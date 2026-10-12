@@ -1,0 +1,3606 @@
+{
+  "schemaVersion": 1,
+  "status": "ready_for_reimport",
+  "image": "td2_sprites04.png",
+  "atlasSizePx": [
+    1024,
+    1024
+  ],
+  "frameSizePx": [
+    64,
+    64
+  ],
+  "packing": {
+    "columns": 12,
+    "stridePx": 80,
+    "insetPx": 8,
+    "extrusionPx": 2
+  },
+  "coordinateOrigin": "top-left",
+  "alphaMode": "straight",
+  "colorSpace": "sRGB",
+  "recommendedSampler": {
+    "filter": "linear",
+    "mipmaps": false,
+    "wrap": "clamp"
+  },
+  "runtimeTexturePolicy": "Use each frame.image relative to this manifest directory. The public sprite API has no atlas UV rectangle; atlas rects are authoring/preview metadata only.",
+  "logicalTilePixels": 64,
+  "placement": {
+    "player": "Draw a 64x64 logical-pixel quad at (body.x*tile-12, body.y*tile-8) when tile=64; scale all offsets by tile/64. Collision reference is 40x56, do not stretch artwork into the body rectangle.",
+    "echo": "Draw a 64x64 quad at (body.x*tile-12, body.y*tile); collision reference is 40x64. Same foot anchor as player.",
+    "devices": "Default stretch_to_authored_bounds. For tile_height_bottom_anchor (plate/spring/checkpoint), draw one tile HIGH with bottom=device.y+device.h; width=device.w*tile. For tile_height_top_anchor (platform/lift), draw one tile HIGH with top=device.y; width=device.w*tile. Do not shrink an entire plate PNG into its thin sensor height. Artwork never changes collision geometry.",
+    "terrain": "Select exposed-edge/corner frames. Repeat at one tile per frame; use fill for interior cells, never stretch a single bordered tile over the whole room.",
+    "direction": "All left/right/up/down variants are baked; no UV mirroring needed."
+  },
+  "frames": [
+    {
+      "key": "player.idle.right.0",
+      "image": "frames/player_idle_right_0.png",
+      "path": "Assets/TD2/Sprites04/frames/player_idle_right_0.png",
+      "sizePx": [
+        64,
+        64
+      ],
+      "rectPx": [
+        8,
+        8,
+        64,
+        64
+      ],
+      "anchorPx": [
+        32,
+        64
+      ],
+      "durationMs": 500,
+      "role": "player",
+      "drawPolicy": "native_body_anchor",
+      "collisionReferencePx": [
+        12,
+        8,
+        40,
+        56
+      ],
+      "artBoundsPx": [
+        10,
+        5,
+        54,
+        64
+      ],
+      "projectPath": "Assets/TD2/Sprites04/frames/player_idle_right_0.png",
+      "sha256": "447f9bfc37fb7199634feeed3f9298772678e109fab644b531dc83c265e8abea"
+    },
+    {
+      "key": "player.idle.right.1",
+      "image": "frames/player_idle_right_1.png",
+      "path": "Assets/TD2/Sprites04/frames/player_idle_right_1.png",
+      "sizePx": [
+        64,
+        64
+      ],
+      "rectPx": [
+        88,
+        8,
+        64,
+        64
+      ],
+      "anchorPx": [
+        32,
+        64
+      ],
+      "durationMs": 500,
+      "role": "player",
+      "drawPolicy": "native_body_anchor",
+      "collisionReferencePx": [
+        12,
+        8,
+        40,
+        56
+      ],
+      "artBoundsPx": [
+        10,
+        6,
+        54,
+        64
+      ],
+      "projectPath": "Assets/TD2/Sprites04/frames/player_idle_right_1.png",
+      "sha256": "8b11c99ce88344d450efb1dc88ddc3615cf4b1534b6483b08a03c278a414ad08"
+    },
+    {
+      "key": "player.walk.right.0",
+      "image": "frames/player_walk_right_0.png",
+      "path": "Assets/TD2/Sprites04/frames/player_walk_right_0.png",
+      "sizePx": [
+        64,
+        64
+      ],
+      "rectPx": [
+        168,
+        8,
+        64,
+        64
+      ],
+      "anchorPx": [
+        32,
+        64
+      ],
+      "durationMs": 110,
+      "role": "player",
+      "drawPolicy": "native_body_anchor",
+      "collisionReferencePx": [
+        12,
+        8,
+        40,
+        56
+      ],
+      "artBoundsPx": [
+        10,
+        5,
+        54,
+        64
+      ],
+      "projectPath": "Assets/TD2/Sprites04/frames/player_walk_right_0.png",
+      "sha256": "447f9bfc37fb7199634feeed3f9298772678e109fab644b531dc83c265e8abea"
+    },
+    {
+      "key": "player.walk.right.1",
+      "image": "frames/player_walk_right_1.png",
+      "path": "Assets/TD2/Sprites04/frames/player_walk_right_1.png",
+      "sizePx": [
+        64,
+        64
+      ],
+      "rectPx": [
+        248,
+        8,
+        64,
+        64
+      ],
+      "anchorPx": [
+        32,
+        64
+      ],
+      "durationMs": 110,
+      "role": "player",
+      "drawPolicy": "native_body_anchor",
+      "collisionReferencePx": [
+        12,
+        8,
+        40,
+        56
+      ],
+      "artBoundsPx": [
+        10,
+        5,
+        56,
+        64
+      ],
+      "projectPath": "Assets/TD2/Sprites04/frames/player_walk_right_1.png",
+      "sha256": "49e6a02514fd48dc7e958e2699fb2dfb38df859f390b0da0564d2dfa2bb0e0a6"
+    },
+    {
+      "key": "player.walk.right.2",
+      "image": "frames/player_walk_right_2.png",
+      "path": "Assets/TD2/Sprites04/frames/player_walk_right_2.png",
+      "sizePx": [
+        64,
+        64
+      ],
+      "rectPx": [
+        328,
+        8,
+        64,
+        64
+      ],
+      "anchorPx": [
+        32,
+        64
+      ],
+      "durationMs": 110,
+      "role": "player",
+      "drawPolicy": "native_body_anchor",
+      "collisionReferencePx": [
+        12,
+        8,
+        40,
+        56
+      ],
+      "artBoundsPx": [
+        10,
+        5,
+        54,
+        64
+      ],
+      "projectPath": "Assets/TD2/Sprites04/frames/player_walk_right_2.png",
+      "sha256": "447f9bfc37fb7199634feeed3f9298772678e109fab644b531dc83c265e8abea"
+    },
+    {
+      "key": "player.walk.right.3",
+      "image": "frames/player_walk_right_3.png",
+      "path": "Assets/TD2/Sprites04/frames/player_walk_right_3.png",
+      "sizePx": [
+        64,
+        64
+      ],
+      "rectPx": [
+        408,
+        8,
+        64,
+        64
+      ],
+      "anchorPx": [
+        32,
+        64
+      ],
+      "durationMs": 110,
+      "role": "player",
+      "drawPolicy": "native_body_anchor",
+      "collisionReferencePx": [
+        12,
+        8,
+        40,
+        56
+      ],
+      "artBoundsPx": [
+        10,
+        5,
+        53,
+        64
+      ],
+      "projectPath": "Assets/TD2/Sprites04/frames/player_walk_right_3.png",
+      "sha256": "a4caacac06981a112116691b37c8855e522f4383cbf013c96a58cc0bdee30686"
+    },
+    {
+      "key": "player.air.right.0",
+      "image": "frames/player_air_right_0.png",
+      "path": "Assets/TD2/Sprites04/frames/player_air_right_0.png",
+      "sizePx": [
+        64,
+        64
+      ],
+      "rectPx": [
+        488,
+        8,
+        64,
+        64
+      ],
+      "anchorPx": [
+        32,
+        64
+      ],
+      "durationMs": 0,
+      "role": "player",
+      "drawPolicy": "native_body_anchor",
+      "collisionReferencePx": [
+        12,
+        8,
+        40,
+        56
+      ],
+      "artBoundsPx": [
+        10,
+        5,
+        53,
+        64
+      ],
+      "projectPath": "Assets/TD2/Sprites04/frames/player_air_right_0.png",
+      "sha256": "6ab912cafd426d56c1467db51d50fe5fe522b9f02bf58b80650398e18215777d"
+    },
+    {
+      "key": "player.dash.right.0",
+      "image": "frames/player_dash_right_0.png",
+      "path": "Assets/TD2/Sprites04/frames/player_dash_right_0.png",
+      "sizePx": [
+        64,
+        64
+      ],
+      "rectPx": [
+        568,
+        8,
+        64,
+        64
+      ],
+      "anchorPx": [
+        32,
+        64
+      ],
+      "durationMs": 140,
+      "role": "player",
+      "drawPolicy": "native_body_anchor",
+      "collisionReferencePx": [
+        12,
+        8,
+        40,
+        56
+      ],
+      "artBoundsPx": [
+        11,
+        10,
+        57,
+        64
+      ],
+      "projectPath": "Assets/TD2/Sprites04/frames/player_dash_right_0.png",
+      "sha256": "450c5f4699376cf0bdeaad8b0c5d405101e08192975715cc458300ac87c3df49"
+    },
+    {
+      "key": "player.land.right.0",
+      "image": "frames/player_land_right_0.png",
+      "path": "Assets/TD2/Sprites04/frames/player_land_right_0.png",
+      "sizePx": [
+        64,
+        64
+      ],
+      "rectPx": [
+        648,
+        8,
+        64,
+        64
+      ],
+      "anchorPx": [
+        32,
+        64
+      ],
+      "durationMs": 90,
+      "role": "player",
+      "drawPolicy": "native_body_anchor",
+      "collisionReferencePx": [
+        12,
+        8,
+        40,
+        56
+      ],
+      "artBoundsPx": [
+        10,
+        10,
+        54,
+        64
+      ],
+      "projectPath": "Assets/TD2/Sprites04/frames/player_land_right_0.png",
+      "sha256": "6704bc2da3419610e13cd2d33eaab1a573ca569dad59aace97ca78c881477065"
+    },
+    {
+      "key": "echo.idle.right",
+      "image": "frames/echo_idle_right.png",
+      "path": "Assets/TD2/Sprites04/frames/echo_idle_right.png",
+      "sizePx": [
+        64,
+        64
+      ],
+      "rectPx": [
+        728,
+        8,
+        64,
+        64
+      ],
+      "anchorPx": [
+        32,
+        64
+      ],
+      "durationMs": 0,
+      "role": "echo",
+      "drawPolicy": "native_body_anchor",
+      "collisionReferencePx": [
+        12,
+        0,
+        40,
+        64
+      ],
+      "artBoundsPx": [
+        10,
+        0,
+        54,
+        64
+      ],
+      "projectPath": "Assets/TD2/Sprites04/frames/echo_idle_right.png",
+      "sha256": "3c63d7c9cf7534293bc89ae0659d1b633ace83ba33309c64b7a23aa0f35793a5"
+    },
+    {
+      "key": "echo.form.right.0",
+      "image": "frames/echo_form_right_0.png",
+      "path": "Assets/TD2/Sprites04/frames/echo_form_right_0.png",
+      "sizePx": [
+        64,
+        64
+      ],
+      "rectPx": [
+        808,
+        8,
+        64,
+        64
+      ],
+      "anchorPx": [
+        32,
+        64
+      ],
+      "durationMs": 55,
+      "role": "echo",
+      "drawPolicy": "native_body_anchor",
+      "collisionReferencePx": [
+        12,
+        0,
+        40,
+        64
+      ],
+      "artBoundsPx": [
+        11,
+        0,
+        54,
+        64
+      ],
+      "projectPath": "Assets/TD2/Sprites04/frames/echo_form_right_0.png",
+      "sha256": "516301d4525b7127219f8c6c745336fc3cd905d6a24c54038c03d9623ad533ca"
+    },
+    {
+      "key": "echo.form.right.1",
+      "image": "frames/echo_form_right_1.png",
+      "path": "Assets/TD2/Sprites04/frames/echo_form_right_1.png",
+      "sizePx": [
+        64,
+        64
+      ],
+      "rectPx": [
+        888,
+        8,
+        64,
+        64
+      ],
+      "anchorPx": [
+        32,
+        64
+      ],
+      "durationMs": 55,
+      "role": "echo",
+      "drawPolicy": "native_body_anchor",
+      "collisionReferencePx": [
+        12,
+        0,
+        40,
+        64
+      ],
+      "artBoundsPx": [
+        10,
+        0,
+        54,
+        64
+      ],
+      "projectPath": "Assets/TD2/Sprites04/frames/echo_form_right_1.png",
+      "sha256": "e4d83584f630fa295b13c22764aa5b0d7ab5a4bc35fcb1f73e87562bb3061661"
+    },
+    {
+      "key": "echo.form.right.2",
+      "image": "frames/echo_form_right_2.png",
+      "path": "Assets/TD2/Sprites04/frames/echo_form_right_2.png",
+      "sizePx": [
+        64,
+        64
+      ],
+      "rectPx": [
+        8,
+        88,
+        64,
+        64
+      ],
+      "anchorPx": [
+        32,
+        64
+      ],
+      "durationMs": 55,
+      "role": "echo",
+      "drawPolicy": "native_body_anchor",
+      "collisionReferencePx": [
+        12,
+        0,
+        40,
+        64
+      ],
+      "artBoundsPx": [
+        10,
+        0,
+        54,
+        64
+      ],
+      "projectPath": "Assets/TD2/Sprites04/frames/echo_form_right_2.png",
+      "sha256": "f7494e16bdef261f4f217607196f67a2d4a49086cc591301a3cd27bfc15b68f0"
+    },
+    {
+      "key": "player.idle.left.0",
+      "image": "frames/player_idle_left_0.png",
+      "path": "Assets/TD2/Sprites04/frames/player_idle_left_0.png",
+      "sizePx": [
+        64,
+        64
+      ],
+      "rectPx": [
+        88,
+        88,
+        64,
+        64
+      ],
+      "anchorPx": [
+        32,
+        64
+      ],
+      "durationMs": 500,
+      "role": "player",
+      "drawPolicy": "native_body_anchor",
+      "collisionReferencePx": [
+        12,
+        8,
+        40,
+        56
+      ],
+      "artBoundsPx": [
+        10,
+        5,
+        54,
+        64
+      ],
+      "projectPath": "Assets/TD2/Sprites04/frames/player_idle_left_0.png",
+      "sha256": "3e1839637c44aebb4ce0357a09d3d9b3a12aeb8c06e36fefc74602be2a336784"
+    },
+    {
+      "key": "player.idle.left.1",
+      "image": "frames/player_idle_left_1.png",
+      "path": "Assets/TD2/Sprites04/frames/player_idle_left_1.png",
+      "sizePx": [
+        64,
+        64
+      ],
+      "rectPx": [
+        168,
+        88,
+        64,
+        64
+      ],
+      "anchorPx": [
+        32,
+        64
+      ],
+      "durationMs": 500,
+      "role": "player",
+      "drawPolicy": "native_body_anchor",
+      "collisionReferencePx": [
+        12,
+        8,
+        40,
+        56
+      ],
+      "artBoundsPx": [
+        10,
+        6,
+        54,
+        64
+      ],
+      "projectPath": "Assets/TD2/Sprites04/frames/player_idle_left_1.png",
+      "sha256": "7ffa6b82f4c1c2b5f0eafe75b392db6560c2a15794376af35feb21e466850239"
+    },
+    {
+      "key": "player.walk.left.0",
+      "image": "frames/player_walk_left_0.png",
+      "path": "Assets/TD2/Sprites04/frames/player_walk_left_0.png",
+      "sizePx": [
+        64,
+        64
+      ],
+      "rectPx": [
+        248,
+        88,
+        64,
+        64
+      ],
+      "anchorPx": [
+        32,
+        64
+      ],
+      "durationMs": 110,
+      "role": "player",
+      "drawPolicy": "native_body_anchor",
+      "collisionReferencePx": [
+        12,
+        8,
+        40,
+        56
+      ],
+      "artBoundsPx": [
+        10,
+        5,
+        54,
+        64
+      ],
+      "projectPath": "Assets/TD2/Sprites04/frames/player_walk_left_0.png",
+      "sha256": "3e1839637c44aebb4ce0357a09d3d9b3a12aeb8c06e36fefc74602be2a336784"
+    },
+    {
+      "key": "player.walk.left.1",
+      "image": "frames/player_walk_left_1.png",
+      "path": "Assets/TD2/Sprites04/frames/player_walk_left_1.png",
+      "sizePx": [
+        64,
+        64
+      ],
+      "rectPx": [
+        328,
+        88,
+        64,
+        64
+      ],
+      "anchorPx": [
+        32,
+        64
+      ],
+      "durationMs": 110,
+      "role": "player",
+      "drawPolicy": "native_body_anchor",
+      "collisionReferencePx": [
+        12,
+        8,
+        40,
+        56
+      ],
+      "artBoundsPx": [
+        8,
+        5,
+        54,
+        64
+      ],
+      "projectPath": "Assets/TD2/Sprites04/frames/player_walk_left_1.png",
+      "sha256": "74b9dd3924e112cc8b3c142b2bd7c3f4e3dd6e08f2d0049d41fc41be3d908122"
+    },
+    {
+      "key": "player.walk.left.2",
+      "image": "frames/player_walk_left_2.png",
+      "path": "Assets/TD2/Sprites04/frames/player_walk_left_2.png",
+      "sizePx": [
+        64,
+        64
+      ],
+      "rectPx": [
+        408,
+        88,
+        64,
+        64
+      ],
+      "anchorPx": [
+        32,
+        64
+      ],
+      "durationMs": 110,
+      "role": "player",
+      "drawPolicy": "native_body_anchor",
+      "collisionReferencePx": [
+        12,
+        8,
+        40,
+        56
+      ],
+      "artBoundsPx": [
+        10,
+        5,
+        54,
+        64
+      ],
+      "projectPath": "Assets/TD2/Sprites04/frames/player_walk_left_2.png",
+      "sha256": "3e1839637c44aebb4ce0357a09d3d9b3a12aeb8c06e36fefc74602be2a336784"
+    },
+    {
+      "key": "player.walk.left.3",
+      "image": "frames/player_walk_left_3.png",
+      "path": "Assets/TD2/Sprites04/frames/player_walk_left_3.png",
+      "sizePx": [
+        64,
+        64
+      ],
+      "rectPx": [
+        488,
+        88,
+        64,
+        64
+      ],
+      "anchorPx": [
+        32,
+        64
+      ],
+      "durationMs": 110,
+      "role": "player",
+      "drawPolicy": "native_body_anchor",
+      "collisionReferencePx": [
+        12,
+        8,
+        40,
+        56
+      ],
+      "artBoundsPx": [
+        11,
+        5,
+        54,
+        64
+      ],
+      "projectPath": "Assets/TD2/Sprites04/frames/player_walk_left_3.png",
+      "sha256": "46cb8cb982b58b6035ecf9cff9cd5269c680b1f868f3931590862f00b8787e39"
+    },
+    {
+      "key": "player.air.left.0",
+      "image": "frames/player_air_left_0.png",
+      "path": "Assets/TD2/Sprites04/frames/player_air_left_0.png",
+      "sizePx": [
+        64,
+        64
+      ],
+      "rectPx": [
+        568,
+        88,
+        64,
+        64
+      ],
+      "anchorPx": [
+        32,
+        64
+      ],
+      "durationMs": 0,
+      "role": "player",
+      "drawPolicy": "native_body_anchor",
+      "collisionReferencePx": [
+        12,
+        8,
+        40,
+        56
+      ],
+      "artBoundsPx": [
+        11,
+        5,
+        54,
+        64
+      ],
+      "projectPath": "Assets/TD2/Sprites04/frames/player_air_left_0.png",
+      "sha256": "dd3daa94cda6ecaa58c27233599f745227bd7bab9dd4e9d14d1343dc8e740641"
+    },
+    {
+      "key": "player.dash.left.0",
+      "image": "frames/player_dash_left_0.png",
+      "path": "Assets/TD2/Sprites04/frames/player_dash_left_0.png",
+      "sizePx": [
+        64,
+        64
+      ],
+      "rectPx": [
+        648,
+        88,
+        64,
+        64
+      ],
+      "anchorPx": [
+        32,
+        64
+      ],
+      "durationMs": 140,
+      "role": "player",
+      "drawPolicy": "native_body_anchor",
+      "collisionReferencePx": [
+        12,
+        8,
+        40,
+        56
+      ],
+      "artBoundsPx": [
+        7,
+        10,
+        53,
+        64
+      ],
+      "projectPath": "Assets/TD2/Sprites04/frames/player_dash_left_0.png",
+      "sha256": "dd8dbfccdf9f203455cf5b46576a01e8342b78e413038a76696ecc5224b74cdb"
+    },
+    {
+      "key": "player.land.left.0",
+      "image": "frames/player_land_left_0.png",
+      "path": "Assets/TD2/Sprites04/frames/player_land_left_0.png",
+      "sizePx": [
+        64,
+        64
+      ],
+      "rectPx": [
+        728,
+        88,
+        64,
+        64
+      ],
+      "anchorPx": [
+        32,
+        64
+      ],
+      "durationMs": 90,
+      "role": "player",
+      "drawPolicy": "native_body_anchor",
+      "collisionReferencePx": [
+        12,
+        8,
+        40,
+        56
+      ],
+      "artBoundsPx": [
+        10,
+        10,
+        54,
+        64
+      ],
+      "projectPath": "Assets/TD2/Sprites04/frames/player_land_left_0.png",
+      "sha256": "967db60a8f51792716b6e950956a7d31e434684a209cdf487d796e7b816b1016"
+    },
+    {
+      "key": "echo.idle.left",
+      "image": "frames/echo_idle_left.png",
+      "path": "Assets/TD2/Sprites04/frames/echo_idle_left.png",
+      "sizePx": [
+        64,
+        64
+      ],
+      "rectPx": [
+        808,
+        88,
+        64,
+        64
+      ],
+      "anchorPx": [
+        32,
+        64
+      ],
+      "durationMs": 0,
+      "role": "echo",
+      "drawPolicy": "native_body_anchor",
+      "collisionReferencePx": [
+        12,
+        0,
+        40,
+        64
+      ],
+      "artBoundsPx": [
+        10,
+        0,
+        54,
+        64
+      ],
+      "projectPath": "Assets/TD2/Sprites04/frames/echo_idle_left.png",
+      "sha256": "609f408b06865bb05a1a307b59599b8c2978941cfce02cd5105f8b2aa70ca902"
+    },
+    {
+      "key": "echo.form.left.0",
+      "image": "frames/echo_form_left_0.png",
+      "path": "Assets/TD2/Sprites04/frames/echo_form_left_0.png",
+      "sizePx": [
+        64,
+        64
+      ],
+      "rectPx": [
+        888,
+        88,
+        64,
+        64
+      ],
+      "anchorPx": [
+        32,
+        64
+      ],
+      "durationMs": 55,
+      "role": "echo",
+      "drawPolicy": "native_body_anchor",
+      "collisionReferencePx": [
+        12,
+        0,
+        40,
+        64
+      ],
+      "artBoundsPx": [
+        10,
+        0,
+        53,
+        64
+      ],
+      "projectPath": "Assets/TD2/Sprites04/frames/echo_form_left_0.png",
+      "sha256": "8c2b4dc604ad8e4ea27a10df8341edc0a017de38132ce4b56f7f7b8864e705d9"
+    },
+    {
+      "key": "echo.form.left.1",
+      "image": "frames/echo_form_left_1.png",
+      "path": "Assets/TD2/Sprites04/frames/echo_form_left_1.png",
+      "sizePx": [
+        64,
+        64
+      ],
+      "rectPx": [
+        8,
+        168,
+        64,
+        64
+      ],
+      "anchorPx": [
+        32,
+        64
+      ],
+      "durationMs": 55,
+      "role": "echo",
+      "drawPolicy": "native_body_anchor",
+      "collisionReferencePx": [
+        12,
+        0,
+        40,
+        64
+      ],
+      "artBoundsPx": [
+        10,
+        0,
+        54,
+        64
+      ],
+      "projectPath": "Assets/TD2/Sprites04/frames/echo_form_left_1.png",
+      "sha256": "19e6b1aa8bf7b0165866fb1b305500b898f6d144b8c66bf9573c49f360a5b736"
+    },
+    {
+      "key": "echo.form.left.2",
+      "image": "frames/echo_form_left_2.png",
+      "path": "Assets/TD2/Sprites04/frames/echo_form_left_2.png",
+      "sizePx": [
+        64,
+        64
+      ],
+      "rectPx": [
+        88,
+        168,
+        64,
+        64
+      ],
+      "anchorPx": [
+        32,
+        64
+      ],
+      "durationMs": 55,
+      "role": "echo",
+      "drawPolicy": "native_body_anchor",
+      "collisionReferencePx": [
+        12,
+        0,
+        40,
+        64
+      ],
+      "artBoundsPx": [
+        10,
+        0,
+        54,
+        64
+      ],
+      "projectPath": "Assets/TD2/Sprites04/frames/echo_form_left_2.png",
+      "sha256": "56b82097806e80900cf59df34dde74eedfde91b31de0d80030e1e9d369b7df82"
+    },
+    {
+      "key": "terrain.fill",
+      "image": "frames/terrain_fill.png",
+      "path": "Assets/TD2/Sprites04/frames/terrain_fill.png",
+      "sizePx": [
+        64,
+        64
+      ],
+      "rectPx": [
+        168,
+        168,
+        64,
+        64
+      ],
+      "anchorPx": [
+        32,
+        32
+      ],
+      "durationMs": 0,
+      "role": "terrain",
+      "drawPolicy": "stretch_to_authored_bounds",
+      "collisionReferencePx": null,
+      "artBoundsPx": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "projectPath": "Assets/TD2/Sprites04/frames/terrain_fill.png",
+      "sha256": "557198d00eded35e7368909208477681d5a1f95d0974c183f1700c0f4a68cd5b"
+    },
+    {
+      "key": "terrain.top",
+      "image": "frames/terrain_top.png",
+      "path": "Assets/TD2/Sprites04/frames/terrain_top.png",
+      "sizePx": [
+        64,
+        64
+      ],
+      "rectPx": [
+        248,
+        168,
+        64,
+        64
+      ],
+      "anchorPx": [
+        32,
+        32
+      ],
+      "durationMs": 0,
+      "role": "terrain",
+      "drawPolicy": "stretch_to_authored_bounds",
+      "collisionReferencePx": null,
+      "artBoundsPx": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "projectPath": "Assets/TD2/Sprites04/frames/terrain_top.png",
+      "sha256": "682aeb4b0f91cd64da01be5d56736f25d5aad98899725999d6af752f2f780414"
+    },
+    {
+      "key": "terrain.bottom",
+      "image": "frames/terrain_bottom.png",
+      "path": "Assets/TD2/Sprites04/frames/terrain_bottom.png",
+      "sizePx": [
+        64,
+        64
+      ],
+      "rectPx": [
+        328,
+        168,
+        64,
+        64
+      ],
+      "anchorPx": [
+        32,
+        32
+      ],
+      "durationMs": 0,
+      "role": "terrain",
+      "drawPolicy": "stretch_to_authored_bounds",
+      "collisionReferencePx": null,
+      "artBoundsPx": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "projectPath": "Assets/TD2/Sprites04/frames/terrain_bottom.png",
+      "sha256": "de1419664977a9cc06fc0febad0724d0b592db69c8f73f6e65119cb289ef4d01"
+    },
+    {
+      "key": "terrain.left",
+      "image": "frames/terrain_left.png",
+      "path": "Assets/TD2/Sprites04/frames/terrain_left.png",
+      "sizePx": [
+        64,
+        64
+      ],
+      "rectPx": [
+        408,
+        168,
+        64,
+        64
+      ],
+      "anchorPx": [
+        32,
+        32
+      ],
+      "durationMs": 0,
+      "role": "terrain",
+      "drawPolicy": "stretch_to_authored_bounds",
+      "collisionReferencePx": null,
+      "artBoundsPx": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "projectPath": "Assets/TD2/Sprites04/frames/terrain_left.png",
+      "sha256": "8f405e3700964e1febe0d1d16fedc1b343e1fb7a5c04ab576d3ff8fb57a59295"
+    },
+    {
+      "key": "terrain.right",
+      "image": "frames/terrain_right.png",
+      "path": "Assets/TD2/Sprites04/frames/terrain_right.png",
+      "sizePx": [
+        64,
+        64
+      ],
+      "rectPx": [
+        488,
+        168,
+        64,
+        64
+      ],
+      "anchorPx": [
+        32,
+        32
+      ],
+      "durationMs": 0,
+      "role": "terrain",
+      "drawPolicy": "stretch_to_authored_bounds",
+      "collisionReferencePx": null,
+      "artBoundsPx": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "projectPath": "Assets/TD2/Sprites04/frames/terrain_right.png",
+      "sha256": "05f898d0fc28bc3454ccd222039b98ac21536bffc1d7624036457e12af1b74df"
+    },
+    {
+      "key": "terrain.top_left",
+      "image": "frames/terrain_top_left.png",
+      "path": "Assets/TD2/Sprites04/frames/terrain_top_left.png",
+      "sizePx": [
+        64,
+        64
+      ],
+      "rectPx": [
+        568,
+        168,
+        64,
+        64
+      ],
+      "anchorPx": [
+        32,
+        32
+      ],
+      "durationMs": 0,
+      "role": "terrain",
+      "drawPolicy": "stretch_to_authored_bounds",
+      "collisionReferencePx": null,
+      "artBoundsPx": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "projectPath": "Assets/TD2/Sprites04/frames/terrain_top_left.png",
+      "sha256": "d4606b9bd3fdb8a4eadd9d7396701a3d75357aa011fefd30c21210d9cbd711ef"
+    },
+    {
+      "key": "terrain.top_right",
+      "image": "frames/terrain_top_right.png",
+      "path": "Assets/TD2/Sprites04/frames/terrain_top_right.png",
+      "sizePx": [
+        64,
+        64
+      ],
+      "rectPx": [
+        648,
+        168,
+        64,
+        64
+      ],
+      "anchorPx": [
+        32,
+        32
+      ],
+      "durationMs": 0,
+      "role": "terrain",
+      "drawPolicy": "stretch_to_authored_bounds",
+      "collisionReferencePx": null,
+      "artBoundsPx": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "projectPath": "Assets/TD2/Sprites04/frames/terrain_top_right.png",
+      "sha256": "94eb89760cdafd1adc28437ce6caf9cffda4344369e893f33ae5bf1883a57817"
+    },
+    {
+      "key": "terrain.bottom_left",
+      "image": "frames/terrain_bottom_left.png",
+      "path": "Assets/TD2/Sprites04/frames/terrain_bottom_left.png",
+      "sizePx": [
+        64,
+        64
+      ],
+      "rectPx": [
+        728,
+        168,
+        64,
+        64
+      ],
+      "anchorPx": [
+        32,
+        32
+      ],
+      "durationMs": 0,
+      "role": "terrain",
+      "drawPolicy": "stretch_to_authored_bounds",
+      "collisionReferencePx": null,
+      "artBoundsPx": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "projectPath": "Assets/TD2/Sprites04/frames/terrain_bottom_left.png",
+      "sha256": "492efd38166f071023ee74a1d716626134a7d3dae6c7040f9eda9c3d081020f3"
+    },
+    {
+      "key": "terrain.bottom_right",
+      "image": "frames/terrain_bottom_right.png",
+      "path": "Assets/TD2/Sprites04/frames/terrain_bottom_right.png",
+      "sizePx": [
+        64,
+        64
+      ],
+      "rectPx": [
+        808,
+        168,
+        64,
+        64
+      ],
+      "anchorPx": [
+        32,
+        32
+      ],
+      "durationMs": 0,
+      "role": "terrain",
+      "drawPolicy": "stretch_to_authored_bounds",
+      "collisionReferencePx": null,
+      "artBoundsPx": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "projectPath": "Assets/TD2/Sprites04/frames/terrain_bottom_right.png",
+      "sha256": "a18c847dad2f25d83a2efd32e260c52cc961f979d0f708a1e1f582b8cc81683e"
+    },
+    {
+      "key": "platform.left",
+      "image": "frames/platform_left.png",
+      "path": "Assets/TD2/Sprites04/frames/platform_left.png",
+      "sizePx": [
+        64,
+        64
+      ],
+      "rectPx": [
+        888,
+        168,
+        64,
+        64
+      ],
+      "anchorPx": [
+        32,
+        0
+      ],
+      "durationMs": 0,
+      "role": "platform",
+      "drawPolicy": "tile_height_top_anchor",
+      "collisionReferencePx": null,
+      "artBoundsPx": [
+        0,
+        0,
+        64,
+        29
+      ],
+      "projectPath": "Assets/TD2/Sprites04/frames/platform_left.png",
+      "sha256": "0a6cf1acac42a6968349f1c6e21da94c2b81a4f7e5f2fbe8f63ffb14f428cabb"
+    },
+    {
+      "key": "platform.middle",
+      "image": "frames/platform_middle.png",
+      "path": "Assets/TD2/Sprites04/frames/platform_middle.png",
+      "sizePx": [
+        64,
+        64
+      ],
+      "rectPx": [
+        8,
+        248,
+        64,
+        64
+      ],
+      "anchorPx": [
+        32,
+        0
+      ],
+      "durationMs": 0,
+      "role": "platform",
+      "drawPolicy": "tile_height_top_anchor",
+      "collisionReferencePx": null,
+      "artBoundsPx": [
+        0,
+        0,
+        64,
+        29
+      ],
+      "projectPath": "Assets/TD2/Sprites04/frames/platform_middle.png",
+      "sha256": "b559b2e8bf19f9d8e80175c3a01af5e552ba7e71373ac901777a84dde8fdbbe8"
+    },
+    {
+      "key": "platform.right",
+      "image": "frames/platform_right.png",
+      "path": "Assets/TD2/Sprites04/frames/platform_right.png",
+      "sizePx": [
+        64,
+        64
+      ],
+      "rectPx": [
+        88,
+        248,
+        64,
+        64
+      ],
+      "anchorPx": [
+        32,
+        0
+      ],
+      "durationMs": 0,
+      "role": "platform",
+      "drawPolicy": "tile_height_top_anchor",
+      "collisionReferencePx": null,
+      "artBoundsPx": [
+        0,
+        0,
+        64,
+        29
+      ],
+      "projectPath": "Assets/TD2/Sprites04/frames/platform_right.png",
+      "sha256": "cfc88ecf0f1030c7f247493fef68f6ce239c4d6b31c9098a2721441de5f23834"
+    },
+    {
+      "key": "spikes.up",
+      "image": "frames/spikes_up.png",
+      "path": "Assets/TD2/Sprites04/frames/spikes_up.png",
+      "sizePx": [
+        64,
+        64
+      ],
+      "rectPx": [
+        168,
+        248,
+        64,
+        64
+      ],
+      "anchorPx": [
+        32,
+        32
+      ],
+      "durationMs": 0,
+      "role": "hazard",
+      "drawPolicy": "stretch_to_authored_bounds",
+      "collisionReferencePx": null,
+      "artBoundsPx": [
+        0,
+        1,
+        64,
+        64
+      ],
+      "projectPath": "Assets/TD2/Sprites04/frames/spikes_up.png",
+      "sha256": "b9e119835c8f9178622a495952b429db20609e49237c766066144188bd19b035"
+    },
+    {
+      "key": "spikes.right",
+      "image": "frames/spikes_right.png",
+      "path": "Assets/TD2/Sprites04/frames/spikes_right.png",
+      "sizePx": [
+        64,
+        64
+      ],
+      "rectPx": [
+        248,
+        248,
+        64,
+        64
+      ],
+      "anchorPx": [
+        32,
+        32
+      ],
+      "durationMs": 0,
+      "role": "hazard",
+      "drawPolicy": "stretch_to_authored_bounds",
+      "collisionReferencePx": null,
+      "artBoundsPx": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "projectPath": "Assets/TD2/Sprites04/frames/spikes_right.png",
+      "sha256": "08819094b1bca3ff87e64592d7786006373db254cd6395db3f02dd1b434f25d7"
+    },
+    {
+      "key": "spikes.down",
+      "image": "frames/spikes_down.png",
+      "path": "Assets/TD2/Sprites04/frames/spikes_down.png",
+      "sizePx": [
+        64,
+        64
+      ],
+      "rectPx": [
+        328,
+        248,
+        64,
+        64
+      ],
+      "anchorPx": [
+        32,
+        32
+      ],
+      "durationMs": 0,
+      "role": "hazard",
+      "drawPolicy": "stretch_to_authored_bounds",
+      "collisionReferencePx": null,
+      "artBoundsPx": [
+        0,
+        0,
+        64,
+        63
+      ],
+      "projectPath": "Assets/TD2/Sprites04/frames/spikes_down.png",
+      "sha256": "815e7d73ef3f6cc69621237305d19385334a20235ad3950123d914db692d7b1a"
+    },
+    {
+      "key": "spikes.left",
+      "image": "frames/spikes_left.png",
+      "path": "Assets/TD2/Sprites04/frames/spikes_left.png",
+      "sizePx": [
+        64,
+        64
+      ],
+      "rectPx": [
+        408,
+        248,
+        64,
+        64
+      ],
+      "anchorPx": [
+        32,
+        32
+      ],
+      "durationMs": 0,
+      "role": "hazard",
+      "drawPolicy": "stretch_to_authored_bounds",
+      "collisionReferencePx": null,
+      "artBoundsPx": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "projectPath": "Assets/TD2/Sprites04/frames/spikes_left.png",
+      "sha256": "98e982435dd77dc0cb2727077fe78435e1568408877d2f1fc9db240f641c490d"
+    },
+    {
+      "key": "plate.up",
+      "image": "frames/plate_up.png",
+      "path": "Assets/TD2/Sprites04/frames/plate_up.png",
+      "sizePx": [
+        64,
+        64
+      ],
+      "rectPx": [
+        488,
+        248,
+        64,
+        64
+      ],
+      "anchorPx": [
+        32,
+        64
+      ],
+      "durationMs": 0,
+      "role": "device",
+      "drawPolicy": "tile_height_bottom_anchor",
+      "collisionReferencePx": null,
+      "artBoundsPx": [
+        0,
+        40,
+        64,
+        64
+      ],
+      "projectPath": "Assets/TD2/Sprites04/frames/plate_up.png",
+      "sha256": "30e376229ed62c4a401e1fe48ba496d7ccb8a78dc711f555f0ab78d6a0909439"
+    },
+    {
+      "key": "plate.down",
+      "image": "frames/plate_down.png",
+      "path": "Assets/TD2/Sprites04/frames/plate_down.png",
+      "sizePx": [
+        64,
+        64
+      ],
+      "rectPx": [
+        568,
+        248,
+        64,
+        64
+      ],
+      "anchorPx": [
+        32,
+        64
+      ],
+      "durationMs": 0,
+      "role": "device",
+      "drawPolicy": "tile_height_bottom_anchor",
+      "collisionReferencePx": null,
+      "artBoundsPx": [
+        0,
+        50,
+        64,
+        64
+      ],
+      "projectPath": "Assets/TD2/Sprites04/frames/plate_down.png",
+      "sha256": "fd902ef55201bce21cc8ee00b5e2332da9bc37d27562bd0286b59737c53bb6b5"
+    },
+    {
+      "key": "door.closed",
+      "image": "frames/door_closed.png",
+      "path": "Assets/TD2/Sprites04/frames/door_closed.png",
+      "sizePx": [
+        64,
+        64
+      ],
+      "rectPx": [
+        648,
+        248,
+        64,
+        64
+      ],
+      "anchorPx": [
+        32,
+        32
+      ],
+      "durationMs": 0,
+      "role": "device",
+      "drawPolicy": "stretch_to_authored_bounds",
+      "collisionReferencePx": null,
+      "artBoundsPx": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "projectPath": "Assets/TD2/Sprites04/frames/door_closed.png",
+      "sha256": "93d408aa70a265c05eed089b9727f2a96f45e30d3535419a1ea76306fda4ac08"
+    },
+    {
+      "key": "door.open",
+      "image": "frames/door_open.png",
+      "path": "Assets/TD2/Sprites04/frames/door_open.png",
+      "sizePx": [
+        64,
+        64
+      ],
+      "rectPx": [
+        728,
+        248,
+        64,
+        64
+      ],
+      "anchorPx": [
+        32,
+        32
+      ],
+      "durationMs": 0,
+      "role": "device",
+      "drawPolicy": "stretch_to_authored_bounds",
+      "collisionReferencePx": null,
+      "artBoundsPx": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "projectPath": "Assets/TD2/Sprites04/frames/door_open.png",
+      "sha256": "a5de4bc7334dfe208ade1272f2092bc279d6f8bd2c645eb6a07a38b0bfa297e1"
+    },
+    {
+      "key": "spring.idle",
+      "image": "frames/spring_idle.png",
+      "path": "Assets/TD2/Sprites04/frames/spring_idle.png",
+      "sizePx": [
+        64,
+        64
+      ],
+      "rectPx": [
+        808,
+        248,
+        64,
+        64
+      ],
+      "anchorPx": [
+        32,
+        64
+      ],
+      "durationMs": 0,
+      "role": "device",
+      "drawPolicy": "tile_height_bottom_anchor",
+      "collisionReferencePx": null,
+      "artBoundsPx": [
+        2,
+        25,
+        62,
+        64
+      ],
+      "projectPath": "Assets/TD2/Sprites04/frames/spring_idle.png",
+      "sha256": "ebd6e952c794e0b72010f639eee127b5768996aa907bfbf7ced98eef5783fe7b"
+    },
+    {
+      "key": "spring.charge0",
+      "image": "frames/spring_charge0.png",
+      "path": "Assets/TD2/Sprites04/frames/spring_charge0.png",
+      "sizePx": [
+        64,
+        64
+      ],
+      "rectPx": [
+        888,
+        248,
+        64,
+        64
+      ],
+      "anchorPx": [
+        32,
+        64
+      ],
+      "durationMs": 0,
+      "role": "device",
+      "drawPolicy": "tile_height_bottom_anchor",
+      "collisionReferencePx": null,
+      "artBoundsPx": [
+        2,
+        33,
+        62,
+        64
+      ],
+      "projectPath": "Assets/TD2/Sprites04/frames/spring_charge0.png",
+      "sha256": "53c717e79536fc9effcfc761943bd1796c83fb3c1f844122dc7f1fbfba53da3a"
+    },
+    {
+      "key": "spring.charge1",
+      "image": "frames/spring_charge1.png",
+      "path": "Assets/TD2/Sprites04/frames/spring_charge1.png",
+      "sizePx": [
+        64,
+        64
+      ],
+      "rectPx": [
+        8,
+        328,
+        64,
+        64
+      ],
+      "anchorPx": [
+        32,
+        64
+      ],
+      "durationMs": 0,
+      "role": "device",
+      "drawPolicy": "tile_height_bottom_anchor",
+      "collisionReferencePx": null,
+      "artBoundsPx": [
+        2,
+        42,
+        62,
+        64
+      ],
+      "projectPath": "Assets/TD2/Sprites04/frames/spring_charge1.png",
+      "sha256": "6ca6fdaf32cad0b50121f980e35009936fab3c770d97f13c411becc5746aec4a"
+    },
+    {
+      "key": "spring.released",
+      "image": "frames/spring_released.png",
+      "path": "Assets/TD2/Sprites04/frames/spring_released.png",
+      "sizePx": [
+        64,
+        64
+      ],
+      "rectPx": [
+        88,
+        328,
+        64,
+        64
+      ],
+      "anchorPx": [
+        32,
+        64
+      ],
+      "durationMs": 0,
+      "role": "device",
+      "drawPolicy": "tile_height_bottom_anchor",
+      "collisionReferencePx": null,
+      "artBoundsPx": [
+        2,
+        6,
+        62,
+        64
+      ],
+      "projectPath": "Assets/TD2/Sprites04/frames/spring_released.png",
+      "sha256": "a907e2f3cf92df6d39ba4d9a0a6b00bfc025e7198e020931f447ee291571251d"
+    },
+    {
+      "key": "checkpoint.idle",
+      "image": "frames/checkpoint_idle.png",
+      "path": "Assets/TD2/Sprites04/frames/checkpoint_idle.png",
+      "sizePx": [
+        64,
+        64
+      ],
+      "rectPx": [
+        168,
+        328,
+        64,
+        64
+      ],
+      "anchorPx": [
+        32,
+        64
+      ],
+      "durationMs": 0,
+      "role": "device",
+      "drawPolicy": "tile_height_bottom_anchor",
+      "collisionReferencePx": null,
+      "artBoundsPx": [
+        5,
+        1,
+        59,
+        64
+      ],
+      "projectPath": "Assets/TD2/Sprites04/frames/checkpoint_idle.png",
+      "sha256": "73f5f34390a92bacb238ca0e960a10ab97ddbc8c70939a6a0de487b4a8c8cd2d"
+    },
+    {
+      "key": "checkpoint.active",
+      "image": "frames/checkpoint_active.png",
+      "path": "Assets/TD2/Sprites04/frames/checkpoint_active.png",
+      "sizePx": [
+        64,
+        64
+      ],
+      "rectPx": [
+        248,
+        328,
+        64,
+        64
+      ],
+      "anchorPx": [
+        32,
+        64
+      ],
+      "durationMs": 0,
+      "role": "device",
+      "drawPolicy": "tile_height_bottom_anchor",
+      "collisionReferencePx": null,
+      "artBoundsPx": [
+        5,
+        1,
+        59,
+        64
+      ],
+      "projectPath": "Assets/TD2/Sprites04/frames/checkpoint_active.png",
+      "sha256": "4e67d107a7700e78b5bf925121ddc8af639f42dc4a7fe594b3914e4735f43792"
+    },
+    {
+      "key": "checkpoint.pulse",
+      "image": "frames/checkpoint_pulse.png",
+      "path": "Assets/TD2/Sprites04/frames/checkpoint_pulse.png",
+      "sizePx": [
+        64,
+        64
+      ],
+      "rectPx": [
+        328,
+        328,
+        64,
+        64
+      ],
+      "anchorPx": [
+        32,
+        64
+      ],
+      "durationMs": 0,
+      "role": "device",
+      "drawPolicy": "tile_height_bottom_anchor",
+      "collisionReferencePx": null,
+      "artBoundsPx": [
+        1,
+        1,
+        63,
+        64
+      ],
+      "projectPath": "Assets/TD2/Sprites04/frames/checkpoint_pulse.png",
+      "sha256": "5b2227065fb73c3d114c4e261fc5b2e2dc348927d85a912f7b64301edb73943f"
+    },
+    {
+      "key": "laser.right.off",
+      "image": "frames/laser_right_off.png",
+      "path": "Assets/TD2/Sprites04/frames/laser_right_off.png",
+      "sizePx": [
+        64,
+        64
+      ],
+      "rectPx": [
+        408,
+        328,
+        64,
+        64
+      ],
+      "anchorPx": [
+        32,
+        32
+      ],
+      "durationMs": 0,
+      "role": "hazard",
+      "drawPolicy": "stretch_to_authored_bounds",
+      "collisionReferencePx": null,
+      "artBoundsPx": [
+        1,
+        1,
+        64,
+        63
+      ],
+      "projectPath": "Assets/TD2/Sprites04/frames/laser_right_off.png",
+      "sha256": "dc5dff51ea19d10f87ebfda5baa5f9819e7a39a7b3de753b652b8dbdc6d71e47"
+    },
+    {
+      "key": "laser.right.on",
+      "image": "frames/laser_right_on.png",
+      "path": "Assets/TD2/Sprites04/frames/laser_right_on.png",
+      "sizePx": [
+        64,
+        64
+      ],
+      "rectPx": [
+        488,
+        328,
+        64,
+        64
+      ],
+      "anchorPx": [
+        32,
+        32
+      ],
+      "durationMs": 0,
+      "role": "hazard",
+      "drawPolicy": "stretch_to_authored_bounds",
+      "collisionReferencePx": null,
+      "artBoundsPx": [
+        1,
+        1,
+        64,
+        63
+      ],
+      "projectPath": "Assets/TD2/Sprites04/frames/laser_right_on.png",
+      "sha256": "adf8d5bff7e6dfca9dfb3fe48bb62c980965781e6ad3b80d82f801b8c676e6d4"
+    },
+    {
+      "key": "laser.down.off",
+      "image": "frames/laser_down_off.png",
+      "path": "Assets/TD2/Sprites04/frames/laser_down_off.png",
+      "sizePx": [
+        64,
+        64
+      ],
+      "rectPx": [
+        568,
+        328,
+        64,
+        64
+      ],
+      "anchorPx": [
+        32,
+        32
+      ],
+      "durationMs": 0,
+      "role": "hazard",
+      "drawPolicy": "stretch_to_authored_bounds",
+      "collisionReferencePx": null,
+      "artBoundsPx": [
+        1,
+        1,
+        63,
+        64
+      ],
+      "projectPath": "Assets/TD2/Sprites04/frames/laser_down_off.png",
+      "sha256": "5a426e0ab469d4757302a8dfcc7b57a44f31dea139edcad798677abbb5f12f30"
+    },
+    {
+      "key": "laser.down.on",
+      "image": "frames/laser_down_on.png",
+      "path": "Assets/TD2/Sprites04/frames/laser_down_on.png",
+      "sizePx": [
+        64,
+        64
+      ],
+      "rectPx": [
+        648,
+        328,
+        64,
+        64
+      ],
+      "anchorPx": [
+        32,
+        32
+      ],
+      "durationMs": 0,
+      "role": "hazard",
+      "drawPolicy": "stretch_to_authored_bounds",
+      "collisionReferencePx": null,
+      "artBoundsPx": [
+        1,
+        1,
+        63,
+        64
+      ],
+      "projectPath": "Assets/TD2/Sprites04/frames/laser_down_on.png",
+      "sha256": "dc3d5f63d790e4d7a57760c26e614becf2949702d2fdc3f77903fb55828e759f"
+    },
+    {
+      "key": "laser.left.off",
+      "image": "frames/laser_left_off.png",
+      "path": "Assets/TD2/Sprites04/frames/laser_left_off.png",
+      "sizePx": [
+        64,
+        64
+      ],
+      "rectPx": [
+        728,
+        328,
+        64,
+        64
+      ],
+      "anchorPx": [
+        32,
+        32
+      ],
+      "durationMs": 0,
+      "role": "hazard",
+      "drawPolicy": "stretch_to_authored_bounds",
+      "collisionReferencePx": null,
+      "artBoundsPx": [
+        0,
+        1,
+        63,
+        63
+      ],
+      "projectPath": "Assets/TD2/Sprites04/frames/laser_left_off.png",
+      "sha256": "9fb8571291f9aeebf4e205982c1b3d1aa1a0f10aef2d5e8e3bd2344a742adf6d"
+    },
+    {
+      "key": "laser.left.on",
+      "image": "frames/laser_left_on.png",
+      "path": "Assets/TD2/Sprites04/frames/laser_left_on.png",
+      "sizePx": [
+        64,
+        64
+      ],
+      "rectPx": [
+        808,
+        328,
+        64,
+        64
+      ],
+      "anchorPx": [
+        32,
+        32
+      ],
+      "durationMs": 0,
+      "role": "hazard",
+      "drawPolicy": "stretch_to_authored_bounds",
+      "collisionReferencePx": null,
+      "artBoundsPx": [
+        0,
+        1,
+        63,
+        63
+      ],
+      "projectPath": "Assets/TD2/Sprites04/frames/laser_left_on.png",
+      "sha256": "b6d522e537141f643e4e3e82e74c29f29ff1fbb0c8438090fbf90e040c8056a6"
+    },
+    {
+      "key": "laser.up.off",
+      "image": "frames/laser_up_off.png",
+      "path": "Assets/TD2/Sprites04/frames/laser_up_off.png",
+      "sizePx": [
+        64,
+        64
+      ],
+      "rectPx": [
+        888,
+        328,
+        64,
+        64
+      ],
+      "anchorPx": [
+        32,
+        32
+      ],
+      "durationMs": 0,
+      "role": "hazard",
+      "drawPolicy": "stretch_to_authored_bounds",
+      "collisionReferencePx": null,
+      "artBoundsPx": [
+        1,
+        0,
+        63,
+        63
+      ],
+      "projectPath": "Assets/TD2/Sprites04/frames/laser_up_off.png",
+      "sha256": "ae25bfcfd763105b3389bd14a2eda34151d7e6dcb6cea512da99733d7844e114"
+    },
+    {
+      "key": "laser.up.on",
+      "image": "frames/laser_up_on.png",
+      "path": "Assets/TD2/Sprites04/frames/laser_up_on.png",
+      "sizePx": [
+        64,
+        64
+      ],
+      "rectPx": [
+        8,
+        408,
+        64,
+        64
+      ],
+      "anchorPx": [
+        32,
+        32
+      ],
+      "durationMs": 0,
+      "role": "hazard",
+      "drawPolicy": "stretch_to_authored_bounds",
+      "collisionReferencePx": null,
+      "artBoundsPx": [
+        1,
+        0,
+        63,
+        63
+      ],
+      "projectPath": "Assets/TD2/Sprites04/frames/laser_up_on.png",
+      "sha256": "7827bc4fa4ca773dbf187647030f6f2061ef67b477d7842bd8b43324b7ee1fd7"
+    },
+    {
+      "key": "laser.beam.horizontal",
+      "image": "frames/laser_beam_horizontal.png",
+      "path": "Assets/TD2/Sprites04/frames/laser_beam_horizontal.png",
+      "sizePx": [
+        64,
+        64
+      ],
+      "rectPx": [
+        88,
+        408,
+        64,
+        64
+      ],
+      "anchorPx": [
+        32,
+        32
+      ],
+      "durationMs": 0,
+      "role": "hazard",
+      "drawPolicy": "stretch_to_authored_bounds",
+      "collisionReferencePx": null,
+      "artBoundsPx": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "projectPath": "Assets/TD2/Sprites04/frames/laser_beam_horizontal.png",
+      "sha256": "9f9237b56a5cd1a5bbfe050c7ed60b1331522416c7357cf91b673cee9f1747f7"
+    },
+    {
+      "key": "laser.beam.vertical",
+      "image": "frames/laser_beam_vertical.png",
+      "path": "Assets/TD2/Sprites04/frames/laser_beam_vertical.png",
+      "sizePx": [
+        64,
+        64
+      ],
+      "rectPx": [
+        168,
+        408,
+        64,
+        64
+      ],
+      "anchorPx": [
+        32,
+        32
+      ],
+      "durationMs": 0,
+      "role": "hazard",
+      "drawPolicy": "stretch_to_authored_bounds",
+      "collisionReferencePx": null,
+      "artBoundsPx": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "projectPath": "Assets/TD2/Sprites04/frames/laser_beam_vertical.png",
+      "sha256": "0ab362d0072c96a2ad28d14a9ef655e86d658e6d36cbf508d2d07245c86b4adc"
+    },
+    {
+      "key": "lift.idle",
+      "image": "frames/lift_idle.png",
+      "path": "Assets/TD2/Sprites04/frames/lift_idle.png",
+      "sizePx": [
+        64,
+        64
+      ],
+      "rectPx": [
+        248,
+        408,
+        64,
+        64
+      ],
+      "anchorPx": [
+        32,
+        0
+      ],
+      "durationMs": 0,
+      "role": "device",
+      "drawPolicy": "tile_height_top_anchor",
+      "collisionReferencePx": null,
+      "artBoundsPx": [
+        0,
+        0,
+        64,
+        57
+      ],
+      "projectPath": "Assets/TD2/Sprites04/frames/lift_idle.png",
+      "sha256": "3486e34b18fcb88e27d9d443466e4d147a02aa580da09422aaa7ce07e5978683"
+    },
+    {
+      "key": "lift.active",
+      "image": "frames/lift_active.png",
+      "path": "Assets/TD2/Sprites04/frames/lift_active.png",
+      "sizePx": [
+        64,
+        64
+      ],
+      "rectPx": [
+        328,
+        408,
+        64,
+        64
+      ],
+      "anchorPx": [
+        32,
+        0
+      ],
+      "durationMs": 0,
+      "role": "device",
+      "drawPolicy": "tile_height_top_anchor",
+      "collisionReferencePx": null,
+      "artBoundsPx": [
+        0,
+        0,
+        64,
+        57
+      ],
+      "projectPath": "Assets/TD2/Sprites04/frames/lift_active.png",
+      "sha256": "3f2fac7918b1ea7017e8e17972ccd77e77393846aed7af31ecb1cacfa282a607"
+    },
+    {
+      "key": "hazard_mover.idle",
+      "image": "frames/hazard_mover_idle.png",
+      "path": "Assets/TD2/Sprites04/frames/hazard_mover_idle.png",
+      "sizePx": [
+        64,
+        64
+      ],
+      "rectPx": [
+        408,
+        408,
+        64,
+        64
+      ],
+      "anchorPx": [
+        32,
+        32
+      ],
+      "durationMs": 0,
+      "role": "hazard",
+      "drawPolicy": "stretch_to_authored_bounds",
+      "collisionReferencePx": null,
+      "artBoundsPx": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "projectPath": "Assets/TD2/Sprites04/frames/hazard_mover_idle.png",
+      "sha256": "2c009d1a43c9e7d51931d5160c6e66ed6ba20b3fa21b402b385bb04fdcef2ad5"
+    },
+    {
+      "key": "hazard_mover.active",
+      "image": "frames/hazard_mover_active.png",
+      "path": "Assets/TD2/Sprites04/frames/hazard_mover_active.png",
+      "sizePx": [
+        64,
+        64
+      ],
+      "rectPx": [
+        488,
+        408,
+        64,
+        64
+      ],
+      "anchorPx": [
+        32,
+        32
+      ],
+      "durationMs": 0,
+      "role": "hazard",
+      "drawPolicy": "stretch_to_authored_bounds",
+      "collisionReferencePx": null,
+      "artBoundsPx": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "projectPath": "Assets/TD2/Sprites04/frames/hazard_mover_active.png",
+      "sha256": "ee46b0cf73868ef8c2a631d394d5f6a8a8cda136e0db31fabf4770f0ed1199b1"
+    },
+    {
+      "key": "collectible.0",
+      "image": "frames/collectible_0.png",
+      "path": "Assets/TD2/Sprites04/frames/collectible_0.png",
+      "sizePx": [
+        64,
+        64
+      ],
+      "rectPx": [
+        568,
+        408,
+        64,
+        64
+      ],
+      "anchorPx": [
+        32,
+        32
+      ],
+      "durationMs": 350,
+      "role": "device",
+      "drawPolicy": "stretch_to_authored_bounds",
+      "collisionReferencePx": null,
+      "artBoundsPx": [
+        11,
+        9,
+        53,
+        56
+      ],
+      "projectPath": "Assets/TD2/Sprites04/frames/collectible_0.png",
+      "sha256": "7ea3dac5fe40cdec8fbdfff272c12e9ad238be8ef20f00623a042bd5e855f0a0"
+    },
+    {
+      "key": "collectible.1",
+      "image": "frames/collectible_1.png",
+      "path": "Assets/TD2/Sprites04/frames/collectible_1.png",
+      "sizePx": [
+        64,
+        64
+      ],
+      "rectPx": [
+        648,
+        408,
+        64,
+        64
+      ],
+      "anchorPx": [
+        32,
+        32
+      ],
+      "durationMs": 350,
+      "role": "device",
+      "drawPolicy": "stretch_to_authored_bounds",
+      "collisionReferencePx": null,
+      "artBoundsPx": [
+        11,
+        9,
+        53,
+        56
+      ],
+      "projectPath": "Assets/TD2/Sprites04/frames/collectible_1.png",
+      "sha256": "6dad863e518d323af341a8929ff8ace8462a6d5f7a2cb4989bf5bca9e92c1fa9"
+    },
+    {
+      "key": "core.0",
+      "image": "frames/core_0.png",
+      "path": "Assets/TD2/Sprites04/frames/core_0.png",
+      "sizePx": [
+        64,
+        64
+      ],
+      "rectPx": [
+        728,
+        408,
+        64,
+        64
+      ],
+      "anchorPx": [
+        32,
+        32
+      ],
+      "durationMs": 350,
+      "role": "device",
+      "drawPolicy": "stretch_to_authored_bounds",
+      "collisionReferencePx": null,
+      "artBoundsPx": [
+        3,
+        3,
+        61,
+        61
+      ],
+      "projectPath": "Assets/TD2/Sprites04/frames/core_0.png",
+      "sha256": "45b80d9cc4d63952f53b16e66d6ffbfd50a27e81788da6897b80a06b9cf7a1d5"
+    },
+    {
+      "key": "core.1",
+      "image": "frames/core_1.png",
+      "path": "Assets/TD2/Sprites04/frames/core_1.png",
+      "sizePx": [
+        64,
+        64
+      ],
+      "rectPx": [
+        808,
+        408,
+        64,
+        64
+      ],
+      "anchorPx": [
+        32,
+        32
+      ],
+      "durationMs": 350,
+      "role": "device",
+      "drawPolicy": "stretch_to_authored_bounds",
+      "collisionReferencePx": null,
+      "artBoundsPx": [
+        3,
+        3,
+        61,
+        61
+      ],
+      "projectPath": "Assets/TD2/Sprites04/frames/core_1.png",
+      "sha256": "dd41a2bfca1f4e6dff5d621c7b337df64b99bc1500e3436f10a51955fb42ada1"
+    },
+    {
+      "key": "key.0",
+      "image": "frames/key_0.png",
+      "path": "Assets/TD2/Sprites04/frames/key_0.png",
+      "sizePx": [
+        64,
+        64
+      ],
+      "rectPx": [
+        888,
+        408,
+        64,
+        64
+      ],
+      "anchorPx": [
+        32,
+        32
+      ],
+      "durationMs": 350,
+      "role": "device",
+      "drawPolicy": "stretch_to_authored_bounds",
+      "collisionReferencePx": null,
+      "artBoundsPx": [
+        4,
+        12,
+        62,
+        44
+      ],
+      "projectPath": "Assets/TD2/Sprites04/frames/key_0.png",
+      "sha256": "e0235c4b66fc29503700f3b944b19b7052e036467b187b481198e16ba2a5a2f7"
+    },
+    {
+      "key": "key.1",
+      "image": "frames/key_1.png",
+      "path": "Assets/TD2/Sprites04/frames/key_1.png",
+      "sizePx": [
+        64,
+        64
+      ],
+      "rectPx": [
+        8,
+        488,
+        64,
+        64
+      ],
+      "anchorPx": [
+        32,
+        32
+      ],
+      "durationMs": 350,
+      "role": "device",
+      "drawPolicy": "stretch_to_authored_bounds",
+      "collisionReferencePx": null,
+      "artBoundsPx": [
+        4,
+        12,
+        62,
+        44
+      ],
+      "projectPath": "Assets/TD2/Sprites04/frames/key_1.png",
+      "sha256": "9aed20b57d2cf04e37aaf0bc7e270824e2a58765c3e219253ef4bee4113e6063"
+    },
+    {
+      "key": "portal.0",
+      "image": "frames/portal_0.png",
+      "path": "Assets/TD2/Sprites04/frames/portal_0.png",
+      "sizePx": [
+        64,
+        64
+      ],
+      "rectPx": [
+        88,
+        488,
+        64,
+        64
+      ],
+      "anchorPx": [
+        32,
+        32
+      ],
+      "durationMs": 350,
+      "role": "device",
+      "drawPolicy": "stretch_to_authored_bounds",
+      "collisionReferencePx": null,
+      "artBoundsPx": [
+        4,
+        1,
+        60,
+        63
+      ],
+      "projectPath": "Assets/TD2/Sprites04/frames/portal_0.png",
+      "sha256": "24a0291a2e5f849844b6998d8a158cec6b9f6960248bfb6bffe81de43124b74b"
+    },
+    {
+      "key": "portal.1",
+      "image": "frames/portal_1.png",
+      "path": "Assets/TD2/Sprites04/frames/portal_1.png",
+      "sizePx": [
+        64,
+        64
+      ],
+      "rectPx": [
+        168,
+        488,
+        64,
+        64
+      ],
+      "anchorPx": [
+        32,
+        32
+      ],
+      "durationMs": 350,
+      "role": "device",
+      "drawPolicy": "stretch_to_authored_bounds",
+      "collisionReferencePx": null,
+      "artBoundsPx": [
+        4,
+        1,
+        60,
+        63
+      ],
+      "projectPath": "Assets/TD2/Sprites04/frames/portal_1.png",
+      "sha256": "d24cb29bc3eb4b98eb6e53f1189d220dc7a2ab68de91bf2b66bbed6ce6695298"
+    },
+    {
+      "key": "beacon.0",
+      "image": "frames/beacon_0.png",
+      "path": "Assets/TD2/Sprites04/frames/beacon_0.png",
+      "sizePx": [
+        64,
+        64
+      ],
+      "rectPx": [
+        248,
+        488,
+        64,
+        64
+      ],
+      "anchorPx": [
+        32,
+        32
+      ],
+      "durationMs": 350,
+      "role": "device",
+      "drawPolicy": "stretch_to_authored_bounds",
+      "collisionReferencePx": null,
+      "artBoundsPx": [
+        11,
+        0,
+        53,
+        64
+      ],
+      "projectPath": "Assets/TD2/Sprites04/frames/beacon_0.png",
+      "sha256": "6d39d2788372bafefc50cf8f4609588845b451cf9b9e1099179863f16f3723ef"
+    },
+    {
+      "key": "beacon.1",
+      "image": "frames/beacon_1.png",
+      "path": "Assets/TD2/Sprites04/frames/beacon_1.png",
+      "sizePx": [
+        64,
+        64
+      ],
+      "rectPx": [
+        328,
+        488,
+        64,
+        64
+      ],
+      "anchorPx": [
+        32,
+        32
+      ],
+      "durationMs": 350,
+      "role": "device",
+      "drawPolicy": "stretch_to_authored_bounds",
+      "collisionReferencePx": null,
+      "artBoundsPx": [
+        11,
+        0,
+        53,
+        64
+      ],
+      "projectPath": "Assets/TD2/Sprites04/frames/beacon_1.png",
+      "sha256": "f32dc43204d5b28980ba1f97bc95f34fe20ef3c91013f0e525aed1e3fa94e6a3"
+    },
+    {
+      "key": "lock.closed",
+      "image": "frames/lock_closed.png",
+      "path": "Assets/TD2/Sprites04/frames/lock_closed.png",
+      "sizePx": [
+        64,
+        64
+      ],
+      "rectPx": [
+        408,
+        488,
+        64,
+        64
+      ],
+      "anchorPx": [
+        32,
+        32
+      ],
+      "durationMs": 0,
+      "role": "device",
+      "drawPolicy": "stretch_to_authored_bounds",
+      "collisionReferencePx": null,
+      "artBoundsPx": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "projectPath": "Assets/TD2/Sprites04/frames/lock_closed.png",
+      "sha256": "d7620ff2f441c3486e8a21d8ca0de0bf7ca1bed4c593834bf3697571df7b7eec"
+    },
+    {
+      "key": "lock.open",
+      "image": "frames/lock_open.png",
+      "path": "Assets/TD2/Sprites04/frames/lock_open.png",
+      "sizePx": [
+        64,
+        64
+      ],
+      "rectPx": [
+        488,
+        488,
+        64,
+        64
+      ],
+      "anchorPx": [
+        32,
+        32
+      ],
+      "durationMs": 0,
+      "role": "device",
+      "drawPolicy": "stretch_to_authored_bounds",
+      "collisionReferencePx": null,
+      "artBoundsPx": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "projectPath": "Assets/TD2/Sprites04/frames/lock_open.png",
+      "sha256": "a5de4bc7334dfe208ade1272f2092bc279d6f8bd2c645eb6a07a38b0bfa297e1"
+    },
+    {
+      "key": "spawn.marker",
+      "image": "frames/spawn_marker.png",
+      "path": "Assets/TD2/Sprites04/frames/spawn_marker.png",
+      "sizePx": [
+        64,
+        64
+      ],
+      "rectPx": [
+        568,
+        488,
+        64,
+        64
+      ],
+      "anchorPx": [
+        32,
+        32
+      ],
+      "durationMs": 0,
+      "role": "editor",
+      "drawPolicy": "stretch_to_authored_bounds",
+      "collisionReferencePx": null,
+      "artBoundsPx": [
+        7,
+        7,
+        57,
+        57
+      ],
+      "projectPath": "Assets/TD2/Sprites04/frames/spawn_marker.png",
+      "sha256": "97dca7bfbe6ec679382518626605fb20a121042762075b893f3b3dc264336ce2"
+    },
+    {
+      "key": "fx.dash.0",
+      "image": "frames/fx_dash_0.png",
+      "path": "Assets/TD2/Sprites04/frames/fx_dash_0.png",
+      "sizePx": [
+        64,
+        64
+      ],
+      "rectPx": [
+        648,
+        488,
+        64,
+        64
+      ],
+      "anchorPx": [
+        32,
+        32
+      ],
+      "durationMs": 35,
+      "role": "effect",
+      "drawPolicy": "effect_anchor",
+      "collisionReferencePx": null,
+      "artBoundsPx": [
+        3,
+        14,
+        61,
+        49
+      ],
+      "projectPath": "Assets/TD2/Sprites04/frames/fx_dash_0.png",
+      "sha256": "ad0cecd096e43453449b7caa94de989fd537741f7b438e3af8cf64cf3bd712f2"
+    },
+    {
+      "key": "fx.dash.1",
+      "image": "frames/fx_dash_1.png",
+      "path": "Assets/TD2/Sprites04/frames/fx_dash_1.png",
+      "sizePx": [
+        64,
+        64
+      ],
+      "rectPx": [
+        728,
+        488,
+        64,
+        64
+      ],
+      "anchorPx": [
+        32,
+        32
+      ],
+      "durationMs": 35,
+      "role": "effect",
+      "drawPolicy": "effect_anchor",
+      "collisionReferencePx": null,
+      "artBoundsPx": [
+        7,
+        14,
+        64,
+        49
+      ],
+      "projectPath": "Assets/TD2/Sprites04/frames/fx_dash_1.png",
+      "sha256": "eefa03b526a667def75b615394340c4835a2dae1bcc3aae622bec026441f27ad"
+    },
+    {
+      "key": "fx.dash.2",
+      "image": "frames/fx_dash_2.png",
+      "path": "Assets/TD2/Sprites04/frames/fx_dash_2.png",
+      "sizePx": [
+        64,
+        64
+      ],
+      "rectPx": [
+        808,
+        488,
+        64,
+        64
+      ],
+      "anchorPx": [
+        32,
+        32
+      ],
+      "durationMs": 35,
+      "role": "effect",
+      "drawPolicy": "effect_anchor",
+      "collisionReferencePx": null,
+      "artBoundsPx": [
+        11,
+        14,
+        64,
+        48
+      ],
+      "projectPath": "Assets/TD2/Sprites04/frames/fx_dash_2.png",
+      "sha256": "98d7500be73b54de72328e5a62ed1fb04e5a6f46c5b693877680f314a0af2679"
+    },
+    {
+      "key": "fx.dash.3",
+      "image": "frames/fx_dash_3.png",
+      "path": "Assets/TD2/Sprites04/frames/fx_dash_3.png",
+      "sizePx": [
+        64,
+        64
+      ],
+      "rectPx": [
+        888,
+        488,
+        64,
+        64
+      ],
+      "anchorPx": [
+        32,
+        32
+      ],
+      "durationMs": 35,
+      "role": "effect",
+      "drawPolicy": "effect_anchor",
+      "collisionReferencePx": null,
+      "artBoundsPx": [
+        15,
+        14,
+        64,
+        47
+      ],
+      "projectPath": "Assets/TD2/Sprites04/frames/fx_dash_3.png",
+      "sha256": "4a8f1dc4f59fa9e04301b2401a5598c11f9ca143d56ecf984a8d09f81585fcc2"
+    },
+    {
+      "key": "fx.land.0",
+      "image": "frames/fx_land_0.png",
+      "path": "Assets/TD2/Sprites04/frames/fx_land_0.png",
+      "sizePx": [
+        64,
+        64
+      ],
+      "rectPx": [
+        8,
+        568,
+        64,
+        64
+      ],
+      "anchorPx": [
+        32,
+        64
+      ],
+      "durationMs": 45,
+      "role": "effect",
+      "drawPolicy": "effect_anchor",
+      "collisionReferencePx": null,
+      "artBoundsPx": [
+        15,
+        53,
+        49,
+        64
+      ],
+      "projectPath": "Assets/TD2/Sprites04/frames/fx_land_0.png",
+      "sha256": "2191540c586dc21aa9f704a558a152e654915a51c10098e96cd2b8d637547a34"
+    },
+    {
+      "key": "fx.land.1",
+      "image": "frames/fx_land_1.png",
+      "path": "Assets/TD2/Sprites04/frames/fx_land_1.png",
+      "sizePx": [
+        64,
+        64
+      ],
+      "rectPx": [
+        88,
+        568,
+        64,
+        64
+      ],
+      "anchorPx": [
+        32,
+        64
+      ],
+      "durationMs": 45,
+      "role": "effect",
+      "drawPolicy": "effect_anchor",
+      "collisionReferencePx": null,
+      "artBoundsPx": [
+        10,
+        51,
+        54,
+        64
+      ],
+      "projectPath": "Assets/TD2/Sprites04/frames/fx_land_1.png",
+      "sha256": "5301e7c72df81adc756c3b78e280d1e8f376e8f848fdd1649ccef582346f3f2b"
+    },
+    {
+      "key": "fx.land.2",
+      "image": "frames/fx_land_2.png",
+      "path": "Assets/TD2/Sprites04/frames/fx_land_2.png",
+      "sizePx": [
+        64,
+        64
+      ],
+      "rectPx": [
+        168,
+        568,
+        64,
+        64
+      ],
+      "anchorPx": [
+        32,
+        64
+      ],
+      "durationMs": 45,
+      "role": "effect",
+      "drawPolicy": "effect_anchor",
+      "collisionReferencePx": null,
+      "artBoundsPx": [
+        5,
+        49,
+        59,
+        61
+      ],
+      "projectPath": "Assets/TD2/Sprites04/frames/fx_land_2.png",
+      "sha256": "1325aa1eb4520daed28da97145b209ba6474f4950f7e6134cfe5908920814e70"
+    },
+    {
+      "key": "fx.land.3",
+      "image": "frames/fx_land_3.png",
+      "path": "Assets/TD2/Sprites04/frames/fx_land_3.png",
+      "sizePx": [
+        64,
+        64
+      ],
+      "rectPx": [
+        248,
+        568,
+        64,
+        64
+      ],
+      "anchorPx": [
+        32,
+        64
+      ],
+      "durationMs": 45,
+      "role": "effect",
+      "drawPolicy": "effect_anchor",
+      "collisionReferencePx": null,
+      "artBoundsPx": [
+        1,
+        48,
+        63,
+        59
+      ],
+      "projectPath": "Assets/TD2/Sprites04/frames/fx_land_3.png",
+      "sha256": "7f92d205b8ccc12b1357fc24054ea815b0b5368f373676735ced756ce124d14e"
+    },
+    {
+      "key": "fx.plate.0",
+      "image": "frames/fx_plate_0.png",
+      "path": "Assets/TD2/Sprites04/frames/fx_plate_0.png",
+      "sizePx": [
+        64,
+        64
+      ],
+      "rectPx": [
+        328,
+        568,
+        64,
+        64
+      ],
+      "anchorPx": [
+        32,
+        64
+      ],
+      "durationMs": 40,
+      "role": "effect",
+      "drawPolicy": "effect_anchor",
+      "collisionReferencePx": null,
+      "artBoundsPx": [
+        6,
+        42,
+        59,
+        54
+      ],
+      "projectPath": "Assets/TD2/Sprites04/frames/fx_plate_0.png",
+      "sha256": "9760814878147cc89554f17820181fae9af217549c970ae9e5acce0f4f33b655"
+    },
+    {
+      "key": "fx.plate.1",
+      "image": "frames/fx_plate_1.png",
+      "path": "Assets/TD2/Sprites04/frames/fx_plate_1.png",
+      "sizePx": [
+        64,
+        64
+      ],
+      "rectPx": [
+        408,
+        568,
+        64,
+        64
+      ],
+      "anchorPx": [
+        32,
+        64
+      ],
+      "durationMs": 40,
+      "role": "effect",
+      "drawPolicy": "effect_anchor",
+      "collisionReferencePx": null,
+      "artBoundsPx": [
+        2,
+        39,
+        63,
+        51
+      ],
+      "projectPath": "Assets/TD2/Sprites04/frames/fx_plate_1.png",
+      "sha256": "58347c0e2714f75476eab7ba41d6f4155354004a4ed74f846ba754dc41557267"
+    },
+    {
+      "key": "fx.plate.2",
+      "image": "frames/fx_plate_2.png",
+      "path": "Assets/TD2/Sprites04/frames/fx_plate_2.png",
+      "sizePx": [
+        64,
+        64
+      ],
+      "rectPx": [
+        488,
+        568,
+        64,
+        64
+      ],
+      "anchorPx": [
+        32,
+        64
+      ],
+      "durationMs": 40,
+      "role": "effect",
+      "drawPolicy": "effect_anchor",
+      "collisionReferencePx": null,
+      "artBoundsPx": [
+        0,
+        36,
+        64,
+        46
+      ],
+      "projectPath": "Assets/TD2/Sprites04/frames/fx_plate_2.png",
+      "sha256": "b93570cb9e961a96dc9471ae6fb3473a89b2765dc6ba0fe0a3ee0b77a9d811ce"
+    },
+    {
+      "key": "fx.door.0",
+      "image": "frames/fx_door_0.png",
+      "path": "Assets/TD2/Sprites04/frames/fx_door_0.png",
+      "sizePx": [
+        64,
+        64
+      ],
+      "rectPx": [
+        568,
+        568,
+        64,
+        64
+      ],
+      "anchorPx": [
+        32,
+        32
+      ],
+      "durationMs": 45,
+      "role": "effect",
+      "drawPolicy": "effect_anchor",
+      "collisionReferencePx": null,
+      "artBoundsPx": [
+        15,
+        11,
+        50,
+        53
+      ],
+      "projectPath": "Assets/TD2/Sprites04/frames/fx_door_0.png",
+      "sha256": "01867e87de8d5aea0efcbc48704aaeb24dd7cec01392b16c9e3446dc812df677"
+    },
+    {
+      "key": "fx.door.1",
+      "image": "frames/fx_door_1.png",
+      "path": "Assets/TD2/Sprites04/frames/fx_door_1.png",
+      "sizePx": [
+        64,
+        64
+      ],
+      "rectPx": [
+        648,
+        568,
+        64,
+        64
+      ],
+      "anchorPx": [
+        32,
+        32
+      ],
+      "durationMs": 45,
+      "role": "effect",
+      "drawPolicy": "effect_anchor",
+      "collisionReferencePx": null,
+      "artBoundsPx": [
+        8,
+        11,
+        56,
+        53
+      ],
+      "projectPath": "Assets/TD2/Sprites04/frames/fx_door_1.png",
+      "sha256": "188812fec366cec875e661f0c4e0810f9c95fec0fd25a648b9b6c6f9fecdbb62"
+    },
+    {
+      "key": "fx.door.2",
+      "image": "frames/fx_door_2.png",
+      "path": "Assets/TD2/Sprites04/frames/fx_door_2.png",
+      "sizePx": [
+        64,
+        64
+      ],
+      "rectPx": [
+        728,
+        568,
+        64,
+        64
+      ],
+      "anchorPx": [
+        32,
+        32
+      ],
+      "durationMs": 45,
+      "role": "effect",
+      "drawPolicy": "effect_anchor",
+      "collisionReferencePx": null,
+      "artBoundsPx": [
+        1,
+        13,
+        63,
+        53
+      ],
+      "projectPath": "Assets/TD2/Sprites04/frames/fx_door_2.png",
+      "sha256": "4171a678f825f4622d6f612e6e3f4f3b39d807956c1e60abce50f61f56279c20"
+    },
+    {
+      "key": "fx.checkpoint.0",
+      "image": "frames/fx_checkpoint_0.png",
+      "path": "Assets/TD2/Sprites04/frames/fx_checkpoint_0.png",
+      "sizePx": [
+        64,
+        64
+      ],
+      "rectPx": [
+        808,
+        568,
+        64,
+        64
+      ],
+      "anchorPx": [
+        32,
+        32
+      ],
+      "durationMs": 75,
+      "role": "effect",
+      "drawPolicy": "effect_anchor",
+      "collisionReferencePx": null,
+      "artBoundsPx": [
+        17,
+        18,
+        47,
+        47
+      ],
+      "projectPath": "Assets/TD2/Sprites04/frames/fx_checkpoint_0.png",
+      "sha256": "5b74b0d350bd7ffe871e1a02f50a6e656da37dc13a94bd4077345154cf123e31"
+    },
+    {
+      "key": "fx.checkpoint.1",
+      "image": "frames/fx_checkpoint_1.png",
+      "path": "Assets/TD2/Sprites04/frames/fx_checkpoint_1.png",
+      "sizePx": [
+        64,
+        64
+      ],
+      "rectPx": [
+        888,
+        568,
+        64,
+        64
+      ],
+      "anchorPx": [
+        32,
+        32
+      ],
+      "durationMs": 75,
+      "role": "effect",
+      "drawPolicy": "effect_anchor",
+      "collisionReferencePx": null,
+      "artBoundsPx": [
+        11,
+        12,
+        53,
+        53
+      ],
+      "projectPath": "Assets/TD2/Sprites04/frames/fx_checkpoint_1.png",
+      "sha256": "b206d75cc0eb07d042cc41a219efe740f53a28ca71b28ae726d75addeb127ede"
+    },
+    {
+      "key": "fx.checkpoint.2",
+      "image": "frames/fx_checkpoint_2.png",
+      "path": "Assets/TD2/Sprites04/frames/fx_checkpoint_2.png",
+      "sizePx": [
+        64,
+        64
+      ],
+      "rectPx": [
+        8,
+        648,
+        64,
+        64
+      ],
+      "anchorPx": [
+        32,
+        32
+      ],
+      "durationMs": 75,
+      "role": "effect",
+      "drawPolicy": "effect_anchor",
+      "collisionReferencePx": null,
+      "artBoundsPx": [
+        5,
+        6,
+        59,
+        59
+      ],
+      "projectPath": "Assets/TD2/Sprites04/frames/fx_checkpoint_2.png",
+      "sha256": "a845a2ee61a4a467036add2b4f5f3c96ab15563953e1719deb4a8aaea6643ade"
+    },
+    {
+      "key": "fx.checkpoint.3",
+      "image": "frames/fx_checkpoint_3.png",
+      "path": "Assets/TD2/Sprites04/frames/fx_checkpoint_3.png",
+      "sizePx": [
+        64,
+        64
+      ],
+      "rectPx": [
+        88,
+        648,
+        64,
+        64
+      ],
+      "anchorPx": [
+        32,
+        32
+      ],
+      "durationMs": 75,
+      "role": "effect",
+      "drawPolicy": "effect_anchor",
+      "collisionReferencePx": null,
+      "artBoundsPx": [
+        1,
+        2,
+        63,
+        63
+      ],
+      "projectPath": "Assets/TD2/Sprites04/frames/fx_checkpoint_3.png",
+      "sha256": "e779bdcb4ff04c9c9539b2055acb1986f3966ac38b44fd6bcf2a40b51c3a969d"
+    },
+    {
+      "key": "fx.death.0",
+      "image": "frames/fx_death_0.png",
+      "path": "Assets/TD2/Sprites04/frames/fx_death_0.png",
+      "sizePx": [
+        64,
+        64
+      ],
+      "rectPx": [
+        168,
+        648,
+        64,
+        64
+      ],
+      "anchorPx": [
+        32,
+        32
+      ],
+      "durationMs": 55,
+      "role": "effect",
+      "drawPolicy": "effect_anchor",
+      "collisionReferencePx": null,
+      "artBoundsPx": [
+        20,
+        20,
+        45,
+        44
+      ],
+      "projectPath": "Assets/TD2/Sprites04/frames/fx_death_0.png",
+      "sha256": "c178046b83c7aaa35feabdb341605961faed33a171557a76c69fa644fc551133"
+    },
+    {
+      "key": "fx.death.1",
+      "image": "frames/fx_death_1.png",
+      "path": "Assets/TD2/Sprites04/frames/fx_death_1.png",
+      "sizePx": [
+        64,
+        64
+      ],
+      "rectPx": [
+        248,
+        648,
+        64,
+        64
+      ],
+      "anchorPx": [
+        32,
+        32
+      ],
+      "durationMs": 55,
+      "role": "effect",
+      "drawPolicy": "effect_anchor",
+      "collisionReferencePx": null,
+      "artBoundsPx": [
+        14,
+        15,
+        51,
+        51
+      ],
+      "projectPath": "Assets/TD2/Sprites04/frames/fx_death_1.png",
+      "sha256": "6751934bb2543108efa388b8eff5bb1eebb269037456bbe1c2abcfcf94891a6c"
+    },
+    {
+      "key": "fx.death.2",
+      "image": "frames/fx_death_2.png",
+      "path": "Assets/TD2/Sprites04/frames/fx_death_2.png",
+      "sizePx": [
+        64,
+        64
+      ],
+      "rectPx": [
+        328,
+        648,
+        64,
+        64
+      ],
+      "anchorPx": [
+        32,
+        32
+      ],
+      "durationMs": 55,
+      "role": "effect",
+      "drawPolicy": "effect_anchor",
+      "collisionReferencePx": null,
+      "artBoundsPx": [
+        9,
+        13,
+        57,
+        59
+      ],
+      "projectPath": "Assets/TD2/Sprites04/frames/fx_death_2.png",
+      "sha256": "8c7da8584679731c5acd43f700abe49818ee19df10570535b82e985e42c5fdbb"
+    },
+    {
+      "key": "fx.death.3",
+      "image": "frames/fx_death_3.png",
+      "path": "Assets/TD2/Sprites04/frames/fx_death_3.png",
+      "sizePx": [
+        64,
+        64
+      ],
+      "rectPx": [
+        408,
+        648,
+        64,
+        64
+      ],
+      "anchorPx": [
+        32,
+        32
+      ],
+      "durationMs": 55,
+      "role": "effect",
+      "drawPolicy": "effect_anchor",
+      "collisionReferencePx": null,
+      "artBoundsPx": [
+        3,
+        15,
+        64,
+        64
+      ],
+      "projectPath": "Assets/TD2/Sprites04/frames/fx_death_3.png",
+      "sha256": "ae0aa6d5b02623672eec680c6f48a377334288a36dd561af01104b78dd1670bd"
+    }
+  ],
+  "animations": {
+    "player.idle.right": {
+      "frames": [
+        "player.idle.right.0",
+        "player.idle.right.1"
+      ],
+      "frameDurationMs": 500,
+      "loop": true
+    },
+    "player.walk.right": {
+      "frames": [
+        "player.walk.right.0",
+        "player.walk.right.1",
+        "player.walk.right.2",
+        "player.walk.right.3"
+      ],
+      "frameDurationMs": 110,
+      "loop": true
+    },
+    "player.air.right": {
+      "frames": [
+        "player.air.right.0"
+      ],
+      "frameDurationMs": 0,
+      "loop": false
+    },
+    "player.dash.right": {
+      "frames": [
+        "player.dash.right.0"
+      ],
+      "frameDurationMs": 140,
+      "loop": false
+    },
+    "player.land.right": {
+      "frames": [
+        "player.land.right.0"
+      ],
+      "frameDurationMs": 90,
+      "loop": false
+    },
+    "echo.form.right": {
+      "frames": [
+        "echo.form.right.0",
+        "echo.form.right.1",
+        "echo.form.right.2"
+      ],
+      "frameDurationMs": 55,
+      "loop": false
+    },
+    "player.idle.left": {
+      "frames": [
+        "player.idle.left.0",
+        "player.idle.left.1"
+      ],
+      "frameDurationMs": 500,
+      "loop": true
+    },
+    "player.walk.left": {
+      "frames": [
+        "player.walk.left.0",
+        "player.walk.left.1",
+        "player.walk.left.2",
+        "player.walk.left.3"
+      ],
+      "frameDurationMs": 110,
+      "loop": true
+    },
+    "player.air.left": {
+      "frames": [
+        "player.air.left.0"
+      ],
+      "frameDurationMs": 0,
+      "loop": false
+    },
+    "player.dash.left": {
+      "frames": [
+        "player.dash.left.0"
+      ],
+      "frameDurationMs": 140,
+      "loop": false
+    },
+    "player.land.left": {
+      "frames": [
+        "player.land.left.0"
+      ],
+      "frameDurationMs": 90,
+      "loop": false
+    },
+    "echo.form.left": {
+      "frames": [
+        "echo.form.left.0",
+        "echo.form.left.1",
+        "echo.form.left.2"
+      ],
+      "frameDurationMs": 55,
+      "loop": false
+    },
+    "collectible": {
+      "frames": [
+        "collectible.0",
+        "collectible.1"
+      ],
+      "frameDurationMs": 350,
+      "loop": true
+    },
+    "core": {
+      "frames": [
+        "core.0",
+        "core.1"
+      ],
+      "frameDurationMs": 350,
+      "loop": true
+    },
+    "key": {
+      "frames": [
+        "key.0",
+        "key.1"
+      ],
+      "frameDurationMs": 350,
+      "loop": true
+    },
+    "portal": {
+      "frames": [
+        "portal.0",
+        "portal.1"
+      ],
+      "frameDurationMs": 350,
+      "loop": true
+    },
+    "beacon": {
+      "frames": [
+        "beacon.0",
+        "beacon.1"
+      ],
+      "frameDurationMs": 350,
+      "loop": true
+    },
+    "fx.dash": {
+      "frames": [
+        "fx.dash.0",
+        "fx.dash.1",
+        "fx.dash.2",
+        "fx.dash.3"
+      ],
+      "frameDurationMs": 35,
+      "loop": false
+    },
+    "fx.land": {
+      "frames": [
+        "fx.land.0",
+        "fx.land.1",
+        "fx.land.2",
+        "fx.land.3"
+      ],
+      "frameDurationMs": 45,
+      "loop": false
+    },
+    "fx.plate": {
+      "frames": [
+        "fx.plate.0",
+        "fx.plate.1",
+        "fx.plate.2"
+      ],
+      "frameDurationMs": 40,
+      "loop": false
+    },
+    "fx.door": {
+      "frames": [
+        "fx.door.0",
+        "fx.door.1",
+        "fx.door.2"
+      ],
+      "frameDurationMs": 45,
+      "loop": false
+    },
+    "fx.checkpoint": {
+      "frames": [
+        "fx.checkpoint.0",
+        "fx.checkpoint.1",
+        "fx.checkpoint.2",
+        "fx.checkpoint.3"
+      ],
+      "frameDurationMs": 75,
+      "loop": false
+    },
+    "fx.death": {
+      "frames": [
+        "fx.death.0",
+        "fx.death.1",
+        "fx.death.2",
+        "fx.death.3"
+      ],
+      "frameDurationMs": 55,
+      "loop": false
+    }
+  },
+  "currentRuntimeBindings": {
+    "Solid": "terrain.fill",
+    "OneWay": "platform.middle",
+    "Plate": {
+      "false": "plate.up",
+      "true": "plate.down"
+    },
+    "Door": {
+      "false": "door.closed",
+      "true": "door.open"
+    },
+    "Laser": "laser.{direction}.{off|on}",
+    "Spikes": "spikes.{direction}",
+    "Checkpoint": {
+      "false": "checkpoint.idle",
+      "true": "checkpoint.active"
+    },
+    "LockWall": {
+      "false": "lock.closed",
+      "true": "lock.open"
+    }
+  },
+  "assetOnlyUntilRulesSupport": [
+    "spring",
+    "lift",
+    "hazard_mover",
+    "collectible",
+    "core",
+    "key",
+    "portal",
+    "beacon"
+  ],
+  "readability": "Warm-white player; cyan echo; pale-jade terrain rims; amber state accents; muted coral danger. No bloom baked in, no text baked in.",
+  "importedIntoEditor": false,
+  "paletteSrgb": {
+    "ink": "#18343C",
+    "dark": "#557E82",
+    "body": "#91BDB5",
+    "jade": "#B6E4D1",
+    "pale": "#DCEEDF",
+    "white": "#F6EDD4",
+    "amber": "#EFC46F",
+    "danger": "#DF8272",
+    "echo": "#8CE0D4",
+    "bg": "#29454D",
+    "muted": "#A0CDBF"
+  },
+  "visualReview": {
+    "reviewed": true,
+    "nativeFramePixels": 64,
+    "testedDisplayPixelsPerCell": [
+      16,
+      24,
+      32
+    ],
+    "screenCompositionPreviewSizes": [
+      [
+        1024,
+        576
+      ],
+      [
+        512,
+        288
+      ],
+      [
+        384,
+        216
+      ]
+    ],
+    "ingame3dVerified": false,
+    "revisionBasis": "GPU screenshot f139918efdb8bde7f8731cbec9bb6d0a.png and Stage04 world-map.png"
+  },
+  "renderTint": [
+    1,
+    1,
+    1,
+    1
+  ],
+  "assetRevision": 2,
+  "needsReimport": true
+}

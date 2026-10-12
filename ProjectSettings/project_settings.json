@@ -1,0 +1,23 @@
+{
+  "enabledRuntimeFeatures": [
+    "Rendering",
+    "UI",
+    "Lighting",
+    "Terrain",
+    "Water",
+    "Animation",
+    "Camera",
+    "Navigation",
+    "Physics",
+    "SurfaceInteraction",
+    "Buoyancy",
+    "GameplayBasic",
+    "Cinematics",
+    "Vfx",
+    "ActionPresentation",
+    "HIKARI.SceneFlow",
+    "Project_TD2_TV.Gameplay"
+  ],
+  "startupSceneGuid": "cef7179ec60648e6affef2927d4f659b",
+  "version": 5
+}

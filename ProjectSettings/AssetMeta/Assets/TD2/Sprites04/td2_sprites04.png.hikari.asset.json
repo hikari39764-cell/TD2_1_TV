@@ -1,0 +1,21 @@
+{
+  "displayName": "td2_sprites04",
+  "guid": "c8569a5ff3aa71b1477a06d511890d0e",
+  "importSettings": {
+    "allowResize": false,
+    "colorSpace": "Srgb",
+    "compression": "BC7",
+    "debugOutputFormat": "DDS",
+    "dimension": "Texture2D",
+    "forcePowerOfTwo": false,
+    "maxSize": 4096,
+    "mipPolicy": "Generate",
+    "outputFormat": "HTEX",
+    "usage": "Auto"
+  },
+  "importerId": "TextureImporter",
+  "importerVersion": 8,
+  "metaVersion": 1,
+  "sourcePath": "Assets/TD2/Sprites04/td2_sprites04.png",
+  "type": "Texture"
+}

@@ -1,0 +1,143 @@
+{
+  "actions": [
+    {
+      "clamp": true,
+      "displayName": "Toggle Editor UI",
+      "id": "Global.ToggleEditorUI",
+      "valueType": "Button"
+    },
+    {
+      "clamp": true,
+      "displayName": "Stop Play",
+      "id": "Global.StopPlay",
+      "valueType": "Button"
+    },
+    {
+      "clamp": true,
+      "displayName": "Close Program",
+      "id": "Global.CloseProgram",
+      "valueType": "Button"
+    },
+    {
+      "clamp": true,
+      "displayName": "Move",
+      "id": "Gameplay.Move",
+      "valueType": "Axis2D"
+    },
+    {
+      "clamp": false,
+      "displayName": "Look",
+      "id": "Gameplay.Look",
+      "valueType": "Axis2D"
+    },
+    {
+      "clamp": false,
+      "displayName": "Camera Zoom",
+      "id": "Gameplay.CameraZoom",
+      "valueType": "Axis1D"
+    },
+    {
+      "clamp": true,
+      "displayName": "Camera Recenter",
+      "id": "Gameplay.CameraRecenter",
+      "valueType": "Button"
+    },
+    {
+      "clamp": true,
+      "displayName": "Jump",
+      "id": "Gameplay.Jump",
+      "valueType": "Button"
+    },
+    {
+      "clamp": true,
+      "displayName": "Sprint",
+      "id": "Gameplay.Sprint",
+      "valueType": "Button"
+    },
+    {
+      "clamp": true,
+      "displayName": "Interact",
+      "id": "Gameplay.Interact",
+      "valueType": "Button"
+    },
+    {
+      "clamp": true,
+      "displayName": "Menu Navigation",
+      "id": "UI.Navigate",
+      "valueType": "Axis2D"
+    },
+    {
+      "clamp": true,
+      "displayName": "Menu Submit",
+      "id": "UI.Submit",
+      "valueType": "Button"
+    },
+    {
+      "clamp": true,
+      "displayName": "Menu Cancel",
+      "id": "UI.Cancel",
+      "valueType": "Button"
+    },
+    {
+      "clamp": true,
+      "displayName": "Pause Menu",
+      "id": "Gameplay.Menu",
+      "valueType": "Button"
+    },
+    {
+      "clamp": true,
+      "displayName": "Camera Move",
+      "id": "Editor.CameraMove",
+      "valueType": "Axis2D"
+    },
+    {
+      "clamp": true,
+      "displayName": "Camera Move Vertical",
+      "id": "Editor.CameraMoveVertical",
+      "valueType": "Axis1D"
+    },
+    {
+      "clamp": false,
+      "displayName": "Camera Look",
+      "id": "Editor.CameraLook",
+      "valueType": "Axis2D"
+    },
+    {
+      "clamp": true,
+      "displayName": "Camera Look Held",
+      "id": "Editor.CameraLookHeld",
+      "valueType": "Button"
+    },
+    {
+      "clamp": false,
+      "displayName": "Camera Pan",
+      "id": "Editor.CameraPan",
+      "valueType": "Axis2D"
+    },
+    {
+      "clamp": true,
+      "displayName": "Camera Pan Held",
+      "id": "Editor.CameraPanHeld",
+      "valueType": "Button"
+    },
+    {
+      "clamp": true,
+      "displayName": "Camera Zoom",
+      "id": "Editor.CameraZoom",
+      "valueType": "Axis1D"
+    },
+    {
+      "clamp": true,
+      "displayName": "Camera Boost",
+      "id": "Editor.CameraBoost",
+      "valueType": "Button"
+    },
+    {
+      "clamp": true,
+      "displayName": "Camera Reset",
+      "id": "Editor.CameraReset",
+      "valueType": "Button"
+    }
+  ],
+  "version": 1
+}

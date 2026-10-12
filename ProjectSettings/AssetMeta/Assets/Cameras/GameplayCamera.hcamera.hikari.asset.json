@@ -1,0 +1,10 @@
+{
+  "displayName": "TD2_Rules01_Fixed",
+  "guid": "012c2ce5c7ef42bba9c80e21d4948a15",
+  "importSettings": {},
+  "importerId": "GameplayCameraAssetImporter",
+  "importerVersion": 1,
+  "metaVersion": 1,
+  "sourcePath": "Assets/Cameras/GameplayCamera.hcamera",
+  "type": "GameplayCamera"
+}

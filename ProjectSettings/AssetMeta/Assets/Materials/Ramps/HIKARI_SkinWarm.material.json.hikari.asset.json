@@ -1,0 +1,15 @@
+{
+  "displayName": "HIKARI_SkinWarm",
+  "guid": "7eb2d1b2a7e5ffee0198ce104f8c11d3",
+  "importSettings": {
+    "cookMaterial": true,
+    "outputFormat": "HMAT",
+    "shaderModel": "PBR",
+    "sourceFormat": ".material.json"
+  },
+  "importerId": "MaterialImporter",
+  "importerVersion": 8,
+  "metaVersion": 1,
+  "sourcePath": "Assets/Materials/Ramps/HIKARI_SkinWarm.material.json",
+  "type": "Material"
+}

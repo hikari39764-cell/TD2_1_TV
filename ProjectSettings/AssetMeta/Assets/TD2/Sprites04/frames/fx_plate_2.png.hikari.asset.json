@@ -1,0 +1,21 @@
+{
+  "displayName": "fx_plate_2",
+  "guid": "cfa0d951d5ecd0411350c09757691344",
+  "importSettings": {
+    "allowResize": false,
+    "colorSpace": "Srgb",
+    "compression": "BC7",
+    "debugOutputFormat": "DDS",
+    "dimension": "Texture2D",
+    "forcePowerOfTwo": false,
+    "maxSize": 4096,
+    "mipPolicy": "Generate",
+    "outputFormat": "HTEX",
+    "usage": "Auto"
+  },
+  "importerId": "TextureImporter",
+  "importerVersion": 8,
+  "metaVersion": 1,
+  "sourcePath": "Assets/TD2/Sprites04/frames/fx_plate_2.png",
+  "type": "Texture"
+}

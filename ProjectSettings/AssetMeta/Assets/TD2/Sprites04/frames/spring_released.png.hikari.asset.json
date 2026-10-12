@@ -1,0 +1,21 @@
+{
+  "displayName": "spring_released",
+  "guid": "b9fe1bde30d2b5d4799ec9eba31deff2",
+  "importSettings": {
+    "allowResize": false,
+    "colorSpace": "Srgb",
+    "compression": "BC7",
+    "debugOutputFormat": "DDS",
+    "dimension": "Texture2D",
+    "forcePowerOfTwo": false,
+    "maxSize": 4096,
+    "mipPolicy": "Generate",
+    "outputFormat": "HTEX",
+    "usage": "Auto"
+  },
+  "importerId": "TextureImporter",
+  "importerVersion": 8,
+  "metaVersion": 1,
+  "sourcePath": "Assets/TD2/Sprites04/frames/spring_released.png",
+  "type": "Texture"
+}

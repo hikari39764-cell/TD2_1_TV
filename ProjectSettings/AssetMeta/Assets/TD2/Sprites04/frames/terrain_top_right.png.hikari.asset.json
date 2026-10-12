@@ -1,0 +1,21 @@
+{
+  "displayName": "terrain_top_right",
+  "guid": "81f8d9dc0da185f660f8886cba23604a",
+  "importSettings": {
+    "allowResize": false,
+    "colorSpace": "Srgb",
+    "compression": "BC7",
+    "debugOutputFormat": "DDS",
+    "dimension": "Texture2D",
+    "forcePowerOfTwo": false,
+    "maxSize": 4096,
+    "mipPolicy": "Generate",
+    "outputFormat": "HTEX",
+    "usage": "Auto"
+  },
+  "importerId": "TextureImporter",
+  "importerVersion": 8,
+  "metaVersion": 1,
+  "sourcePath": "Assets/TD2/Sprites04/frames/terrain_top_right.png",
+  "type": "Texture"
+}

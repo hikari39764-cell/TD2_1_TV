@@ -1,0 +1,125 @@
+{
+  "bindings": [
+    {
+      "action": "Editor.CameraMove",
+      "component": 0,
+      "control": "A",
+      "modifier": "Mouse:Right",
+      "scale": -1.0,
+      "source": "Keyboard"
+    },
+    {
+      "action": "Editor.CameraMove",
+      "component": 0,
+      "control": "D",
+      "modifier": "Mouse:Right",
+      "scale": 1.0,
+      "source": "Keyboard"
+    },
+    {
+      "action": "Editor.CameraMove",
+      "component": 1,
+      "control": "W",
+      "modifier": "Mouse:Right",
+      "scale": 1.0,
+      "source": "Keyboard"
+    },
+    {
+      "action": "Editor.CameraMove",
+      "component": 1,
+      "control": "S",
+      "modifier": "Mouse:Right",
+      "scale": -1.0,
+      "source": "Keyboard"
+    },
+    {
+      "action": "Editor.CameraMoveVertical",
+      "component": 0,
+      "control": "E",
+      "modifier": "Mouse:Right",
+      "scale": 1.0,
+      "source": "Keyboard"
+    },
+    {
+      "action": "Editor.CameraMoveVertical",
+      "component": 0,
+      "control": "Q",
+      "modifier": "Mouse:Right",
+      "scale": -1.0,
+      "source": "Keyboard"
+    },
+    {
+      "action": "Editor.CameraLook",
+      "component": 0,
+      "control": "DeltaX",
+      "modifier": "Mouse:Right",
+      "scale": 1.0,
+      "source": "MouseDeltaX"
+    },
+    {
+      "action": "Editor.CameraLook",
+      "component": 1,
+      "control": "DeltaY",
+      "modifier": "Mouse:Right",
+      "scale": 1.0,
+      "source": "MouseDeltaY"
+    },
+    {
+      "action": "Editor.CameraLookHeld",
+      "component": 0,
+      "control": "Right",
+      "scale": 1.0,
+      "source": "MouseButton"
+    },
+    {
+      "action": "Editor.CameraPan",
+      "component": 0,
+      "control": "DeltaX",
+      "modifier": "Mouse:Middle",
+      "scale": -1.0,
+      "source": "MouseDeltaX"
+    },
+    {
+      "action": "Editor.CameraPan",
+      "component": 1,
+      "control": "DeltaY",
+      "modifier": "Mouse:Middle",
+      "scale": -1.0,
+      "source": "MouseDeltaY"
+    },
+    {
+      "action": "Editor.CameraPanHeld",
+      "component": 0,
+      "control": "Middle",
+      "scale": 1.0,
+      "source": "MouseButton"
+    },
+    {
+      "action": "Editor.CameraZoom",
+      "component": 0,
+      "control": "Wheel",
+      "scale": 1.0,
+      "source": "MouseWheel"
+    },
+    {
+      "action": "Editor.CameraBoost",
+      "component": 0,
+      "control": "Shift",
+      "scale": 1.0,
+      "source": "Keyboard"
+    },
+    {
+      "action": "Editor.CameraReset",
+      "component": 0,
+      "control": "Home",
+      "scale": 1.0,
+      "source": "Keyboard"
+    }
+  ],
+  "consumeInput": true,
+  "displayName": "Editor Camera",
+  "enabledByDefault": true,
+  "id": "Editor",
+  "priority": 500,
+  "version": 1
+}

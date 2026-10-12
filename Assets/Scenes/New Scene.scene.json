@@ -1,0 +1,250 @@
+{
+  "camera": {
+    "defaultCameraObjectId": 0
+  },
+  "cinematics": {
+    "defaultSequenceId": 1,
+    "sequences": [
+      {
+        "bindings": [],
+        "durationSeconds": 10.0,
+        "id": 1,
+        "name": "Main Sequence",
+        "screenEffects": [],
+        "tracks": [
+          {
+            "clips": [],
+            "enabled": true,
+            "id": 1,
+            "type": "cameraCut"
+          },
+          {
+            "channels": [],
+            "enabled": true,
+            "id": 2,
+            "type": "cameraTransform"
+          },
+          {
+            "channels": [],
+            "enabled": true,
+            "id": 3,
+            "type": "cameraLens"
+          }
+        ]
+      }
+    ]
+  },
+  "environment": {
+    "location": {
+      "latitudeDegrees": 35.68,
+      "longitudeDegrees": 139.69,
+      "northYawDegrees": 0.0,
+      "utcOffsetHours": 9.0
+    },
+    "profile": "82ed86b9cb8bdc405178c702c9c5b42c",
+    "renderStyle": "engine.style.realistic",
+    "time": {
+      "day": 21,
+      "localHours": 10.0,
+      "month": 6,
+      "year": 2026
+    },
+    "timeScale": 0.0,
+    "weather": ""
+  },
+  "objects": [
+    {
+      "components": [
+        {
+          "id": 1,
+          "properties": {
+            "assetId": "",
+            "castShadow": false,
+            "receiveShadow": true,
+            "renderStatic": true,
+            "visible": true
+          },
+          "type": "ModelComponent"
+        },
+        {
+          "id": 2,
+          "properties": {
+            "depth": 100.0,
+            "doubleSided": true,
+            "generateTangents": true,
+            "height": 1.0,
+            "kind": "GridPlane",
+            "materialSelection": "generated://checker/bfbfbfff/8a8a8aff",
+            "segmentsX": 50,
+            "segmentsY": 50,
+            "segmentsZ": 1,
+            "sphereSlices": 32,
+            "sphereStacks": 16,
+            "width": 100.0
+          },
+          "type": "ProceduralMeshComponent"
+        },
+        {
+          "id": 3,
+          "properties": {
+            "center": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "enabled": true,
+            "filter": {
+              "layer": 1,
+              "mask": 4294967295
+            },
+            "fitMode": "Geometry",
+            "height": 0.019999999552965164,
+            "material": {
+              "density": 1.0,
+              "friction": 0.5,
+              "restitution": 0.0
+            },
+            "radius": 0.009999999776482582,
+            "rotation": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "shape": "Box",
+            "size": [
+              100.0,
+              0.019999999552965164,
+              100.0
+            ],
+            "trigger": false
+          },
+          "type": "ColliderComponent"
+        }
+      ],
+      "editorLocked": false,
+      "editorVisible": true,
+      "enabled": true,
+      "id": 1,
+      "name": "Grid Floor",
+      "parent": null,
+      "sourcePrefabId": "",
+      "transform": {
+        "position": [
+          0.0,
+          2.3024067878723145,
+          0.0
+        ],
+        "rotationEulerDeg": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "components": [
+        {
+          "id": 1,
+          "properties": {
+            "assetId": "",
+            "castShadow": true,
+            "receiveShadow": true,
+            "renderStatic": false,
+            "visible": true
+          },
+          "type": "ModelComponent"
+        },
+        {
+          "id": 2,
+          "properties": {
+            "cuts": [],
+            "depth": 11.229000091552734,
+            "doubleSided": false,
+            "generateTangents": true,
+            "height": 14.678999900817871,
+            "kind": "Box",
+            "materialSelection": "",
+            "segmentsX": 10,
+            "segmentsY": 10,
+            "segmentsZ": 1,
+            "sphereSlices": 32,
+            "sphereStacks": 16,
+            "uvTilesX": 0.0,
+            "uvTilesY": 0.0,
+            "width": 0.6660000085830688
+          },
+          "type": "ProceduralMeshComponent"
+        },
+        {
+          "id": 3,
+          "properties": {
+            "enabled": true,
+            "filter": {
+              "layer": 1,
+              "mask": 4294967295
+            },
+            "fitMode": "Geometry",
+            "material": {
+              "density": 1.0,
+              "friction": 0.5,
+              "restitution": 0.0
+            },
+            "trigger": false
+          },
+          "type": "ColliderComponent"
+        }
+      ],
+      "editorLocked": false,
+      "editorVisible": true,
+      "enabled": true,
+      "id": 2,
+      "name": "Box",
+      "parent": null,
+      "sourcePrefabId": "",
+      "transform": {
+        "position": [
+          -1.4913822412490845,
+          8.028397560119629,
+          -11.750645637512207
+        ],
+        "rotationEulerDeg": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "scale": [
+          4.502380847930908,
+          0.7834436893463135,
+          3.6068663597106934
+        ]
+      }
+    }
+  ],
+  "sceneName": "Untitled Scene",
+  "systems": [
+    {
+      "enabled": true,
+      "executionOrder": 100,
+      "settings": {},
+      "systemId": "ModelRenderSystem"
+    },
+    {
+      "enabled": true,
+      "executionOrder": 70,
+      "settings": {},
+      "systemId": "UiSceneSystem"
+    },
+    {
+      "enabled": true,
+      "executionOrder": 100,
+      "settings": {},
+      "systemId": "Project_TD2_TV.Game"
+    }
+  ],
+  "version": 10
+}

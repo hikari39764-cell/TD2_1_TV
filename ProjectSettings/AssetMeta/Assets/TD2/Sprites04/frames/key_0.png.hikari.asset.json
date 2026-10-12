@@ -1,0 +1,21 @@
+{
+  "displayName": "key_0",
+  "guid": "f32f6282f317bea7af6410e22058dc08",
+  "importSettings": {
+    "allowResize": false,
+    "colorSpace": "Srgb",
+    "compression": "BC7",
+    "debugOutputFormat": "DDS",
+    "dimension": "Texture2D",
+    "forcePowerOfTwo": false,
+    "maxSize": 4096,
+    "mipPolicy": "Generate",
+    "outputFormat": "HTEX",
+    "usage": "Auto"
+  },
+  "importerId": "TextureImporter",
+  "importerVersion": 8,
+  "metaVersion": 1,
+  "sourcePath": "Assets/TD2/Sprites04/frames/key_0.png",
+  "type": "Texture"
+}

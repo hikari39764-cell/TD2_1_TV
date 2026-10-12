@@ -1,0 +1,138 @@
+{
+  "bindings": [
+    {
+      "action": "UI.Navigate",
+      "component": 0,
+      "control": "A",
+      "scale": -1.0,
+      "source": "Keyboard"
+    },
+    {
+      "action": "UI.Navigate",
+      "component": 0,
+      "control": "Left",
+      "scale": -1.0,
+      "source": "Keyboard"
+    },
+    {
+      "action": "UI.Navigate",
+      "component": 0,
+      "control": "D",
+      "scale": 1.0,
+      "source": "Keyboard"
+    },
+    {
+      "action": "UI.Navigate",
+      "component": 0,
+      "control": "Right",
+      "scale": 1.0,
+      "source": "Keyboard"
+    },
+    {
+      "action": "UI.Navigate",
+      "component": 1,
+      "control": "W",
+      "scale": 1.0,
+      "source": "Keyboard"
+    },
+    {
+      "action": "UI.Navigate",
+      "component": 1,
+      "control": "Up",
+      "scale": 1.0,
+      "source": "Keyboard"
+    },
+    {
+      "action": "UI.Navigate",
+      "component": 1,
+      "control": "S",
+      "scale": -1.0,
+      "source": "Keyboard"
+    },
+    {
+      "action": "UI.Navigate",
+      "component": 1,
+      "control": "Down",
+      "scale": -1.0,
+      "source": "Keyboard"
+    },
+    {
+      "action": "UI.Navigate",
+      "component": 0,
+      "control": "LeftX",
+      "deadZone": 0.15000000596046448,
+      "scale": 1.0,
+      "source": "GamepadAxis"
+    },
+    {
+      "action": "UI.Navigate",
+      "component": 1,
+      "control": "LeftY",
+      "deadZone": 0.15000000596046448,
+      "scale": 1.0,
+      "source": "GamepadAxis"
+    },
+    {
+      "action": "UI.Submit",
+      "component": 0,
+      "control": "Enter",
+      "scale": 1.0,
+      "source": "Keyboard"
+    },
+    {
+      "action": "UI.Submit",
+      "component": 0,
+      "control": "E",
+      "scale": 1.0,
+      "source": "Keyboard"
+    },
+    {
+      "action": "UI.Submit",
+      "component": 0,
+      "control": "Space",
+      "scale": 1.0,
+      "source": "Keyboard"
+    },
+    {
+      "action": "UI.Submit",
+      "component": 0,
+      "control": "A",
+      "scale": 1.0,
+      "source": "GamepadButton"
+    },
+    {
+      "action": "UI.Submit",
+      "component": 0,
+      "control": "X",
+      "scale": 1.0,
+      "source": "GamepadButton"
+    },
+    {
+      "action": "UI.Cancel",
+      "component": 0,
+      "control": "Tab",
+      "scale": 1.0,
+      "source": "Keyboard"
+    },
+    {
+      "action": "UI.Cancel",
+      "component": 0,
+      "control": "B",
+      "scale": 1.0,
+      "source": "GamepadButton"
+    },
+    {
+      "action": "UI.Cancel",
+      "component": 0,
+      "control": "Start",
+      "scale": 1.0,
+      "source": "GamepadButton"
+    }
+  ],
+  "consumeInput": true,
+  "displayName": "User Interface",
+  "enabledByDefault": false,
+  "id": "UI",
+  "priority": 200,
+  "version": 1
+}

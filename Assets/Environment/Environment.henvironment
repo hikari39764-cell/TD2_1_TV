@@ -1,0 +1,226 @@
+{
+  "ambientOcclusion": {
+    "bias": 0.02500000037252903,
+    "blurIterations": 1,
+    "diffuseStrength": 1.0,
+    "enabled": true,
+    "mode": "OptimizedHigh",
+    "power": 1.5,
+    "radius": 0.6000000238418579,
+    "sampleCount": 16,
+    "specularStrength": 0.5,
+    "strength": 1.0
+  },
+  "atmosphere": {
+    "aerialPerspectiveStrength": 1.0,
+    "atmosphereHeight": 80000.0,
+    "belowHorizon": "Haze",
+    "groundAlbedo": [
+      0.10000000149011612,
+      0.10000000149011612,
+      0.10000000149011612
+    ],
+    "mieAnisotropy": 0.800000011920929,
+    "mieScaleHeight": 800.0,
+    "mieScattering": [
+      4.999999873689376e-05,
+      4.999999873689376e-05,
+      4.999999873689376e-05
+    ],
+    "multiScatteringLutSize": 32,
+    "ozoneAbsorption": [
+      6.500000040432496e-07,
+      1.8810000028679497e-06,
+      8.500000348021786e-08
+    ],
+    "ozoneCenterHeight": 25000.0,
+    "ozoneWidth": 15000.0,
+    "planetRadius": 6360000.0,
+    "rayleighScaleHeight": 8000.0,
+    "rayleighScattering": [
+      5.80000005356851e-06,
+      1.3500000022759195e-05,
+      3.310000101919286e-05
+    ],
+    "skyViewLutHeight": 108,
+    "skyViewLutWidth": 192,
+    "transmittanceLutHeight": 64,
+    "transmittanceLutWidth": 256
+  },
+  "bloom": {
+    "downsampleCount": 6,
+    "enabled": true,
+    "intensity": 0.05000000074505806,
+    "radius": 1.0,
+    "threshold": 0.0
+  },
+  "clouds": {
+    "ambientScale": 1.0,
+    "baseAltitude": 1500.0,
+    "clusterStrength": 1.0,
+    "coverageBias": 0.0,
+    "densityScale": 1.0,
+    "detailErosion": 0.11999999731779099,
+    "enabled": true,
+    "shadowStrength": 0.6499999761581421,
+    "shapeScale": 1.0,
+    "silverLining": 1.0,
+    "sunlightScale": 1.0
+  },
+  "colorGrading": {
+    "highlightsTint": [
+      1.0,
+      1.0,
+      1.0
+    ],
+    "lut": "",
+    "lutIntensity": 1.0,
+    "midtonesTint": [
+      1.0,
+      1.0,
+      1.0
+    ],
+    "shadowsTint": [
+      1.0,
+      1.0,
+      1.0
+    ]
+  },
+  "defaultWeather": "engine.weather.clear",
+  "exposure": {
+    "compensationEv": 0.0,
+    "dimAdaptationStrength": 0.30000001192092896,
+    "highlightProtection": 0.5,
+    "manualEv100": 14.0,
+    "maxEv100": 18.0,
+    "minEv100": -10.0,
+    "mode": "Automatic",
+    "nightAdaptationEv100": 5.0,
+    "nightAdaptationStrength": 0.3499999940395355,
+    "speedDown": 2.5,
+    "speedUp": 5.0,
+    "sunlitMeteringCorrectionEv": 1.0
+  },
+  "fog": {
+    "albedo": [
+      0.8999999761581421,
+      0.8999999761581421,
+      0.8999999761581421
+    ],
+    "ambientScatteringStrength": 1.0,
+    "anisotropy": 0.20000000298023224,
+    "baseHeight": 0.0,
+    "density": 0.0005000000237487257,
+    "enabled": true,
+    "heightFalloff": 0.019999999552965164,
+    "noise": 0.0,
+    "noiseScale": 16.0,
+    "scatteringIntensity": 1.0,
+    "startDistance": 0.0,
+    "sunShaftStrength": 1.0,
+    "temporalWeight": 0.8999999761581421,
+    "volumetric": true
+  },
+  "formatVersion": 1,
+  "moon": {
+    "angularRadius": 0.0044999998062849045,
+    "color": [
+      0.8799999952316284,
+      0.9200000166893005,
+      1.0
+    ],
+    "enabled": true,
+    "illuminance": 0.27000001072883606
+  },
+  "name": "Default",
+  "screenSpaceReflections": {
+    "edgeFade": 0.07999999821186066,
+    "enabled": true,
+    "intensity": 0.75,
+    "maxDistance": 24.0,
+    "maxRoughness": 0.7200000286102295,
+    "quality": "Medium",
+    "stride": 0.18000000715255737,
+    "thickness": 0.0024999999441206455
+  },
+  "shadows": {
+    "contactShadowLength": 0.25,
+    "contactShadowStrength": 1.0,
+    "contactShadowThickness": 0.25,
+    "contactShadows": false,
+    "distance": 60.0,
+    "enabled": true,
+    "strength": 1.0
+  },
+  "sky": {
+    "asset": "",
+    "lightIntensity": 1.0,
+    "panoramaCloudAsset": "",
+    "panoramaCloudOpacity": 1.0,
+    "panoramaCloudScrollSpeed": [
+      0.001500000013038516,
+      0.0
+    ],
+    "reflectionIntensity": 1.0,
+    "source": "Atmosphere",
+    "textureIlluminance": 20000.0,
+    "tint": [
+      1.0,
+      1.0,
+      1.0
+    ],
+    "yaw": 0.0
+  },
+  "stars": {
+    "backgroundLuminance": 0.00016999999934341758,
+    "enabled": true,
+    "intensity": 1.0,
+    "limitingMagnitude": 6.5
+  },
+  "subsurfaceScattering": {
+    "channelFalloff": [
+      1.0,
+      0.4000000059604645,
+      0.25
+    ],
+    "enabled": true,
+    "maxPixelRadius": 48.0,
+    "strength": 1.0
+  },
+  "sun": {
+    "angularRadius": 0.004674999974668026,
+    "color": [
+      1.0,
+      1.0,
+      1.0
+    ],
+    "fixedAzimuthDegrees": 238.6999969482422,
+    "fixedElevationDegrees": 40.0,
+    "illuminance": 204800.0,
+    "mode": "Fixed",
+    "showDisk": true
+  },
+  "sunGlare": {
+    "edgeFade": 0.15000000596046448,
+    "enabled": false,
+    "ghostIntensity": 0.0,
+    "haloFalloff": 3.0,
+    "haloRadius": 0.07999999821186066,
+    "intensity": 0.15000000596046448,
+    "maxRadiance": 4.0,
+    "occlusionRadius": 0.012000000104308128,
+    "shaftDecay": 0.9399999976158142,
+    "shaftIntensity": 0.0,
+    "shaftLength": 0.550000011920929,
+    "streakIntensity": 0.0,
+    "streakLength": 0.15000000596046448
+  },
+  "toneMapping": {
+    "contrast": 1.149999976158142,
+    "curve": "AgX",
+    "gamma": 2.200000047683716,
+    "saturation": 1.0,
+    "whiteBalanceTemperature": 6500.0,
+    "whiteBalanceTint": 0.0
+  }
+}

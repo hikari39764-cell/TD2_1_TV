@@ -1,0 +1,3953 @@
+{
+  "camera": {
+    "defaultCameraObjectId": 3
+  },
+  "cinematics": {
+    "defaultSequenceId": 1,
+    "sequences": [
+      {
+        "bindings": [],
+        "durationSeconds": 10.0,
+        "id": 1,
+        "name": "Main Sequence",
+        "screenEffects": [],
+        "tracks": [
+          {
+            "clips": [],
+            "enabled": true,
+            "id": 1,
+            "type": "cameraCut"
+          },
+          {
+            "channels": [],
+            "enabled": true,
+            "id": 2,
+            "type": "cameraTransform"
+          },
+          {
+            "channels": [],
+            "enabled": true,
+            "id": 3,
+            "type": "cameraLens"
+          }
+        ]
+      }
+    ]
+  },
+  "environment": {
+    "location": {
+      "latitudeDegrees": 35.68,
+      "longitudeDegrees": 139.69,
+      "northYawDegrees": 0.0,
+      "utcOffsetHours": 9.0
+    },
+    "profile": "d3f39fed1acb45b74ca2d0ffb55a282e",
+    "renderStyle": "54a2bfcef895b094ffc95c51d91c684f",
+    "time": {
+      "day": 21,
+      "localHours": 0.0,
+      "month": 6,
+      "year": 2026
+    },
+    "timeScale": 0.0,
+    "weather": ""
+  },
+  "objects": [
+    {
+      "components": [
+        {
+          "id": 1,
+          "properties": {
+            "enabled": true,
+            "farClip": 2000.0,
+            "nearClip": 0.10000000149011612,
+            "verticalFovDegrees": 43.400001525878906
+          },
+          "type": "CameraComponent"
+        },
+        {
+          "id": 2,
+          "properties": {
+            "cameraObject": {
+              "$hikariRef": "SceneObject",
+              "id": 3
+            },
+            "regionA": "td2.region.rules01",
+            "regionB": "td2.region.25",
+            "sequenceAssetGuid": "60b053c59d1940cfb385d4d160b8ac15",
+            "sequenceSlotName": "Camera"
+          },
+          "type": "TD2.RegionSequence"
+        }
+      ],
+      "editorLocked": false,
+      "editorVisible": true,
+      "enabled": true,
+      "id": 3,
+      "name": "TD2_Rules01_Camera",
+      "parent": null,
+      "sourcePrefabId": "",
+      "transform": {
+        "position": [
+          -1.8051667213439941,
+          1.9392085075378418,
+          3.206040859222412
+        ],
+        "rotationEulerDeg": [
+          9.28192138671875,
+          162.9758758544922,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "components": [
+        {
+          "id": 1,
+          "properties": {
+            "assetId": "27fde11b05dce002ff58fef90d1cfecc",
+            "castShadow": true,
+            "receiveShadow": true,
+            "visible": true
+          },
+          "type": "ModelComponent"
+        },
+        {
+          "id": 2,
+          "properties": {
+            "cells": "111111111111111110000000000000011000000000000001100000000000000110000000000011110000000000000001000000000000000000000000000000001111111111111111",
+            "cols": 16,
+            "devices": "plate_A Plate 4 7 1 1 targets=door_A\ndoor_A Door 9 5 1 3\nsave_A Checkpoint 11 7 1 1\nspike_A Spikes 13 3 1 1 dir=Up",
+            "entryRegion": false,
+            "outputHeight": 576,
+            "outputWidth": 1024,
+            "regionId": "td2.region.rules01",
+            "rows": 9,
+            "screenBrightness": 2.2,
+            "screenMaterialIndex": 5,
+            "screenModelAssetGuid": "27fde11b05dce002ff58fef90d1cfecc",
+            "screenObject": {
+              "$hikariRef": "SceneObject",
+              "id": 4
+            },
+            "screenSlot": "TD2_Screen",
+            "spawnX": 2.1875,
+            "spawnY": 7.125,
+            "texturePath": "generated://solid/ffffffff",
+            "tilePixels": 64,
+            "worldPlaced": true,
+            "worldX": 16,
+            "worldY": 0
+          },
+          "type": "TD2.Region"
+        }
+      ],
+      "editorLocked": false,
+      "editorVisible": true,
+      "enabled": true,
+      "id": 4,
+      "name": "A区 · 主电视（16×9）",
+      "parent": null,
+      "sourcePrefabId": "",
+      "transform": {
+        "position": [
+          0.013444498181343079,
+          0.5746489763259888,
+          0.0
+        ],
+        "rotationEulerDeg": [
+          0.0,
+          -20.26410484313965,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "components": [
+        {
+          "id": 1,
+          "properties": {
+            "assetId": "81d2dc2872eefdbabd62cafc214d6510",
+            "castShadow": true,
+            "receiveShadow": true,
+            "visible": true
+          },
+          "type": "ModelComponent"
+        }
+      ],
+      "editorLocked": false,
+      "editorVisible": true,
+      "enabled": true,
+      "id": 5,
+      "name": "TD2_Cabinet",
+      "parent": null,
+      "sourcePrefabId": "",
+      "transform": {
+        "position": [
+          0.0,
+          1.1444091541079615e-07,
+          0.0
+        ],
+        "rotationEulerDeg": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "components": [
+        {
+          "id": 1,
+          "properties": {
+            "assetId": "3dd2f97515633720388e046a5afd0d00",
+            "castShadow": true,
+            "receiveShadow": true,
+            "visible": true
+          },
+          "type": "ModelComponent"
+        }
+      ],
+      "editorLocked": false,
+      "editorVisible": true,
+      "enabled": true,
+      "id": 6,
+      "name": "TD2_Lamp",
+      "parent": null,
+      "sourcePrefabId": "",
+      "transform": {
+        "position": [
+          1.6589100360870361,
+          1.1444091541079615e-07,
+          -0.15000000596046448
+        ],
+        "rotationEulerDeg": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "components": [
+        {
+          "id": 1,
+          "properties": {
+            "assetId": "f4d4e125a5db278b961308926c74bbde",
+            "castShadow": true,
+            "receiveShadow": true,
+            "visible": true
+          },
+          "type": "ModelComponent"
+        }
+      ],
+      "editorLocked": false,
+      "editorVisible": true,
+      "enabled": true,
+      "id": 7,
+      "name": "TD2_Bench",
+      "parent": null,
+      "sourcePrefabId": "",
+      "transform": {
+        "position": [
+          -1.6999998092651367,
+          1.1444091541079615e-07,
+          -0.5
+        ],
+        "rotationEulerDeg": [
+          0.0,
+          12.0,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "components": [
+        {
+          "id": 1,
+          "properties": {
+            "assetId": "",
+            "castShadow": true,
+            "receiveShadow": true,
+            "renderStatic": false,
+            "visible": true
+          },
+          "type": "ModelComponent"
+        },
+        {
+          "id": 2,
+          "properties": {
+            "cuts": [],
+            "depth": 8.086999893188477,
+            "doubleSided": false,
+            "generateTangents": true,
+            "height": 0.10000000149011612,
+            "kind": "Box",
+            "materialSelection": "11b1f13655233ef663fb5e706bb32dc9",
+            "segmentsX": 10,
+            "segmentsY": 10,
+            "segmentsZ": 1,
+            "sphereSlices": 32,
+            "sphereStacks": 16,
+            "uvTilesX": 0.0,
+            "uvTilesY": 0.0,
+            "width": 9.53600025177002
+          },
+          "type": "ProceduralMeshComponent"
+        },
+        {
+          "id": 3,
+          "properties": {
+            "enabled": true,
+            "filter": {
+              "layer": 1,
+              "mask": 4294967295
+            },
+            "fitMode": "Geometry",
+            "material": {
+              "density": 1.0,
+              "friction": 0.5,
+              "restitution": 0.0
+            },
+            "trigger": false
+          },
+          "type": "ColliderComponent"
+        }
+      ],
+      "editorLocked": false,
+      "editorVisible": true,
+      "enabled": true,
+      "id": 8,
+      "name": "TD2_Floor",
+      "parent": null,
+      "sourcePrefabId": "",
+      "transform": {
+        "position": [
+          11.216434478759766,
+          -0.5673660039901733,
+          14.529121398925781
+        ],
+        "rotationEulerDeg": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "scale": [
+          6.344521999359131,
+          12.747118949890137,
+          7.110329627990723
+        ]
+      }
+    },
+    {
+      "components": [
+        {
+          "id": 1,
+          "properties": {
+            "assetId": "",
+            "castShadow": true,
+            "receiveShadow": true,
+            "renderStatic": false,
+            "visible": true
+          },
+          "type": "ModelComponent"
+        },
+        {
+          "id": 2,
+          "properties": {
+            "cuts": [],
+            "depth": 6.5,
+            "doubleSided": false,
+            "generateTangents": true,
+            "height": 3.5510001182556152,
+            "kind": "Box",
+            "materialSelection": "11b1f13655233ef663fb5e706bb32dc9",
+            "segmentsX": 10,
+            "segmentsY": 10,
+            "segmentsZ": 1,
+            "sphereSlices": 32,
+            "sphereStacks": 16,
+            "uvTilesX": 0.0,
+            "uvTilesY": 0.0,
+            "width": 9.807000160217285
+          },
+          "type": "ProceduralMeshComponent"
+        },
+        {
+          "id": 3,
+          "properties": {
+            "enabled": true,
+            "filter": {
+              "layer": 1,
+              "mask": 4294967295
+            },
+            "fitMode": "Geometry",
+            "material": {
+              "density": 1.0,
+              "friction": 0.5,
+              "restitution": 0.0
+            },
+            "trigger": false
+          },
+          "type": "ColliderComponent"
+        }
+      ],
+      "editorLocked": true,
+      "editorVisible": true,
+      "enabled": true,
+      "id": 9,
+      "name": "TD2_Backdrop",
+      "parent": null,
+      "sourcePrefabId": "",
+      "transform": {
+        "position": [
+          12.678775787353516,
+          4.483311653137207,
+          -11.4096097946167
+        ],
+        "rotationEulerDeg": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "scale": [
+          6.475038051605225,
+          3.6611039638519287,
+          1.0
+        ]
+      }
+    },
+    {
+      "components": [
+        {
+          "id": 1,
+          "properties": {
+            "angularFalloff": 1.0,
+            "castsShadows": true,
+            "color": [
+              1.0,
+              0.8399999737739563,
+              0.6800000071525574
+            ],
+            "cookie": "",
+            "enabled": false,
+            "height": 0.800000011920929,
+            "iesProfile": "",
+            "innerConeAngleDegrees": 25.0,
+            "intensity": 600.0,
+            "intensityUnit": "Lumens",
+            "length": 1.2000000476837158,
+            "outerConeAngleDegrees": 35.0,
+            "priority": 0,
+            "range": 6.0,
+            "sceneRelativeIntensity": 1.0,
+            "sourceRadius": 0.0,
+            "type": "Rect"
+          },
+          "type": "LightComponent"
+        }
+      ],
+      "editorLocked": false,
+      "editorVisible": true,
+      "enabled": true,
+      "id": 10,
+      "name": "TD2_Key_Warm",
+      "parent": null,
+      "sourcePrefabId": "",
+      "transform": {
+        "position": [
+          -1.2999999523162842,
+          2.819999933242798,
+          1.2000000476837158
+        ],
+        "rotationEulerDeg": [
+          47.0,
+          132.6999969482422,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "components": [
+        {
+          "id": 1,
+          "properties": {
+            "castsShadows": false,
+            "color": [
+              0.75,
+              0.86,
+              1
+            ],
+            "enabled": true,
+            "height": 0.8,
+            "intensity": 120,
+            "intensityUnit": "Lumens",
+            "length": 1.2,
+            "range": 6,
+            "type": "Rect"
+          },
+          "type": "LightComponent"
+        }
+      ],
+      "editorLocked": false,
+      "editorVisible": true,
+      "enabled": true,
+      "id": 11,
+      "name": "TD2_Fill_Cool",
+      "parent": null,
+      "sourcePrefabId": "",
+      "transform": {
+        "position": [
+          1.7000000476837158,
+          2.119999885559082,
+          1.0
+        ],
+        "rotationEulerDeg": [
+          29.149999618530273,
+          -120.46499633789063,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "components": [
+        {
+          "id": 1,
+          "properties": {
+            "assetId": "",
+            "castShadow": true,
+            "receiveShadow": true,
+            "renderStatic": false,
+            "visible": true
+          },
+          "type": "ModelComponent"
+        },
+        {
+          "id": 2,
+          "properties": {
+            "cuts": [],
+            "depth": 4.0,
+            "doubleSided": false,
+            "generateTangents": true,
+            "height": 16.5,
+            "kind": "Box",
+            "materialSelection": "11b1f13655233ef663fb5e706bb32dc9",
+            "segmentsX": 10,
+            "segmentsY": 10,
+            "segmentsZ": 1,
+            "sphereSlices": 32,
+            "sphereStacks": 16,
+            "uvTilesX": 0.0,
+            "uvTilesY": 0.0,
+            "width": 55.5
+          },
+          "type": "ProceduralMeshComponent"
+        },
+        {
+          "id": 3,
+          "properties": {
+            "enabled": true,
+            "filter": {
+              "layer": 1,
+              "mask": 4294967295
+            },
+            "fitMode": "Geometry",
+            "material": {
+              "density": 1.0,
+              "friction": 0.5,
+              "restitution": 0.0
+            },
+            "trigger": false
+          },
+          "type": "ColliderComponent"
+        }
+      ],
+      "editorLocked": true,
+      "editorVisible": true,
+      "enabled": true,
+      "id": 12,
+      "name": "墙",
+      "parent": null,
+      "sourcePrefabId": "",
+      "transform": {
+        "position": [
+          42.303043365478516,
+          4.25,
+          15.749991416931152
+        ],
+        "rotationEulerDeg": [
+          0.0,
+          90.0,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "components": [
+        {
+          "id": 1,
+          "properties": {
+            "assetId": "",
+            "castShadow": true,
+            "receiveShadow": true,
+            "renderStatic": false,
+            "visible": true
+          },
+          "type": "ModelComponent"
+        },
+        {
+          "id": 2,
+          "properties": {
+            "cuts": [],
+            "depth": 3.0,
+            "doubleSided": false,
+            "generateTangents": true,
+            "height": 11.0,
+            "kind": "Box",
+            "materialSelection": "11b1f13655233ef663fb5e706bb32dc9",
+            "segmentsX": 10,
+            "segmentsY": 10,
+            "segmentsZ": 1,
+            "sphereSlices": 32,
+            "sphereStacks": 16,
+            "uvTilesX": 0.0,
+            "uvTilesY": 0.0,
+            "width": 56.0
+          },
+          "type": "ProceduralMeshComponent"
+        },
+        {
+          "id": 3,
+          "properties": {
+            "enabled": true,
+            "filter": {
+              "layer": 1,
+              "mask": 4294967295
+            },
+            "fitMode": "Geometry",
+            "material": {
+              "density": 1.0,
+              "friction": 0.5,
+              "restitution": 0.0
+            },
+            "trigger": false
+          },
+          "type": "ColliderComponent"
+        }
+      ],
+      "editorLocked": true,
+      "editorVisible": true,
+      "enabled": true,
+      "id": 13,
+      "name": "墙",
+      "parent": null,
+      "sourcePrefabId": "",
+      "transform": {
+        "position": [
+          -18.561439514160156,
+          5.569990158081055,
+          15.7760009765625
+        ],
+        "rotationEulerDeg": [
+          0.0,
+          270.0,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "components": [
+        {
+          "id": 1,
+          "properties": {
+            "assetId": "",
+            "castShadow": true,
+            "receiveShadow": true,
+            "renderStatic": false,
+            "visible": true
+          },
+          "type": "ModelComponent"
+        },
+        {
+          "id": 2,
+          "properties": {
+            "cuts": [],
+            "depth": 2.5,
+            "doubleSided": false,
+            "generateTangents": true,
+            "height": 14.0,
+            "kind": "Box",
+            "materialSelection": "11b1f13655233ef663fb5e706bb32dc9",
+            "segmentsX": 10,
+            "segmentsY": 10,
+            "segmentsZ": 1,
+            "sphereSlices": 32,
+            "sphereStacks": 16,
+            "uvTilesX": 0.0,
+            "uvTilesY": 0.0,
+            "width": 59.0
+          },
+          "type": "ProceduralMeshComponent"
+        },
+        {
+          "id": 3,
+          "properties": {
+            "enabled": true,
+            "filter": {
+              "layer": 1,
+              "mask": 4294967295
+            },
+            "fitMode": "Geometry",
+            "material": {
+              "density": 1.0,
+              "friction": 0.5,
+              "restitution": 0.0
+            },
+            "trigger": false
+          },
+          "type": "ColliderComponent"
+        }
+      ],
+      "editorLocked": true,
+      "editorVisible": true,
+      "enabled": true,
+      "id": 14,
+      "name": "墙",
+      "parent": null,
+      "sourcePrefabId": "",
+      "transform": {
+        "position": [
+          10.5,
+          5.069990158081055,
+          41.875
+        ],
+        "rotationEulerDeg": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "components": [
+        {
+          "id": 1,
+          "properties": {
+            "angularFalloff": 1.0,
+            "castsShadows": true,
+            "color": [
+              1.0,
+              1.0,
+              1.0
+            ],
+            "cookie": "",
+            "enabled": true,
+            "height": 1.0,
+            "iesProfile": "",
+            "innerConeAngleDegrees": 32.43000030517578,
+            "intensity": 800.0,
+            "intensityUnit": "SceneRelative",
+            "length": 1.0,
+            "outerConeAngleDegrees": 38.150001525878906,
+            "priority": 0,
+            "range": 12.399999618530273,
+            "sceneRelativeIntensity": 8.0,
+            "sourceRadius": 0.0,
+            "type": "Spot"
+          },
+          "type": "LightComponent"
+        }
+      ],
+      "editorLocked": false,
+      "editorVisible": true,
+      "enabled": true,
+      "id": 16,
+      "name": "聚光",
+      "parent": null,
+      "sourcePrefabId": "",
+      "transform": {
+        "position": [
+          4.162802696228027,
+          5.497605323791504,
+          -0.48161888122558594
+        ],
+        "rotationEulerDeg": [
+          94.09661102294922,
+          22.540802001953125,
+          -23.694578170776367
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "components": [
+        {
+          "id": 1,
+          "properties": {
+            "assetId": "",
+            "castShadow": true,
+            "receiveShadow": true,
+            "renderStatic": false,
+            "visible": true
+          },
+          "type": "ModelComponent"
+        },
+        {
+          "id": 2,
+          "properties": {
+            "cuts": [],
+            "depth": 84.0,
+            "doubleSided": false,
+            "generateTangents": true,
+            "height": 2.0,
+            "kind": "Box",
+            "materialSelection": "11b1f13655233ef663fb5e706bb32dc9",
+            "segmentsX": 10,
+            "segmentsY": 10,
+            "segmentsZ": 1,
+            "sphereSlices": 32,
+            "sphereStacks": 16,
+            "uvTilesX": 0.0,
+            "uvTilesY": 0.0,
+            "width": 50.5
+          },
+          "type": "ProceduralMeshComponent"
+        },
+        {
+          "id": 3,
+          "properties": {
+            "enabled": true,
+            "filter": {
+              "layer": 1,
+              "mask": 4294967295
+            },
+            "fitMode": "Geometry",
+            "material": {
+              "density": 1.0,
+              "friction": 0.5,
+              "restitution": 0.0
+            },
+            "trigger": false
+          },
+          "type": "ColliderComponent"
+        }
+      ],
+      "editorLocked": false,
+      "editorVisible": true,
+      "enabled": true,
+      "id": 17,
+      "name": "地板",
+      "parent": null,
+      "sourcePrefabId": "",
+      "transform": {
+        "position": [
+          -1.69696044921875,
+          11.600000381469727,
+          16.249998092651367
+        ],
+        "rotationEulerDeg": [
+          0.0,
+          90.0,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "components": [
+        {
+          "id": 1,
+          "properties": {
+            "angularFalloff": 1.0,
+            "castsShadows": false,
+            "color": [
+              1.0,
+              1.0,
+              1.0
+            ],
+            "cookie": "",
+            "enabled": true,
+            "height": 1.0,
+            "iesProfile": "",
+            "innerConeAngleDegrees": 25.0,
+            "intensity": 800.0,
+            "intensityUnit": "SceneRelative",
+            "length": 1.0,
+            "outerConeAngleDegrees": 35.0,
+            "priority": 0,
+            "range": 3.0,
+            "sceneRelativeIntensity": 1.6100000143051147,
+            "sourceRadius": 0.0,
+            "type": "Point"
+          },
+          "type": "LightComponent"
+        }
+      ],
+      "editorLocked": false,
+      "editorVisible": true,
+      "enabled": true,
+      "id": 18,
+      "name": "点光",
+      "parent": null,
+      "sourcePrefabId": "",
+      "transform": {
+        "position": [
+          -1.7547184228897095,
+          1.292749285697937,
+          -0.4490249752998352
+        ],
+        "rotationEulerDeg": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "components": [
+        {
+          "id": 1,
+          "properties": {
+            "angularFalloff": 1.0,
+            "castsShadows": false,
+            "color": [
+              1.0,
+              1.0,
+              1.0
+            ],
+            "cookie": "",
+            "enabled": true,
+            "height": 1.0,
+            "iesProfile": "",
+            "innerConeAngleDegrees": 25.0,
+            "intensity": 800.0,
+            "intensityUnit": "SceneRelative",
+            "length": 1.0,
+            "outerConeAngleDegrees": 35.0,
+            "priority": 0,
+            "range": 0.25,
+            "sceneRelativeIntensity": 0.22100000083446503,
+            "sourceRadius": 0.0,
+            "type": "Point"
+          },
+          "type": "LightComponent"
+        }
+      ],
+      "editorLocked": false,
+      "editorVisible": true,
+      "enabled": true,
+      "id": 19,
+      "name": "点光",
+      "parent": null,
+      "sourcePrefabId": "",
+      "transform": {
+        "position": [
+          1.670681118965149,
+          1.3452529907226563,
+          -0.10631047189235687
+        ],
+        "rotationEulerDeg": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "components": [
+        {
+          "id": 1,
+          "properties": {
+            "assetId": "",
+            "castShadow": true,
+            "receiveShadow": true,
+            "renderStatic": false,
+            "visible": true
+          },
+          "type": "ModelComponent"
+        },
+        {
+          "id": 2,
+          "properties": {
+            "cuts": [],
+            "depth": 1.5,
+            "doubleSided": false,
+            "generateTangents": true,
+            "height": 1.5,
+            "kind": "Box",
+            "materialSelection": "11b1f13655233ef663fb5e706bb32dc9",
+            "segmentsX": 10,
+            "segmentsY": 10,
+            "segmentsZ": 1,
+            "sphereSlices": 32,
+            "sphereStacks": 16,
+            "uvTilesX": 0.0,
+            "uvTilesY": 0.0,
+            "width": 2.0
+          },
+          "type": "ProceduralMeshComponent"
+        },
+        {
+          "id": 3,
+          "properties": {
+            "enabled": true,
+            "filter": {
+              "layer": 1,
+              "mask": 4294967295
+            },
+            "fitMode": "Geometry",
+            "material": {
+              "density": 1.0,
+              "friction": 0.5,
+              "restitution": 0.0
+            },
+            "trigger": false
+          },
+          "type": "ColliderComponent"
+        }
+      ],
+      "editorLocked": false,
+      "editorVisible": true,
+      "enabled": true,
+      "id": 20,
+      "name": "方块",
+      "parent": null,
+      "sourcePrefabId": "",
+      "transform": {
+        "position": [
+          -4.459353923797607,
+          0.7472112774848938,
+          0.4038406014442444
+        ],
+        "rotationEulerDeg": [
+          0.0,
+          244.1881103515625,
+          0.0
+        ],
+        "scale": [
+          2.5626778602600098,
+          1.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "components": [
+        {
+          "id": 1,
+          "properties": {
+            "assetId": "",
+            "castShadow": true,
+            "receiveShadow": true,
+            "renderStatic": false,
+            "visible": true
+          },
+          "type": "ModelComponent"
+        },
+        {
+          "id": 2,
+          "properties": {
+            "cuts": [],
+            "depth": 1.5,
+            "doubleSided": false,
+            "generateTangents": true,
+            "height": 3.0,
+            "kind": "Box",
+            "materialSelection": "11b1f13655233ef663fb5e706bb32dc9",
+            "segmentsX": 10,
+            "segmentsY": 10,
+            "segmentsZ": 1,
+            "sphereSlices": 32,
+            "sphereStacks": 16,
+            "uvTilesX": 0.0,
+            "uvTilesY": 0.0,
+            "width": 5.5
+          },
+          "type": "ProceduralMeshComponent"
+        },
+        {
+          "id": 3,
+          "properties": {
+            "enabled": true,
+            "filter": {
+              "layer": 1,
+              "mask": 4294967295
+            },
+            "fitMode": "Geometry",
+            "material": {
+              "density": 1.0,
+              "friction": 0.5,
+              "restitution": 0.0
+            },
+            "trigger": false
+          },
+          "type": "ColliderComponent"
+        }
+      ],
+      "editorLocked": false,
+      "editorVisible": true,
+      "enabled": true,
+      "id": 21,
+      "name": "方块",
+      "parent": null,
+      "sourcePrefabId": "",
+      "transform": {
+        "position": [
+          -9.029484748840332,
+          1.6442036628723145,
+          0.7499997615814209
+        ],
+        "rotationEulerDeg": [
+          0.0,
+          270.0,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "components": [
+        {
+          "id": 1,
+          "properties": {
+            "assetId": "cd8a1d4e009d861b71af501c27f4ef83",
+            "castShadow": true,
+            "receiveShadow": true,
+            "visible": true
+          },
+          "type": "ModelComponent"
+        }
+      ],
+      "editorLocked": false,
+      "editorVisible": true,
+      "enabled": true,
+      "id": 23,
+      "name": "SM_TV_4x3",
+      "parent": null,
+      "sourcePrefabId": "",
+      "transform": {
+        "position": [
+          -5.3283538818359375,
+          1.5625532865524292,
+          1.3132178783416748
+        ],
+        "rotationEulerDeg": [
+          0.0,
+          51.849517822265625,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "components": [
+        {
+          "id": 1,
+          "properties": {
+            "assetId": "cd8a1d4e009d861b71af501c27f4ef83",
+            "castShadow": true,
+            "receiveShadow": true,
+            "visible": true
+          },
+          "type": "ModelComponent"
+        }
+      ],
+      "editorLocked": false,
+      "editorVisible": true,
+      "enabled": true,
+      "id": 24,
+      "name": "SM_TV_4x3_Copy",
+      "parent": null,
+      "sourcePrefabId": "",
+      "transform": {
+        "position": [
+          -5.3194990158081055,
+          2.8171722888946533,
+          1.305408000946045
+        ],
+        "rotationEulerDeg": [
+          0.0,
+          53.46344757080078,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "components": [
+        {
+          "id": 1,
+          "properties": {
+            "assetId": "cd8a1d4e009d861b71af501c27f4ef83",
+            "castShadow": true,
+            "receiveShadow": true,
+            "visible": true
+          },
+          "type": "ModelComponent"
+        },
+        {
+          "id": 2,
+          "properties": {
+            "cells": "111111111111100000000001100000000001100000000001100000000001100000000001000000000001000000000001111111111111",
+            "cols": 12,
+            "devices": "save_B Checkpoint 6 7 1 1",
+            "entryRegion": false,
+            "outputHeight": 576,
+            "outputWidth": 768,
+            "regionId": "td2.region.25",
+            "rows": 9,
+            "screenBrightness": 2.2,
+            "screenMaterialIndex": 4,
+            "screenModelAssetGuid": "cd8a1d4e009d861b71af501c27f4ef83",
+            "screenObject": {
+              "$hikariRef": "SceneObject",
+              "id": 25
+            },
+            "screenSlot": "TD2_Screen",
+            "spawnX": 2.1875,
+            "spawnY": 7.125,
+            "texturePath": "generated://solid/ffffffff",
+            "tilePixels": 64,
+            "worldPlaced": true,
+            "worldX": -8,
+            "worldY": 0
+          },
+          "type": "TD2.Region"
+        }
+      ],
+      "editorLocked": false,
+      "editorVisible": true,
+      "enabled": true,
+      "id": 25,
+      "name": "B区 · 高台电视（12×9）",
+      "parent": null,
+      "sourcePrefabId": "",
+      "transform": {
+        "position": [
+          -4.094269752502441,
+          1.497211217880249,
+          -0.0470849871635437
+        ],
+        "rotationEulerDeg": [
+          0.0,
+          46.718048095703125,
+          0.0
+        ],
+        "scale": [
+          1.2599999904632568,
+          1.2599999904632568,
+          1.2599999904632568
+        ]
+      }
+    },
+    {
+      "components": [
+        {
+          "id": 1,
+          "properties": {
+            "assetId": "cd8a1d4e009d861b71af501c27f4ef83",
+            "castShadow": true,
+            "receiveShadow": true,
+            "visible": true
+          },
+          "type": "ModelComponent"
+        },
+        {
+          "id": 2,
+          "properties": {
+            "cells": "000000000000000000000000111100000000000000000000000000000000000000000000000000000000000000000000111111111111",
+            "cols": 12,
+            "devices": "device_1 Plate 7 7 1 1\n",
+            "entryRegion": true,
+            "outputHeight": 576,
+            "outputWidth": 768,
+            "regionId": "td2.region.26",
+            "rows": 9,
+            "screenBrightness": 2.200000047683716,
+            "screenMaterialIndex": 4,
+            "screenModelAssetGuid": "cd8a1d4e009d861b71af501c27f4ef83",
+            "screenObject": {
+              "$hikariRef": "SceneObject",
+              "id": 26
+            },
+            "screenSlot": "TD2_Screen",
+            "spawnX": 0.5,
+            "spawnY": 0.5,
+            "texturePath": "generated://solid/ffffffff",
+            "tilePixels": 64,
+            "worldPlaced": true,
+            "worldX": 4,
+            "worldY": 0
+          },
+          "type": "TD2.Region"
+        }
+      ],
+      "editorLocked": false,
+      "editorVisible": true,
+      "enabled": true,
+      "id": 26,
+      "name": "TV2",
+      "parent": null,
+      "sourcePrefabId": "",
+      "transform": {
+        "position": [
+          -1.7202085256576538,
+          0.45848023891448975,
+          -0.5456750392913818
+        ],
+        "rotationEulerDeg": [
+          0.0,
+          13.601118087768555,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "components": [
+        {
+          "id": 1,
+          "properties": {
+            "assetId": "",
+            "castShadow": true,
+            "receiveShadow": true,
+            "renderStatic": false,
+            "visible": true
+          },
+          "type": "ModelComponent"
+        },
+        {
+          "id": 2,
+          "properties": {
+            "cuts": [
+              {
+                "center": [
+                  0.5,
+                  1.149999976158142,
+                  -0.4000000059604645
+                ],
+                "size": [
+                  1.2000000476837158,
+                  2.0,
+                  3.5
+                ]
+              }
+            ],
+            "depth": 7.0,
+            "doubleSided": false,
+            "generateTangents": true,
+            "height": 5.5,
+            "kind": "Box",
+            "materialSelection": "11b1f13655233ef663fb5e706bb32dc9",
+            "segmentsX": 10,
+            "segmentsY": 10,
+            "segmentsZ": 1,
+            "sphereSlices": 32,
+            "sphereStacks": 16,
+            "uvTilesX": 0.0,
+            "uvTilesY": 0.0,
+            "width": 2.0
+          },
+          "type": "ProceduralMeshComponent"
+        },
+        {
+          "id": 3,
+          "properties": {
+            "enabled": true,
+            "filter": {
+              "layer": 1,
+              "mask": 4294967295
+            },
+            "fitMode": "Geometry",
+            "material": {
+              "density": 1.0,
+              "friction": 0.5,
+              "restitution": 0.0
+            },
+            "trigger": false
+          },
+          "type": "ColliderComponent"
+        }
+      ],
+      "editorLocked": false,
+      "editorVisible": true,
+      "enabled": true,
+      "id": 27,
+      "name": "方块",
+      "parent": null,
+      "sourcePrefabId": "",
+      "transform": {
+        "position": [
+          0.2991243898868561,
+          2.444655656814575,
+          -4.993896007537842
+        ],
+        "rotationEulerDeg": [
+          0.0,
+          270.0,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "components": [
+        {
+          "id": 1,
+          "properties": {
+            "angularFalloff": 3.75,
+            "castsShadows": true,
+            "color": [
+              1.0,
+              1.0,
+              1.0
+            ],
+            "cookie": "",
+            "enabled": true,
+            "height": 1.0,
+            "iesProfile": "",
+            "innerConeAngleDegrees": 29.360000610351563,
+            "intensity": 0.0,
+            "intensityUnit": "SceneRelative",
+            "length": 1.0,
+            "outerConeAngleDegrees": 40.56999969482422,
+            "priority": 0,
+            "range": 8.149999618530273,
+            "sceneRelativeIntensity": 13.0,
+            "sourceRadius": 0.0,
+            "type": "Spot"
+          },
+          "type": "LightComponent"
+        }
+      ],
+      "editorLocked": false,
+      "editorVisible": true,
+      "enabled": true,
+      "id": 28,
+      "name": "Tube Light",
+      "parent": null,
+      "sourcePrefabId": "",
+      "transform": {
+        "position": [
+          -4.541601181030273,
+          8.451722145080566,
+          -6.327221870422363
+        ],
+        "rotationEulerDeg": [
+          150.14186096191406,
+          -136.85128784179688,
+          -65.55278015136719
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "components": [
+        {
+          "id": 1,
+          "properties": {
+            "assetId": "26dc3d04723dcae8ddaea3b16db53d98",
+            "castShadow": true,
+            "receiveShadow": true,
+            "visible": true
+          },
+          "type": "ModelComponent"
+        }
+      ],
+      "editorLocked": false,
+      "editorVisible": true,
+      "enabled": true,
+      "id": 100,
+      "name": "TD2_S02_SM_TV_PortableCRT_100",
+      "parent": null,
+      "sourcePrefabId": "",
+      "transform": {
+        "position": [
+          -5.339498996734619,
+          4.122171878814697,
+          1.2654080390930176
+        ],
+        "rotationEulerDeg": [
+          0.0,
+          53.0,
+          0.0
+        ],
+        "scale": [
+          1.0499999523162842,
+          1.0499999523162842,
+          1.0499999523162842
+        ]
+      }
+    },
+    {
+      "components": [
+        {
+          "id": 1,
+          "properties": {
+            "assetId": "",
+            "castShadow": true,
+            "receiveShadow": true,
+            "renderStatic": false,
+            "visible": true
+          },
+          "type": "ModelComponent"
+        },
+        {
+          "id": 2,
+          "properties": {
+            "cuts": [],
+            "depth": 0.65,
+            "doubleSided": false,
+            "generateTangents": true,
+            "height": 3.18,
+            "kind": "Box",
+            "materialSelection": "11b1f13655233ef663fb5e706bb32dc9",
+            "segmentsX": 1,
+            "segmentsY": 1,
+            "segmentsZ": 1,
+            "sphereSlices": 32,
+            "sphereStacks": 16,
+            "uvTilesX": 0.0,
+            "uvTilesY": 0.0,
+            "width": 0.65
+          },
+          "type": "ProceduralMeshComponent"
+        }
+      ],
+      "editorLocked": false,
+      "editorVisible": true,
+      "enabled": true,
+      "id": 101,
+      "name": "TD2_S02_Cantilever_Column",
+      "parent": null,
+      "sourcePrefabId": "",
+      "transform": {
+        "position": [
+          -7.550000190734863,
+          1.659999966621399,
+          -1.6200000047683716
+        ],
+        "rotationEulerDeg": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "components": [
+        {
+          "id": 1,
+          "properties": {
+            "assetId": "",
+            "castShadow": true,
+            "receiveShadow": true,
+            "renderStatic": false,
+            "visible": true
+          },
+          "type": "ModelComponent"
+        },
+        {
+          "id": 2,
+          "properties": {
+            "cuts": [],
+            "depth": 0.8,
+            "doubleSided": false,
+            "generateTangents": true,
+            "height": 0.2,
+            "kind": "Box",
+            "materialSelection": "11b1f13655233ef663fb5e706bb32dc9",
+            "segmentsX": 1,
+            "segmentsY": 1,
+            "segmentsZ": 1,
+            "sphereSlices": 32,
+            "sphereStacks": 16,
+            "uvTilesX": 0.0,
+            "uvTilesY": 0.0,
+            "width": 3.2
+          },
+          "type": "ProceduralMeshComponent"
+        }
+      ],
+      "editorLocked": false,
+      "editorVisible": true,
+      "enabled": true,
+      "id": 102,
+      "name": "TD2_S02_Cantilever_Beam",
+      "parent": null,
+      "sourcePrefabId": "",
+      "transform": {
+        "position": [
+          -6.269999980926514,
+          3.3499999046325684,
+          -1.0099999904632568
+        ],
+        "rotationEulerDeg": [
+          0.0,
+          -25.5,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "components": [
+        {
+          "id": 1,
+          "properties": {
+            "assetId": "30a35e690d0a14612950d0eb090f3a92",
+            "castShadow": true,
+            "receiveShadow": true,
+            "visible": true
+          },
+          "type": "ModelComponent"
+        }
+      ],
+      "editorLocked": false,
+      "editorVisible": true,
+      "enabled": true,
+      "id": 103,
+      "name": "TD2_S02_SM_TV_WideRetro_103",
+      "parent": null,
+      "sourcePrefabId": "",
+      "transform": {
+        "position": [
+          -7.0,
+          3.450000047683716,
+          -1.2999999523162842
+        ],
+        "rotationEulerDeg": [
+          0.0,
+          30.0,
+          -5.0
+        ],
+        "scale": [
+          0.9200000166893005,
+          0.9200000166893005,
+          0.9200000166893005
+        ]
+      }
+    },
+    {
+      "components": [
+        {
+          "id": 1,
+          "properties": {
+            "assetId": "a87c16f7cf9b3c2847f000c1d3a4d517",
+            "castShadow": true,
+            "receiveShadow": true,
+            "visible": true
+          },
+          "type": "ModelComponent"
+        }
+      ],
+      "editorLocked": false,
+      "editorVisible": true,
+      "enabled": true,
+      "id": 104,
+      "name": "TD2_S02_Right_Plinth",
+      "parent": null,
+      "sourcePrefabId": "",
+      "transform": {
+        "position": [
+          2.180000066757202,
+          0.07000000029802322,
+          -1.2999999523162842
+        ],
+        "rotationEulerDeg": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "components": [
+        {
+          "id": 1,
+          "properties": {
+            "assetId": "b455822545c9af754c979b2dcbfd0ead",
+            "castShadow": true,
+            "receiveShadow": true,
+            "visible": true
+          },
+          "type": "ModelComponent"
+        }
+      ],
+      "editorLocked": false,
+      "editorVisible": true,
+      "enabled": true,
+      "id": 105,
+      "name": "TD2_S02_SM_TV_IndustrialPortrait_105",
+      "parent": null,
+      "sourcePrefabId": "",
+      "transform": {
+        "position": [
+          2.180000066757202,
+          1.2699999809265137,
+          -1.2999999523162842
+        ],
+        "rotationEulerDeg": [
+          0.0,
+          -24.0,
+          0.0
+        ],
+        "scale": [
+          0.8999999761581421,
+          0.8999999761581421,
+          0.8999999761581421
+        ]
+      }
+    },
+    {
+      "components": [
+        {
+          "id": 1,
+          "properties": {
+            "assetId": "",
+            "castShadow": true,
+            "receiveShadow": true,
+            "renderStatic": false,
+            "visible": true
+          },
+          "type": "ModelComponent"
+        },
+        {
+          "id": 2,
+          "properties": {
+            "cuts": [],
+            "depth": 0.55,
+            "doubleSided": false,
+            "generateTangents": true,
+            "height": 0.55,
+            "kind": "Box",
+            "materialSelection": "11b1f13655233ef663fb5e706bb32dc9",
+            "segmentsX": 1,
+            "segmentsY": 1,
+            "segmentsZ": 1,
+            "sphereSlices": 32,
+            "sphereStacks": 16,
+            "uvTilesX": 0.0,
+            "uvTilesY": 0.0,
+            "width": 0.55
+          },
+          "type": "ProceduralMeshComponent"
+        }
+      ],
+      "editorLocked": false,
+      "editorVisible": true,
+      "enabled": true,
+      "id": 106,
+      "name": "TD2_S02_Suspended_Block_S",
+      "parent": null,
+      "sourcePrefabId": "",
+      "transform": {
+        "position": [
+          0.30000001192092896,
+          2.880000114440918,
+          -1.7999999523162842
+        ],
+        "rotationEulerDeg": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "components": [
+        {
+          "id": 1,
+          "properties": {
+            "assetId": "",
+            "castShadow": true,
+            "receiveShadow": true,
+            "renderStatic": false,
+            "visible": true
+          },
+          "type": "ModelComponent"
+        },
+        {
+          "id": 2,
+          "properties": {
+            "cuts": [],
+            "depth": 0.65,
+            "doubleSided": false,
+            "generateTangents": true,
+            "height": 0.85,
+            "kind": "Box",
+            "materialSelection": "11b1f13655233ef663fb5e706bb32dc9",
+            "segmentsX": 1,
+            "segmentsY": 1,
+            "segmentsZ": 1,
+            "sphereSlices": 32,
+            "sphereStacks": 16,
+            "uvTilesX": 0.0,
+            "uvTilesY": 0.0,
+            "width": 0.85
+          },
+          "type": "ProceduralMeshComponent"
+        }
+      ],
+      "editorLocked": false,
+      "editorVisible": true,
+      "enabled": true,
+      "id": 107,
+      "name": "TD2_S02_Suspended_Block_M",
+      "parent": null,
+      "sourcePrefabId": "",
+      "transform": {
+        "position": [
+          -1.0,
+          3.4000000953674316,
+          -1.600000023841858
+        ],
+        "rotationEulerDeg": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "components": [
+        {
+          "id": 1,
+          "properties": {
+            "assetId": "",
+            "castShadow": true,
+            "receiveShadow": true,
+            "renderStatic": false,
+            "visible": true
+          },
+          "type": "ModelComponent"
+        },
+        {
+          "id": 2,
+          "properties": {
+            "cuts": [],
+            "depth": 0.7,
+            "doubleSided": false,
+            "generateTangents": true,
+            "height": 0.55,
+            "kind": "Box",
+            "materialSelection": "11b1f13655233ef663fb5e706bb32dc9",
+            "segmentsX": 1,
+            "segmentsY": 1,
+            "segmentsZ": 1,
+            "sphereSlices": 32,
+            "sphereStacks": 16,
+            "uvTilesX": 0.0,
+            "uvTilesY": 0.0,
+            "width": 1.15
+          },
+          "type": "ProceduralMeshComponent"
+        }
+      ],
+      "editorLocked": false,
+      "editorVisible": true,
+      "enabled": true,
+      "id": 108,
+      "name": "TD2_S02_Suspended_Block_L",
+      "parent": null,
+      "sourcePrefabId": "",
+      "transform": {
+        "position": [
+          -2.450000047683716,
+          4.199999809265137,
+          -1.2999999523162842
+        ],
+        "rotationEulerDeg": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "components": [
+        {
+          "id": 1,
+          "properties": {
+            "assetId": "26dc3d04723dcae8ddaea3b16db53d98",
+            "castShadow": true,
+            "receiveShadow": true,
+            "visible": true
+          },
+          "type": "ModelComponent"
+        }
+      ],
+      "editorLocked": false,
+      "editorVisible": true,
+      "enabled": true,
+      "id": 109,
+      "name": "TD2_S02_SM_TV_PortableCRT_109",
+      "parent": null,
+      "sourcePrefabId": "",
+      "transform": {
+        "position": [
+          -3.299999952316284,
+          1.49721097946167,
+          -1.6200000047683716
+        ],
+        "rotationEulerDeg": [
+          0.0,
+          22.0,
+          0.0
+        ],
+        "scale": [
+          0.800000011920929,
+          0.800000011920929,
+          0.800000011920929
+        ]
+      }
+    },
+    {
+      "components": [
+        {
+          "id": 1,
+          "properties": {
+            "assetId": "5bfcf83f38f064e2171ffce19a7a70dd",
+            "castShadow": true,
+            "receiveShadow": true,
+            "visible": true
+          },
+          "type": "ModelComponent"
+        }
+      ],
+      "editorLocked": false,
+      "editorVisible": true,
+      "enabled": true,
+      "id": 110,
+      "name": "TD2_S02_Wedge",
+      "parent": null,
+      "sourcePrefabId": "",
+      "transform": {
+        "position": [
+          1.600000023841858,
+          0.019999999552965164,
+          -2.299999952316284
+        ],
+        "rotationEulerDeg": [
+          0.0,
+          -20.0,
+          0.0
+        ],
+        "scale": [
+          1.2000000476837158,
+          1.2000000476837158,
+          1.2000000476837158
+        ]
+      }
+    },
+    {
+      "components": [
+        {
+          "id": 1,
+          "properties": {
+            "assetId": "681153e620fa797690508ea791d1a953",
+            "castShadow": true,
+            "receiveShadow": true,
+            "visible": true
+          },
+          "type": "ModelComponent"
+        }
+      ],
+      "editorLocked": false,
+      "editorVisible": true,
+      "enabled": true,
+      "id": 111,
+      "name": "TD2_S02_StackBlock",
+      "parent": null,
+      "sourcePrefabId": "",
+      "transform": {
+        "position": [
+          -2.799999952316284,
+          0.019999999552965164,
+          -2.5
+        ],
+        "rotationEulerDeg": [
+          0.0,
+          12.0,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "components": [
+        {
+          "id": 1,
+          "properties": {
+            "assetId": "62bfac4c69ca9b5595109bd003d0c966",
+            "castShadow": true,
+            "receiveShadow": true,
+            "visible": true
+          },
+          "type": "ModelComponent"
+        }
+      ],
+      "editorLocked": false,
+      "editorVisible": true,
+      "enabled": true,
+      "id": 112,
+      "name": "TD2_S02_OpenFrame",
+      "parent": null,
+      "sourcePrefabId": "",
+      "transform": {
+        "position": [
+          -6.349999904632568,
+          0.03999999910593033,
+          -1.5
+        ],
+        "rotationEulerDeg": [
+          0.0,
+          25.0,
+          0.0
+        ],
+        "scale": [
+          1.2000000476837158,
+          1.2000000476837158,
+          1.2000000476837158
+        ]
+      }
+    },
+    {
+      "components": [
+        {
+          "id": 1,
+          "properties": {
+            "assetId": "30a35e690d0a14612950d0eb090f3a92",
+            "castShadow": true,
+            "receiveShadow": true,
+            "visible": true
+          },
+          "type": "ModelComponent"
+        }
+      ],
+      "editorLocked": false,
+      "editorVisible": true,
+      "enabled": true,
+      "id": 113,
+      "name": "TD2_S02_WideRetro_Low",
+      "parent": null,
+      "sourcePrefabId": "",
+      "transform": {
+        "position": [
+          -2.799999952316284,
+          0.6600000262260437,
+          -2.5
+        ],
+        "rotationEulerDeg": [
+          0.0,
+          16.0,
+          0.0
+        ],
+        "scale": [
+          0.7400000095367432,
+          0.7400000095367432,
+          0.7400000095367432
+        ]
+      }
+    },
+    {
+      "components": [
+        {
+          "id": 1,
+          "properties": {
+            "castsShadows": false,
+            "color": [
+              0.94,
+              0.97,
+              1
+            ],
+            "enabled": true,
+            "height": 1.6,
+            "intensity": 650.0,
+            "intensityUnit": "Lumens",
+            "length": 1.8,
+            "range": 8,
+            "type": "Rect"
+          },
+          "type": "LightComponent"
+        }
+      ],
+      "editorLocked": false,
+      "editorVisible": true,
+      "enabled": true,
+      "id": 114,
+      "name": "TD2_S02_Tower_SoftFill",
+      "parent": null,
+      "sourcePrefabId": "",
+      "transform": {
+        "position": [
+          -2.5,
+          5.199999809265137,
+          4.199999809265137
+        ],
+        "rotationEulerDeg": [
+          28.0,
+          -145.0,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "components": [
+        {
+          "id": 1,
+          "properties": {
+            "assetId": "",
+            "castShadow": true,
+            "receiveShadow": true,
+            "renderStatic": false,
+            "visible": true
+          },
+          "type": "ModelComponent"
+        },
+        {
+          "id": 2,
+          "properties": {
+            "cuts": [],
+            "depth": 0.95,
+            "doubleSided": false,
+            "generateTangents": true,
+            "height": 0.78,
+            "kind": "Box",
+            "materialSelection": "11b1f13655233ef663fb5e706bb32dc9",
+            "segmentsX": 1,
+            "segmentsY": 1,
+            "segmentsZ": 1,
+            "sphereSlices": 32,
+            "sphereStacks": 16,
+            "uvTilesX": 0.0,
+            "uvTilesY": 0.0,
+            "width": 3.7
+          },
+          "type": "ProceduralMeshComponent"
+        }
+      ],
+      "editorLocked": false,
+      "editorVisible": true,
+      "enabled": true,
+      "id": 200,
+      "name": "TD2_EX_LeftWall_Base",
+      "parent": null,
+      "sourcePrefabId": "",
+      "transform": {
+        "position": [
+          -6.0,
+          0.46000000834465027,
+          -2.9000000953674316
+        ],
+        "rotationEulerDeg": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "components": [
+        {
+          "id": 1,
+          "properties": {
+            "assetId": "",
+            "castShadow": true,
+            "receiveShadow": true,
+            "renderStatic": false,
+            "visible": true
+          },
+          "type": "ModelComponent"
+        },
+        {
+          "id": 2,
+          "properties": {
+            "cuts": [],
+            "depth": 0.85,
+            "doubleSided": false,
+            "generateTangents": true,
+            "height": 3.1,
+            "kind": "Box",
+            "materialSelection": "11b1f13655233ef663fb5e706bb32dc9",
+            "segmentsX": 1,
+            "segmentsY": 1,
+            "segmentsZ": 1,
+            "sphereSlices": 32,
+            "sphereStacks": 16,
+            "uvTilesX": 0.0,
+            "uvTilesY": 0.0,
+            "width": 0.26
+          },
+          "type": "ProceduralMeshComponent"
+        }
+      ],
+      "editorLocked": false,
+      "editorVisible": true,
+      "enabled": true,
+      "id": 201,
+      "name": "TD2_EX_LeftWall_Pier_L",
+      "parent": null,
+      "sourcePrefabId": "",
+      "transform": {
+        "position": [
+          -7.71999979019165,
+          1.6200000047683716,
+          -2.950000047683716
+        ],
+        "rotationEulerDeg": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "components": [
+        {
+          "id": 1,
+          "properties": {
+            "assetId": "",
+            "castShadow": true,
+            "receiveShadow": true,
+            "renderStatic": false,
+            "visible": true
+          },
+          "type": "ModelComponent"
+        },
+        {
+          "id": 2,
+          "properties": {
+            "cuts": [],
+            "depth": 0.85,
+            "doubleSided": false,
+            "generateTangents": true,
+            "height": 3.1,
+            "kind": "Box",
+            "materialSelection": "11b1f13655233ef663fb5e706bb32dc9",
+            "segmentsX": 1,
+            "segmentsY": 1,
+            "segmentsZ": 1,
+            "sphereSlices": 32,
+            "sphereStacks": 16,
+            "uvTilesX": 0.0,
+            "uvTilesY": 0.0,
+            "width": 0.26
+          },
+          "type": "ProceduralMeshComponent"
+        }
+      ],
+      "editorLocked": false,
+      "editorVisible": true,
+      "enabled": true,
+      "id": 202,
+      "name": "TD2_EX_LeftWall_Pier_R",
+      "parent": null,
+      "sourcePrefabId": "",
+      "transform": {
+        "position": [
+          -4.269999980926514,
+          1.6200000047683716,
+          -2.950000047683716
+        ],
+        "rotationEulerDeg": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "components": [
+        {
+          "id": 1,
+          "properties": {
+            "assetId": "",
+            "castShadow": true,
+            "receiveShadow": true,
+            "renderStatic": false,
+            "visible": true
+          },
+          "type": "ModelComponent"
+        },
+        {
+          "id": 2,
+          "properties": {
+            "cuts": [],
+            "depth": 0.8,
+            "doubleSided": false,
+            "generateTangents": true,
+            "height": 0.18,
+            "kind": "Box",
+            "materialSelection": "11b1f13655233ef663fb5e706bb32dc9",
+            "segmentsX": 1,
+            "segmentsY": 1,
+            "segmentsZ": 1,
+            "sphereSlices": 32,
+            "sphereStacks": 16,
+            "uvTilesX": 0.0,
+            "uvTilesY": 0.0,
+            "width": 3.7
+          },
+          "type": "ProceduralMeshComponent"
+        }
+      ],
+      "editorLocked": false,
+      "editorVisible": true,
+      "enabled": true,
+      "id": 203,
+      "name": "TD2_EX_LeftWall_MidShelf",
+      "parent": null,
+      "sourcePrefabId": "",
+      "transform": {
+        "position": [
+          -6.0,
+          1.9600000381469727,
+          -2.9000000953674316
+        ],
+        "rotationEulerDeg": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "components": [
+        {
+          "id": 1,
+          "properties": {
+            "assetId": "",
+            "castShadow": true,
+            "receiveShadow": true,
+            "renderStatic": false,
+            "visible": true
+          },
+          "type": "ModelComponent"
+        },
+        {
+          "id": 2,
+          "properties": {
+            "cuts": [],
+            "depth": 0.8,
+            "doubleSided": false,
+            "generateTangents": true,
+            "height": 0.22,
+            "kind": "Box",
+            "materialSelection": "11b1f13655233ef663fb5e706bb32dc9",
+            "segmentsX": 1,
+            "segmentsY": 1,
+            "segmentsZ": 1,
+            "sphereSlices": 32,
+            "sphereStacks": 16,
+            "uvTilesX": 0.0,
+            "uvTilesY": 0.0,
+            "width": 3.95
+          },
+          "type": "ProceduralMeshComponent"
+        }
+      ],
+      "editorLocked": false,
+      "editorVisible": true,
+      "enabled": true,
+      "id": 204,
+      "name": "TD2_EX_LeftWall_CrownBeam",
+      "parent": null,
+      "sourcePrefabId": "",
+      "transform": {
+        "position": [
+          -6.0,
+          3.3299999237060547,
+          -2.9000000953674316
+        ],
+        "rotationEulerDeg": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "components": [
+        {
+          "id": 1,
+          "properties": {
+            "assetId": "30a35e690d0a14612950d0eb090f3a92",
+            "castShadow": true,
+            "receiveShadow": true,
+            "visible": true
+          },
+          "type": "ModelComponent"
+        }
+      ],
+      "editorLocked": false,
+      "editorVisible": true,
+      "enabled": true,
+      "id": 205,
+      "name": "TD2_EX_LeftWall_WideRetro",
+      "parent": null,
+      "sourcePrefabId": "",
+      "transform": {
+        "position": [
+          -6.820000171661377,
+          0.8500000238418579,
+          -2.5999999046325684
+        ],
+        "rotationEulerDeg": [
+          0.0,
+          32.0,
+          0.0
+        ],
+        "scale": [
+          1.100000023841858,
+          1.100000023841858,
+          1.100000023841858
+        ]
+      }
+    },
+    {
+      "components": [
+        {
+          "id": 1,
+          "properties": {
+            "assetId": "cd8a1d4e009d861b71af501c27f4ef83",
+            "castShadow": true,
+            "receiveShadow": true,
+            "visible": true
+          },
+          "type": "ModelComponent"
+        }
+      ],
+      "editorLocked": false,
+      "editorVisible": true,
+      "enabled": true,
+      "id": 206,
+      "name": "TD2_EX_LeftWall_Compact43",
+      "parent": null,
+      "sourcePrefabId": "",
+      "transform": {
+        "position": [
+          -5.079999923706055,
+          0.8500000238418579,
+          -2.5999999046325684
+        ],
+        "rotationEulerDeg": [
+          0.0,
+          25.0,
+          0.0
+        ],
+        "scale": [
+          0.800000011920929,
+          0.800000011920929,
+          0.800000011920929
+        ]
+      }
+    },
+    {
+      "components": [
+        {
+          "id": 1,
+          "properties": {
+            "assetId": "26dc3d04723dcae8ddaea3b16db53d98",
+            "castShadow": true,
+            "receiveShadow": true,
+            "visible": true
+          },
+          "type": "ModelComponent"
+        }
+      ],
+      "editorLocked": false,
+      "editorVisible": true,
+      "enabled": true,
+      "id": 207,
+      "name": "TD2_EX_LeftWall_Portable",
+      "parent": null,
+      "sourcePrefabId": "",
+      "transform": {
+        "position": [
+          -6.980000019073486,
+          2.049999952316284,
+          -2.549999952316284
+        ],
+        "rotationEulerDeg": [
+          0.0,
+          30.0,
+          0.0
+        ],
+        "scale": [
+          1.100000023841858,
+          1.100000023841858,
+          1.100000023841858
+        ]
+      }
+    },
+    {
+      "components": [
+        {
+          "id": 1,
+          "properties": {
+            "assetId": "27fde11b05dce002ff58fef90d1cfecc",
+            "castShadow": true,
+            "receiveShadow": true,
+            "visible": true
+          },
+          "type": "ModelComponent"
+        }
+      ],
+      "editorLocked": false,
+      "editorVisible": true,
+      "enabled": true,
+      "id": 208,
+      "name": "TD2_EX_LeftWall_Flat16",
+      "parent": null,
+      "sourcePrefabId": "",
+      "transform": {
+        "position": [
+          -5.550000190734863,
+          2.049999952316284,
+          -2.559999942779541
+        ],
+        "rotationEulerDeg": [
+          0.0,
+          28.0,
+          0.0
+        ],
+        "scale": [
+          0.7799999713897705,
+          0.7799999713897705,
+          0.7799999713897705
+        ]
+      }
+    },
+    {
+      "components": [
+        {
+          "id": 1,
+          "properties": {
+            "assetId": "26dc3d04723dcae8ddaea3b16db53d98",
+            "castShadow": true,
+            "receiveShadow": true,
+            "visible": true
+          },
+          "type": "ModelComponent"
+        }
+      ],
+      "editorLocked": false,
+      "editorVisible": true,
+      "enabled": true,
+      "id": 209,
+      "name": "TD2_EX_LeftWall_OffsetCap",
+      "parent": null,
+      "sourcePrefabId": "",
+      "transform": {
+        "position": [
+          -6.349999904632568,
+          3.440000057220459,
+          -2.619999885559082
+        ],
+        "rotationEulerDeg": [
+          0.0,
+          35.0,
+          0.0
+        ],
+        "scale": [
+          1.100000023841858,
+          1.100000023841858,
+          1.100000023841858
+        ]
+      }
+    },
+    {
+      "components": [
+        {
+          "id": 1,
+          "properties": {
+            "assetId": "",
+            "castShadow": true,
+            "receiveShadow": true,
+            "renderStatic": false,
+            "visible": true
+          },
+          "type": "ModelComponent"
+        },
+        {
+          "id": 2,
+          "properties": {
+            "cuts": [],
+            "depth": 1.15,
+            "doubleSided": false,
+            "generateTangents": true,
+            "height": 0.66,
+            "kind": "Box",
+            "materialSelection": "11b1f13655233ef663fb5e706bb32dc9",
+            "segmentsX": 1,
+            "segmentsY": 1,
+            "segmentsZ": 1,
+            "sphereSlices": 32,
+            "sphereStacks": 16,
+            "uvTilesX": 0.0,
+            "uvTilesY": 0.0,
+            "width": 2.65
+          },
+          "type": "ProceduralMeshComponent"
+        }
+      ],
+      "editorLocked": false,
+      "editorVisible": true,
+      "enabled": true,
+      "id": 210,
+      "name": "TD2_EX_Right_Island",
+      "parent": null,
+      "sourcePrefabId": "",
+      "transform": {
+        "position": [
+          3.799999952316284,
+          0.4000000059604645,
+          -2.5999999046325684
+        ],
+        "rotationEulerDeg": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "components": [
+        {
+          "id": 1,
+          "properties": {
+            "assetId": "b455822545c9af754c979b2dcbfd0ead",
+            "castShadow": true,
+            "receiveShadow": true,
+            "visible": true
+          },
+          "type": "ModelComponent"
+        }
+      ],
+      "editorLocked": false,
+      "editorVisible": true,
+      "enabled": true,
+      "id": 211,
+      "name": "TD2_EX_Right_Portrait_S",
+      "parent": null,
+      "sourcePrefabId": "",
+      "transform": {
+        "position": [
+          2.799999952316284,
+          0.7300000190734863,
+          -2.549999952316284
+        ],
+        "rotationEulerDeg": [
+          0.0,
+          -20.0,
+          0.0
+        ],
+        "scale": [
+          0.8500000238418579,
+          0.8500000238418579,
+          0.8500000238418579
+        ]
+      }
+    },
+    {
+      "components": [
+        {
+          "id": 1,
+          "properties": {
+            "assetId": "b455822545c9af754c979b2dcbfd0ead",
+            "castShadow": true,
+            "receiveShadow": true,
+            "visible": true
+          },
+          "type": "ModelComponent"
+        }
+      ],
+      "editorLocked": false,
+      "editorVisible": true,
+      "enabled": true,
+      "id": 212,
+      "name": "TD2_EX_Right_Portrait_M",
+      "parent": null,
+      "sourcePrefabId": "",
+      "transform": {
+        "position": [
+          3.7200000286102295,
+          0.7300000190734863,
+          -2.549999952316284
+        ],
+        "rotationEulerDeg": [
+          0.0,
+          -25.0,
+          0.0
+        ],
+        "scale": [
+          1.149999976158142,
+          1.149999976158142,
+          1.149999976158142
+        ]
+      }
+    },
+    {
+      "components": [
+        {
+          "id": 1,
+          "properties": {
+            "assetId": "",
+            "castShadow": true,
+            "receiveShadow": true,
+            "renderStatic": false,
+            "visible": true
+          },
+          "type": "ModelComponent"
+        },
+        {
+          "id": 2,
+          "properties": {
+            "cuts": [],
+            "depth": 0.8,
+            "doubleSided": false,
+            "generateTangents": true,
+            "height": 0.64,
+            "kind": "Box",
+            "materialSelection": "11b1f13655233ef663fb5e706bb32dc9",
+            "segmentsX": 1,
+            "segmentsY": 1,
+            "segmentsZ": 1,
+            "sphereSlices": 32,
+            "sphereStacks": 16,
+            "uvTilesX": 0.0,
+            "uvTilesY": 0.0,
+            "width": 1.2
+          },
+          "type": "ProceduralMeshComponent"
+        }
+      ],
+      "editorLocked": false,
+      "editorVisible": true,
+      "enabled": true,
+      "id": 213,
+      "name": "TD2_EX_Right_OffsetBlock",
+      "parent": null,
+      "sourcePrefabId": "",
+      "transform": {
+        "position": [
+          3.7200000286102295,
+          2.4700000286102295,
+          -2.700000047683716
+        ],
+        "rotationEulerDeg": [
+          0.0,
+          -12.0,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "components": [
+        {
+          "id": 1,
+          "properties": {
+            "assetId": "26dc3d04723dcae8ddaea3b16db53d98",
+            "castShadow": true,
+            "receiveShadow": true,
+            "visible": true
+          },
+          "type": "ModelComponent"
+        }
+      ],
+      "editorLocked": false,
+      "editorVisible": true,
+      "enabled": true,
+      "id": 214,
+      "name": "TD2_EX_Right_PortableCap",
+      "parent": null,
+      "sourcePrefabId": "",
+      "transform": {
+        "position": [
+          3.7200000286102295,
+          2.7899999618530273,
+          -2.700000047683716
+        ],
+        "rotationEulerDeg": [
+          0.0,
+          -18.0,
+          0.0
+        ],
+        "scale": [
+          0.8500000238418579,
+          0.8500000238418579,
+          0.8500000238418579
+        ]
+      }
+    },
+    {
+      "components": [
+        {
+          "id": 1,
+          "properties": {
+            "assetId": "27fde11b05dce002ff58fef90d1cfecc",
+            "castShadow": true,
+            "receiveShadow": true,
+            "visible": true
+          },
+          "type": "ModelComponent"
+        }
+      ],
+      "editorLocked": false,
+      "editorVisible": true,
+      "enabled": true,
+      "id": 215,
+      "name": "TD2_EX_Right_LowWide16",
+      "parent": null,
+      "sourcePrefabId": "",
+      "transform": {
+        "position": [
+          4.679999828338623,
+          0.7300000190734863,
+          -2.5
+        ],
+        "rotationEulerDeg": [
+          0.0,
+          -28.0,
+          0.0
+        ],
+        "scale": [
+          0.47999998927116394,
+          0.47999998927116394,
+          0.47999998927116394
+        ]
+      }
+    },
+    {
+      "components": [
+        {
+          "id": 1,
+          "properties": {
+            "assetId": "",
+            "castShadow": true,
+            "receiveShadow": true,
+            "renderStatic": false,
+            "visible": true
+          },
+          "type": "ModelComponent"
+        },
+        {
+          "id": 2,
+          "properties": {
+            "cuts": [],
+            "depth": 0.38,
+            "doubleSided": false,
+            "generateTangents": true,
+            "height": 3.32,
+            "kind": "Box",
+            "materialSelection": "11b1f13655233ef663fb5e706bb32dc9",
+            "segmentsX": 1,
+            "segmentsY": 1,
+            "segmentsZ": 1,
+            "sphereSlices": 32,
+            "sphereStacks": 16,
+            "uvTilesX": 0.0,
+            "uvTilesY": 0.0,
+            "width": 0.28
+          },
+          "type": "ProceduralMeshComponent"
+        }
+      ],
+      "editorLocked": false,
+      "editorVisible": true,
+      "enabled": true,
+      "id": 216,
+      "name": "TD2_EX_Right_ThinColumn",
+      "parent": null,
+      "sourcePrefabId": "",
+      "transform": {
+        "position": [
+          4.849999904632568,
+          1.7300000190734863,
+          -3.4000000953674316
+        ],
+        "rotationEulerDeg": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "components": [
+        {
+          "id": 1,
+          "properties": {
+            "assetId": "",
+            "castShadow": true,
+            "receiveShadow": true,
+            "renderStatic": false,
+            "visible": true
+          },
+          "type": "ModelComponent"
+        },
+        {
+          "id": 2,
+          "properties": {
+            "cuts": [],
+            "depth": 0.95,
+            "doubleSided": false,
+            "generateTangents": true,
+            "height": 0.24,
+            "kind": "Box",
+            "materialSelection": "11b1f13655233ef663fb5e706bb32dc9",
+            "segmentsX": 1,
+            "segmentsY": 1,
+            "segmentsZ": 1,
+            "sphereSlices": 32,
+            "sphereStacks": 16,
+            "uvTilesX": 0.0,
+            "uvTilesY": 0.0,
+            "width": 2.6
+          },
+          "type": "ProceduralMeshComponent"
+        }
+      ],
+      "editorLocked": false,
+      "editorVisible": true,
+      "enabled": true,
+      "id": 217,
+      "name": "TD2_EX_Right_Cantilever",
+      "parent": null,
+      "sourcePrefabId": "",
+      "transform": {
+        "position": [
+          3.75,
+          3.509999990463257,
+          -3.049999952316284
+        ],
+        "rotationEulerDeg": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "components": [
+        {
+          "id": 1,
+          "properties": {
+            "assetId": "b455822545c9af754c979b2dcbfd0ead",
+            "castShadow": true,
+            "receiveShadow": true,
+            "visible": true
+          },
+          "type": "ModelComponent"
+        }
+      ],
+      "editorLocked": false,
+      "editorVisible": true,
+      "enabled": true,
+      "id": 218,
+      "name": "TD2_EX_Right_HighPortrait",
+      "parent": null,
+      "sourcePrefabId": "",
+      "transform": {
+        "position": [
+          3.75,
+          3.630000114440918,
+          -3.0299999713897705
+        ],
+        "rotationEulerDeg": [
+          0.0,
+          -18.0,
+          0.0
+        ],
+        "scale": [
+          0.7799999713897705,
+          0.7799999713897705,
+          0.7799999713897705
+        ]
+      }
+    },
+    {
+      "components": [
+        {
+          "id": 1,
+          "properties": {
+            "assetId": "",
+            "castShadow": true,
+            "receiveShadow": true,
+            "renderStatic": false,
+            "visible": true
+          },
+          "type": "ModelComponent"
+        },
+        {
+          "id": 2,
+          "properties": {
+            "cuts": [],
+            "depth": 0.75,
+            "doubleSided": false,
+            "generateTangents": true,
+            "height": 0.22,
+            "kind": "Box",
+            "materialSelection": "11b1f13655233ef663fb5e706bb32dc9",
+            "segmentsX": 1,
+            "segmentsY": 1,
+            "segmentsZ": 1,
+            "sphereSlices": 32,
+            "sphereStacks": 16,
+            "uvTilesX": 0.0,
+            "uvTilesY": 0.0,
+            "width": 1.15
+          },
+          "type": "ProceduralMeshComponent"
+        }
+      ],
+      "editorLocked": false,
+      "editorVisible": true,
+      "enabled": true,
+      "id": 219,
+      "name": "TD2_EX_FloatingStep_01",
+      "parent": null,
+      "sourcePrefabId": "",
+      "transform": {
+        "position": [
+          -1.350000023841858,
+          2.549999952316284,
+          -3.0999999046325684
+        ],
+        "rotationEulerDeg": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "components": [
+        {
+          "id": 1,
+          "properties": {
+            "assetId": "",
+            "castShadow": true,
+            "receiveShadow": true,
+            "renderStatic": false,
+            "visible": true
+          },
+          "type": "ModelComponent"
+        },
+        {
+          "id": 2,
+          "properties": {
+            "cuts": [],
+            "depth": 0.75,
+            "doubleSided": false,
+            "generateTangents": true,
+            "height": 0.22,
+            "kind": "Box",
+            "materialSelection": "11b1f13655233ef663fb5e706bb32dc9",
+            "segmentsX": 1,
+            "segmentsY": 1,
+            "segmentsZ": 1,
+            "sphereSlices": 32,
+            "sphereStacks": 16,
+            "uvTilesX": 0.0,
+            "uvTilesY": 0.0,
+            "width": 1.15
+          },
+          "type": "ProceduralMeshComponent"
+        }
+      ],
+      "editorLocked": false,
+      "editorVisible": true,
+      "enabled": true,
+      "id": 220,
+      "name": "TD2_EX_FloatingStep_02",
+      "parent": null,
+      "sourcePrefabId": "",
+      "transform": {
+        "position": [
+          -0.20000000298023224,
+          3.25,
+          -3.0999999046325684
+        ],
+        "rotationEulerDeg": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "components": [
+        {
+          "id": 1,
+          "properties": {
+            "assetId": "",
+            "castShadow": true,
+            "receiveShadow": true,
+            "renderStatic": false,
+            "visible": true
+          },
+          "type": "ModelComponent"
+        },
+        {
+          "id": 2,
+          "properties": {
+            "cuts": [],
+            "depth": 0.75,
+            "doubleSided": false,
+            "generateTangents": true,
+            "height": 0.22,
+            "kind": "Box",
+            "materialSelection": "11b1f13655233ef663fb5e706bb32dc9",
+            "segmentsX": 1,
+            "segmentsY": 1,
+            "segmentsZ": 1,
+            "sphereSlices": 32,
+            "sphereStacks": 16,
+            "uvTilesX": 0.0,
+            "uvTilesY": 0.0,
+            "width": 1.15
+          },
+          "type": "ProceduralMeshComponent"
+        }
+      ],
+      "editorLocked": false,
+      "editorVisible": true,
+      "enabled": true,
+      "id": 221,
+      "name": "TD2_EX_FloatingStep_03",
+      "parent": null,
+      "sourcePrefabId": "",
+      "transform": {
+        "position": [
+          0.949999988079071,
+          3.950000047683716,
+          -3.0999999046325684
+        ],
+        "rotationEulerDeg": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "components": [
+        {
+          "id": 1,
+          "properties": {
+            "assetId": "26dc3d04723dcae8ddaea3b16db53d98",
+            "castShadow": true,
+            "receiveShadow": true,
+            "visible": true
+          },
+          "type": "ModelComponent"
+        }
+      ],
+      "editorLocked": false,
+      "editorVisible": true,
+      "enabled": true,
+      "id": 222,
+      "name": "TD2_EX_FloatingStep_Portable",
+      "parent": null,
+      "sourcePrefabId": "",
+      "transform": {
+        "position": [
+          0.949999988079071,
+          4.059999942779541,
+          -3.0999999046325684
+        ],
+        "rotationEulerDeg": [
+          0.0,
+          -12.0,
+          0.0
+        ],
+        "scale": [
+          0.8500000238418579,
+          0.8500000238418579,
+          0.8500000238418579
+        ]
+      }
+    },
+    {
+      "components": [
+        {
+          "id": 1,
+          "properties": {
+            "assetId": "",
+            "castShadow": true,
+            "receiveShadow": true,
+            "renderStatic": false,
+            "visible": true
+          },
+          "type": "ModelComponent"
+        },
+        {
+          "id": 2,
+          "properties": {
+            "cuts": [],
+            "depth": 0.65,
+            "doubleSided": false,
+            "generateTangents": true,
+            "height": 0.65,
+            "kind": "Box",
+            "materialSelection": "11b1f13655233ef663fb5e706bb32dc9",
+            "segmentsX": 1,
+            "segmentsY": 1,
+            "segmentsZ": 1,
+            "sphereSlices": 32,
+            "sphereStacks": 16,
+            "uvTilesX": 0.0,
+            "uvTilesY": 0.0,
+            "width": 0.65
+          },
+          "type": "ProceduralMeshComponent"
+        }
+      ],
+      "editorLocked": false,
+      "editorVisible": true,
+      "enabled": true,
+      "id": 223,
+      "name": "TD2_EX_FloatingStep_LowCube",
+      "parent": null,
+      "sourcePrefabId": "",
+      "transform": {
+        "position": [
+          -2.6500000953674316,
+          2.049999952316284,
+          -3.0999999046325684
+        ],
+        "rotationEulerDeg": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "components": [
+        {
+          "id": 1,
+          "properties": {
+            "assetId": "681153e620fa797690508ea791d1a953",
+            "castShadow": true,
+            "receiveShadow": true,
+            "visible": true
+          },
+          "type": "ModelComponent"
+        }
+      ],
+      "editorLocked": false,
+      "editorVisible": true,
+      "enabled": true,
+      "id": 224,
+      "name": "TD2_EX_OffsetStack_Base",
+      "parent": null,
+      "sourcePrefabId": "",
+      "transform": {
+        "position": [
+          -7.099999904632568,
+          0.07000000029802322,
+          1.850000023841858
+        ],
+        "rotationEulerDeg": [
+          0.0,
+          45.0,
+          0.0
+        ],
+        "scale": [
+          1.2000000476837158,
+          1.2000000476837158,
+          1.2000000476837158
+        ]
+      }
+    },
+    {
+      "components": [
+        {
+          "id": 1,
+          "properties": {
+            "assetId": "30a35e690d0a14612950d0eb090f3a92",
+            "castShadow": true,
+            "receiveShadow": true,
+            "visible": true
+          },
+          "type": "ModelComponent"
+        }
+      ],
+      "editorLocked": false,
+      "editorVisible": true,
+      "enabled": true,
+      "id": 225,
+      "name": "TD2_EX_OffsetStack_Retro",
+      "parent": null,
+      "sourcePrefabId": "",
+      "transform": {
+        "position": [
+          -7.099999904632568,
+          0.8379999995231628,
+          1.850000023841858
+        ],
+        "rotationEulerDeg": [
+          0.0,
+          35.0,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "components": [
+        {
+          "id": 1,
+          "properties": {
+            "assetId": "26dc3d04723dcae8ddaea3b16db53d98",
+            "castShadow": true,
+            "receiveShadow": true,
+            "visible": true
+          },
+          "type": "ModelComponent"
+        }
+      ],
+      "editorLocked": false,
+      "editorVisible": true,
+      "enabled": true,
+      "id": 226,
+      "name": "TD2_EX_OffsetStack_Portable_L",
+      "parent": null,
+      "sourcePrefabId": "",
+      "transform": {
+        "position": [
+          -7.360000133514404,
+          1.6380000114440918,
+          1.899999976158142
+        ],
+        "rotationEulerDeg": [
+          0.0,
+          47.0,
+          0.0
+        ],
+        "scale": [
+          1.2000000476837158,
+          1.2000000476837158,
+          1.2000000476837158
+        ]
+      }
+    },
+    {
+      "components": [
+        {
+          "id": 1,
+          "properties": {
+            "assetId": "26dc3d04723dcae8ddaea3b16db53d98",
+            "castShadow": true,
+            "receiveShadow": true,
+            "visible": true
+          },
+          "type": "ModelComponent"
+        }
+      ],
+      "editorLocked": false,
+      "editorVisible": true,
+      "enabled": true,
+      "id": 227,
+      "name": "TD2_EX_OffsetStack_Portable_S",
+      "parent": null,
+      "sourcePrefabId": "",
+      "transform": {
+        "position": [
+          -7.139999866485596,
+          2.4179999828338623,
+          1.9500000476837158
+        ],
+        "rotationEulerDeg": [
+          0.0,
+          35.0,
+          0.0
+        ],
+        "scale": [
+          0.8500000238418579,
+          0.8500000238418579,
+          0.8500000238418579
+        ]
+      }
+    },
+    {
+      "components": [
+        {
+          "id": 1,
+          "properties": {
+            "assetId": "27fde11b05dce002ff58fef90d1cfecc",
+            "castShadow": true,
+            "receiveShadow": true,
+            "visible": true
+          },
+          "type": "ModelComponent"
+        }
+      ],
+      "editorLocked": false,
+      "editorVisible": true,
+      "enabled": true,
+      "id": 228,
+      "name": "TD2_EX_UserBlock21_Flat16",
+      "parent": null,
+      "sourcePrefabId": "",
+      "transform": {
+        "position": [
+          -8.649999618530273,
+          3.1442039012908936,
+          0.75
+        ],
+        "rotationEulerDeg": [
+          0.0,
+          38.0,
+          0.0
+        ],
+        "scale": [
+          0.6800000071525574,
+          0.6800000071525574,
+          0.6800000071525574
+        ]
+      }
+    },
+    {
+      "components": [
+        {
+          "id": 1,
+          "properties": {
+            "assetId": "26dc3d04723dcae8ddaea3b16db53d98",
+            "castShadow": true,
+            "receiveShadow": true,
+            "visible": true
+          },
+          "type": "ModelComponent"
+        }
+      ],
+      "editorLocked": false,
+      "editorVisible": true,
+      "enabled": true,
+      "id": 229,
+      "name": "TD2_EX_UserBlock21_PortableCap",
+      "parent": null,
+      "sourcePrefabId": "",
+      "transform": {
+        "position": [
+          -8.529999732971191,
+          3.9908039569854736,
+          0.75
+        ],
+        "rotationEulerDeg": [
+          0.0,
+          44.0,
+          0.0
+        ],
+        "scale": [
+          0.6000000238418579,
+          0.6000000238418579,
+          0.6000000238418579
+        ]
+      }
+    },
+    {
+      "components": [
+        {
+          "id": 1,
+          "properties": {
+            "castsShadows": false,
+            "color": [
+              0.94,
+              0.97,
+              1.0
+            ],
+            "enabled": true,
+            "height": 2.0,
+            "intensity": 1200.0,
+            "intensityUnit": "Lumens",
+            "length": 2.4,
+            "range": 5.2,
+            "type": "Rect"
+          },
+          "type": "LightComponent"
+        }
+      ],
+      "editorLocked": false,
+      "editorVisible": true,
+      "enabled": true,
+      "id": 250,
+      "name": "TD2_EX_LeftWall_Softbox",
+      "parent": null,
+      "sourcePrefabId": "",
+      "transform": {
+        "position": [
+          -5.699999809265137,
+          2.950000047683716,
+          -0.6499999761581421
+        ],
+        "rotationEulerDeg": [
+          19.48442268371582,
+          -161.96571350097656,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "components": [
+        {
+          "id": 1,
+          "properties": {
+            "castsShadows": false,
+            "color": [
+              1.0,
+              0.95,
+              0.89
+            ],
+            "enabled": true,
+            "height": 2.0,
+            "intensity": 320.0,
+            "intensityUnit": "Lumens",
+            "length": 1.8,
+            "range": 4.6,
+            "type": "Rect"
+          },
+          "type": "LightComponent"
+        }
+      ],
+      "editorLocked": false,
+      "editorVisible": true,
+      "enabled": true,
+      "id": 251,
+      "name": "TD2_EX_RightIndustrial_Softbox",
+      "parent": null,
+      "sourcePrefabId": "",
+      "transform": {
+        "position": [
+          4.800000190734863,
+          3.299999952316284,
+          -0.6499999761581421
+        ],
+        "rotationEulerDeg": [
+          17.86225128173828,
+          -152.4027099609375,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "components": [
+        {
+          "id": 1,
+          "properties": {
+            "castsShadows": false,
+            "color": [
+              0.95,
+              0.98,
+              1.0
+            ],
+            "enabled": true,
+            "height": 0.9,
+            "intensity": 700.0,
+            "intensityUnit": "Lumens",
+            "length": 2.8,
+            "range": 4.2,
+            "type": "Rect"
+          },
+          "type": "LightComponent"
+        }
+      ],
+      "editorLocked": false,
+      "editorVisible": true,
+      "enabled": true,
+      "id": 252,
+      "name": "TD2_EX_HighSteps_Softbox",
+      "parent": null,
+      "sourcePrefabId": "",
+      "transform": {
+        "position": [
+          -0.20000000298023224,
+          3.5,
+          -0.6000000238418579
+        ],
+        "rotationEulerDeg": [
+          -0.0,
+          180.0,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "components": [
+        {
+          "id": 1,
+          "properties": {
+            "castsShadows": false,
+            "color": [
+              1.0,
+              0.94,
+              0.83
+            ],
+            "enabled": true,
+            "height": 0.45,
+            "intensity": 0.0,
+            "intensityUnit": "SceneRelative",
+            "length": 3.6,
+            "range": 3.3,
+            "sceneRelativeIntensity": 0.4,
+            "type": "Rect"
+          },
+          "type": "LightComponent"
+        }
+      ],
+      "editorLocked": false,
+      "editorVisible": true,
+      "enabled": true,
+      "id": 253,
+      "name": "TD2_EX_TVWall_Upper_Edge",
+      "parent": null,
+      "sourcePrefabId": "",
+      "transform": {
+        "position": [
+          -6.300000190734863,
+          4.699999809265137,
+          -1.4500000476837158
+        ],
+        "rotationEulerDeg": [
+          48.9439582824707,
+          168.31063842773438,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "components": [
+        {
+          "id": 1,
+          "properties": {
+            "castsShadows": false,
+            "color": [
+              0.8,
+              0.9,
+              1.0
+            ],
+            "enabled": true,
+            "height": 2.2,
+            "intensity": 0.0,
+            "intensityUnit": "SceneRelative",
+            "length": 0.45,
+            "range": 3.8,
+            "sceneRelativeIntensity": 0.3,
+            "type": "Rect"
+          },
+          "type": "LightComponent"
+        }
+      ],
+      "editorLocked": false,
+      "editorVisible": true,
+      "enabled": true,
+      "id": 254,
+      "name": "TD2_EX_Steps_Side_Edge",
+      "parent": null,
+      "sourcePrefabId": "",
+      "transform": {
+        "position": [
+          1.899999976158142,
+          4.449999809265137,
+          -2.0
+        ],
+        "rotationEulerDeg": [
+          26.848051071166992,
+          -117.6459732055664,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "components": [
+        {
+          "id": 1,
+          "properties": {
+            "cameraObject": {
+              "$hikariRef": "SceneObject",
+              "id": 3
+            },
+            "regionA": "td2.region.25",
+            "regionB": "td2.region.26",
+            "sequenceAssetGuid": "60b053c59d1940cfb385d4d160b8ac15",
+            "sequenceSlotName": "Camera"
+          },
+          "type": "TD2.RegionSequence"
+        }
+      ],
+      "editorLocked": false,
+      "editorVisible": true,
+      "enabled": true,
+      "id": 255,
+      "name": "电视交界演出",
+      "parent": null,
+      "sourcePrefabId": "",
+      "transform": {
+        "position": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "rotationEulerDeg": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ]
+      }
+    }
+  ],
+  "sceneName": "TD2 Rules 01",
+  "systems": [
+    {
+      "enabled": true,
+      "executionOrder": 100,
+      "settings": {},
+      "systemId": "ModelRenderSystem"
+    },
+    {
+      "enabled": true,
+      "executionOrder": 70,
+      "settings": {},
+      "systemId": "UiSceneSystem"
+    },
+    {
+      "enabled": true,
+      "executionOrder": 100,
+      "settings": {},
+      "systemId": "Project_TD2_TV.Game"
+    }
+  ],
+  "version": 10
+}

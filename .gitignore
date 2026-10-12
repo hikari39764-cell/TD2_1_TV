@@ -1,0 +1,75 @@
+/Library/
+/logs/
+/out/
+/.vs/
+/imgui.ini
+*.user
+
+# ビルド成果物と作業用キャッシュは共有しない。
+/build/
+/Build/
+/Temp/
+/temp/
+/tmp/
+/.cache/
+*.tmp
+*.temp
+*.log
+
+# 個人環境の設定と OS の補助ファイルを除外する。
+/.mcp.json
+/CMakeUserPresets.json
+.DS_Store
+Thumbs.db
+
+# 設計・引き継ぎ・報告はローカルで保管する。
+AGENTS.md
+CLAUDE.md
+/Docs/
+/docs/
+/Design/
+/design/
+/Reports/
+/reports/
+/*設計*.md
+/*设计*.md
+/*引き継ぎ*.md
+/*交接*.md
+/*報告*.md
+/*报告*.md
+
+# 秘密情報は登録せず、値を含まない設定例だけを許可する。
+.env
+.env.*
+!.env.example
+!.env.template
+.secrets/
+*.pem
+*.key
+*.p12
+*.pfx
+id_rsa
+id_ed25519
+
+# 正式な .blend と Exports は残し、自動バックアップだけを除外する。
+*.blend[0-9]*
+*.blend@
+
+# このセットの派生プレビューと検証結果だけを除外し、資産一覧と再生成スクリプトは残す。
+/ArtSource/ModularSet01/Previews/
+/ArtSource/ModularSet01/validation_report.json
+/ArtSource/ModularSet01/roundtrip_report.json
+# 検証専用スクリプトはローカルに残し、生成・FBX 出力スクリプトは追跡する。
+/ArtSource/ModularSet01/verify_exports.py
+/ArtSource/ModularSet01/verify_blender_roundtrip.py
+
+# Set02 のプレビュー・作業キャッシュ・一覧を含む検証報告はローカルに残す。
+/ArtSource/ModularSet02/Previews/
+/ArtSource/ModularSet02/Temp/
+/ArtSource/ModularSet02/asset_manifest.json
+/ArtSource/ModularSet02/verification*.json
+/ArtSource/ModularSet02/verification*.py
+/ArtSource/ModularSet02/verify*.py
+
+# スプライト生成時の Python キャッシュはローカルに残す。
+/ArtSource/Sprites04/__pycache__/

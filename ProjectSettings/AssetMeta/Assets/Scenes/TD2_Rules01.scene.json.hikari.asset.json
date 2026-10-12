@@ -1,0 +1,13 @@
+{
+  "displayName": "TD2 Rules 01",
+  "guid": "cef7179ec60648e6affef2927d4f659b",
+  "importSettings": {
+    "runtimeLoader": "SceneSerializer",
+    "sourceAuthoritative": true
+  },
+  "importerId": "SceneAssetImporter",
+  "importerVersion": 2,
+  "metaVersion": 1,
+  "sourcePath": "Assets/Scenes/TD2_Rules01.scene.json",
+  "type": "Scene"
+}

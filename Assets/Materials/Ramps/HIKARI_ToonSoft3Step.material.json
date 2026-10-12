@@ -1,0 +1,223 @@
+{
+  "domain": "Surface",
+  "featureRequests": [],
+  "kind": "Ramp",
+  "materialName": "Toon Soft 3-Step",
+  "pbr": {
+    "baseColor": {
+      "factor": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "texCoord": 0,
+      "textureAssetGuid": "",
+      "useTexture": false,
+      "uvOffset": [
+        0.0,
+        0.0
+      ],
+      "uvRotation": 0.0,
+      "uvScale": [
+        1.0,
+        1.0
+      ]
+    },
+    "clearCoat": {
+      "factor": 0.0,
+      "roughness": 0.10000000149011612
+    },
+    "emissive": {
+      "factor": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "strength": 1.0,
+      "texCoord": 0,
+      "textureAssetGuid": "",
+      "useTexture": false,
+      "uvOffset": [
+        0.0,
+        0.0
+      ],
+      "uvRotation": 0.0,
+      "uvScale": [
+        1.0,
+        1.0
+      ]
+    },
+    "metallicRoughness": {
+      "metallicFactor": 0.0,
+      "roughnessFactor": 1.0,
+      "texCoord": 0,
+      "textureAssetGuid": "",
+      "useTexture": false,
+      "uvOffset": [
+        0.0,
+        0.0
+      ],
+      "uvRotation": 0.0,
+      "uvScale": [
+        1.0,
+        1.0
+      ]
+    },
+    "normal": {
+      "scale": 1.0,
+      "texCoord": 0,
+      "textureAssetGuid": "",
+      "useTexture": false,
+      "uvOffset": [
+        0.0,
+        0.0
+      ],
+      "uvRotation": 0.0,
+      "uvScale": [
+        1.0,
+        1.0
+      ]
+    },
+    "occlusion": {
+      "strength": 1.0,
+      "texCoord": 0,
+      "textureAssetGuid": "",
+      "useTexture": false,
+      "uvOffset": [
+        0.0,
+        0.0
+      ],
+      "uvRotation": 0.0,
+      "uvScale": [
+        1.0,
+        1.0
+      ]
+    },
+    "specular": {
+      "factor": 1.0,
+      "texCoord": 0,
+      "textureAssetGuid": "",
+      "useTexture": false,
+      "uvOffset": [
+        0.0,
+        0.0
+      ],
+      "uvRotation": 0.0,
+      "uvScale": [
+        1.0,
+        1.0
+      ]
+    },
+    "specularColor": {
+      "factor": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "texCoord": 0,
+      "textureAssetGuid": "",
+      "useTexture": false,
+      "uvOffset": [
+        0.0,
+        0.0
+      ],
+      "uvRotation": 0.0,
+      "uvScale": [
+        1.0,
+        1.0
+      ]
+    },
+    "subsurface": {
+      "factor": 0.0,
+      "radius": 0.019999999552965164
+    },
+    "transmission": {
+      "factor": 0.0,
+      "ior": 1.5
+    }
+  },
+  "profileAssetGuid": "",
+  "ramp": {
+    "dimension": "OneD",
+    "height": 1,
+    "interpolation": "Smooth",
+    "points": [
+      {
+        "color": [
+          0.30000001192092896,
+          0.36000001430511475,
+          0.5199999809265137,
+          1.0
+        ],
+        "id": "shadow",
+        "position": [
+          0.0,
+          0.0
+        ]
+      },
+      {
+        "color": [
+          0.3400000035762787,
+          0.4099999964237213,
+          0.5799999833106995,
+          1.0
+        ],
+        "id": "shadow_edge",
+        "position": [
+          0.4300000071525574,
+          0.0
+        ]
+      },
+      {
+        "color": [
+          0.699999988079071,
+          0.7599999904632568,
+          0.8600000143051147,
+          1.0
+        ],
+        "id": "midtone",
+        "position": [
+          0.49000000953674316,
+          0.0
+        ]
+      },
+      {
+        "color": [
+          0.7400000095367432,
+          0.800000011920929,
+          0.8999999761581421,
+          1.0
+        ],
+        "id": "midtone_edge",
+        "position": [
+          0.6899999976158142,
+          0.0
+        ]
+      },
+      {
+        "color": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "id": "light",
+        "position": [
+          0.75,
+          0.0
+        ]
+      }
+    ],
+    "width": 256
+  },
+  "surface": {
+    "alphaCutoff": 0.5,
+    "alphaMode": "Opaque",
+    "alphaRepresentation": "Straight",
+    "doubleSided": false,
+    "unlit": false
+  },
+  "template": "Custom",
+  "version": 7
+}

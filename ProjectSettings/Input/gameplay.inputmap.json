@@ -1,0 +1,189 @@
+{
+  "bindings": [
+    {
+      "action": "Gameplay.Move",
+      "component": 0,
+      "control": "A",
+      "scale": -1.0,
+      "source": "Keyboard"
+    },
+    {
+      "action": "Gameplay.Move",
+      "component": 0,
+      "control": "Left",
+      "scale": -1.0,
+      "source": "Keyboard"
+    },
+    {
+      "action": "Gameplay.Move",
+      "component": 0,
+      "control": "D",
+      "scale": 1.0,
+      "source": "Keyboard"
+    },
+    {
+      "action": "Gameplay.Move",
+      "component": 0,
+      "control": "Right",
+      "scale": 1.0,
+      "source": "Keyboard"
+    },
+    {
+      "action": "Gameplay.Move",
+      "component": 1,
+      "control": "W",
+      "scale": 1.0,
+      "source": "Keyboard"
+    },
+    {
+      "action": "Gameplay.Move",
+      "component": 1,
+      "control": "Up",
+      "scale": 1.0,
+      "source": "Keyboard"
+    },
+    {
+      "action": "Gameplay.Move",
+      "component": 1,
+      "control": "S",
+      "scale": -1.0,
+      "source": "Keyboard"
+    },
+    {
+      "action": "Gameplay.Move",
+      "component": 1,
+      "control": "Down",
+      "scale": -1.0,
+      "source": "Keyboard"
+    },
+    {
+      "action": "Gameplay.Move",
+      "component": 0,
+      "control": "LeftX",
+      "deadZone": 0.15000000596046448,
+      "scale": 1.0,
+      "source": "GamepadAxis"
+    },
+    {
+      "action": "Gameplay.Move",
+      "component": 1,
+      "control": "LeftY",
+      "deadZone": 0.15000000596046448,
+      "scale": 1.0,
+      "source": "GamepadAxis"
+    },
+    {
+      "action": "Gameplay.Look",
+      "component": 0,
+      "control": "DeltaX",
+      "scale": 1.0,
+      "source": "MouseDeltaX"
+    },
+    {
+      "action": "Gameplay.Look",
+      "component": 1,
+      "control": "DeltaY",
+      "scale": 1.0,
+      "source": "MouseDeltaY"
+    },
+    {
+      "action": "Gameplay.Look",
+      "component": 0,
+      "control": "RightX",
+      "deadZone": 0.15000000596046448,
+      "scale": 1.0,
+      "source": "GamepadAxis"
+    },
+    {
+      "action": "Gameplay.Look",
+      "component": 1,
+      "control": "RightY",
+      "deadZone": 0.15000000596046448,
+      "scale": -1.0,
+      "source": "GamepadAxis"
+    },
+    {
+      "action": "Gameplay.CameraZoom",
+      "component": 0,
+      "control": "Wheel",
+      "scale": 1.0,
+      "source": "MouseWheel"
+    },
+    {
+      "action": "Gameplay.CameraRecenter",
+      "component": 0,
+      "control": "R",
+      "scale": 1.0,
+      "source": "Keyboard"
+    },
+    {
+      "action": "Gameplay.CameraRecenter",
+      "component": 0,
+      "control": "RightStick",
+      "scale": 1.0,
+      "source": "GamepadButton"
+    },
+    {
+      "action": "Gameplay.Jump",
+      "component": 0,
+      "control": "Space",
+      "scale": 1.0,
+      "source": "Keyboard"
+    },
+    {
+      "action": "Gameplay.Jump",
+      "component": 0,
+      "control": "A",
+      "scale": 1.0,
+      "source": "GamepadButton"
+    },
+    {
+      "action": "Gameplay.Sprint",
+      "component": 0,
+      "control": "Shift",
+      "scale": 1.0,
+      "source": "Keyboard"
+    },
+    {
+      "action": "Gameplay.Sprint",
+      "component": 0,
+      "control": "LeftStick",
+      "scale": 1.0,
+      "source": "GamepadButton"
+    },
+    {
+      "action": "Gameplay.Interact",
+      "component": 0,
+      "control": "E",
+      "scale": 1.0,
+      "source": "Keyboard"
+    },
+    {
+      "action": "Gameplay.Interact",
+      "component": 0,
+      "control": "X",
+      "scale": 1.0,
+      "source": "GamepadButton"
+    },
+    {
+      "action": "Gameplay.Menu",
+      "component": 0,
+      "control": "Tab",
+      "scale": 1.0,
+      "source": "Keyboard"
+    },
+    {
+      "action": "Gameplay.Menu",
+      "component": 0,
+      "control": "Start",
+      "scale": 1.0,
+      "source": "GamepadButton"
+    }
+  ],
+  "consumeInput": false,
+  "displayName": "Gameplay",
+  "enabledByDefault": true,
+  "id": "Gameplay",
+  "priority": 100,
+  "version": 1
+}
