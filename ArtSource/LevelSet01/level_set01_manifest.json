@@ -1,0 +1,153 @@
+{
+  "schema_version": 1,
+  "set": "LevelSet01",
+  "conventions": {
+    "units": "meters",
+    "up": "+Y",
+    "front": "+Z",
+    "pivot": "bottom_center",
+    "screen_material": "TD2_Screen",
+    "screen_aspect": "12:7 (24x14 cells)"
+  },
+  "parts": [
+    {
+      "id": "SM_L_TV_Hub",
+      "file": "Exports/SM_L_TV_Hub.fbx",
+      "triangles": 5074,
+      "dimensions_m": [
+        1.24,
+        0.9563,
+        0.825
+      ],
+      "screen": {
+        "width_m": 0.96,
+        "height_m": 0.56,
+        "center_x_m": 0.0,
+        "bottom_m": 0.2,
+        "front_z_m": 0.304
+      },
+      "height_m": 0.88,
+      "hang": [
+        [
+          -0.46,
+          0.95
+        ],
+        [
+          0.46,
+          0.95
+        ]
+      ]
+    },
+    {
+      "id": "SM_L_TV_Wide",
+      "file": "Exports/SM_L_TV_Wide.fbx",
+      "triangles": 4322,
+      "dimensions_m": [
+        1.1,
+        0.856,
+        0.733
+      ],
+      "screen": {
+        "width_m": 0.84,
+        "height_m": 0.49,
+        "center_x_m": 0.0,
+        "bottom_m": 0.155,
+        "front_z_m": 0.273
+      },
+      "height_m": 0.78,
+      "hang": [
+        [
+          -0.42,
+          0.85
+        ],
+        [
+          0.42,
+          0.85
+        ]
+      ]
+    },
+    {
+      "id": "SM_L_TV_Steel",
+      "file": "Exports/SM_L_TV_Steel.fbx",
+      "triangles": 5186,
+      "dimensions_m": [
+        1.08,
+        0.816,
+        0.556
+      ],
+      "screen": {
+        "width_m": 0.84,
+        "height_m": 0.49,
+        "center_x_m": 0.0,
+        "bottom_m": 0.135,
+        "front_z_m": 0.266
+      },
+      "height_m": 0.74,
+      "hang": [
+        [
+          -0.4,
+          0.81
+        ],
+        [
+          0.4,
+          0.81
+        ]
+      ]
+    },
+    {
+      "id": "SM_L_TV_Console",
+      "file": "Exports/SM_L_TV_Console.fbx",
+      "triangles": 1134,
+      "dimensions_m": [
+        1.16,
+        1.0,
+        0.55
+      ],
+      "screen": {
+        "width_m": 0.84,
+        "height_m": 0.49,
+        "center_x_m": 0.0,
+        "bottom_m": 0.395,
+        "front_z_m": 0.276
+      },
+      "height_m": 1.0
+    },
+    {
+      "id": "SM_L_Monolith",
+      "file": "Exports/SM_L_Monolith.fbx",
+      "triangles": 14772,
+      "dimensions_m": [
+        2.76,
+        8.06,
+        2.76
+      ],
+      "size": [
+        2.6,
+        8.0,
+        2.6
+      ]
+    },
+    {
+      "id": "SM_L_CageLamp",
+      "file": "Exports/SM_L_CageLamp.fbx",
+      "triangles": 4280,
+      "dimensions_m": [
+        0.1831,
+        0.3753,
+        0.1831
+      ],
+      "cast_shadow": false
+    },
+    {
+      "id": "SM_L_Cable_Sag",
+      "file": "Exports/SM_L_Cable_Sag.fbx",
+      "triangles": 192,
+      "dimensions_m": [
+        1.0101,
+        0.1965,
+        0.018
+      ],
+      "cast_shadow": false
+    }
+  ]
+}

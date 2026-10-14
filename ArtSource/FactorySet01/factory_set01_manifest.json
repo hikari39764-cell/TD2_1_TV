@@ -1,0 +1,1023 @@
+{
+  "schema_version": 1,
+  "set": "FactorySet01",
+  "conventions": {
+    "units": "meters",
+    "up": "+Y",
+    "front": "+Z",
+    "pivot": "bottom_center",
+    "screen_material": "TD2_Screen",
+    "node_transforms": "identity",
+    "uv": "box projection, 1 m = 1 UV unit; screens 0..1"
+  },
+  "parts": [
+    {
+      "id": "SM_F_FloorSlab_6m",
+      "file": "Exports/SM_F_FloorSlab_6m.fbx",
+      "triangles": 12,
+      "dimensions_m": [
+        6.02,
+        0.3,
+        6.02
+      ],
+      "materials": [
+        "TD2F_Floor"
+      ],
+      "material_order": [
+        "TD2F_Floor"
+      ]
+    },
+    {
+      "id": "SM_F_WallBay_Side_A",
+      "file": "Exports/SM_F_WallBay_Side_A.fbx",
+      "triangles": 1620,
+      "dimensions_m": [
+        6.07,
+        12.0,
+        0.3
+      ],
+      "materials": [
+        "TD2F_Steel",
+        "TD2F_WallLower",
+        "TD2F_WallUpper"
+      ],
+      "material_order": [
+        "TD2F_WallLower",
+        "TD2F_WallUpper",
+        "TD2F_Steel"
+      ]
+    },
+    {
+      "id": "SM_F_WindowGlass_Side_A",
+      "file": "Exports/SM_F_WindowGlass_Side_A.fbx",
+      "triangles": 28,
+      "dimensions_m": [
+        5.93,
+        3.41,
+        0.0
+      ],
+      "materials": [
+        "TD2F_WindowGlass"
+      ],
+      "material_order": [
+        "TD2F_WindowGlass"
+      ]
+    },
+    {
+      "id": "SM_F_WallBay_Side_B",
+      "file": "Exports/SM_F_WallBay_Side_B.fbx",
+      "triangles": 1620,
+      "dimensions_m": [
+        6.07,
+        12.0,
+        0.3
+      ],
+      "materials": [
+        "TD2F_Steel",
+        "TD2F_WallLower",
+        "TD2F_WallUpper"
+      ],
+      "material_order": [
+        "TD2F_WallLower",
+        "TD2F_WallUpper",
+        "TD2F_Steel"
+      ]
+    },
+    {
+      "id": "SM_F_WindowGlass_Side_B",
+      "file": "Exports/SM_F_WindowGlass_Side_B.fbx",
+      "triangles": 28,
+      "dimensions_m": [
+        5.93,
+        3.41,
+        0.0
+      ],
+      "materials": [
+        "TD2F_WindowGlass"
+      ],
+      "material_order": [
+        "TD2F_WindowGlass"
+      ]
+    },
+    {
+      "id": "SM_F_WallBay_End",
+      "file": "Exports/SM_F_WallBay_End.fbx",
+      "triangles": 1728,
+      "dimensions_m": [
+        6.07,
+        12.0,
+        0.3
+      ],
+      "materials": [
+        "TD2F_Steel",
+        "TD2F_WallLower",
+        "TD2F_WallUpper"
+      ],
+      "material_order": [
+        "TD2F_WallLower",
+        "TD2F_WallUpper",
+        "TD2F_Steel"
+      ]
+    },
+    {
+      "id": "SM_F_WindowGlass_End",
+      "file": "Exports/SM_F_WindowGlass_End.fbx",
+      "triangles": 42,
+      "dimensions_m": [
+        5.93,
+        5.91,
+        0.0
+      ],
+      "materials": [
+        "TD2F_WindowGlass"
+      ],
+      "material_order": [
+        "TD2F_WindowGlass"
+      ]
+    },
+    {
+      "id": "SM_F_Column_H12",
+      "file": "Exports/SM_F_Column_H12.fbx",
+      "triangles": 432,
+      "dimensions_m": [
+        0.44,
+        12.0,
+        0.85
+      ],
+      "materials": [
+        "TD2F_Steel"
+      ],
+      "material_order": [
+        "TD2F_Steel"
+      ]
+    },
+    {
+      "id": "SM_F_RunwayBeam_6m",
+      "file": "Exports/SM_F_RunwayBeam_6m.fbx",
+      "triangles": 108,
+      "dimensions_m": [
+        0.36,
+        0.7,
+        6.0
+      ],
+      "materials": [
+        "TD2F_Steel"
+      ],
+      "material_order": [
+        "TD2F_Steel"
+      ]
+    },
+    {
+      "id": "SM_F_RoofTruss_30m",
+      "file": "Exports/SM_F_RoofTruss_30m.fbx",
+      "triangles": 2268,
+      "dimensions_m": [
+        29.2163,
+        1.909,
+        0.12
+      ],
+      "materials": [
+        "TD2F_Steel"
+      ],
+      "material_order": [
+        "TD2F_Steel"
+      ]
+    },
+    {
+      "id": "SM_F_RoofBay_6m",
+      "file": "Exports/SM_F_RoofBay_6m.fbx",
+      "triangles": 156,
+      "dimensions_m": [
+        29.9204,
+        1.8076,
+        6.1
+      ],
+      "materials": [
+        "TD2F_Roof",
+        "TD2F_Steel"
+      ],
+      "material_order": [
+        "TD2F_Roof",
+        "TD2F_Steel"
+      ]
+    },
+    {
+      "id": "SM_F_TV_Portable",
+      "file": "Exports/SM_F_TV_Portable.fbx",
+      "triangles": 1662,
+      "dimensions_m": [
+        0.62,
+        0.6025,
+        0.58
+      ],
+      "materials": [
+        "TD2F_BareMetal",
+        "TD2F_Fabric",
+        "TD2F_PlasticBeige",
+        "TD2F_PlasticDark",
+        "TD2_Screen"
+      ],
+      "material_order": [
+        "TD2F_PlasticDark",
+        "TD2F_PlasticBeige",
+        "TD2F_BareMetal",
+        "TD2F_Fabric",
+        "TD2_Screen"
+      ],
+      "screen": {
+        "width_m": 0.4,
+        "height_m": 0.3,
+        "center_x_m": -0.05,
+        "bottom_m": 0.11,
+        "front_z_m": 0.2365
+      }
+    },
+    {
+      "id": "SM_F_ScreenGlow_Portable",
+      "file": "Exports/SM_F_ScreenGlow_Portable.fbx",
+      "triangles": 2,
+      "dimensions_m": [
+        0.4,
+        0.3,
+        0.0
+      ],
+      "materials": [
+        "TD2F_StaticGlow"
+      ],
+      "material_order": [
+        "TD2F_StaticGlow"
+      ]
+    },
+    {
+      "id": "SM_F_TV_Console",
+      "file": "Exports/SM_F_TV_Console.fbx",
+      "triangles": 1230,
+      "dimensions_m": [
+        1.04,
+        0.98,
+        0.51
+      ],
+      "materials": [
+        "TD2F_BareMetal",
+        "TD2F_Fabric",
+        "TD2F_PlasticDark",
+        "TD2F_Wood",
+        "TD2_Screen"
+      ],
+      "material_order": [
+        "TD2F_Wood",
+        "TD2F_PlasticDark",
+        "TD2F_Fabric",
+        "TD2F_BareMetal",
+        "TD2_Screen"
+      ],
+      "screen": {
+        "width_m": 0.56,
+        "height_m": 0.42,
+        "center_x_m": -0.15,
+        "bottom_m": 0.41,
+        "front_z_m": 0.2565
+      }
+    },
+    {
+      "id": "SM_F_ScreenGlow_Console",
+      "file": "Exports/SM_F_ScreenGlow_Console.fbx",
+      "triangles": 2,
+      "dimensions_m": [
+        0.56,
+        0.42,
+        0.0
+      ],
+      "materials": [
+        "TD2F_StaticGlow"
+      ],
+      "material_order": [
+        "TD2F_StaticGlow"
+      ]
+    },
+    {
+      "id": "SM_F_TV_Broadcast",
+      "file": "Exports/SM_F_TV_Broadcast.fbx",
+      "triangles": 1190,
+      "dimensions_m": [
+        0.65,
+        0.46,
+        0.523
+      ],
+      "materials": [
+        "TD2F_BareMetal",
+        "TD2F_LedRed",
+        "TD2F_Paper",
+        "TD2F_PlasticDark",
+        "TD2F_Steel",
+        "TD2_Screen"
+      ],
+      "material_order": [
+        "TD2F_Steel",
+        "TD2F_PlasticDark",
+        "TD2F_BareMetal",
+        "TD2F_LedRed",
+        "TD2F_Paper",
+        "TD2_Screen"
+      ],
+      "screen": {
+        "width_m": 0.4,
+        "height_m": 0.3,
+        "center_x_m": -0.04,
+        "bottom_m": 0.08,
+        "front_z_m": 0.2665
+      }
+    },
+    {
+      "id": "SM_F_ScreenGlow_Broadcast",
+      "file": "Exports/SM_F_ScreenGlow_Broadcast.fbx",
+      "triangles": 2,
+      "dimensions_m": [
+        0.4,
+        0.3,
+        0.0
+      ],
+      "materials": [
+        "TD2F_StaticGlow"
+      ],
+      "material_order": [
+        "TD2F_StaticGlow"
+      ]
+    },
+    {
+      "id": "SM_F_TV_Wide",
+      "file": "Exports/SM_F_TV_Wide.fbx",
+      "triangles": 1190,
+      "dimensions_m": [
+        1.2,
+        0.74,
+        0.5425
+      ],
+      "materials": [
+        "TD2F_Fabric",
+        "TD2F_PlasticBeige",
+        "TD2F_PlasticDark",
+        "TD2_Screen"
+      ],
+      "material_order": [
+        "TD2F_PlasticDark",
+        "TD2F_PlasticBeige",
+        "TD2F_Fabric",
+        "TD2_Screen"
+      ],
+      "screen": {
+        "width_m": 0.8,
+        "height_m": 0.45,
+        "center_x_m": -0.08,
+        "bottom_m": 0.195,
+        "front_z_m": 0.2825
+      }
+    },
+    {
+      "id": "SM_F_ScreenGlow_Wide",
+      "file": "Exports/SM_F_ScreenGlow_Wide.fbx",
+      "triangles": 2,
+      "dimensions_m": [
+        0.8,
+        0.45,
+        0.0
+      ],
+      "materials": [
+        "TD2F_StaticGlow"
+      ],
+      "material_order": [
+        "TD2F_StaticGlow"
+      ]
+    },
+    {
+      "id": "SM_F_TV_Portrait",
+      "file": "Exports/SM_F_TV_Portrait.fbx",
+      "triangles": 326,
+      "dimensions_m": [
+        0.62,
+        1.04,
+        0.34
+      ],
+      "materials": [
+        "TD2F_PlasticDark",
+        "TD2F_Steel",
+        "TD2_Screen"
+      ],
+      "material_order": [
+        "TD2F_Steel",
+        "TD2F_PlasticDark",
+        "TD2_Screen"
+      ],
+      "screen": {
+        "width_m": 0.45,
+        "height_m": 0.8,
+        "center_x_m": 0.0,
+        "bottom_m": 0.14,
+        "front_z_m": 0.1665
+      }
+    },
+    {
+      "id": "SM_F_ScreenGlow_Portrait",
+      "file": "Exports/SM_F_ScreenGlow_Portrait.fbx",
+      "triangles": 2,
+      "dimensions_m": [
+        0.45,
+        0.8,
+        0.0
+      ],
+      "materials": [
+        "TD2F_StaticGlow"
+      ],
+      "material_order": [
+        "TD2F_StaticGlow"
+      ]
+    },
+    {
+      "id": "SM_F_TV_DeskCRT",
+      "file": "Exports/SM_F_TV_DeskCRT.fbx",
+      "triangles": 886,
+      "dimensions_m": [
+        0.4,
+        0.43,
+        0.516
+      ],
+      "materials": [
+        "TD2F_LedRed",
+        "TD2F_PlasticBeige",
+        "TD2F_Sticky",
+        "TD2_Screen"
+      ],
+      "material_order": [
+        "TD2F_PlasticBeige",
+        "TD2F_LedRed",
+        "TD2F_Sticky",
+        "TD2_Screen"
+      ],
+      "screen": {
+        "width_m": 0.3,
+        "height_m": 0.225,
+        "center_x_m": 0.0,
+        "bottom_m": 0.1375,
+        "front_z_m": 0.1935
+      }
+    },
+    {
+      "id": "SM_F_ScreenGlow_DeskCRT",
+      "file": "Exports/SM_F_ScreenGlow_DeskCRT.fbx",
+      "triangles": 2,
+      "dimensions_m": [
+        0.3,
+        0.225,
+        0.0
+      ],
+      "materials": [
+        "TD2F_StaticGlow"
+      ],
+      "material_order": [
+        "TD2F_StaticGlow"
+      ]
+    },
+    {
+      "id": "SM_F_Rack_Bay",
+      "file": "Exports/SM_F_Rack_Bay.fbx",
+      "triangles": 2484,
+      "dimensions_m": [
+        2.4,
+        6.0,
+        1.07
+      ],
+      "materials": [
+        "TD2F_RackPaint",
+        "TD2F_Steel"
+      ],
+      "material_order": [
+        "TD2F_Steel",
+        "TD2F_RackPaint"
+      ]
+    },
+    {
+      "id": "SM_F_Rack_EndFrame",
+      "file": "Exports/SM_F_Rack_EndFrame.fbx",
+      "triangles": 972,
+      "dimensions_m": [
+        0.08,
+        6.0,
+        1.07
+      ],
+      "materials": [
+        "TD2F_Steel"
+      ],
+      "material_order": [
+        "TD2F_Steel"
+      ]
+    },
+    {
+      "id": "SM_F_Pallet",
+      "file": "Exports/SM_F_Pallet.fbx",
+      "triangles": 1080,
+      "dimensions_m": [
+        1.21,
+        0.125,
+        1.0
+      ],
+      "materials": [
+        "TD2F_Wood"
+      ],
+      "material_order": [
+        "TD2F_Wood"
+      ]
+    },
+    {
+      "id": "SM_F_Box_A",
+      "file": "Exports/SM_F_Box_A.fbx",
+      "triangles": 216,
+      "dimensions_m": [
+        0.6,
+        0.35,
+        0.502
+      ],
+      "materials": [
+        "TD2F_Cardboard"
+      ],
+      "material_order": [
+        "TD2F_Cardboard"
+      ]
+    },
+    {
+      "id": "SM_F_Box_B",
+      "file": "Exports/SM_F_Box_B.fbx",
+      "triangles": 216,
+      "dimensions_m": [
+        0.45,
+        0.3,
+        0.402
+      ],
+      "materials": [
+        "TD2F_Cardboard"
+      ],
+      "material_order": [
+        "TD2F_Cardboard"
+      ]
+    },
+    {
+      "id": "SM_F_Box_C",
+      "file": "Exports/SM_F_Box_C.fbx",
+      "triangles": 216,
+      "dimensions_m": [
+        0.7,
+        0.4,
+        0.552
+      ],
+      "materials": [
+        "TD2F_Cardboard"
+      ],
+      "material_order": [
+        "TD2F_Cardboard"
+      ]
+    },
+    {
+      "id": "SM_F_Crate_Stack",
+      "file": "Exports/SM_F_Crate_Stack.fbx",
+      "triangles": 216,
+      "dimensions_m": [
+        1.0596,
+        1.3,
+        0.8705
+      ],
+      "materials": [
+        "TD2F_Wood"
+      ],
+      "material_order": [
+        "TD2F_Wood"
+      ]
+    },
+    {
+      "id": "SM_F_CableReel",
+      "file": "Exports/SM_F_CableReel.fbx",
+      "triangles": 948,
+      "dimensions_m": [
+        1.0,
+        1.0,
+        0.65
+      ],
+      "materials": [
+        "TD2F_Rubber",
+        "TD2F_Wood"
+      ],
+      "material_order": [
+        "TD2F_Wood",
+        "TD2F_Rubber"
+      ]
+    },
+    {
+      "id": "SM_F_Workbench_3m6",
+      "file": "Exports/SM_F_Workbench_3m6.fbx",
+      "triangles": 972,
+      "dimensions_m": [
+        3.6,
+        0.905,
+        0.9
+      ],
+      "materials": [
+        "TD2F_BenchTop",
+        "TD2F_Steel"
+      ],
+      "material_order": [
+        "TD2F_BenchTop",
+        "TD2F_Steel"
+      ]
+    },
+    {
+      "id": "SM_F_Riser_Plank",
+      "file": "Exports/SM_F_Riser_Plank.fbx",
+      "triangles": 108,
+      "dimensions_m": [
+        0.9,
+        0.035,
+        0.5
+      ],
+      "materials": [
+        "TD2F_Wood"
+      ],
+      "material_order": [
+        "TD2F_Wood"
+      ]
+    },
+    {
+      "id": "SM_F_Puddle_A",
+      "file": "Exports/SM_F_Puddle_A.fbx",
+      "triangles": 16,
+      "dimensions_m": [
+        3.5783,
+        0.0,
+        2.3274
+      ],
+      "materials": [
+        "TD2F_Puddle"
+      ],
+      "material_order": [
+        "TD2F_Puddle"
+      ]
+    },
+    {
+      "id": "SM_F_Puddle_B",
+      "file": "Exports/SM_F_Puddle_B.fbx",
+      "triangles": 16,
+      "dimensions_m": [
+        2.4483,
+        0.0,
+        1.337
+      ],
+      "materials": [
+        "TD2F_Puddle"
+      ],
+      "material_order": [
+        "TD2F_Puddle"
+      ]
+    },
+    {
+      "id": "SM_F_Puddle_C",
+      "file": "Exports/SM_F_Puddle_C.fbx",
+      "triangles": 16,
+      "dimensions_m": [
+        5.6877,
+        0.0,
+        3.7635
+      ],
+      "materials": [
+        "TD2F_Puddle"
+      ],
+      "material_order": [
+        "TD2F_Puddle"
+      ]
+    },
+    {
+      "id": "SM_F_Chain_1m",
+      "file": "Exports/SM_F_Chain_1m.fbx",
+      "triangles": 12,
+      "dimensions_m": [
+        0.02,
+        1.0,
+        0.02
+      ],
+      "materials": [
+        "TD2F_BareMetal"
+      ],
+      "material_order": [
+        "TD2F_BareMetal"
+      ]
+    },
+    {
+      "id": "SM_F_Lamp_Pendant",
+      "file": "Exports/SM_F_Lamp_Pendant.fbx",
+      "triangles": 472,
+      "dimensions_m": [
+        0.8,
+        4.225,
+        0.8
+      ],
+      "materials": [
+        "TD2F_Bulb",
+        "TD2F_Rubber",
+        "TD2F_Steel"
+      ],
+      "material_order": [
+        "TD2F_Rubber",
+        "TD2F_Steel",
+        "TD2F_Bulb"
+      ]
+    },
+    {
+      "id": "SM_F_Crane_Bridge",
+      "file": "Exports/SM_F_Crane_Bridge.fbx",
+      "triangles": 432,
+      "dimensions_m": [
+        28.9,
+        1.0,
+        3.2
+      ],
+      "materials": [
+        "TD2F_RackPaint"
+      ],
+      "material_order": [
+        "TD2F_RackPaint"
+      ]
+    },
+    {
+      "id": "SM_F_Crane_Hoist",
+      "file": "Exports/SM_F_Crane_Hoist.fbx",
+      "triangles": 432,
+      "dimensions_m": [
+        4.6,
+        4.425,
+        2.6
+      ],
+      "materials": [
+        "TD2F_BareMetal",
+        "TD2F_Steel"
+      ],
+      "material_order": [
+        "TD2F_Steel",
+        "TD2F_BareMetal"
+      ]
+    },
+    {
+      "id": "SM_F_Stair_Broken",
+      "file": "Exports/SM_F_Stair_Broken.fbx",
+      "triangles": 1944,
+      "dimensions_m": [
+        1.1,
+        5.2373,
+        5.4735
+      ],
+      "materials": [
+        "TD2F_Steel"
+      ],
+      "material_order": [
+        "TD2F_Steel"
+      ]
+    },
+    {
+      "id": "SM_F_Desk",
+      "file": "Exports/SM_F_Desk.fbx",
+      "triangles": 864,
+      "dimensions_m": [
+        1.6,
+        0.76,
+        0.8
+      ],
+      "materials": [
+        "TD2F_BareMetal",
+        "TD2F_Steel",
+        "TD2F_Wood"
+      ],
+      "material_order": [
+        "TD2F_Wood",
+        "TD2F_Steel",
+        "TD2F_BareMetal"
+      ]
+    },
+    {
+      "id": "SM_F_Keyboard",
+      "file": "Exports/SM_F_Keyboard.fbx",
+      "triangles": 216,
+      "dimensions_m": [
+        0.46,
+        0.035,
+        0.16
+      ],
+      "materials": [
+        "TD2F_PlasticBeige",
+        "TD2F_PlasticDark"
+      ],
+      "material_order": [
+        "TD2F_PlasticBeige",
+        "TD2F_PlasticDark"
+      ]
+    },
+    {
+      "id": "SM_F_Mug",
+      "file": "Exports/SM_F_Mug.fbx",
+      "triangles": 236,
+      "dimensions_m": [
+        0.08,
+        0.1,
+        0.08
+      ],
+      "materials": [
+        "TD2F_Ceramic"
+      ],
+      "material_order": [
+        "TD2F_Ceramic"
+      ]
+    },
+    {
+      "id": "SM_F_PaperSheet",
+      "file": "Exports/SM_F_PaperSheet.fbx",
+      "triangles": 12,
+      "dimensions_m": [
+        0.21,
+        0.001,
+        0.297
+      ],
+      "materials": [
+        "TD2F_Paper"
+      ],
+      "material_order": [
+        "TD2F_Paper"
+      ]
+    },
+    {
+      "id": "SM_F_StickyPad",
+      "file": "Exports/SM_F_StickyPad.fbx",
+      "triangles": 12,
+      "dimensions_m": [
+        0.14,
+        0.01,
+        0.18
+      ],
+      "materials": [
+        "TD2F_Sticky"
+      ],
+      "material_order": [
+        "TD2F_Sticky"
+      ]
+    },
+    {
+      "id": "SM_F_Cap",
+      "file": "Exports/SM_F_Cap.fbx",
+      "triangles": 428,
+      "dimensions_m": [
+        0.2,
+        0.124,
+        0.2797
+      ],
+      "materials": [
+        "TD2F_CapFabric"
+      ],
+      "material_order": [
+        "TD2F_CapFabric"
+      ]
+    },
+    {
+      "id": "SM_F_Lamp_Desk",
+      "file": "Exports/SM_F_Lamp_Desk.fbx",
+      "triangles": 820,
+      "dimensions_m": [
+        0.3173,
+        0.4472,
+        0.5048
+      ],
+      "materials": [
+        "TD2F_BulbWarm",
+        "TD2F_Steel"
+      ],
+      "material_order": [
+        "TD2F_Steel",
+        "TD2F_BulbWarm"
+      ]
+    },
+    {
+      "id": "SM_F_Chair_Office",
+      "file": "Exports/SM_F_Chair_Office.fbx",
+      "triangles": 992,
+      "dimensions_m": [
+        0.551,
+        1.0643,
+        0.5774
+      ],
+      "materials": [
+        "TD2F_Fabric",
+        "TD2F_PlasticDark",
+        "TD2F_Steel"
+      ],
+      "material_order": [
+        "TD2F_Fabric",
+        "TD2F_Steel",
+        "TD2F_PlasticDark"
+      ]
+    },
+    {
+      "id": "SM_F_Backpack",
+      "file": "Exports/SM_F_Backpack.fbx",
+      "triangles": 216,
+      "dimensions_m": [
+        0.32,
+        0.42,
+        0.22
+      ],
+      "materials": [
+        "TD2F_CapFabric"
+      ],
+      "material_order": [
+        "TD2F_CapFabric"
+      ]
+    },
+    {
+      "id": "SM_F_PinBoard",
+      "file": "Exports/SM_F_PinBoard.fbx",
+      "triangles": 972,
+      "dimensions_m": [
+        1.2,
+        1.75,
+        0.5
+      ],
+      "materials": [
+        "TD2F_Cork",
+        "TD2F_Paper",
+        "TD2F_Steel",
+        "TD2F_Sticky"
+      ],
+      "material_order": [
+        "TD2F_Cork",
+        "TD2F_Steel",
+        "TD2F_Paper",
+        "TD2F_Sticky"
+      ]
+    },
+    {
+      "id": "SM_F_Lamp_WorkTripod",
+      "file": "Exports/SM_F_Lamp_WorkTripod.fbx",
+      "triangles": 540,
+      "dimensions_m": [
+        0.7978,
+        2.0268,
+        0.7414
+      ],
+      "materials": [
+        "TD2F_Steel"
+      ],
+      "material_order": [
+        "TD2F_Steel"
+      ]
+    },
+    {
+      "id": "SM_F_Cable_01",
+      "file": "Exports/SM_F_Cable_01.fbx",
+      "triangles": 1152,
+      "dimensions_m": [
+        8.7715,
+        1.19,
+        7.1427
+      ],
+      "materials": [
+        "TD2F_Rubber"
+      ],
+      "material_order": [
+        "TD2F_Rubber"
+      ]
+    },
+    {
+      "id": "SM_F_Cable_02",
+      "file": "Exports/SM_F_Cable_02.fbx",
+      "triangles": 768,
+      "dimensions_m": [
+        4.8707,
+        0.7487,
+        9.8359
+      ],
+      "materials": [
+        "TD2F_Rubber"
+      ],
+      "material_order": [
+        "TD2F_Rubber"
+      ]
+    },
+    {
+      "id": "SM_F_Cable_03",
+      "file": "Exports/SM_F_Cable_03.fbx",
+      "triangles": 960,
+      "dimensions_m": [
+        11.6292,
+        1.1204,
+        9.6617
+      ],
+      "materials": [
+        "TD2F_Rubber"
+      ],
+      "material_order": [
+        "TD2F_Rubber"
+      ]
+    }
+  ]
+}
