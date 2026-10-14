@@ -73,3 +73,16 @@ id_ed25519
 
 # スプライト生成時の Python キャッシュはローカルに残す。
 /ArtSource/Sprites04/__pycache__/
+
+# 工場セットのプレビュー画像と画面テクスチャ等の作業キャッシュはローカルに残す。
+/ArtSource/FactorySet01/Previews/
+/ArtSource/FactorySet01/Temp/
+
+# レベルセットと画面キットのプレビュー・作業キャッシュはローカルに残す。
+/ArtSource/LevelSet01/Previews/
+/ArtSource/LevelSet01/Temp/
+/ArtSource/ScreenStyle07/Temp/
+
+# 画面スタイル試作の .blend は生成スクリプトから再作成できるためローカルに残す。
+/ArtSource/ScreenStyleStudy01/*.blend
+/ArtSource/ScreenStyleStudy02/*.blend
