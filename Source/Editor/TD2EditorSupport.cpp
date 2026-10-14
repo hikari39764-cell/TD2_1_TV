@@ -103,7 +103,7 @@ bool ReadRegion(EditorWorkspaceHostContext& context, uint64_t objectId, RegionTa
     const auto result = Execute(context, "component.describe",
         {{"objectId", target.objectId}, {"componentId", target.componentId},
          {"propertyIds", {"regionId", "cols", "rows", "tilePixels", "cells", "screenObject",
-                          "screenSlot", "texturePath", "outputWidth", "outputHeight",
+                          "screenSlot", "outputWidth", "outputHeight",
                           "spawnX", "spawnY", "entryRegion", "devices", "worldPlaced", "worldX", "worldY",
                           "screenBrightness", "screenMaterialIndex", "screenModelAssetGuid"}}});
     if (!result.ok) { error = result.error; return false; }
@@ -169,7 +169,7 @@ bool ReadRegion(EditorWorkspaceHostContext& context, uint64_t objectId, RegionTa
     return text("regionId", settings.region.regionId) && number("cols", settings.region.cols) &&
         number("rows", settings.region.rows) && number("tilePixels", settings.region.tilePixels) &&
         text("cells", settings.region.cells) && text("screenSlot", settings.screenSlot) &&
-        text("texturePath", settings.texturePath) && number("outputWidth", settings.outputWidth) &&
+        number("outputWidth", settings.outputWidth) &&
         number("outputHeight", settings.outputHeight) && text("devices", settings.devices);
 }
 
@@ -190,7 +190,6 @@ void AppendRegionChanges(Json& commands, const RegionTarget& target, const Regio
     add("screenBrightness", before.screenBrightness, after.screenBrightness);
     add("screenMaterialIndex", before.screenMaterialIndex, after.screenMaterialIndex);
     add("screenModelAssetGuid", before.screenModelAssetGuid, after.screenModelAssetGuid);
-    add("texturePath", before.texturePath, after.texturePath);
     add("outputWidth", before.outputWidth, after.outputWidth);
     add("outputHeight", before.outputHeight, after.outputHeight);
     add("spawnX", before.spawnX, after.spawnX);

@@ -14,6 +14,8 @@ bool DeviceKind(std::string_view name, Rules::DeviceKind& kind) {
         {"Plate", Rules::DeviceKind::Plate}, {"Door", Rules::DeviceKind::Door},
         {"Laser", Rules::DeviceKind::Laser}, {"Spikes", Rules::DeviceKind::Spikes},
         {"Checkpoint", Rules::DeviceKind::Checkpoint}, {"LockWall", Rules::DeviceKind::LockWall},
+        {"Spring", Rules::DeviceKind::Spring}, {"Bridge", Rules::DeviceKind::Bridge},
+        {"Collectible", Rules::DeviceKind::Collectible}, {"Decal", Rules::DeviceKind::Decal},
     };
     for (const auto& [id, value] : kinds) { if (name == id) { kind = value; return true; } }
     return false;
@@ -72,6 +74,16 @@ bool ParseDevices(std::string_view text, std::vector<Rules::DeviceDefinition>& d
             } else if (key == "invert") {
                 if (value != "0" && value != "1") { return fail("invert 使用 0 或 1"); }
                 device.inverted = value == "1";
+            } else if (key == "power" || key == "delay" || key == "cooldown" || key == "opacity") {
+                // 弾簧の弾力（格/秒）・溜め秒・冷却秒、貼り絵の不透明度。
+                double number = 0;
+                const auto parsed = std::from_chars(value.data(), value.data() + value.size(), number);
+                if (parsed.ec != std::errc{} || parsed.ptr != value.data() + value.size() || !std::isfinite(number)) {
+                    return fail(std::string(key) + " 必须为有限数字");
+                }
+                (key == "power" ? device.power : key == "delay" ? device.delay : key == "cooldown" ? device.cooldown : device.opacity) = number;
+            } else if (key == "variant") {
+                device.variant = std::string(value);
             } else { return fail("未知可选字段：" + std::string(key)); }
         }
         devices.push_back(std::move(device));

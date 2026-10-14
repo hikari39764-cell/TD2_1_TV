@@ -4,8 +4,10 @@
 #include <array>
 
 namespace TD2::Editor {
-inline constexpr std::array<std::string_view, 8> kEditorDeviceKinds{"Solid", "OneWay", "Plate", "Door", "Laser", "Spikes", "Checkpoint", "LockWall"};
-inline constexpr std::array<std::string_view, 8> kEditorDeviceLabels{"▧ 实体块", "━ 单向平台", "▰ 压板", "▥ 门", "→ 激光", "▲ 尖刺", "⚑ 存档点", "▣ 锁墙"};
+inline constexpr std::array<std::string_view, 12> kEditorDeviceKinds{"Solid", "OneWay", "Plate", "Door", "Laser", "Spikes", "Checkpoint", "LockWall",
+                                                                     "Spring", "Bridge", "Collectible", "Decal"};
+inline constexpr std::array<std::string_view, 12> kEditorDeviceLabels{"▧ 实体块", "━ 单向平台", "▰ 压板", "▥ 门", "→ 激光", "▲ 尖刺", "⚑ 存档点", "▣ 锁墙",
+                                                                      "⤒ 弹簧", "═ 伸缩桥", "◆ 收集物", "✎ 教程贴画"};
 
 inline std::string DeviceLabel(std::string_view kind) {
     const auto it = std::find(kEditorDeviceKinds.begin(), kEditorDeviceKinds.end(), kind);

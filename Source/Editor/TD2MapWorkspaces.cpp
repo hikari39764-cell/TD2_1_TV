@@ -1,7 +1,6 @@
 #include "TD2MapWorkspaces.h"
 #include "TD2MapCanvas.h"
 #include "TD2EditorChoices.h"
-#include "TD2SequenceCameraPanel.h"
 #include "../Common/TD2WorldLayout.h"
 #include <array>
 #include <limits>
@@ -46,7 +45,6 @@ public:
     bool Dirty() const { const auto* item = Current(); return ready && item && draft != item->settings; }
     void Discard() { if (const auto* item = Current()) { draft = item->settings; devices.Load(draft.devices); } gesture = false; error.clear(); screenWarning.clear(); }
     void Poll(EditorWorkspaceHostContext& ctx, bool force = false) {
-        gMapSprites.Load(ctx.projectRootUtf8);
         elapsed += ctx.unscaledDeltaSeconds;
         if (gesture || Dirty() || (!force && !refresh && elapsed < .75f)) { return; }
         elapsed = 0; refresh = false;
@@ -168,7 +166,7 @@ public:
         if (Commit(ctx)) { error.clear(); }
     }
     void Publish(EditorWorkspaceHostContext& ctx) {
-        std::string message = !error.empty() ? error : !screenWarning.empty() ? screenWarning : gMapSprites.warning;
+        std::string message = !error.empty() ? error : screenWarning;
         if (message.empty() && !rooms.empty()) {
             const auto entries = std::count_if(rooms.begin(), rooms.end(), [](const auto& r) { return r.settings.worldPlaced && r.settings.entryRegion; });
             if (entries == 0) { message = "请在世界地图放置开始电视"; }
@@ -582,6 +580,18 @@ private:
                 ui.Text("当前：" + (s.screenObject == 0 ? std::string("未绑定") : current == screens_.end() ? "对象 " + std::to_string(s.screenObject) : ShortChoiceLabel(current->name)));
                 double brightness = s.screenBrightness;
                 if (EditFloat(ui, "td2.television.screen.brightness", "屏幕亮度", brightness, .5f, 4.0f)) { s.screenBrightness = static_cast<float>(brightness); }
+                if (ui.Button("td2.television.screen.style", "屏幕风格（原生属性）")) {
+                    // 原生 Inspector への明示的な入口だけを置く。共有舞台の設定や演出カメラを複製しない。
+                    std::vector<SceneItem> styles;
+                    if (QueryObjects(ctx, "TD2.ScreenStyle", styles, model_->error)) {
+                        const auto own = std::find_if(styles.begin(), styles.end(), [&](const auto& item) { return item.objectId == model_->selected || item.objectId == s.screenObject; });
+                        const uint64_t styleObject = own != styles.end() ? own->objectId : styles.size() == 1 ? styles.front().objectId : 0;
+                        if (styleObject) {
+                            const auto selected = Execute(ctx, "scene.object.select", {{"objectId", styleObject}});
+                            model_->error = selected.ok ? std::string{} : selected.error;
+                        } else { model_->error = styles.empty() ? "尚未配置屏幕风格组件" : "有多个共享屏幕风格，请在场景中选择要调整的组件"; }
+                    }
+                }
                 if (ui.Button("td2.television.screen.pick", screenPicker_ ? "收起屏幕列表" : "选择屏幕对象")) { screenPicker_ = !screenPicker_; }
                 if (screenPicker_) {
                     EditText(ui, "td2.television.screen.search", "查找", screenSearch_);
@@ -643,12 +653,12 @@ class WorldMapWorkspace final : public MapWorkspace {
 public:
     using MapWorkspace::MapWorkspace;
     bool IsDirty() const override { return MapWorkspace::IsDirty() || (sequenceDraft_ && pendingBinding_ != observedBinding_); }
-    void DiscardChanges(EditorWorkspaceHostContext& ctx) override { sequenceDraft_ = false; bindingRefresh_ = true; cameraPanel_.Reset(); MapWorkspace::DiscardChanges(ctx); }
+    void DiscardChanges(EditorWorkspaceHostContext& ctx) override { sequenceDraft_ = false; bindingRefresh_ = true; MapWorkspace::DiscardChanges(ctx); }
     EditorWorkspaceDescriptor GetDescriptor() const override {
         EditorWorkspaceDescriptor d; d.workspaceId = kWorldWorkspace; d.displayName = "世界地图";
         d.options = static_cast<uint32_t>(EditorWorkspaceOption::RequestSceneViewport); return d;
     }
-    void OnActivate(EditorWorkspaceHostContext& ctx) override { MapWorkspace::OnActivate(ctx); assetsRefresh_ = true; bindingRefresh_ = true; cameraPanel_.Reset(); }
+    void OnActivate(EditorWorkspaceHostContext& ctx) override { MapWorkspace::OnActivate(ctx); assetsRefresh_ = true; bindingRefresh_ = true; }
     void OnDeactivate(EditorWorkspaceHostContext& ctx) override { if (libraryDrag_) { model_->Discard(); } else { MapWorkspace::OnDeactivate(ctx); } moving_ = false; libraryDrag_ = false; }
     void Draw(EditorWorkspaceHostContext& ctx) override {
         if (!ctx.ui || !ctx.commands) { return; }
@@ -677,7 +687,7 @@ private:
     bool LeaveSequence(EditorWorkspaceHostContext& ctx) {
         // 文脈変更で草稿を黙って破棄しない。無効な草稿は右欄で撤回できるよう選択を維持する。
         if (sequenceDraft_ && pendingBinding_ != observedBinding_ && !WriteBinding(ctx, pendingBinding_)) { return false; }
-        sequenceDraft_ = false; edge_ = {}; picker_ = 0; cameraPanel_.Reset(); bindingRefresh_ = true; return true;
+        sequenceDraft_ = false; edge_ = {}; picker_ = 0; bindingRefresh_ = true; return true;
     }
     bool ChooseEdge(EditorWorkspaceHostContext& ctx, const EdgeSelection& next) {
         if (next.a == edge_.a && next.b == edge_.b) { return true; }
@@ -846,7 +856,6 @@ private:
     bool bindingValid_ = false;
     std::vector<SequenceAsset> assets_;
     std::vector<SceneItem> cameras_;
-    SequenceCameraPanel cameraPanel_;
     int picker_ = 0, assetPage_ = 0, slotPage_ = 0, cameraPage_ = 0, neighborPage_ = 0, roomPage_ = 0;
     std::string assetSearch_, cameraSearch_;
 };
@@ -908,17 +917,13 @@ void WorldMapWorkspace::ReadBinding(EditorWorkspaceHostContext& ctx) {
         for (const auto& component : instances.data.value("components", Json::array())) {
             if (component.value("type", "") != kRegionSequenceComponentType) { continue; }
             const auto componentId = ObjectId(component.value("componentId", Json{}));
-            const auto result = Execute(ctx, "component.describe", {{"objectId", item.objectId}, {"componentId", componentId}, {"propertyIds", {"regionA", "regionB", "sequenceAssetGuid", "sequenceSlotName", "cameraObject", "sourceCameraObject", "targetCameraObject"}}});
+            const auto result = Execute(ctx, "component.describe", {{"objectId", item.objectId}, {"componentId", componentId}, {"propertyIds", {"regionA", "regionB", "sequenceAssetGuid", "sequenceSlotName", "cameraObject"}}});
             if (!result.ok) { model_->error = result.error; return; }
             const auto fields = result.data.value("fields", Json::array());
             const auto* fa = FieldValue(fields, "regionA"); const auto* fb = FieldValue(fields, "regionB");
             const auto* guid = FieldValue(fields, "sequenceAssetGuid"); const auto* slot = FieldValue(fields, "sequenceSlotName"); const auto* camera = FieldValue(fields, "cameraObject");
             if (!fa || !fa->is_string() || !fb || !fb->is_string() || !guid || !guid->is_string() || !slot || !slot->is_string() || !camera || !camera->is_number_integer()) { model_->error = "Sequence 绑定字段无效"; return; }
             RegionSequenceBinding value{fa->get<std::string>(), fb->get<std::string>(), guid->get<std::string>(), slot->get<std::string>(), ObjectId(*camera)};
-            // 旧 Scene に制作参照がなければ 0 を保持し、実行 camera を A/B に流用しない。
-            const auto* sourceCamera = FieldValue(fields, "sourceCameraObject"), *targetCamera = FieldValue(fields, "targetCameraObject");
-            if ((sourceCamera && (!sourceCamera->is_number_integer() || *sourceCamera < 0)) || (targetCamera && (!targetCamera->is_number_integer() || *targetCamera < 0))) { model_->error = "镜头制作引用无效"; return; }
-            value.sourceCameraObject = sourceCamera ? ObjectId(*sourceCamera) : 0; value.targetCameraObject = targetCamera ? ObjectId(*targetCamera) : 0;
             if (!SameRegionPair(binding_, value)) { continue; }
             if (bindingTarget_.objectId) { model_->error = "同一交界有重复 Sequence 绑定"; bindingTarget_ = {}; return; }
             binding_ = std::move(value); bindingTarget_ = {item.objectId, componentId};
@@ -950,7 +955,7 @@ bool WorldMapWorkspace::WriteBinding(EditorWorkspaceHostContext& ctx, const Regi
     RegionTarget target = bindingTarget_;
     bool createdRecord = false;
     if (!target.objectId) {
-        if (next.sequenceAssetGuid.empty() && !next.sourceCameraObject && !next.targetCameraObject) { sequenceDraft_ = false; return true; }
+        if (next.sequenceAssetGuid.empty()) { sequenceDraft_ = false; return true; }
         // 辺ごとに小さい記録を所有する。同じ camera を複数の辺で使っても既存記録を上書きしない。
         const auto created = Execute(ctx, "scene.create_empty_object", {{"name", "电视交界演出"}});
         if (!created.ok) { model_->error = created.error; return false; }
@@ -965,7 +970,6 @@ bool WorldMapWorkspace::WriteBinding(EditorWorkspaceHostContext& ctx, const Regi
     Json commands = Json::array();
     const auto add = [&commands, &target](std::string_view id, const auto& value) { commands.push_back({{"objectId", target.objectId}, {"componentId", target.componentId}, {"propertyId", id}, {"value", value}}); };
     add("regionA", next.regionA); add("regionB", next.regionB); add("sequenceAssetGuid", next.sequenceAssetGuid); add("sequenceSlotName", next.sequenceSlotName); add("cameraObject", next.cameraObject);
-    add("sourceCameraObject", next.sourceCameraObject); add("targetCameraObject", next.targetCameraObject);
     const auto result = Execute(ctx, "authoring.transaction", {{"commands", commands}});
     if (!result.ok) { if (createdRecord) { Execute(ctx, "scene.delete_object", {{"objectId", target.objectId}}); } model_->error = result.error; return false; }
     model_->sceneDirty = true;
@@ -993,7 +997,7 @@ void WorldMapWorkspace::DrawProperties(EditorWorkspaceHostContext& ctx) {
         ui.Text("演出：" + (selectedGuid.empty() ? std::string("保持当前镜头") : selectedAsset == assets_.end() ? std::string("资产缺失") : ShortChoiceLabel(selectedAsset->name)));
         ui.Text(sequenceDraft_ && pendingBinding_ != observedBinding_ ? "绑定草稿未应用" : model_->sceneDirty ? "绑定已应用 · 场景未保存" : model_->savedOnce ? "绑定已保存" : "场景中的绑定");
         if (ui.Button("td2.world.sequence.pick", picker_ == 1 ? "收起演出列表" : "选择切换演出")) { picker_ = picker_ == 1 ? 0 : 1; }
-        ui.SameLine(); if (ui.Button("td2.world.sequence.refresh", "刷新")) { assetsRefresh_ = true; bindingRefresh_ = true; cameraPanel_.Reset(); }
+        ui.SameLine(); if (ui.Button("td2.world.sequence.refresh", "刷新")) { assetsRefresh_ = true; bindingRefresh_ = true; }
         if (picker_ == 1) {
             EditText(ui, "td2.world.sequence.search", "查找演出", assetSearch_);
             std::vector<EditorChoice> choices{{"td2.world.sequence.none", "保持当前镜头", selectedGuid.empty()}};
@@ -1010,13 +1014,13 @@ void WorldMapWorkspace::DrawProperties(EditorWorkspaceHostContext& ctx) {
                     pendingBinding_.sequenceSlotName = asset->slots.front();
                     if (!cameras_.empty()) { pendingBinding_.cameraObject = cameras_.front().objectId; }
                 }
-                picker_ = 0; cameraPanel_.Reset();
+                picker_ = 0;
             }
             if (assets_.empty()) { ui.Text("项目没有 Sequence；可先保持镜头"); }
         }
         if (ui.Button("td2.world.sequence.none.quick", "保持当前镜头") && !selectedGuid.empty()) {
             beginDraft(); pendingBinding_.sequenceAssetGuid.clear(); pendingBinding_.sequenceSlotName.clear(); pendingBinding_.cameraObject = 0;
-            picker_ = 0; cameraPanel_.Reset();
+            picker_ = 0;
         }
         const auto& editable = sequenceDraft_ ? pendingBinding_ : binding_;
         if (!editable.sequenceAssetGuid.empty()) {
@@ -1044,7 +1048,7 @@ void WorldMapWorkspace::DrawProperties(EditorWorkspaceHostContext& ctx) {
                                 if (!cameraSearch_.empty() && camera.name.find(cameraSearch_) == std::string::npos) { continue; }
                                 choices.push_back({"td2.world.sequence.camera." + std::to_string(camera.objectId), camera.name, editable.cameraObject == camera.objectId}); ids.push_back(camera.objectId);
                             }
-                            if (const int selected = DrawPagedChoices(ui, choices, cameraPage_, "td2.world.cameras", 4); selected >= 0) { beginDraft(); pendingBinding_.cameraObject = ids[static_cast<size_t>(selected)]; picker_ = 0; cameraPanel_.Reset(); }
+                            if (const int selected = DrawPagedChoices(ui, choices, cameraPage_, "td2.world.cameras", 4); selected >= 0) { beginDraft(); pendingBinding_.cameraObject = ids[static_cast<size_t>(selected)]; picker_ = 0; }
                             if (cameras_.empty()) { ui.Text("场景没有 CameraComponent；先添加相机"); }
                         }
                     }
@@ -1052,16 +1056,10 @@ void WorldMapWorkspace::DrawProperties(EditorWorkspaceHostContext& ctx) {
             }
         }
         if (ui.Button("td2.world.sequence.apply", "应用绑定")) { if (sequenceDraft_) { WriteBinding(ctx, pendingBinding_); } }
-        ui.SameLine(); if (ui.Button("td2.world.sequence.discard", "撤回草稿")) { sequenceDraft_ = false; bindingRefresh_ = true; cameraPanel_.Reset(); model_->error.clear(); }
+        ui.SameLine(); if (ui.Button("td2.world.sequence.discard", "撤回草稿")) { sequenceDraft_ = false; bindingRefresh_ = true; model_->error.clear(); }
         if (!bindingValid_) { ui.Text("绑定读取失败；请刷新或处理上方错误"); return; }
-        // A/B 名称は永続 binding の方向に対応する。近隣をクリックした順序で反転しない。
-        const auto roomName = [this](const std::string& id) {
-            const auto room = std::find_if(model_->rooms.begin(), model_->rooms.end(), [&id](const auto& item) { return item.settings.region.regionId == id; });
-            return room == model_->rooms.end() ? id : room->object.name;
-        };
-        auto cameraDraft = sequenceDraft_ ? pendingBinding_ : binding_;
-        cameraPanel_.Draw(ctx, cameraDraft, roomName(cameraDraft.regionA), roomName(cameraDraft.regionB), model_->error);
-        if (cameraPanel_.ConsumeDraftChanged()) { beginDraft(); pendingBinding_ = std::move(cameraDraft); }
+        // 演出の中身（镜头关键帧）は引擎の演出工作区で作る。ここは区域の対へ既存の演出資産を結ぶだけ。
+        ui.Text("镜头关键帧请在引擎的演出（Cinematics）工作区编辑");
         return;
     }
     if (!model_->ready) { return; }

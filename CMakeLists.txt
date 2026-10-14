@@ -7,7 +7,8 @@ if(NOT WIN32 OR NOT MSVC OR NOT CMAKE_SIZEOF_VOID_P EQUAL 8)
         "HIKARI GameProjects require x64 Visual Studio 2022.")
 endif()
 
-find_package(HIKARI 4.1.0 CONFIG REQUIRED)
+# TV 専用の SceneCapture スタイル API を備えた公開 SDK が必要。
+find_package(HIKARI 4.2.0 CONFIG REQUIRED)
 
 hikari_add_game_project(
     NAME "Project_TD2_TV"

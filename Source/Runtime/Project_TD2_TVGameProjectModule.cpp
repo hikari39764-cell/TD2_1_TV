@@ -2,8 +2,13 @@
 #include "HIKARI/Project/GameProjectModule.h"
 #include "TD2RegionComponent.h"
 #include "TD2GameSession.h"
+#include "TD2LightBudget.h"
+#include "TD2ScreenPresenter.h"
 #include "TD2TravelComponents.h"
+#include "TD2ScreenFx.h"
+#include "TD2ScreenStyle.h"
 #include <array>
+#include <chrono>
 #include <cstdint>
 #include <memory>
 
@@ -14,7 +19,10 @@ class Game final : public HIKARI::IGameSystem {
 public:
     void Update(HIKARI::WorldView& world, const HIKARI::FrameContext& frame) override {
         auto* session = dynamic_cast<TD2::GameSession*>(world.GetGameSession());
-        if (session != nullptr) { session->Update(world, frame); }
+        if (session == nullptr) { return; }
+        const auto started = std::chrono::steady_clock::now();
+        session->Update(world, frame);
+        TD2::GameUpdateMilliseconds() += std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - started).count();
     }
 };
 
@@ -38,24 +46,35 @@ public:
                 .category = "TD2",
                 .description = "电视网格作者数据与屏幕引用",
             }) &&
-            context.RegisterComponent<TD2::PassageComponent>({
-                .typeName = TD2::kPassageComponentType, .displayName = "TD2 旧通路（停用）", .category = "TD2 Legacy",
-                .description = "仅保留旧数据，不参与连续世界",
-            }) &&
-            context.RegisterComponent<TD2::CameraPerformanceComponent>({
-                .typeName = TD2::kCameraPerformanceComponentType, .displayName = "TD2 旧镜头路径（停用）", .category = "TD2 Legacy",
-                .description = "仅保留旧数据，不参与 Sequence 播放",
-            }) &&
             context.RegisterComponent<TD2::RegionSequenceComponent>({
                 .typeName = TD2::kRegionSequenceComponentType, .displayName = "TD2 区域演出", .category = "TD2",
                 .description = "相邻电视的可选引擎 Sequence 绑定",
+            }) &&
+            context.RegisterComponent<TD2::ScreenStyleComponent>({
+                .typeName = TD2::kScreenStyleComponentType, .displayName = "TD2 屏幕3D风格", .category = "TD2",
+                .description = "电视独立3D捕获与漫画素描像素风格，不改变规则或厂房",
+            }) &&
+            context.RegisterComponent<TD2::ScreenFxComponent>({
+                .typeName = TD2::kScreenFxComponentType, .displayName = "TD2 屏幕特效", .category = "TD2",
+                .description = "电视内游戏事件特效（VFX 资产，可在 VFX 工作区编辑），不改变规则",
             }) &&
             context.RegisterSystem<TD2::ScreenPresentationSystem>({
                 .systemId = TD2::kScreenSystemId,
                 .displayName = "TD2 屏幕呈现",
             }) &&
+            context.RegisterComponent<TD2::LightCullComponent>({
+                .typeName = TD2::kLightCullComponentType, .displayName = "TD2 灯光预算", .category = "TD2",
+                .description = "Play 中视野外的灯光暂时关闭（不改场景数值）",
+            }) &&
+            context.RegisterSystem<TD2::LightBudgetSystem>({
+                .systemId = TD2::kLightBudgetSystemId,
+                .displayName = "TD2 灯光预算",
+            }) &&
+            context.BindComponentSystem({TD2::kLightCullComponentType, TD2::kLightBudgetSystemId, 120}) &&
             context.BindComponentSystem({TD2::kRegionComponentType, "Project_TD2_TV.Game", 100}) &&
-            context.BindComponentSystem({TD2::kRegionComponentType, TD2::kScreenSystemId, 110});
+            context.BindComponentSystem({TD2::kRegionComponentType, TD2::kScreenSystemId, 110}) &&
+            context.BindComponentSystem({TD2::kScreenStyleComponentType, TD2::kScreenSystemId, 110}) &&
+            context.BindComponentSystem({TD2::kScreenFxComponentType, TD2::kScreenSystemId, 110});
     }
 };
 

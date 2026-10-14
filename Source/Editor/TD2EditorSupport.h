@@ -35,7 +35,8 @@ struct RegionTarget {
 struct RegionSettings {
     RegionDefinition region;
     uint64_t screenObject = 0;
-    std::string screenSlot = "TD2_Screen", texturePath = "generated://solid/ffffffff";
+    // 画面は三次元キャプチャの材質槽へ接続し、旧二次元素材のパスを作者草稿に持たせない。
+    std::string screenSlot = "TD2_Screen";
     // 増幅はテレビの専用材質だけに適用する。index とモデル GUID は作者 UI に露出しない。
     float screenBrightness = 2.2f;
     int screenMaterialIndex = -1;

@@ -12,7 +12,9 @@ namespace TD2::Rules {
 struct Vec2 { double x = 0.0, y = 0.0; };
 struct Rect { double x = 0.0, y = 0.0, w = 1.0, h = 1.0; };
 enum class Direction { Up, Down, Left, Right };
-enum class DeviceKind { Solid, OneWay, Plate, Door, Laser, Spikes, Checkpoint, LockWall };
+// Spring は上面 10/32 格の踏み板。Bridge は Door と同じ通電規則（通電で収納）。Collectible は本体だけが拾う。
+// Decal は教程の貼り絵で、衝突も光線遮断も持たない表示専用の装置。
+enum class DeviceKind { Solid, OneWay, Plate, Door, Laser, Spikes, Checkpoint, LockWall, Spring, Bridge, Collectible, Decal };
 
 // 地形は RegionDefinition を唯一の情報源とし、センサーと可変の障害物だけを別定義にする。
 // targets は Plate から装置 ID への OR 接続。Door は active 時に実体を失う。
@@ -24,6 +26,11 @@ struct DeviceDefinition {
     bool inverted = false;
     Direction direction = Direction::Up;
     double range = 20.0;
+    // Spring：基礎の打ち上げ速度（格/秒）、立って溜める秒数、発射後の冷却秒数（3〜30）。
+    double power = 22.5, delay = 0.85, cooldown = 3.0;
+    // Decal：図案の種類（ad / space / spaceHold）と不透明度。
+    std::string variant;
+    double opacity = 0.8;
 };
 // 配置済みテレビだけを疎な地形として保持する。origin は整数格の世界座標。
 struct TerrainChunk { RegionDefinition region; int x = 0, y = 0; };
@@ -48,6 +55,8 @@ struct BodyState {
 };
 struct DeviceState {
     bool active = false, pressed = false;
+    // Spring の溜め・冷却の経過秒と、この刻みに記録した着地の衝撃速度（格/秒）。
+    double charge = 0.0, cooldown = 0.0, impact = 0.0;
     // 別の存档に滞在したまま古い存档を毎フレーム再登録しないため、接触辺沿を持つ。
     bool playerContact = false, echoContact = false;
 };
@@ -55,7 +64,7 @@ struct BeamState { std::string sourceId; Rect rect; };
 enum class EventKind {
     Blink, Bounce, BlinkRejected, EchoCreated, EchoRecalled, EchoRemoved,
     EchoSpawnBlocked, PlateChanged, DeviceChanged, CheckpointActivated,
-    PlayerDied, PlayerRespawned, ExplorationRestarted
+    PlayerDied, PlayerRespawned, ExplorationRestarted, SpringLaunched, CollectibleTaken
 };
 struct RuleEvent {
     EventKind kind = EventKind::Blink;
@@ -99,6 +108,9 @@ struct DeviceSnapshot {
     Rect rect;
     Direction direction = Direction::Up;
     bool active = false, pressed = false, solid = false;
+    // 表示用：Spring の溜め（0〜1）と冷却の残り（1→0）。Decal の図案。
+    double charge = 0.0, cooldown = 0.0;
+    std::string variant;
 };
 struct WorldSnapshot {
     std::string regionId;

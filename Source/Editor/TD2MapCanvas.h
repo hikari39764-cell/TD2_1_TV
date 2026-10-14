@@ -1,8 +1,6 @@
 #pragma once
 #include "TD2DeviceEditor.h"
-#include "TD2MapAssets.h"
 #include <algorithm>
-#include <cctype>
 #include <cmath>
 
 namespace TD2::Editor {
@@ -60,47 +58,68 @@ inline void DrawCanvasGrid(IEditorWorkspaceUi& ui, const MapCanvasView& v, Edito
 inline EditorWorkspaceColor DeviceColor(std::string_view kind) {
     if (kind == "Laser" || kind == "Spikes") { return {.83f, .37f, .42f, 1}; }
     if (kind == "Checkpoint") { return {.42f, .85f, .73f, 1}; }
-    if (kind == "Plate" || kind == "Door") { return {.84f, .69f, .38f, 1}; }
+    if (kind == "Plate" || kind == "Door" || kind == "Bridge") { return {.84f, .69f, .38f, 1}; }
+    if (kind == "Spring") { return {.96f, .72f, .24f, 1}; }
+    if (kind == "Collectible") { return {.94f, .42f, .66f, 1}; }
+    if (kind == "Decal") { return {.55f, .6f, .62f, 1}; }
     return {.48f, .65f, .71f, 1};
 }
 
-// スプライト表示は作者矩形と独立。薄い圧板・足場は一格高で底／上端に合わせる。
+// 作者 Canvas の記号は公開描画 API だけで構成する。ゲームの三次元表示や素材に依存しない。
+// 薄い圧板・足場の一格表示は従来の選択領域に合わせ、物理矩形を変更しない。
 inline void DrawDeviceGlyph(IEditorWorkspaceUi& ui, const DeviceDraft& d, const MapCanvasView& v) {
     auto a = v.Screen(static_cast<float>(d.x), static_cast<float>(d.y));
     auto b = v.Screen(static_cast<float>(d.x + d.w), static_cast<float>(d.y + d.h));
-    std::string key;
-    if (d.kind == "Solid") { key = "terrain.fill"; }
-    else if (d.kind == "OneWay") { key = "platform.middle"; b.y = a.y + v.tile; }
-    else if (d.kind == "Plate") { key = "plate.up"; a.y = b.y - v.tile; }
-    else if (d.kind == "Door") { key = "door.closed"; }
-    else if (d.kind == "Checkpoint") { key = "checkpoint.idle"; a.y = b.y - v.tile; }
-    else if (d.kind == "LockWall") { key = "lock.closed"; }
-    else {
-        std::string direction = d.direction;
-        std::transform(direction.begin(), direction.end(), direction.begin(), [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
-        if (d.kind == "Spikes") { key = "spikes." + direction; }
-        if (d.kind == "Laser") { key = "laser." + direction + ".on"; }
-    }
-    if (gMapSprites.Draw(ui, key, a, b)) { return; }
+    if (d.kind == "OneWay") { b.y = a.y + v.tile; }
+    if (d.kind == "Plate" || d.kind == "Checkpoint") { a.y = b.y - v.tile; }
     const auto c = DeviceColor(d.kind);
-    if (d.kind == "OneWay" || d.kind == "Plate") {
-        ui.CanvasFill({a.x, b.y - v.tile * .18f}, b, c);
-        ui.CanvasLine({a.x, b.y - v.tile * .24f}, {b.x, b.y - v.tile * .24f}, {c.r, c.g, c.b, .4f}, 2);
+    const auto p = [&](float x, float y) { return EditorWorkspacePoint{a.x + (b.x - a.x) * x, a.y + (b.y - a.y) * y}; };
+    const float stroke = std::clamp(v.tile * .055f, 1.0f, 2.5f);
+    const float unit = (std::min)({v.tile, b.x - a.x, b.y - a.y});
+    const auto line = [&](float x1, float y1, float x2, float y2) { ui.CanvasLine(p(x1, y1), p(x2, y2), c, stroke); };
+    if (d.kind == "OneWay") {
+        ui.CanvasFill(p(0, 0), p(1, .13f), c);
+        line(.42f, .57f, .5f, .35f); line(.5f, .35f, .58f, .57f); line(.5f, .35f, .5f, .85f);
+    } else if (d.kind == "Plate") {
+        ui.CanvasFill(p(0, .83f), p(1, 1), {c.r * .45f, c.g * .45f, c.b * .45f, 1});
+        ui.CanvasFill(p(.1f, .64f), p(.9f, .8f), c);
+        line(.5f, .12f, .5f, .46f); line(.39f, .34f, .5f, .46f); line(.5f, .46f, .61f, .34f);
+    } else if (d.kind == "Checkpoint") {
+        line(.15f, .93f, .85f, .93f); line(.3f, .93f, .3f, .08f);
+        ui.CanvasFill(p(.3f, .08f), p(.82f, .37f), c);
+    } else if (d.kind == "Spikes") {
+        // 尖端方向は作者の dir と一致させる。縦横どちらも端の半格を切り捨てない。
+        const bool vertical = d.direction == "Left" || d.direction == "Right";
+        const int teeth = std::clamp(static_cast<int>(std::ceil((vertical ? d.h : d.w) * 2)), 1, 128);
+        const auto oriented = [&](float along, float depth) {
+            if (d.direction == "Down") { return p(along, 1 - depth); }
+            if (d.direction == "Left") { return p(depth, along); }
+            if (d.direction == "Right") { return p(1 - depth, along); }
+            return p(along, depth);
+        };
+        ui.CanvasFill(a, b, {c.r * .2f, c.g * .2f, c.b * .2f, 1});
+        for (int i = 0; i < teeth; ++i) {
+            ui.CanvasLine(oriented(static_cast<float>(i) / teeth, .95f), oriented((i + .5f) / teeth, .08f), c, stroke);
+            ui.CanvasLine(oriented((i + .5f) / teeth, .08f), oriented((i + 1.0f) / teeth, .95f), c, stroke);
+        }
+    } else if (d.kind == "Laser") {
+        const auto center = p(.5f, .5f);
+        const EditorWorkspacePoint dir = d.direction == "Left" ? EditorWorkspacePoint{-1, 0} : d.direction == "Right" ? EditorWorkspacePoint{1, 0} : d.direction == "Down" ? EditorWorkspacePoint{0, 1} : EditorWorkspacePoint{0, -1};
+        const auto tip = p(.5f + .42f * dir.x, .5f + .42f * dir.y);
+        ui.CanvasCircle(center, unit * .19f, c, stroke);
+        ui.CanvasLine({center.x + dir.x * unit * .19f, center.y + dir.y * unit * .19f}, tip, c, stroke);
+        for (const float side : {-1.0f, 1.0f}) { ui.CanvasLine(tip, {tip.x - dir.x * unit * .16f - dir.y * side * unit * .12f, tip.y - dir.y * unit * .16f + dir.x * side * unit * .12f}, c, stroke); }
     } else {
         ui.CanvasFill(a, b, {c.r * .3f, c.g * .3f, c.b * .3f, 1});
-        ui.CanvasRect(a, b, c, 2);
-        if (d.kind == "Spikes") {
-            for (float x = a.x; x < b.x; x += v.tile * .5f) {
-                ui.CanvasLine({x, b.y}, {x + v.tile * .25f, a.y}, c, 2);
-                ui.CanvasLine({x + v.tile * .25f, a.y}, {(std::min)(b.x, x + v.tile * .5f), b.y}, c, 2);
-            }
-        } else if (d.kind == "Laser") {
-            ui.CanvasCircle({(a.x + b.x) * .5f, (a.y + b.y) * .5f}, v.tile * .18f, c, 2);
-        } else if (d.kind == "Door" || d.kind == "LockWall") {
-            ui.CanvasLine({(a.x + b.x) * .5f, a.y}, {(a.x + b.x) * .5f, b.y}, c, 2);
-        } else if (d.kind == "Checkpoint") {
-            ui.CanvasLine({a.x + v.tile * .3f, b.y}, {a.x + v.tile * .3f, a.y}, c, 2);
-            ui.CanvasFill({a.x + v.tile * .3f, a.y}, {a.x + v.tile * .8f, a.y + v.tile * .35f}, c);
+        ui.CanvasRect(a, b, c, stroke);
+        if (d.kind == "Solid") { line(.12f, .12f, .88f, .12f); }
+        else if (d.kind == "Door") {
+            line(.5f, .05f, .5f, .95f); ui.CanvasCircle(p(.65f, .54f), unit * .06f, c, stroke);
+        } else if (d.kind == "LockWall") {
+            const auto center = p(.5f, .5f);
+            ui.CanvasCircle({center.x, center.y - unit * .11f}, unit * .16f, c, stroke);
+            ui.CanvasFill({center.x - unit * .23f, center.y - unit * .05f}, {center.x + unit * .23f, center.y + unit * .25f}, c);
+            ui.CanvasLine({center.x, center.y + unit * .02f}, {center.x, center.y + unit * .17f}, {.1f, .18f, .23f, 1}, stroke);
         }
     }
 }
@@ -115,11 +134,12 @@ inline void DrawRoomMap(IEditorWorkspaceUi& ui, const RegionSettings& s, const M
         if (s.region.cells[CellIndex(s.region, x, y)] == '1') {
             const auto empty = [&s](int cx, int cy) { return cx < 0 || cy < 0 || cx >= s.region.cols || cy >= s.region.rows || s.region.cells[CellIndex(s.region, cx, cy)] == '0'; };
             const bool top = empty(x, y - 1), bottom = empty(x, y + 1), left = empty(x - 1, y), right = empty(x + 1, y);
-            const std::string key = top ? (left ? "terrain.top_left" : right ? "terrain.top_right" : "terrain.top") : bottom ? (left ? "terrain.bottom_left" : right ? "terrain.bottom_right" : "terrain.bottom") : left ? "terrain.left" : right ? "terrain.right" : "terrain.fill";
-            if (gMapSprites.Draw(ui, key, a, b)) { continue; }
             ui.CanvasFill(a, b, {.25f, .42f, .46f, 1});
-            ui.CanvasFill(a, {b.x, a.y + v.tile * .16f}, {.53f, .78f, .72f, 1});
-            ui.CanvasRect(a, b, {.12f, .25f, .29f, 1});
+            if (grid && v.tile > 10) { ui.CanvasRect(a, b, {.20f, .35f, .39f, 1}, .5f); }
+            if (top) { ui.CanvasLine(a, {b.x, a.y}, {.63f, .84f, .77f, 1}, 2); }
+            if (left) { ui.CanvasLine(a, {a.x, b.y}, {.43f, .63f, .62f, 1}); }
+            if (right) { ui.CanvasLine({b.x, a.y}, b, {.43f, .63f, .62f, 1}); }
+            if (bottom) { ui.CanvasLine({a.x, b.y}, b, {.43f, .63f, .62f, 1}); }
         } else if (grid && v.tile > 10) { ui.CanvasRect(a, b, {.15f, .22f, .25f, .65f}, .5f); }
     }
     DeviceEditor devices; devices.Load(s.devices);
@@ -131,10 +151,16 @@ inline void DrawRoomMap(IEditorWorkspaceUi& ui, const RegionSettings& s, const M
         }
     }
     for (const auto& d : devices.Items()) { DrawDeviceGlyph(ui, d, v); }
-    const auto a = v.Screen(s.spawnX, s.spawnY), b = v.Screen(s.spawnX + .625f, s.spawnY + .875f);
-    if (gMapSprites.Draw(ui, "player.idle.right.0", v.Screen(s.spawnX - .1875f, s.spawnY - .125f), v.Screen(s.spawnX + .8125f, s.spawnY + .875f))) { return; }
-    ui.CanvasFill(a, b, {.83f, .91f, .94f, 1});
-    ui.CanvasFill({a.x + v.tile * .35f, a.y + v.tile * .2f}, {b.x, a.y + v.tile * .28f}, {.12f, .23f, .30f, 1});
+    // 出生点は人物記号とし、選択・移動用の既存 .625 × .875 格の矩形内に収める。
+    const auto spawn = [&](float x, float y) { return v.Screen(s.spawnX + x, s.spawnY + y); };
+    constexpr EditorWorkspaceColor player{.88f, .94f, .98f, 1};
+    const float stroke = std::clamp(v.tile * .07f, 1.0f, 3.0f);
+    ui.CanvasCircle(spawn(.3125f, .16f), v.tile * .12f, player, stroke);
+    ui.CanvasFill(spawn(.2f, .33f), spawn(.425f, .61f), player);
+    ui.CanvasLine(spawn(.2f, .37f), spawn(.08f, .57f), player, stroke);
+    ui.CanvasLine(spawn(.425f, .37f), spawn(.545f, .57f), player, stroke);
+    ui.CanvasLine(spawn(.25f, .61f), spawn(.17f, .84f), player, stroke);
+    ui.CanvasLine(spawn(.375f, .61f), spawn(.455f, .84f), player, stroke);
 }
 
 } // namespace TD2::Editor

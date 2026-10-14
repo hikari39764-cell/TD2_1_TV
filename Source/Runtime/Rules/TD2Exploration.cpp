@@ -4,11 +4,6 @@
 
 namespace TD2::Rules {
 namespace {
-Rect RoomRect(const RegionPlacement& p) { return {double(p.worldX), double(p.worldY), double(p.cols), double(p.rows)}; }
-bool Overlap(const Rect& a, const Rect& b) {
-    return a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
-}
-Rect Local(Rect r, const RegionPlacement& p) { r.x -= p.worldX; r.y -= p.worldY; return r; }
 std::string DeviceId(std::string_view region, std::string_view local) {
     // region ID は '/' を含まない契約なので、同名の局所装置が別 TV と混ざらない。
     return std::string(region) + "/" + std::string(local);
@@ -34,12 +29,13 @@ std::string Exploration::Initialize(std::vector<RegionSource> sources) {
         }
         RegionRuntime runtime;
         runtime.definition = std::move(source.definition); runtime.placement = p;
-        runtime.deviceBegin = next.world_.devices.size();
         next.world_.chunks.push_back({runtime.definition.region, p.worldX, p.worldY});
         for (auto device : runtime.definition.devices) {
             device.id = DeviceId(p.regionId, device.id);
             device.rect.x += p.worldX; device.rect.y += p.worldY;
-            for (auto& target : device.targets) target = DeviceId(p.regionId, target);
+            // 「区域ID/装置ID」と書いた接続は別の TV の装置をそのまま指す（地図块を跨ぐ圧板）。
+            for (auto& target : device.targets)
+                if (target.find('/') == std::string::npos) target = DeviceId(p.regionId, target);
             next.deviceOwners_[device.id] = p.regionId;
             next.world_.devices.push_back(std::move(device));
         }
@@ -51,7 +47,6 @@ std::string Exploration::Initialize(std::vector<RegionSource> sources) {
     if (const auto error = ValidateWorld(next.world_); !error.empty()) return error;
     next.state_ = CreateWorldState(next.world_);
     next.activeRegion_ = next.RegionAt(next.state_.player.rect);
-    next.RefreshSnapshots();
     *this = std::move(next);
     return {};
 }
@@ -110,61 +105,23 @@ void Exploration::Record(StepOutput output, ExplorationOutput& out) {
     for (auto& [region, events] : grouped) out.regions.push_back({region, std::move(events)});
 }
 
-void Exploration::RefreshSnapshots() {
-    const auto global = BuildSnapshot(world_, state_);
-    for (auto& [id, region] : regions_) {
-        const auto& p = region.placement; const auto bounds = RoomRect(p);
-        auto local = global;
-        local.regionId = id;
-        local.playerPresent = global.playerPresent && Overlap(global.presentationPlayer, bounds);
-        local.player.rect = Local(global.player.rect, p); local.presentationPlayer = Local(global.presentationPlayer, p);
-        if (global.echo && Overlap(global.echo->rect, bounds)) local.echo->rect = Local(global.echo->rect, p);
-        else local.echo.reset();
-        if (global.pendingEcho && Overlap(*global.pendingEcho, bounds)) local.pendingEcho = Local(*global.pendingEcho, p);
-        else local.pendingEcho.reset();
-        const auto prefix = id + "/";
-        local.checkpointId = global.checkpointId.starts_with(prefix) ? global.checkpointId.substr(prefix.size()) : std::string{};
-        local.devices.clear();
-        for (size_t i = 0; i < region.definition.devices.size(); ++i) {
-            auto device = global.devices[region.deviceBegin + i];
-            device.id = region.definition.devices[i].id; device.rect = Local(device.rect, p);
-            local.devices.push_back(std::move(device));
-        }
-        local.beams.clear();
-        for (auto beam : global.beams) if (Overlap(beam.rect, bounds)) {
-            const double right = std::min(beam.rect.x + beam.rect.w, bounds.x + bounds.w);
-            const double bottom = std::min(beam.rect.y + beam.rect.h, bounds.y + bounds.h);
-            beam.rect.x = std::max(beam.rect.x, bounds.x); beam.rect.y = std::max(beam.rect.y, bounds.y);
-            beam.rect.w = right - beam.rect.x; beam.rect.h = bottom - beam.rect.y;
-            beam.rect = Local(beam.rect, p); local.beams.push_back(std::move(beam));
-        }
-        region.snapshot = std::move(local);
-    }
+const WorldSnapshot& Exploration::Snapshot() {
+    if (snapshotDirty_) { snapshot_ = BuildSnapshot(world_, state_); snapshotDirty_ = false; }
+    return snapshot_;
 }
 
 ExplorationOutput Exploration::Step(const InputState& input, double seconds) {
     ExplorationOutput out;
     if (!Ready()) return out;
-    auto buttons = input;
-    if (inputLocked_) {
-        out.inputSuppressed = true;
-        if (input.action.held || input.action.pressed) actionNeedsRelease_ = true;
-        if (input.action.released || (!input.action.held && !input.action.pressed)) actionNeedsRelease_ = false;
-        buttons = {};
-        state_.blinkBuffer = 0; state_.pendingActionPressed = state_.pendingActionReleased = false;
-    } else if (actionNeedsRelease_) {
-        buttons.action = {};
-        if (input.action.released || !input.action.held) actionNeedsRelease_ = false;
-    }
-    // 操作を捨てても重力・反発・残影・装置の物理はそのまま進める。領域切替は結果の観測だけ。
-    auto result = StepRules(world_, state_, buttons, seconds);
+    // 部屋の切り替え（镜头の演出）の間も操作はそのまま効く。領域切替は結果の観測だけ。
+    auto result = StepRules(world_, state_, input, seconds);
     const bool respawn = std::any_of(result.events.begin(), result.events.end(), [](const RuleEvent& e) { return e.kind == EventKind::PlayerRespawned; });
     const auto current = RegionAt(state_.player.rect);
     if (!current.empty() && current != activeRegion_) {
         out.transitions.push_back({respawn ? "respawn" : "crossed", activeRegion_, current, {state_.player.rect.x, state_.player.rect.y}});
         activeRegion_ = current;
     }
-    Record(std::move(result), out); RefreshSnapshots();
+    Record(std::move(result), out); snapshotDirty_ = true;
     return out;
 }
 } // namespace TD2::Rules

@@ -10,7 +10,8 @@
 
 namespace TD2::Editor {
 namespace {
-constexpr std::array<std::string_view, 8> kKinds{"Solid", "OneWay", "Plate", "Door", "Laser", "Spikes", "Checkpoint", "LockWall"};
+constexpr std::array<std::string_view, 12> kKinds{"Solid", "OneWay", "Plate", "Door", "Laser", "Spikes", "Checkpoint", "LockWall",
+                                                  "Spring", "Bridge", "Collectible", "Decal"};
 constexpr std::array<std::string_view, 4> kDirections{"Up", "Down", "Left", "Right"};
 constexpr std::array<std::string_view, 8> kLabels{"实体块", "单向平台", "压板", "门", "激光", "尖刺", "存档点", "锁墙"};
 bool StableId(std::string_view id) {
@@ -69,7 +70,7 @@ int DeviceEditor::Hit(double x, double y) const {
     for (size_t i = devices_.size(); i > 0; --i) {
         const auto& d = devices_[i - 1];
         if (x >= d.x && x < d.x + d.w && y >= d.y && y < d.y + d.h) { return static_cast<int>(i - 1); }
-        // 薄い装置は表示用の一格高スプライトも選択できる。物理矩形そのものは変更しない。
+        // 薄い装置は表示用の一格高の編集記号も選択できる。物理矩形そのものは変更しない。
         if ((d.kind == "Plate" || d.kind == "Checkpoint") && x >= d.x && x < d.x + d.w && y >= d.y + d.h - 1 && y < d.y + d.h) { return static_cast<int>(i - 1); }
         if (d.kind == "OneWay" && x >= d.x && x < d.x + d.w && y >= d.y && y < d.y + 1) { return static_cast<int>(i - 1); }
     }
@@ -80,7 +81,7 @@ bool DeviceEditor::Add(std::string_view kind, int col, int row, int cols, int ro
     if (!IsLoaded() || std::find(kKinds.begin(), kKinds.end(), kind) == kKinds.end() || col < 0 || row < 0 || col >= cols || row >= rows) { return false; }
     DeviceDraft d; d.kind = kind; d.x = col; d.y = row;
     if (kind == "Door" || kind == "LockWall") { d.h = (std::min)(3, rows - row); }
-    if (kind == "OneWay") { d.w = (std::min)(3, cols - col); }
+    if (kind == "OneWay" || kind == "Bridge") { d.w = (std::min)(3, cols - col); }
     if (kind == "Laser") { d.direction = "Right"; }
     unsigned suffix = 1;
     do { d.id = "device_" + std::to_string(suffix++); }

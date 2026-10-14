@@ -65,9 +65,8 @@ struct RegionSequenceBinding {
     std::string sequenceAssetGuid;
     std::string sequenceSlotName;
     uint64_t cameraObject = 0;
-    // 制作用の任意参照。既存の集約初期化を保ち、実行時の姿勢は Sequence の端点だけで決める。
-    uint64_t sourceCameraObject = 0;
-    uint64_t targetCameraObject = 0;
+    // 再生の倍速。引擎の演出は最短 1 秒なので、0.4 秒の切り替えは 1 秒の演出を 2.5 倍で流す。
+    float speed = 1.0f;
 
     bool operator==(const RegionSequenceBinding&) const = default;
 };
