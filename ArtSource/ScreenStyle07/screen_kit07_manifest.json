@@ -1,0 +1,449 @@
+{
+ "schema": 1,
+ "kit": "ScreenKit07",
+ "cellUnits": 1,
+ "pivot": "bottom_center_front",
+ "front": "+Z",
+ "up": "+Y",
+ "depth": 0.7,
+ "gamePixelsPerCell": 16,
+ "backgroundLuminanceBelow": 0.035,
+ "palettes": {
+  "ink": {
+   "Backdrop": "d0570d8147e0a19421e95f250d12cb71",
+   "Plate": "4b168fdd3b7b5ab6408f1902c9cac7b9",
+   "Plate_Pressed": "bd14db802db1f4f30e5d782fafe11361",
+   "Door_Jamb": "182211dc9d91d289da4f222a2466a54e",
+   "Door_Lintel": "9d502e28378197a2c41fabeaca75628e",
+   "Door_LintelLit": "a894c6acda4cca9587c2a6822a95a813",
+   "Door_LeafTile": "c9d4cdeee7807eaeb374b83df289372e",
+   "Door_LeafFolded": "eb7f868a7fca40f3a83da9c64cbeab0a",
+   "Checkpoint_Idle": "6de53c2e260e595d0583bd28748c31f7",
+   "Checkpoint_Active": "06c5079b53321586925d40389e7d6ddc",
+   "OneWay": "19f67a3cee0f5c5ff417bd6ffcf91478",
+   "LaserBeam": "d720acc017fe33caff24e30c15075503",
+   "LockWall_Tile": "0ae807dd83615ed4fa99b802f0fa61f8",
+   "LockWall_Emblem": "961d97aa68321c802a0e6b426059bf02",
+   "FX_Ring": "f98c31eecadd2d116c76a6e811dd30eb",
+   "FX_Shard": "7152a9fd5b6bf10f05f58940782160df",
+   "Terrain_Block8x4": "f790b44d0550eeb8fe9a3266f55ff5f5",
+   "Terrain_Block4x4": "e1679ecbb0cbf15950bda4441cc40bbc",
+   "Terrain_Block8x2": "4586d99e780d5ba54b19b6a1ac1e8dca",
+   "Terrain_Block4x2": "a5a4c5a4728532fe78d619d428fd3b3e",
+   "Terrain_Block2x4": "5f197e4443b68a3d53a9feb504d3f7ab",
+   "Terrain_Block8x1": "ac4b9a9c2a5d6b1e16898032e76a35f4",
+   "Terrain_Block2x2": "f622692d23b8d51734ffbb602e8699b3",
+   "Terrain_Block4x1": "ce19c11b71bc84f744b151681dcc9729",
+   "Terrain_Block1x4": "10a8a280d473e6b96b6d2fb959551167",
+   "Terrain_Block2x1": "1058df2d7b748f421d94be87d321dd65",
+   "Terrain_Block1x2": "6400bb426a484ef110e031f83d734251",
+   "Terrain_Block1x1": "5c98722ee9ef39c546717a80a919d6fc",
+   "Terrain_TopRun8": "891005eb7331938df61392b8b2f0680a",
+   "Terrain_TopRun8L": "e20263cea0bb805e6105b4106f929491",
+   "Terrain_TopRun8R": "6ee4a302103753c4845ba9f33773d4a2",
+   "Terrain_TopRun8LR": "dbd03e33fdf630385a2f1bdd801ecfa7",
+   "Terrain_TopRun4": "765065a38311f6b5b23471fb44ef5425",
+   "Terrain_TopRun4L": "b1605fe43eed77ce605cf429c3764541",
+   "Terrain_TopRun4R": "4bc1256a6ab2a2f07a188660d60776dd",
+   "Terrain_TopRun4LR": "0a7208e4a4db3a58fc4914984fd2232b",
+   "Terrain_TopRun2": "3a6ac633a6fe438eaccff7301defc0a7",
+   "Terrain_TopRun2L": "b8a03ebc20a2b87d9f2344f34284a0e0",
+   "Terrain_TopRun2R": "ec66f88c35ccb28b31f541d50e79e0c5",
+   "Terrain_TopRun2LR": "30b0d06b4296f130b908b7c37b960b8a",
+   "Terrain_TopRun1": "e294605df8486dfd585d842fd5061030",
+   "Terrain_TopRun1L": "03f3c3fe7c4aad85032d5bc6b1a897b7",
+   "Terrain_TopRun1R": "9f1a8084f7e0b05b79c330dfc62782e9",
+   "Terrain_TopRun1LR": "bf015b700a6bba3e0c54221266f7a60e",
+   "Backdrop_GridH8": "e78dbaab7b1a1f12d4309adec41601ae",
+   "Backdrop_GridH4": "98932f2e3060b946dec4dd7be92c94ef",
+   "Backdrop_GridH2": "72e6d8b29cc46aae37559f2f292437d5",
+   "Backdrop_GridH1": "48175433f9e9bc58270a8785d38327d8",
+   "Backdrop_GridV8": "3ffff428f0bedc0ffe3318198e730edd",
+   "Backdrop_GridV4": "8b38727a5a14dfb9917b800132b79063",
+   "Backdrop_GridV2": "fad8c62d57c35350c618a50390fe6801",
+   "Backdrop_GridV1": "0bed7ebd2f75c3df92af4166727d3188",
+   "Spikes_Up": "92f68cf1f4274333f847827015c16363",
+   "Spikes_Down": "90376c1ea1234d67c08c206273100b22",
+   "Spikes_Left": "acf0452f2dcd268ff5b6ff26e8e3de09",
+   "Spikes_Right": "5ae341e51a7841bbbfc371b3ec1f8dc9",
+   "Laser_Left": "6e64193e19c45f8ebbcce6c94ec82f2c",
+   "Laser_Right": "40ab696a8164e8b51c83eb4d04ce7f27",
+   "Laser_Up": "17e4be04d5f57b1fc2161b44e39cccb4",
+   "Laser_Down": "7e70974204737121b4723a893a0677f5",
+   "Ninja_Idle0_R": "3a1d06451090c32d861aac2b9fa37db3",
+   "Ninja_Idle0_L": "e8ffcf101e9b3627f7f6463129c94c62",
+   "Ninja_Idle1_R": "626dac9ff7706f9f0f356f958eb31652",
+   "Ninja_Idle1_L": "e3e641ac95525d7dbf06fe66f81989fb",
+   "Ninja_Jog0_R": "f1b813a6458628683c092680ec7eefa5",
+   "Ninja_Jog0_L": "8efa244af1fe3f5be64b2ac77e69ea07",
+   "Ninja_Jog1_R": "cfa0d81e29baf400b6aebea64d7eaaef",
+   "Ninja_Jog1_L": "3c22bd8270bffad340ae295d58b4c2c0",
+   "Ninja_Jog2_R": "a73be8539016bdafa2278442c32874bd",
+   "Ninja_Jog2_L": "52c7cfa74baa2bb103d54734a15ef92a",
+   "Ninja_Jog3_R": "73a5c0f1dcf78b3fbcd028a2095ed173",
+   "Ninja_Jog3_L": "1cb3160c12df4f82c2b6f81f2e9b7a7d",
+   "Ninja_Jog4_R": "a0fa1466d27493e1e0c1b1b5d7e9777e",
+   "Ninja_Jog4_L": "4cd979dc3f418bc8a587817682e69dbf",
+   "Ninja_Jog5_R": "cf1cd1c3803dbcced4d48f81e248e012",
+   "Ninja_Jog5_L": "3815899a1ad0f05c0eadc24ce7397524",
+   "Ninja_Air0_R": "9925d28822239bd1dc4ed8a852766418",
+   "Ninja_Air0_L": "3d1368fb08b6920c312a1efa105e3313",
+   "Ninja_Echo_R": "5cbc8fabe644ba8003718764626c0549",
+   "Ninja_Echo_L": "a95dc821759302aaf0e16598221d62e8",
+   "Bridge_Ghost": "61e05fd0382e1039590ac698dc3aab15",
+   "Spring": "7b09ef34a7f57dec1290146c8e6b8e1d",
+   "Spring_Hot": "001a5197bba0cf7278859a92fb681891",
+   "Spring_Off": "65ee1db899e4cb0a2d3dfe8a6dacd211",
+   "Spring_Arrow": "99f9c510cf98f42f3206bdba1d62ecac",
+   "Spring_ArrowDim": "c9119be5e21a8cc299b8a2c7c6e8738d"
+  },
+  "teal": {
+   "Backdrop": "a822f068678fb232a68acf6c643ef35d",
+   "Plate": "62c7053db267ff7e7b84f6c09226508b",
+   "Plate_Pressed": "1b87112cf3445e65cc09770660aa1594",
+   "Door_Jamb": "c38adb91a74184aca460b650f80f64c1",
+   "Door_Lintel": "022d5a25b9a66ad72a506b648fe2c84e",
+   "Door_LintelLit": "7ad0734c15d7f3ec0960be3b8b0c411e",
+   "Door_LeafTile": "363c3cddf202b039fc673f23d9d79899",
+   "Door_LeafFolded": "dad67b6a51357a2a4f6d548f1bc68fa0",
+   "Checkpoint_Idle": "8c50fd64ca706be46a9a8fc8f8460df9",
+   "Checkpoint_Active": "24f04d94153ea9a4529879effa294ce7",
+   "OneWay": "8e3e0007b01f1713ae4f345faa1ac610",
+   "LaserBeam": "7d795d1921b4e25f0a664a2b62aa4759",
+   "LockWall_Tile": "0997f136efc29a5035b97663e83b67a5",
+   "LockWall_Emblem": "552f4a6278d0c3989a9750a90981729d",
+   "FX_Ring": "26586f6957b16fc56f28029098e99e00",
+   "FX_Shard": "931c45573c560dd98e754f6625626834",
+   "Terrain_Block8x4": "c9a02ce0c0b299e98354bd1f16940918",
+   "Terrain_Block4x4": "6c2eaad20ae44db2a77e32533759bc5a",
+   "Terrain_Block8x2": "041ca7f26b017a28c6e984b811bcfcde",
+   "Terrain_Block4x2": "a6ecb072db83e04d9667e8737b00df9f",
+   "Terrain_Block2x4": "3ae6d3a93a7cec72628eba74a57c92a4",
+   "Terrain_Block8x1": "33ef0fd1c365c9ec3c4410b5c6095ac1",
+   "Terrain_Block2x2": "c9ad6c6fdfbd14107dc15c843be29b33",
+   "Terrain_Block4x1": "3efa147452280763afad99d213b5ecb3",
+   "Terrain_Block1x4": "4af048b6f526af1dccf12eaaf78a05df",
+   "Terrain_Block2x1": "808011dc53373ec44546df2c19249e00",
+   "Terrain_Block1x2": "28c7de9760e77019ca136d1f9f141f78",
+   "Terrain_Block1x1": "b863f062ccc82c11170272d93475500c",
+   "Terrain_TopRun8": "cfe689ba55b4d05a5b2901f9ace3b681",
+   "Terrain_TopRun8L": "b02ff4be972ae19a0c75b33b16139d82",
+   "Terrain_TopRun8R": "8c59cf4c34f21fba6f2b4ed04eafdb7f",
+   "Terrain_TopRun8LR": "2ff5206573e3eadd8e14f19c58810ca8",
+   "Terrain_TopRun4": "7be590178c24f7da446ac62f58eb5113",
+   "Terrain_TopRun4L": "a03eb3815b22ce9397c6041d99379fc4",
+   "Terrain_TopRun4R": "21485e84ed7cbb8884d2d4e6091b0097",
+   "Terrain_TopRun4LR": "807a262b7756f01220f7541876a87b22",
+   "Terrain_TopRun2": "183cada8f2023b3c3bc87e3695afa663",
+   "Terrain_TopRun2L": "d9b463a7ef14148d35d8baa6f0a5b95d",
+   "Terrain_TopRun2R": "a0f08d11ec6af097d0aab2eef6a2b9ee",
+   "Terrain_TopRun2LR": "d278d6e5eae502a2c6bbb2fb1fd1f07b",
+   "Terrain_TopRun1": "331d007d5af790c4a527f7b4001c3897",
+   "Terrain_TopRun1L": "1dc9560cc29ffb240bfc3afb6b66f76f",
+   "Terrain_TopRun1R": "dda1a58bfd31e11712d39bd30b7d6683",
+   "Terrain_TopRun1LR": "d7477fd228b3419552716d455d4639fc",
+   "Backdrop_GridH8": "1f04e4483a9b888d9f66fd829bd0157f",
+   "Backdrop_GridH4": "1d206030cc3e74dd03b4efe7683755c9",
+   "Backdrop_GridH2": "323f0494df884434b2790b227ede3dc1",
+   "Backdrop_GridH1": "c1a88550e17d95ed4ea699edb99a88ef",
+   "Backdrop_GridV8": "d1497c40f1794301e95c2e9ac0bf342e",
+   "Backdrop_GridV4": "417f1bbc3f5a37d11d48ab1c100301b8",
+   "Backdrop_GridV2": "74045438464613d8b94b545c76b93a14",
+   "Backdrop_GridV1": "58675207bc68eba685427833a9d504db",
+   "Spikes_Up": "4337611fbfa4689957de32bdb1c9971f",
+   "Spikes_Down": "a7eafabde44b1e1748af741ad70a2836",
+   "Spikes_Left": "bc2c254efea8e89688d360e7c1de9f4b",
+   "Spikes_Right": "b18478cc5589824d3858a82a513b257b",
+   "Laser_Left": "4b02f722b5e469998e8e4712c3755801",
+   "Laser_Right": "422a0dc476ae6dac01a7acd382cdec8a",
+   "Laser_Up": "6d599f8070e1e025706f206211b1f22a",
+   "Laser_Down": "aaa722fbf9477a82b980edd4fbc08426",
+   "Ninja_Idle0_R": "426c5ffc143fd2ed84649ebb1568dbc7",
+   "Ninja_Idle0_L": "ec54e464e104283243aa2046af511007",
+   "Ninja_Idle1_R": "57d3a77868e159925017c69c1dd18c1f",
+   "Ninja_Idle1_L": "ed7d3c5911167ac0a02df14cf17c33cc",
+   "Ninja_Jog0_R": "5fe91cf3fd61e0923d3f998c3101ffb2",
+   "Ninja_Jog0_L": "696414d7ad51edfe5cbbafeae9100590",
+   "Ninja_Jog1_R": "6469486dbdb6c3b315d7446014556ce5",
+   "Ninja_Jog1_L": "2258616ffa3f1348f364b588a0ac7e2e",
+   "Ninja_Jog2_R": "474c76fed0a5798fb6131e42d8b1ff72",
+   "Ninja_Jog2_L": "2c3ca7f13f239edb2fd5be64636baaaf",
+   "Ninja_Jog3_R": "fc36fe4b597c95ba4e4abb0657cce1ea",
+   "Ninja_Jog3_L": "465c68d95f919074468d827cd848b29f",
+   "Ninja_Jog4_R": "0155397658bbf8d6d986283a836c989d",
+   "Ninja_Jog4_L": "29bbde1565dd7a395fdcfa8d8f13383a",
+   "Ninja_Jog5_R": "f270acc462f1419527d6f29e66e4aa9e",
+   "Ninja_Jog5_L": "2b67bc682129dc3a50e0ccf90a093634",
+   "Ninja_Air0_R": "80eb7f8bcf98468be21205453fa920c8",
+   "Ninja_Air0_L": "1910069b1edbf86eb0553aa496415a59",
+   "Ninja_Echo_R": "0136ba4413c2ab21eab0a65013ff77a6",
+   "Ninja_Echo_L": "8517ab8f8c7d9f0577dec00216edc8fa",
+   "Bridge_Ghost": "9c488236cf32c8b439a7fdc147b1d9e8",
+   "Spring": "46b66aa88bd7149c7796813b89284492",
+   "Spring_Hot": "ff8c020f3ea6cffc6f020dcd89bf1dcd",
+   "Spring_Off": "943c75fc7b8d1b94626b860cb4942ff2",
+   "Spring_Arrow": "307d6e726c1c56dbe0df75144ac1bff9",
+   "Spring_ArrowDim": "28d93d70b198943fa681db61770d99cf"
+  }
+ },
+ "parts": {
+  "Backdrop": {
+   "triangles": 78
+  },
+  "Plate": {
+   "triangles": 132
+  },
+  "Plate_Pressed": {
+   "triangles": 132
+  },
+  "Door_Jamb": {
+   "triangles": 88
+  },
+  "Door_Lintel": {
+   "triangles": 96
+  },
+  "Door_LintelLit": {
+   "triangles": 96
+  },
+  "Door_LeafTile": {
+   "triangles": 220
+  },
+  "Door_LeafFolded": {
+   "triangles": 44
+  },
+  "Checkpoint_Idle": {
+   "triangles": 132
+  },
+  "Checkpoint_Active": {
+   "triangles": 132
+  },
+  "OneWay": {
+   "triangles": 220
+  },
+  "LaserBeam": {
+   "triangles": 24
+  },
+  "LockWall_Tile": {
+   "triangles": 140
+  },
+  "LockWall_Emblem": {
+   "triangles": 132
+  },
+  "FX_Ring": {
+   "triangles": 48
+  },
+  "FX_Shard": {
+   "triangles": 8
+  },
+  "Terrain_Block8x4": {
+   "triangles": 1664
+  },
+  "Terrain_Block4x4": {
+   "triangles": 832
+  },
+  "Terrain_Block8x2": {
+   "triangles": 832
+  },
+  "Terrain_Block4x2": {
+   "triangles": 416
+  },
+  "Terrain_Block2x4": {
+   "triangles": 416
+  },
+  "Terrain_Block8x1": {
+   "triangles": 416
+  },
+  "Terrain_Block2x2": {
+   "triangles": 208
+  },
+  "Terrain_Block4x1": {
+   "triangles": 208
+  },
+  "Terrain_Block1x4": {
+   "triangles": 208
+  },
+  "Terrain_Block2x1": {
+   "triangles": 104
+  },
+  "Terrain_Block1x2": {
+   "triangles": 104
+  },
+  "Terrain_Block1x1": {
+   "triangles": 52
+  },
+  "Terrain_TopRun8": {
+   "triangles": 768
+  },
+  "Terrain_TopRun8L": {
+   "triangles": 768
+  },
+  "Terrain_TopRun8R": {
+   "triangles": 768
+  },
+  "Terrain_TopRun8LR": {
+   "triangles": 768
+  },
+  "Terrain_TopRun4": {
+   "triangles": 384
+  },
+  "Terrain_TopRun4L": {
+   "triangles": 384
+  },
+  "Terrain_TopRun4R": {
+   "triangles": 384
+  },
+  "Terrain_TopRun4LR": {
+   "triangles": 384
+  },
+  "Terrain_TopRun2": {
+   "triangles": 192
+  },
+  "Terrain_TopRun2L": {
+   "triangles": 192
+  },
+  "Terrain_TopRun2R": {
+   "triangles": 192
+  },
+  "Terrain_TopRun2LR": {
+   "triangles": 192
+  },
+  "Terrain_TopRun1": {
+   "triangles": 96
+  },
+  "Terrain_TopRun1L": {
+   "triangles": 96
+  },
+  "Terrain_TopRun1R": {
+   "triangles": 96
+  },
+  "Terrain_TopRun1LR": {
+   "triangles": 96
+  },
+  "Backdrop_GridH8": {
+   "triangles": 96
+  },
+  "Backdrop_GridH4": {
+   "triangles": 48
+  },
+  "Backdrop_GridH2": {
+   "triangles": 24
+  },
+  "Backdrop_GridH1": {
+   "triangles": 12
+  },
+  "Backdrop_GridV8": {
+   "triangles": 96
+  },
+  "Backdrop_GridV4": {
+   "triangles": 48
+  },
+  "Backdrop_GridV2": {
+   "triangles": 24
+  },
+  "Backdrop_GridV1": {
+   "triangles": 12
+  },
+  "Spikes_Up": {
+   "triangles": 30
+  },
+  "Spikes_Down": {
+   "triangles": 30
+  },
+  "Spikes_Left": {
+   "triangles": 30
+  },
+  "Spikes_Right": {
+   "triangles": 30
+  },
+  "Laser_Left": {
+   "triangles": 112
+  },
+  "Laser_Right": {
+   "triangles": 112
+  },
+  "Laser_Up": {
+   "triangles": 112
+  },
+  "Laser_Down": {
+   "triangles": 112
+  },
+  "Ninja_Idle0_R": {
+   "triangles": 4505
+  },
+  "Ninja_Idle0_L": {
+   "triangles": 4505
+  },
+  "Ninja_Idle1_R": {
+   "triangles": 4505
+  },
+  "Ninja_Idle1_L": {
+   "triangles": 4505
+  },
+  "Ninja_Jog0_R": {
+   "triangles": 4507
+  },
+  "Ninja_Jog0_L": {
+   "triangles": 4507
+  },
+  "Ninja_Jog1_R": {
+   "triangles": 4506
+  },
+  "Ninja_Jog1_L": {
+   "triangles": 4506
+  },
+  "Ninja_Jog2_R": {
+   "triangles": 4506
+  },
+  "Ninja_Jog2_L": {
+   "triangles": 4506
+  },
+  "Ninja_Jog3_R": {
+   "triangles": 4506
+  },
+  "Ninja_Jog3_L": {
+   "triangles": 4506
+  },
+  "Ninja_Jog4_R": {
+   "triangles": 4505
+  },
+  "Ninja_Jog4_L": {
+   "triangles": 4505
+  },
+  "Ninja_Jog5_R": {
+   "triangles": 4506
+  },
+  "Ninja_Jog5_L": {
+   "triangles": 4506
+  },
+  "Ninja_Air0_R": {
+   "triangles": 4507
+  },
+  "Ninja_Air0_L": {
+   "triangles": 4507
+  },
+  "Ninja_Echo_R": {
+   "triangles": 4505
+  },
+  "Ninja_Echo_L": {
+   "triangles": 4505
+  },
+  "Bridge_Ghost": {
+   "triangles": 36
+  },
+  "Spring": {
+   "triangles": 352
+  },
+  "Spring_Hot": {
+   "triangles": 352
+  },
+  "Spring_Off": {
+   "triangles": 352
+  },
+  "Spring_Arrow": {
+   "triangles": 4
+  },
+  "Spring_ArrowDim": {
+   "triangles": 4
+  }
+ }
+}

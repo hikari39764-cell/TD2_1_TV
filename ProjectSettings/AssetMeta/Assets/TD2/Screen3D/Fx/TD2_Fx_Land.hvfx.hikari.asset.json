@@ -1,0 +1,14 @@
+{
+  "displayName": "TD2 屏幕特效 · 落地",
+  "guid": "6266c810bfc4cd30a3fef407561a82a2",
+  "importSettings": {
+    "cookVfx": true,
+    "outputFormat": "HVFXC",
+    "sourceFormat": ".hvfx"
+  },
+  "importerId": "VfxAssetImporter",
+  "importerVersion": 27,
+  "metaVersion": 1,
+  "sourcePath": "Assets/TD2/Screen3D/Fx/TD2_Fx_Land.hvfx",
+  "type": "VfxEffect"
+}

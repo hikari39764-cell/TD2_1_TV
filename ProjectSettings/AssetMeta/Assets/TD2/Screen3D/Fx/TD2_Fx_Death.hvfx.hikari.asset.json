@@ -1,0 +1,14 @@
+{
+  "displayName": "TD2 屏幕特效 · 死亡",
+  "guid": "ac0a58b7025321b79947b30998df75a6",
+  "importSettings": {
+    "cookVfx": true,
+    "outputFormat": "HVFXC",
+    "sourceFormat": ".hvfx"
+  },
+  "importerId": "VfxAssetImporter",
+  "importerVersion": 27,
+  "metaVersion": 1,
+  "sourcePath": "Assets/TD2/Screen3D/Fx/TD2_Fx_Death.hvfx",
+  "type": "VfxEffect"
+}

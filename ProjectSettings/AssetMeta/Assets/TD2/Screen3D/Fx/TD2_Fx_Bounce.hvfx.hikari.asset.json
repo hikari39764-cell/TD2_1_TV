@@ -1,0 +1,14 @@
+{
+  "displayName": "TD2 屏幕特效 · 反弹",
+  "guid": "428f4676da445f316151df1bd3238c47",
+  "importSettings": {
+    "cookVfx": true,
+    "outputFormat": "HVFXC",
+    "sourceFormat": ".hvfx"
+  },
+  "importerId": "VfxAssetImporter",
+  "importerVersion": 27,
+  "metaVersion": 1,
+  "sourcePath": "Assets/TD2/Screen3D/Fx/TD2_Fx_Bounce.hvfx",
+  "type": "VfxEffect"
+}

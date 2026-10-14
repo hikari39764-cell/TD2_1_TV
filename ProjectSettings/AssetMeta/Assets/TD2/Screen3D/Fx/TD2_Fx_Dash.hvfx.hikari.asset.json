@@ -1,0 +1,14 @@
+{
+  "displayName": "TD2 屏幕特效 · 瞬移拖尾",
+  "guid": "105dfe17eae26654eb473849b8f06cba",
+  "importSettings": {
+    "cookVfx": true,
+    "outputFormat": "HVFXC",
+    "sourceFormat": ".hvfx"
+  },
+  "importerId": "VfxAssetImporter",
+  "importerVersion": 27,
+  "metaVersion": 1,
+  "sourcePath": "Assets/TD2/Screen3D/Fx/TD2_Fx_Dash.hvfx",
+  "type": "VfxEffect"
+}

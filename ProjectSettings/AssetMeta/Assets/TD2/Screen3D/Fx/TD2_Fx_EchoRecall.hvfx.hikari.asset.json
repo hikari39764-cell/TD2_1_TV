@@ -1,0 +1,14 @@
+{
+  "displayName": "TD2 屏幕特效 · 残影收回",
+  "guid": "03ba15fa8522fe78b11bac48f693967a",
+  "importSettings": {
+    "cookVfx": true,
+    "outputFormat": "HVFXC",
+    "sourceFormat": ".hvfx"
+  },
+  "importerId": "VfxAssetImporter",
+  "importerVersion": 27,
+  "metaVersion": 1,
+  "sourcePath": "Assets/TD2/Screen3D/Fx/TD2_Fx_EchoRecall.hvfx",
+  "type": "VfxEffect"
+}

@@ -1,0 +1,14 @@
+{
+  "displayName": "TD2 屏幕特效 · 残影受阻",
+  "guid": "9b3335bf7710e1e4c63396d588a26009",
+  "importSettings": {
+    "cookVfx": true,
+    "outputFormat": "HVFXC",
+    "sourceFormat": ".hvfx"
+  },
+  "importerId": "VfxAssetImporter",
+  "importerVersion": 27,
+  "metaVersion": 1,
+  "sourcePath": "Assets/TD2/Screen3D/Fx/TD2_Fx_EchoBlocked.hvfx",
+  "type": "VfxEffect"
+}

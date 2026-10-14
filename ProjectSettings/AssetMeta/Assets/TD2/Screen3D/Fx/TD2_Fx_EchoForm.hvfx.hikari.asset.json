@@ -1,0 +1,14 @@
+{
+  "displayName": "TD2 屏幕特效 · 残影生成",
+  "guid": "c583b85b271889016e5efe1b52625e64",
+  "importSettings": {
+    "cookVfx": true,
+    "outputFormat": "HVFXC",
+    "sourceFormat": ".hvfx"
+  },
+  "importerId": "VfxAssetImporter",
+  "importerVersion": 27,
+  "metaVersion": 1,
+  "sourcePath": "Assets/TD2/Screen3D/Fx/TD2_Fx_EchoForm.hvfx",
+  "type": "VfxEffect"
+}

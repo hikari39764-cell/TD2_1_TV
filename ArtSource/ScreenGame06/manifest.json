@@ -1,0 +1,1864 @@
+{
+  "formatVersion": 1,
+  "status": "ready",
+  "coordinates": {
+    "up": "+Y",
+    "right": "+X",
+    "front": "+Z",
+    "cellWidth": 1,
+    "cellHeight": 1,
+    "units": "meters",
+    "defaultPivot": "bottom_center",
+    "camera": "orthographic yaw 0 elevation 7 degrees",
+    "logicalCollision": "Rules own collision; visible bevels, device thinness and scaling do not alter it"
+  },
+  "palette": {
+    "ink": "#435969",
+    "ivory": "#DDD5C1",
+    "danger": "#C34737"
+  },
+  "models": [
+    {
+      "id": "terrain_solid",
+      "file": "D:\\PJ\\TD2_TV\\Assets\\TD2\\Screen3D\\Models\\SG06_Terrain_Solid.fbx",
+      "rootName": "SG06_Terrain_Solid",
+      "pivot": "bottom_center",
+      "status": "ready",
+      "logicalCells": [
+        1,
+        1
+      ],
+      "tiling": "Repeat at integer cell centers; do not stretch seams across fractional cells",
+      "bounds": {
+        "min": [
+          -0.5,
+          0.0,
+          -0.2199999988079071
+        ],
+        "max": [
+          0.5,
+          1.0,
+          0.2199999988079071
+        ],
+        "size": [
+          1.0,
+          1.0,
+          0.4399999976158142
+        ]
+      },
+      "triangles": 44,
+      "animations": [],
+      "nodes": [
+        {
+          "name": "SG06_Terrain_Solid__Body",
+          "restTranslation": [
+            0,
+            0,
+            0
+          ],
+          "boundsLocal": {
+            "min": [
+              -0.5,
+              0.0,
+              -0.2199999988079071
+            ],
+            "max": [
+              0.5,
+              1.0,
+              0.2199999988079071
+            ],
+            "size": [
+              1.0,
+              1.0,
+              0.4399999976158142
+            ]
+          },
+          "materials": [
+            "SG06_Ivory",
+            "SG06_Ink"
+          ]
+        }
+      ],
+      "materialIndices": {
+        "SG06_Ivory": 0,
+        "SG06_Ink": 1
+      },
+      "fbxReadbackPassed": true,
+      "sha256": "cbc5b02bd49b07777b44af17cc4aa728e8b9c9fd30996e4c3dec92c0359fe2a9",
+      "engineGuid": "3dd0712936468ab3e238071f78f4c4a9",
+      "source": "D:\\PJ\\TD2_TV\\ArtSource\\ScreenGame06\\ScreenGame06_Terrain.blend",
+      "hasArmature": false,
+      "engineImportVerified": false,
+      "runtimeVisualVerified": false,
+      "revision": "front_geometric_inlay_01",
+      "frontGrooveWidth": 0.025,
+      "frontGrooveDepth": 0.004,
+      "frontGrooveOuterInset": 0.01,
+      "tileGap": 0,
+      "fbxReadbackBounds": {
+        "min": [
+          -0.5,
+          -1.66095386333609e-08,
+          -0.22000007331371307
+        ],
+        "max": [
+          0.5,
+          1.0,
+          0.2199999988079071
+        ],
+        "size": [
+          1.0,
+          1.0000000166095386,
+          0.4400000721216202
+        ]
+      },
+      "fbxReadbackMaxErrorMeters": 7.450580596923828e-08,
+      "fbxAxes": {
+        "UpAxis": 1,
+        "UpAxisSign": 1,
+        "FrontAxis": 2,
+        "FrontAxisSign": 1,
+        "CoordAxis": 0,
+        "CoordAxisSign": 1,
+        "UnitScaleFactor": 100.0
+      }
+    },
+    {
+      "id": "oneway",
+      "file": "D:\\PJ\\TD2_TV\\Assets\\TD2\\Screen3D\\Models\\SG06_OneWay.fbx",
+      "rootName": "SG06_OneWay",
+      "pivot": "bottom_center",
+      "status": "ready",
+      "logicalCells": [
+        1,
+        1
+      ],
+      "surfaceY": 0.16,
+      "bounds": {
+        "min": [
+          -0.5,
+          0.0,
+          -0.22
+        ],
+        "max": [
+          0.5,
+          0.16,
+          0.22
+        ],
+        "size": [
+          1.0,
+          0.16,
+          0.44
+        ]
+      },
+      "triangles": 88,
+      "animations": [],
+      "nodes": [
+        {
+          "name": "SG06_OneWay__Body",
+          "restTranslation": [
+            0.0,
+            0.0,
+            -0.0
+          ],
+          "boundsLocal": {
+            "min": [
+              -0.5,
+              0.0,
+              -0.22
+            ],
+            "max": [
+              0.5,
+              0.16,
+              0.22
+            ],
+            "size": [
+              1.0,
+              0.16,
+              0.44
+            ]
+          },
+          "materials": [
+            "SG06_Ink",
+            "SG06_Ivory"
+          ]
+        }
+      ],
+      "materialIndices": {
+        "SG06_Ink": 0,
+        "SG06_Ivory": 1
+      },
+      "fbxReadbackPassed": true,
+      "sha256": "fea26decf6ecedfe0dcbb3426ab8d9b648ad9f4498d7e36b86a16f364b49e3ce",
+      "engineGuid": "1de725f3d05038431e7416af5048e7d7"
+    },
+    {
+      "id": "pressure_plate",
+      "file": "D:\\PJ\\TD2_TV\\Assets\\TD2\\Screen3D\\Models\\SG06_PressurePlate.fbx",
+      "rootName": "SG06_PressurePlate",
+      "pivot": "bottom_center",
+      "status": "ready",
+      "logicalCells": [
+        1,
+        1
+      ],
+      "parts": {
+        "Base": {
+          "file": "D:\\PJ\\TD2_TV\\Assets\\TD2\\Screen3D\\Models\\SG06_PressurePlate_Base.fbx",
+          "node": "SG06_PressurePlate__Base",
+          "restTranslation": [
+            0.0,
+            0.0,
+            -0.0
+          ],
+          "pivot": "bottom_center",
+          "bounds": {
+            "min": [
+              -0.5,
+              0.0,
+              -0.24
+            ],
+            "max": [
+              0.5,
+              0.14,
+              0.24
+            ],
+            "size": [
+              1.0,
+              0.14,
+              0.48
+            ]
+          },
+          "materialIndices": {
+            "SG06_Ink": 0
+          },
+          "fbxReadbackPassed": true,
+          "triangles": 132,
+          "sha256": "8d01d44704385a7856aeac820d9e12554b4501b3d409cb46b77069ef0eb065ca",
+          "engineGuid": "79646aee7da22c9b2593a075a086d460"
+        },
+        "Plate": {
+          "file": "D:\\PJ\\TD2_TV\\Assets\\TD2\\Screen3D\\Models\\SG06_PressurePlate_Plate.fbx",
+          "node": "SG06_PressurePlate__Plate",
+          "restTranslation": [
+            0.0,
+            0.075,
+            -0.0
+          ],
+          "pivot": "bottom_center",
+          "bounds": {
+            "min": [
+              -0.4,
+              -0.0,
+              -0.2
+            ],
+            "max": [
+              0.4,
+              0.055,
+              0.2
+            ],
+            "size": [
+              0.8,
+              0.055,
+              0.4
+            ]
+          },
+          "materialIndices": {
+            "SG06_Ivory": 0
+          },
+          "fbxReadbackPassed": true,
+          "triangles": 44,
+          "sha256": "6b2c4b2f6f5ea250c5295163ff52a1a70593af334e2a69a909b8b82572925196",
+          "engineGuid": "34ad7d2d9a251a884f15fc3b6f2c8cf0"
+        }
+      },
+      "pressedPlateDelta": [
+        0,
+        -0.035,
+        0
+      ],
+      "bounds": {
+        "min": [
+          -0.5,
+          0.0,
+          -0.24
+        ],
+        "max": [
+          0.5,
+          0.14,
+          0.24
+        ],
+        "size": [
+          1.0,
+          0.14,
+          0.48
+        ]
+      },
+      "triangles": 176,
+      "animations": [],
+      "nodes": [
+        {
+          "name": "SG06_PressurePlate__Base",
+          "restTranslation": [
+            0.0,
+            0.0,
+            -0.0
+          ],
+          "boundsLocal": {
+            "min": [
+              -0.5,
+              0.0,
+              -0.24
+            ],
+            "max": [
+              0.5,
+              0.14,
+              0.24
+            ],
+            "size": [
+              1.0,
+              0.14,
+              0.48
+            ]
+          },
+          "materials": [
+            "SG06_Ink"
+          ]
+        },
+        {
+          "name": "SG06_PressurePlate__Plate",
+          "restTranslation": [
+            0.0,
+            0.075,
+            -0.0
+          ],
+          "boundsLocal": {
+            "min": [
+              -0.4,
+              -0.0,
+              -0.2
+            ],
+            "max": [
+              0.4,
+              0.055,
+              0.2
+            ],
+            "size": [
+              0.8,
+              0.055,
+              0.4
+            ]
+          },
+          "materials": [
+            "SG06_Ivory"
+          ]
+        }
+      ],
+      "materialIndices": {
+        "SG06_Ink": 0,
+        "SG06_Ivory": 1
+      },
+      "fbxReadbackPassed": true,
+      "sha256": "91a6b236106049f421b07ea0954dcf72446cb400e9da44e24ebf36f3ade4f6b3",
+      "engineGuid": "e6cc24f30506c90737866c1442a344c7"
+    },
+    {
+      "id": "door",
+      "file": "D:\\PJ\\TD2_TV\\Assets\\TD2\\Screen3D\\Models\\SG06_Door.fbx",
+      "rootName": "SG06_Door",
+      "pivot": "bottom_center",
+      "status": "ready",
+      "logicalCells": [
+        1,
+        1
+      ],
+      "parts": {
+        "Frame": {
+          "file": "D:\\PJ\\TD2_TV\\Assets\\TD2\\Screen3D\\Models\\SG06_Door_Frame.fbx",
+          "node": "SG06_Door__Frame",
+          "restTranslation": [
+            0.0,
+            0.0,
+            -0.0
+          ],
+          "pivot": "bottom_center",
+          "bounds": {
+            "min": [
+              -0.5,
+              0.0,
+              -0.2
+            ],
+            "max": [
+              0.5,
+              1.0,
+              0.2
+            ],
+            "size": [
+              1.0,
+              1.0,
+              0.4
+            ]
+          },
+          "materialIndices": {
+            "SG06_Ink": 0
+          },
+          "fbxReadbackPassed": true,
+          "triangles": 176,
+          "sha256": "8971d20c7bc5f8b88b78fea017ae368306c78b2c11d338fd63211eca898d479d",
+          "engineGuid": "04ba6a0e479042c39e925dace14cc506"
+        },
+        "Leaf": {
+          "file": "D:\\PJ\\TD2_TV\\Assets\\TD2\\Screen3D\\Models\\SG06_Door_Leaf.fbx",
+          "node": "SG06_Door__Leaf",
+          "restTranslation": [
+            0.0,
+            0.035,
+            -0.0
+          ],
+          "pivot": "bottom_center",
+          "bounds": {
+            "min": [
+              -0.42,
+              0.0,
+              -0.14
+            ],
+            "max": [
+              0.42,
+              0.88,
+              0.14
+            ],
+            "size": [
+              0.84,
+              0.88,
+              0.28
+            ]
+          },
+          "materialIndices": {
+            "SG06_Ivory": 0
+          },
+          "fbxReadbackPassed": true,
+          "triangles": 44,
+          "sha256": "d26c67a03d451ea84b90d6884d18bc39ba3abd66a83ad0168e4f308d8e56edd2",
+          "engineGuid": "3a28f92d587148070d962703d55368a4"
+        }
+      },
+      "openLeafDelta": [
+        0,
+        0.92,
+        0
+      ],
+      "bounds": {
+        "min": [
+          -0.5,
+          0.0,
+          -0.2
+        ],
+        "max": [
+          0.5,
+          1.0,
+          0.2
+        ],
+        "size": [
+          1.0,
+          1.0,
+          0.4
+        ]
+      },
+      "triangles": 220,
+      "animations": [],
+      "nodes": [
+        {
+          "name": "SG06_Door__Frame",
+          "restTranslation": [
+            0.0,
+            0.0,
+            -0.0
+          ],
+          "boundsLocal": {
+            "min": [
+              -0.5,
+              0.0,
+              -0.2
+            ],
+            "max": [
+              0.5,
+              1.0,
+              0.2
+            ],
+            "size": [
+              1.0,
+              1.0,
+              0.4
+            ]
+          },
+          "materials": [
+            "SG06_Ink"
+          ]
+        },
+        {
+          "name": "SG06_Door__Leaf",
+          "restTranslation": [
+            0.0,
+            0.035,
+            -0.0
+          ],
+          "boundsLocal": {
+            "min": [
+              -0.42,
+              0.0,
+              -0.14
+            ],
+            "max": [
+              0.42,
+              0.88,
+              0.14
+            ],
+            "size": [
+              0.84,
+              0.88,
+              0.28
+            ]
+          },
+          "materials": [
+            "SG06_Ivory"
+          ]
+        }
+      ],
+      "materialIndices": {
+        "SG06_Ink": 0,
+        "SG06_Ivory": 1
+      },
+      "fbxReadbackPassed": true,
+      "sha256": "420f348f11a75f73ad550e9e90ae38afc1a711a6092acff509cb0a9855990632",
+      "engineGuid": "9797c5f016dc9266b224d6b8b6aab45c"
+    },
+    {
+      "id": "laser_emitter",
+      "file": "D:\\PJ\\TD2_TV\\Assets\\TD2\\Screen3D\\Models\\SG06_LaserEmitter.fbx",
+      "rootName": "SG06_LaserEmitter",
+      "pivot": "bottom_center",
+      "status": "ready",
+      "logicalCells": [
+        1,
+        1
+      ],
+      "forward": "+X",
+      "muzzle": [
+        0.24,
+        0.24,
+        0
+      ],
+      "bounds": {
+        "min": [
+          -0.24,
+          0.0,
+          -0.22
+        ],
+        "max": [
+          0.24,
+          0.44,
+          0.22
+        ],
+        "size": [
+          0.48,
+          0.44,
+          0.44
+        ]
+      },
+      "triangles": 432,
+      "animations": [],
+      "nodes": [
+        {
+          "name": "SG06_LaserEmitter__Body",
+          "restTranslation": [
+            0.0,
+            0.0,
+            -0.0
+          ],
+          "boundsLocal": {
+            "min": [
+              -0.24,
+              0.0,
+              -0.22
+            ],
+            "max": [
+              0.24,
+              0.44,
+              0.22
+            ],
+            "size": [
+              0.48,
+              0.44,
+              0.44
+            ]
+          },
+          "materials": [
+            "SG06_Ink",
+            "SG06_Ivory",
+            "SG06_DangerSignal",
+            "SG06_Danger"
+          ]
+        }
+      ],
+      "materialIndices": {
+        "SG06_Ink": 0,
+        "SG06_Ivory": 1,
+        "SG06_DangerSignal": 2,
+        "SG06_Danger": 3
+      },
+      "fbxReadbackPassed": true,
+      "sha256": "d397c261fc96fda3829f2be7c92dac08b9ab11a23a1823964862a145ec1221c6",
+      "engineGuid": "55399b7a9ca54b42c460be5d2b2b7dbd"
+    },
+    {
+      "id": "laser_beam",
+      "file": "D:\\PJ\\TD2_TV\\Assets\\TD2\\Screen3D\\Models\\SG06_LaserBeam.fbx",
+      "rootName": "SG06_LaserBeam",
+      "pivot": "bottom_center",
+      "status": "ready",
+      "purpose": "Low-cost VFX geometry with thin bright core",
+      "lengthAxis": "+X",
+      "unitLength": 1,
+      "bounds": {
+        "min": [
+          -0.5,
+          0.0,
+          -0.023
+        ],
+        "max": [
+          0.5,
+          0.036,
+          0.023
+        ],
+        "size": [
+          1.0,
+          0.036,
+          0.046
+        ]
+      },
+      "triangles": 36,
+      "animations": [],
+      "nodes": [
+        {
+          "name": "SG06_LaserBeam__Body",
+          "restTranslation": [
+            0.0,
+            0.0,
+            -0.0
+          ],
+          "boundsLocal": {
+            "min": [
+              -0.5,
+              0.0,
+              -0.023
+            ],
+            "max": [
+              0.5,
+              0.036,
+              0.023
+            ],
+            "size": [
+              1.0,
+              0.036,
+              0.046
+            ]
+          },
+          "materials": [
+            "SG06_DangerSignal",
+            "SG06_IvoryCore"
+          ]
+        }
+      ],
+      "centerAnchor": [
+        0,
+        0.018,
+        0
+      ],
+      "materialIndices": {
+        "SG06_DangerSignal": 0,
+        "SG06_IvoryCore": 1
+      },
+      "fbxReadbackPassed": true,
+      "sha256": "450be4edec70e365ccc3b79b9f7ab7e668b37f21a5686c266a8524d12f846a92",
+      "engineGuid": "b5469c27bc6e1e41d64e096700359eac"
+    },
+    {
+      "id": "spikes",
+      "file": "D:\\PJ\\TD2_TV\\Assets\\TD2\\Screen3D\\Models\\SG06_Spikes.fbx",
+      "rootName": "SG06_Spikes",
+      "pivot": "bottom_center",
+      "status": "ready",
+      "logicalCells": [
+        1,
+        1
+      ],
+      "defaultDirection": "+Y",
+      "rotationAboutZDegrees": {
+        "Up": 0,
+        "Right": -90,
+        "Down": 180,
+        "Left": 90
+      },
+      "bounds": {
+        "min": [
+          -0.5,
+          0.0,
+          -0.2
+        ],
+        "max": [
+          0.5,
+          0.6373752,
+          0.2
+        ],
+        "size": [
+          1.0,
+          0.6373752,
+          0.4
+        ]
+      },
+      "triangles": 140,
+      "animations": [],
+      "nodes": [
+        {
+          "name": "SG06_Spikes__Body",
+          "restTranslation": [
+            0.0,
+            0.0,
+            -0.0
+          ],
+          "boundsLocal": {
+            "min": [
+              -0.5,
+              0.0,
+              -0.2
+            ],
+            "max": [
+              0.5,
+              0.6373752,
+              0.2
+            ],
+            "size": [
+              1.0,
+              0.6373752,
+              0.4
+            ]
+          },
+          "materials": [
+            "SG06_Ink",
+            "SG06_Danger"
+          ]
+        }
+      ],
+      "materialIndices": {
+        "SG06_Ink": 0,
+        "SG06_Danger": 1
+      },
+      "fbxReadbackPassed": true,
+      "sha256": "31ae65ce1b942e8554c78f6bcfd50de54fb82092eac06de4914ea53f4c4e1352",
+      "engineGuid": "d87858f10e7cbe52db2759081721ac3f"
+    },
+    {
+      "id": "checkpoint_idle",
+      "file": "D:\\PJ\\TD2_TV\\Assets\\TD2\\Screen3D\\Models\\SG06_Checkpoint_Idle.fbx",
+      "rootName": "SG06_Checkpoint_Idle",
+      "pivot": "bottom_center",
+      "status": "ready",
+      "logicalCells": [
+        1,
+        1
+      ],
+      "parts": {
+        "Base": {
+          "file": "D:\\PJ\\TD2_TV\\Assets\\TD2\\Screen3D\\Models\\SG06_Checkpoint_Base.fbx",
+          "node": "SG06_Checkpoint_Idle__Base",
+          "restTranslation": [
+            0.0,
+            0.0,
+            -0.0
+          ],
+          "pivot": "bottom_center",
+          "bounds": {
+            "min": [
+              -0.275,
+              0.0,
+              -0.2
+            ],
+            "max": [
+              0.275,
+              0.42,
+              0.2
+            ],
+            "size": [
+              0.55,
+              0.42,
+              0.4
+            ]
+          },
+          "materialIndices": {
+            "SG06_Ink": 0
+          },
+          "fbxReadbackPassed": true,
+          "triangles": 88,
+          "sha256": "adf11da7ad8db402ec01cba087eb329644133d02bea8ab377ef3ebac421c4a49",
+          "engineGuid": "e9eede903c47ad50be3b8f8a69b46232"
+        },
+        "Marker": {
+          "file": "D:\\PJ\\TD2_TV\\Assets\\TD2\\Screen3D\\Models\\SG06_Checkpoint_IdleMarker.fbx",
+          "node": "SG06_Checkpoint_Idle__Marker",
+          "restTranslation": [
+            0.0,
+            0.3,
+            -0.0
+          ],
+          "pivot": "bottom_center",
+          "bounds": {
+            "min": [
+              -0.2971716,
+              0.0028284,
+              -0.06
+            ],
+            "max": [
+              0.2971716,
+              0.5971715,
+              0.06
+            ],
+            "size": [
+              0.5943432,
+              0.5943431,
+              0.12
+            ]
+          },
+          "materialIndices": {
+            "SG06_Ivory": 0
+          },
+          "fbxReadbackPassed": true,
+          "triangles": 96,
+          "sha256": "c807f2c6920ab26344091355e2544dec4b92b8c161ce8f4ce26ae8edf2397073",
+          "engineGuid": "197b7858d46508b398484b12237b50fc"
+        }
+      },
+      "bounds": {
+        "min": [
+          -0.2971716,
+          0.0,
+          -0.2
+        ],
+        "max": [
+          0.2971716,
+          0.8971716,
+          0.2
+        ],
+        "size": [
+          0.5943432,
+          0.8971716,
+          0.4
+        ]
+      },
+      "triangles": 184,
+      "animations": [],
+      "nodes": [
+        {
+          "name": "SG06_Checkpoint_Idle__Base",
+          "restTranslation": [
+            0.0,
+            0.0,
+            -0.0
+          ],
+          "boundsLocal": {
+            "min": [
+              -0.275,
+              0.0,
+              -0.2
+            ],
+            "max": [
+              0.275,
+              0.42,
+              0.2
+            ],
+            "size": [
+              0.55,
+              0.42,
+              0.4
+            ]
+          },
+          "materials": [
+            "SG06_Ink"
+          ]
+        },
+        {
+          "name": "SG06_Checkpoint_Idle__Marker",
+          "restTranslation": [
+            0.0,
+            0.3,
+            -0.0
+          ],
+          "boundsLocal": {
+            "min": [
+              -0.2971716,
+              0.0028284,
+              -0.06
+            ],
+            "max": [
+              0.2971716,
+              0.5971715,
+              0.06
+            ],
+            "size": [
+              0.5943432,
+              0.5943431,
+              0.12
+            ]
+          },
+          "materials": [
+            "SG06_Ivory"
+          ]
+        }
+      ],
+      "materialIndices": {
+        "SG06_Ink": 0,
+        "SG06_Ivory": 1
+      },
+      "fbxReadbackPassed": true,
+      "sha256": "11185a7eec77fb2555b13087648c4a74ad836dd5ed7580ac10324a0e3c8c0c78",
+      "engineGuid": "cb9c4206f4a8f2a93a0acf4f5c59b4e3"
+    },
+    {
+      "id": "checkpoint_active",
+      "file": "D:\\PJ\\TD2_TV\\Assets\\TD2\\Screen3D\\Models\\SG06_Checkpoint_Active.fbx",
+      "rootName": "SG06_Checkpoint_Active",
+      "pivot": "bottom_center",
+      "status": "ready",
+      "logicalCells": [
+        1,
+        1
+      ],
+      "parts": {
+        "Base": {
+          "file": "D:\\PJ\\TD2_TV\\Assets\\TD2\\Screen3D\\Models\\SG06_Checkpoint_Base.fbx",
+          "node": "SG06_Checkpoint_Active__Base",
+          "restTranslation": [
+            0.0,
+            0.0,
+            -0.0
+          ],
+          "pivot": "bottom_center",
+          "bounds": {
+            "min": [
+              -0.275,
+              0.0,
+              -0.2
+            ],
+            "max": [
+              0.275,
+              0.42,
+              0.2
+            ],
+            "size": [
+              0.55,
+              0.42,
+              0.4
+            ]
+          },
+          "materialIndices": {
+            "SG06_Ink": 0
+          },
+          "fbxReadbackPassed": true,
+          "triangles": 88,
+          "sha256": "adf11da7ad8db402ec01cba087eb329644133d02bea8ab377ef3ebac421c4a49",
+          "engineGuid": "e9eede903c47ad50be3b8f8a69b46232"
+        },
+        "Marker": {
+          "file": "D:\\PJ\\TD2_TV\\Assets\\TD2\\Screen3D\\Models\\SG06_Checkpoint_ActiveMarker.fbx",
+          "node": "SG06_Checkpoint_Active__Marker",
+          "restTranslation": [
+            0.0,
+            0.3,
+            -0.0
+          ],
+          "pivot": "bottom_center",
+          "bounds": {
+            "min": [
+              -0.2971716,
+              0.0028284,
+              -0.06
+            ],
+            "max": [
+              0.2971716,
+              0.5971715,
+              0.06
+            ],
+            "size": [
+              0.5943432,
+              0.5943431,
+              0.12
+            ]
+          },
+          "materialIndices": {
+            "SG06_IvorySignal": 0
+          },
+          "fbxReadbackPassed": true,
+          "triangles": 140,
+          "sha256": "ba63dbee6bd350cedca0333c70d261a877f03fb9b6aff701bd8769447ce3819b",
+          "engineGuid": "618a066a71e42ad0ede5bd385fb892a2"
+        }
+      },
+      "bounds": {
+        "min": [
+          -0.2971716,
+          0.0,
+          -0.2
+        ],
+        "max": [
+          0.2971716,
+          0.8971716,
+          0.2
+        ],
+        "size": [
+          0.5943432,
+          0.8971716,
+          0.4
+        ]
+      },
+      "triangles": 228,
+      "animations": [],
+      "nodes": [
+        {
+          "name": "SG06_Checkpoint_Active__Base",
+          "restTranslation": [
+            0.0,
+            0.0,
+            -0.0
+          ],
+          "boundsLocal": {
+            "min": [
+              -0.275,
+              0.0,
+              -0.2
+            ],
+            "max": [
+              0.275,
+              0.42,
+              0.2
+            ],
+            "size": [
+              0.55,
+              0.42,
+              0.4
+            ]
+          },
+          "materials": [
+            "SG06_Ink"
+          ]
+        },
+        {
+          "name": "SG06_Checkpoint_Active__Marker",
+          "restTranslation": [
+            0.0,
+            0.3,
+            -0.0
+          ],
+          "boundsLocal": {
+            "min": [
+              -0.2971716,
+              0.0028284,
+              -0.06
+            ],
+            "max": [
+              0.2971716,
+              0.5971715,
+              0.06
+            ],
+            "size": [
+              0.5943432,
+              0.5943431,
+              0.12
+            ]
+          },
+          "materials": [
+            "SG06_IvorySignal"
+          ]
+        }
+      ],
+      "materialIndices": {
+        "SG06_Ink": 0,
+        "SG06_IvorySignal": 1
+      },
+      "fbxReadbackPassed": true,
+      "sha256": "231cdc65aefcb7b0749c9d84605427fbba9a1422b25b6b2465aa45e44a2d4844",
+      "engineGuid": "c98033317f3082e67588c4ad152265d1"
+    },
+    {
+      "id": "lockwall",
+      "file": "D:\\PJ\\TD2_TV\\Assets\\TD2\\Screen3D\\Models\\SG06_LockWall.fbx",
+      "rootName": "SG06_LockWall",
+      "pivot": "bottom_center",
+      "status": "ready",
+      "logicalCells": [
+        1,
+        1
+      ],
+      "bounds": {
+        "min": [
+          -0.5,
+          0.0,
+          -0.227
+        ],
+        "max": [
+          0.5,
+          1.0,
+          0.227
+        ],
+        "size": [
+          1.0,
+          1.0,
+          0.454
+        ]
+      },
+      "triangles": 432,
+      "animations": [],
+      "nodes": [
+        {
+          "name": "SG06_LockWall__Body",
+          "restTranslation": [
+            0.0,
+            0.0,
+            -0.002
+          ],
+          "boundsLocal": {
+            "min": [
+              -0.5,
+              0.0,
+              -0.225
+            ],
+            "max": [
+              0.5,
+              1.0,
+              0.229
+            ],
+            "size": [
+              1.0,
+              1.0,
+              0.454
+            ]
+          },
+          "materials": [
+            "SG06_Ink",
+            "SG06_Ivory"
+          ]
+        }
+      ],
+      "materialIndices": {
+        "SG06_Ink": 0,
+        "SG06_Ivory": 1
+      },
+      "fbxReadbackPassed": true,
+      "sha256": "837f5379c011bbe50d99b805ddc87fc1e144a5f2af509971c7e1f587067bc6ab",
+      "engineGuid": "3b99fb3d43a79ac71f482c843c710021",
+      "revision": "ivory_chamfer_01",
+      "source": "D:\\PJ\\TD2_TV\\ArtSource\\ScreenGame06\\ScreenGame06_LockWall.blend",
+      "frontChamferWidth": 0.045,
+      "frontChamferDepth": 0.05,
+      "topFaces": "Ivory continues from bevel across the upper side faces",
+      "boundsUnchanged": true,
+      "fbxReadbackMaxErrorMeters": 1.0000000000287557e-07,
+      "fbxReadbackBounds": {
+        "min": [
+          -0.5,
+          -0.0,
+          -0.2270001
+        ],
+        "max": [
+          0.5,
+          1.0,
+          0.227
+        ],
+        "size": [
+          1.0,
+          1.0,
+          0.4540001
+        ]
+      },
+      "engineImportVerified": false,
+      "runtimeVisualVerified": false,
+      "preview": {
+        "file": "D:\\PJ\\TD2_TV\\Library\\Screen3D06\\lockwall_revision_cpu.png",
+        "source": "Final FBX readback",
+        "renderer": "Blender Cycles CPU",
+        "engineVisualVerified": false
+      }
+    },
+    {
+      "id": "fx_ring",
+      "file": "D:\\PJ\\TD2_TV\\Assets\\TD2\\Screen3D\\Models\\SG06_FX_Ring.fbx",
+      "rootName": "SG06_FX_Ring",
+      "pivot": "bottom_center",
+      "status": "ready",
+      "centerAnchor": [
+        0,
+        0.5,
+        0
+      ],
+      "bounds": {
+        "min": [
+          -0.5,
+          0.0,
+          -0.0303109
+        ],
+        "max": [
+          0.5,
+          1.0,
+          0.0303109
+        ],
+        "size": [
+          1.0,
+          1.0,
+          0.0606218
+        ]
+      },
+      "triangles": 384,
+      "animations": [],
+      "nodes": [
+        {
+          "name": "SG06_FX_Ring__Body",
+          "restTranslation": [
+            0.0,
+            0.0,
+            -0.0
+          ],
+          "boundsLocal": {
+            "min": [
+              -0.5,
+              0.0,
+              -0.0303109
+            ],
+            "max": [
+              0.5,
+              1.0,
+              0.0303109
+            ],
+            "size": [
+              1.0,
+              1.0,
+              0.0606218
+            ]
+          },
+          "materials": [
+            "SG06_IvorySignal"
+          ]
+        }
+      ],
+      "materialIndices": {
+        "SG06_IvorySignal": 0
+      },
+      "fbxReadbackPassed": true,
+      "sha256": "b4110498c708b43fa5b3b34216cb018136cae6c7374a7f7ec690dea888dc5bf6",
+      "engineGuid": "1f99e0dd9eb4018d004643f145d24f39"
+    },
+    {
+      "id": "fx_shard",
+      "file": "D:\\PJ\\TD2_TV\\Assets\\TD2\\Screen3D\\Models\\SG06_FX_Shard.fbx",
+      "rootName": "SG06_FX_Shard",
+      "pivot": "bottom_center",
+      "status": "ready",
+      "bounds": {
+        "min": [
+          -0.1,
+          0.0,
+          -0.07
+        ],
+        "max": [
+          0.1,
+          0.45,
+          0.07
+        ],
+        "size": [
+          0.2,
+          0.45,
+          0.14
+        ]
+      },
+      "triangles": 8,
+      "animations": [],
+      "nodes": [
+        {
+          "name": "SG06_FX_Shard__Body",
+          "restTranslation": [
+            0.0,
+            0.0,
+            -0.0
+          ],
+          "boundsLocal": {
+            "min": [
+              -0.1,
+              0.0,
+              -0.07
+            ],
+            "max": [
+              0.1,
+              0.45,
+              0.07
+            ],
+            "size": [
+              0.2,
+              0.45,
+              0.14
+            ]
+          },
+          "materials": [
+            "SG06_IvorySignal"
+          ]
+        }
+      ],
+      "materialIndices": {
+        "SG06_IvorySignal": 0
+      },
+      "fbxReadbackPassed": true,
+      "sha256": "9f161e1f248a342358461fba1f86e48a1c2104c0a2cb8d1a82fd35da6bc25c83",
+      "engineGuid": "2a587b3a148873cd7ea8c184ba9f2450"
+    },
+    {
+      "id": "fx_streak",
+      "file": "D:\\PJ\\TD2_TV\\Assets\\TD2\\Screen3D\\Models\\SG06_FX_Streak.fbx",
+      "rootName": "SG06_FX_Streak",
+      "pivot": "bottom_center",
+      "status": "ready",
+      "lengthAxis": "+X",
+      "bounds": {
+        "min": [
+          -0.5,
+          0.0,
+          -0.025
+        ],
+        "max": [
+          0.5,
+          0.12,
+          0.025
+        ],
+        "size": [
+          1.0,
+          0.12,
+          0.05
+        ]
+      },
+      "triangles": 20,
+      "animations": [],
+      "nodes": [
+        {
+          "name": "SG06_FX_Streak__Body",
+          "restTranslation": [
+            0.0,
+            0.0,
+            -0.0
+          ],
+          "boundsLocal": {
+            "min": [
+              -0.5,
+              0.0,
+              -0.025
+            ],
+            "max": [
+              0.5,
+              0.12,
+              0.025
+            ],
+            "size": [
+              1.0,
+              0.12,
+              0.05
+            ]
+          },
+          "materials": [
+            "SG06_IvorySignal"
+          ]
+        }
+      ],
+      "centerAnchor": [
+        0,
+        0.06,
+        0
+      ],
+      "materialIndices": {
+        "SG06_IvorySignal": 0
+      },
+      "fbxReadbackPassed": true,
+      "sha256": "18e4d42748db242ad53b55553c8a112d7e8fe7b83c69d4d8bba25bd4cf1eba0b",
+      "engineGuid": "afa7d4827edbb949fcd8344bfa4e3d69"
+    },
+    {
+      "id": "character_ninja",
+      "file": "D:\\PJ\\TD2_TV\\Assets\\TD2\\Screen3D\\Models\\SG06_Ninja.fbx",
+      "rootName": "SG06_Ninja",
+      "pivot": "original_rig_feet_origin",
+      "status": "ready",
+      "source": "D:\\PJ\\TD2_TV\\ArtSource\\Characters\\PrototypeNinja\\ninja-game.glb",
+      "animations": [
+        "SoftHuman_Rig|Ninja_Idle",
+        "SoftHuman_Rig|Ninja_Jog",
+        "SoftHuman_Rig|Ninja_SealQuick",
+        "SoftHuman_Rig|Ninja_WallBackJump"
+      ],
+      "targetHeight": 1.0,
+      "bounds": {
+        "min": [
+          -0.8190045952796936,
+          0.0007860572659410536,
+          -0.455078661441803
+        ],
+        "max": [
+          0.819004476070404,
+          1.748999834060669,
+          0.2426127791404724
+        ],
+        "size": [
+          1.6380090713500977,
+          1.748213776794728,
+          0.6976914405822754
+        ]
+      },
+      "sourceBoundsBeforePivotRebase": {
+        "min": [
+          -0.8190045952796936,
+          0.0007860572659410536,
+          -0.455078661441803
+        ],
+        "max": [
+          0.819004476070404,
+          1.748999834060669,
+          0.2426127791404724
+        ],
+        "size": [
+          1.6380090713500977,
+          1.748213776794728,
+          0.6976914405822754
+        ]
+      },
+      "naturalRestHeight": 1.748213776794728,
+      "uniformScaleForOneCellHeight": 0.5720124239230373,
+      "assetRootTranslation": [
+        0.0,
+        0.0,
+        -0.0
+      ],
+      "bottomCenterRenderOffset": [
+        5.960464477539063e-08,
+        -0.0007860572659410536,
+        0.10623294115066528
+      ],
+      "sideFacingRightYawDegrees": 90,
+      "sourceBoneCount": 66,
+      "materialIndices": {
+        "SG06_Ivory": 0,
+        "SG06_Ink": 1
+      },
+      "animationClips": [
+        {
+          "name": "SoftHuman_Rig|Ninja_Idle",
+          "sourceName": "Ninja_Idle",
+          "durationSeconds": 1.0,
+          "startSeconds": 0.0
+        },
+        {
+          "name": "SoftHuman_Rig|Ninja_Jog",
+          "sourceName": "Ninja_Jog",
+          "durationSeconds": 0.8333333333333334,
+          "startSeconds": 0.0
+        },
+        {
+          "name": "SoftHuman_Rig|Ninja_SealQuick",
+          "sourceName": "Ninja_SealQuick",
+          "durationSeconds": 0.5,
+          "startSeconds": 0.0
+        },
+        {
+          "name": "SoftHuman_Rig|Ninja_WallBackJump",
+          "sourceName": "Ninja_WallBackJump",
+          "durationSeconds": 0.4,
+          "startSeconds": 0.0
+        }
+      ],
+      "triangles": 38668,
+      "fbxReadbackPassed": true,
+      "animationPoseBoundsMaxErrorMeters": 9.5367431640625e-07,
+      "fbxReadbackOriginDelta": [
+        -5.364418029785156e-07,
+        -1.8269158630346283e-07,
+        4.470348358154297e-08
+      ],
+      "fbxReadbackFeetCorrection": [
+        5.364418029785156e-07,
+        1.8269158630346283e-07,
+        -4.470348358154297e-08
+      ],
+      "readbackNote": "Blender automatic bone-connect constraints disabled during QA so exported bone translation channels can evaluate.",
+      "readbackConnectedBonesReleased": [
+        "Hips",
+        "LeftForeArm",
+        "LeftHand",
+        "RightForeArm",
+        "RightHand"
+      ],
+      "readbackBoneCount": 66,
+      "sha256": "99585ecf6d8e222efd98624cc59fdfa0849aaf235c8439fd7ecdf5a00681679d",
+      "engineGuid": "d6d9d9e8c42935a919b76f701867faa5"
+    },
+    {
+      "id": "character_ninja_display",
+      "file": "D:\\PJ\\TD2_TV\\Assets\\TD2\\Screen3D\\Models\\SG06_Ninja_Display.fbx",
+      "rootName": "SG06_Ninja_Display",
+      "pivot": "bottom_center",
+      "status": "ready",
+      "source": "D:\\PJ\\TD2_TV\\ArtSource\\ScreenGame06\\ScreenGame06_Ninja_Display.blend",
+      "bounds": {
+        "min": [
+          -0.24617408215999603,
+          0.0,
+          -0.21581588685512543
+        ],
+        "max": [
+          0.24617405235767365,
+          1.0,
+          0.21581587195396423
+        ],
+        "size": [
+          0.4923481345176697,
+          1.0,
+          0.43163175880908966
+        ]
+      },
+      "animations": [],
+      "hasArmature": false,
+      "triangles": 38668,
+      "sha256": "40f0ea857209eb5802c696d6c04c9c9e0e86f9983bfe9fbbbe5e66ccc18ee64b",
+      "engineImportVerified": false,
+      "runtimeVisualVerified": false,
+      "nodes": [
+        {
+          "name": "SG06_Ninja_Display__Body_Base",
+          "restTranslation": [
+            0,
+            0,
+            0
+          ],
+          "boundsLocal": {
+            "min": [
+              -0.24617408215999603,
+              0.0,
+              -0.21280939877033234
+            ],
+            "max": [
+              0.24617405235767365,
+              0.7984042763710022,
+              0.2157013863325119
+            ],
+            "size": [
+              0.4923481345176697,
+              0.7984042763710022,
+              0.42851078510284424
+            ]
+          },
+          "materials": [
+            "SG06_Ivory"
+          ]
+        },
+        {
+          "name": "SG06_Ninja_Display__Head_Base",
+          "restTranslation": [
+            0,
+            0,
+            0
+          ],
+          "boundsLocal": {
+            "min": [
+              -0.15652574598789215,
+              0.7085313200950623,
+              -0.08108358830213547
+            ],
+            "max": [
+              0.13504990935325623,
+              1.0,
+              0.21032147109508514
+            ],
+            "size": [
+              0.2915756553411484,
+              0.29146867990493774,
+              0.2914050593972206
+            ]
+          },
+          "materials": [
+            "SG06_Ivory"
+          ]
+        },
+        {
+          "name": "SG06_Ninja_Display__Ninja_Headband",
+          "restTranslation": [
+            0,
+            0,
+            0
+          ],
+          "boundsLocal": {
+            "min": [
+              -0.19671469926834106,
+              0.7987338900566101,
+              -0.21581588685512543
+            ],
+            "max": [
+              0.13568592071533203,
+              0.9597437381744385,
+              0.21581587195396423
+            ],
+            "size": [
+              0.3324006199836731,
+              0.16100984811782837,
+              0.43163175880908966
+            ]
+          },
+          "materials": [
+            "SG06_Ink"
+          ]
+        }
+      ],
+      "sourceRig": "D:\\PJ\\TD2_TV\\ArtSource\\ScreenGame06\\ScreenGame06_Ninja.blend",
+      "evaluatedAction": "Ninja_Idle",
+      "evaluatedFrame": 0,
+      "evaluatedSourceBounds": {
+        "min": [
+          -0.4265782833099365,
+          3.553577698767185e-07,
+          -0.31663718819618225
+        ],
+        "max": [
+          0.39696305990219116,
+          1.6726813316345215,
+          0.40534505248069763
+        ],
+        "size": [
+          0.8235413432121277,
+          1.6726809762767516,
+          0.7219822406768799
+        ]
+      },
+      "sourcePoseHeight": 1.6726809762767516,
+      "bakedUniformScale": 0.5978426335821172,
+      "bakedTranslationBeforeScale": [
+        0.01480761170387268,
+        -3.553577698767185e-07,
+        -0.04435393214225769
+      ],
+      "renderScaleForOneCellHeight": 1,
+      "renderOffset": [
+        0,
+        0,
+        0
+      ],
+      "sideFacingRightYawDegrees": 90,
+      "coordinates": {
+        "up": "+Y",
+        "right": "+X",
+        "front": "+Z"
+      },
+      "usage": "Static evaluated Idle mesh for render-only paths without Animator; original animated FBX is unchanged.",
+      "fbxReadbackPassed": true,
+      "fbxReadbackBounds": {
+        "min": [
+          -0.24617408215999603,
+          -1.1600697291669348e-08,
+          -0.2158159464597702
+        ],
+        "max": [
+          0.24617405235767365,
+          1.0,
+          0.21581581234931946
+        ],
+        "size": [
+          0.4923481345176697,
+          1.0000000116006973,
+          0.43163175880908966
+        ]
+      },
+      "fbxReadbackMaxErrorMeters": 5.960464477539063e-08,
+      "materialIndices": {
+        "SG06_Ivory": 0,
+        "SG06_Ink": 1
+      },
+      "fbxAxes": {
+        "UpAxis": 1,
+        "UpAxisSign": 1,
+        "FrontAxis": 2,
+        "FrontAxisSign": 1,
+        "CoordAxis": 0,
+        "CoordAxisSign": 1,
+        "UnitScaleFactor": 100.0
+      }
+    }
+  ],
+  "engineImportVerified": false,
+  "sourceProps": "D:\\PJ\\TD2_TV\\ArtSource\\ScreenGame06\\ScreenGame06_Props.blend",
+  "sourceCharacter": "D:\\PJ\\TD2_TV\\ArtSource\\ScreenGame06\\ScreenGame06_Ninja.blend",
+  "exportsFrozen": true,
+  "previews": {
+    "large": "D:\\PJ\\TD2_TV\\Library\\Screen3D06\\screen_game06.png",
+    "small": "D:\\PJ\\TD2_TV\\Library\\Screen3D06\\screen_game06_small.png",
+    "background": "transparent; no background geometry",
+    "projection": "orthographic; yaw 0; elevation 7 degrees",
+    "source": "Frozen final FBX files imported into Blender; static Ninja Display and grooved terrain revision",
+    "outdatedFor": [
+      "SG06_LockWall.fbx"
+    ]
+  },
+  "engineImportEvidence": {
+    "executedBy": "Root / main integration lead",
+    "executorThreadId": "01a12bfb-43f5-7073-b2ca-61f753f9cebd",
+    "verifiedFromLogBy": "Screen3D06 modeling lead",
+    "project": "D:\\PJ\\TD2_TV\\Library\\Screen3D06\\Sandbox",
+    "log": "D:\\PJ\\TD2_TV\\Library\\Screen3D06\\Sandbox\\Library\\Logs\\HIKARI_20261013_130020.log",
+    "result": "D:\\PJ\\TD2_TV\\Library\\Screen3D06\\Integration\\screen3d-models.result.json",
+    "guidMapping": "D:\\PJ\\TD2_TV\\Library\\Screen3D06\\Integration\\model-guids.json",
+    "completedAtLocal": "2026-10-13 13:00:22 Asia/Tokyo",
+    "attempted": 21,
+    "succeeded": 21,
+    "failed": 0,
+    "texturesEach": 0,
+    "fallbackTexturesEach": 0,
+    "sandboxFbxHashesMatchFrozenDelivery": true,
+    "assets": [
+      {
+        "fileName": "SG06_Checkpoint_Active.fbx",
+        "guid": "c98033317f3082e67588c4ad152265d1",
+        "meshes": 2,
+        "materials": 2
+      },
+      {
+        "fileName": "SG06_Checkpoint_ActiveMarker.fbx",
+        "guid": "618a066a71e42ad0ede5bd385fb892a2",
+        "meshes": 1,
+        "materials": 1
+      },
+      {
+        "fileName": "SG06_Checkpoint_Base.fbx",
+        "guid": "e9eede903c47ad50be3b8f8a69b46232",
+        "meshes": 1,
+        "materials": 1
+      },
+      {
+        "fileName": "SG06_Checkpoint_Idle.fbx",
+        "guid": "cb9c4206f4a8f2a93a0acf4f5c59b4e3",
+        "meshes": 2,
+        "materials": 2
+      },
+      {
+        "fileName": "SG06_Checkpoint_IdleMarker.fbx",
+        "guid": "197b7858d46508b398484b12237b50fc",
+        "meshes": 1,
+        "materials": 1
+      },
+      {
+        "fileName": "SG06_Door.fbx",
+        "guid": "9797c5f016dc9266b224d6b8b6aab45c",
+        "meshes": 2,
+        "materials": 2
+      },
+      {
+        "fileName": "SG06_Door_Frame.fbx",
+        "guid": "04ba6a0e479042c39e925dace14cc506",
+        "meshes": 1,
+        "materials": 1
+      },
+      {
+        "fileName": "SG06_Door_Leaf.fbx",
+        "guid": "3a28f92d587148070d962703d55368a4",
+        "meshes": 1,
+        "materials": 1
+      },
+      {
+        "fileName": "SG06_FX_Ring.fbx",
+        "guid": "1f99e0dd9eb4018d004643f145d24f39",
+        "meshes": 1,
+        "materials": 1
+      },
+      {
+        "fileName": "SG06_FX_Shard.fbx",
+        "guid": "2a587b3a148873cd7ea8c184ba9f2450",
+        "meshes": 1,
+        "materials": 1
+      },
+      {
+        "fileName": "SG06_FX_Streak.fbx",
+        "guid": "afa7d4827edbb949fcd8344bfa4e3d69",
+        "meshes": 1,
+        "materials": 1
+      },
+      {
+        "fileName": "SG06_LaserBeam.fbx",
+        "guid": "b5469c27bc6e1e41d64e096700359eac",
+        "meshes": 2,
+        "materials": 2
+      },
+      {
+        "fileName": "SG06_LaserEmitter.fbx",
+        "guid": "55399b7a9ca54b42c460be5d2b2b7dbd",
+        "meshes": 4,
+        "materials": 4
+      },
+      {
+        "fileName": "SG06_LockWall.fbx",
+        "guid": "3b99fb3d43a79ac71f482c843c710021",
+        "meshes": 2,
+        "materials": 2
+      },
+      {
+        "fileName": "SG06_Ninja.fbx",
+        "guid": "d6d9d9e8c42935a919b76f701867faa5",
+        "meshes": 3,
+        "materials": 2
+      },
+      {
+        "fileName": "SG06_OneWay.fbx",
+        "guid": "1de725f3d05038431e7416af5048e7d7",
+        "meshes": 2,
+        "materials": 2
+      },
+      {
+        "fileName": "SG06_PressurePlate.fbx",
+        "guid": "e6cc24f30506c90737866c1442a344c7",
+        "meshes": 2,
+        "materials": 2
+      },
+      {
+        "fileName": "SG06_PressurePlate_Base.fbx",
+        "guid": "79646aee7da22c9b2593a075a086d460",
+        "meshes": 1,
+        "materials": 1
+      },
+      {
+        "fileName": "SG06_PressurePlate_Plate.fbx",
+        "guid": "34ad7d2d9a251a884f15fc3b6f2c8cf0",
+        "meshes": 1,
+        "materials": 1
+      },
+      {
+        "fileName": "SG06_Spikes.fbx",
+        "guid": "d87858f10e7cbe52db2759081721ac3f",
+        "meshes": 2,
+        "materials": 2
+      },
+      {
+        "fileName": "SG06_Terrain_Solid.fbx",
+        "guid": "3dd0712936468ab3e238071f78f4c4a9",
+        "meshes": 1,
+        "materials": 1
+      }
+    ],
+    "scope": "Root imported the previous 21-file revision successfully; terrain revision and new static Display await targeted reimport."
+  },
+  "runtimeVisualVerified": false,
+  "runtimeVerificationOwner": "Root / main integration lead",
+  "runtimeVerificationStatus": "Root must verify static Ninja Display and readable terrain grid after targeted reimport.",
+  "pendingEngineReimport": [
+    "SG06_Terrain_Solid.fbx",
+    "SG06_Ninja_Display.fbx",
+    "SG06_LockWall.fbx"
+  ],
+  "sourceTerrain": "D:\\PJ\\TD2_TV\\ArtSource\\ScreenGame06\\ScreenGame06_Terrain.blend",
+  "sourceCharacterDisplay": "D:\\PJ\\TD2_TV\\ArtSource\\ScreenGame06\\ScreenGame06_Ninja_Display.blend",
+  "sourceLockWall": "D:\\PJ\\TD2_TV\\ArtSource\\ScreenGame06\\ScreenGame06_LockWall.blend"
+}
