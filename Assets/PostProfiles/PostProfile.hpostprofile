@@ -1,34 +1,10 @@
 {
-  "effect": "engine.post.effect.crtdy",
+  "effect": "engine.post.effect.manga",
   "formatVersion": 1,
-  "name": "CRTDY",
+  "name": "TD2_Lens",
   "values": {
-    "chromaPixels": [
-      0.2,
-      0.0,
-      0.0,
-      0.0
-    ],
-    "curvature": [
-      0.0,
-      0.0,
-      0.0,
-      0.0
-    ],
-    "glitch": [
-      0.0,
-      0.0,
-      0.0,
-      0.0
-    ],
-    "phosphorMask": [
-      0.035,
-      0.0,
-      0.0,
-      0.0
-    ],
-    "vignette": [
-      0.12,
+    "strength": [
+      0.13199999928474426,
       0.0,
       0.0,
       0.0

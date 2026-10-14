@@ -1,0 +1,159 @@
+{
+  "assetType": "Sequence",
+  "displayName": "c4_r2 ↔ c5_r2",
+  "formatVersion": 4,
+  "guid": "b92d9c840ce86694c44dcb3c1d3a748c",
+  "sequence": {
+    "bindings": [
+      {
+        "id": 1,
+        "name": "游戏摄像机",
+        "required": true,
+        "slotName": "Camera",
+        "targetKind": "slot"
+      }
+    ],
+    "durationSeconds": 1.0,
+    "id": 1,
+    "name": "c4_r2 ↔ c5_r2",
+    "screenEffects": [],
+    "tracks": [
+      {
+        "clips": [
+          {
+            "camera": {
+              "owned": false
+            },
+            "cameraBindingId": 1,
+            "durationSeconds": 1.0,
+            "effects": [],
+            "id": 1,
+            "startTimeSeconds": 0,
+            "transition": {
+              "durationSeconds": 0,
+              "mode": "cut"
+            }
+          }
+        ],
+        "enabled": true,
+        "id": 1,
+        "type": "cameraCut"
+      },
+      {
+        "channels": [
+          {
+            "cameraBindingId": 1,
+            "keyframes": [
+              {
+                "id": 1,
+                "interpolation": "smooth",
+                "position": [
+                  3.0479,
+                  7.9746,
+                  -6.1513
+                ],
+                "rotationEulerDeg": [
+                  -1.806,
+                  164.0,
+                  0.0
+                ],
+                "timeSeconds": 0.0
+              },
+              {
+                "id": 2,
+                "interpolation": "smooth",
+                "position": [
+                  2.978,
+                  7.9836,
+                  -5.5669
+                ],
+                "rotationEulerDeg": [
+                  -2.805,
+                  159.449,
+                  0.0
+                ],
+                "timeSeconds": 0.25
+              },
+              {
+                "id": 3,
+                "interpolation": "smooth",
+                "position": [
+                  3.5568,
+                  8.1876,
+                  -5.851
+                ],
+                "rotationEulerDeg": [
+                  -2.591,
+                  155.194,
+                  0.0
+                ],
+                "timeSeconds": 0.5
+              },
+              {
+                "id": 4,
+                "interpolation": "smooth",
+                "position": [
+                  4.4755,
+                  8.4773,
+                  -6.8635
+                ],
+                "rotationEulerDeg": [
+                  -1.446,
+                  150.843,
+                  0.0
+                ],
+                "timeSeconds": 0.75
+              },
+              {
+                "id": 5,
+                "interpolation": "smooth",
+                "position": [
+                  5.2261,
+                  8.6927,
+                  -8.0373
+                ],
+                "rotationEulerDeg": [
+                  1.16,
+                  146.0,
+                  0.0
+                ],
+                "timeSeconds": 1.0
+              }
+            ]
+          }
+        ],
+        "enabled": true,
+        "id": 2,
+        "type": "cameraTransform"
+      },
+      {
+        "channels": [
+          {
+            "cameraBindingId": 1,
+            "keyframes": [
+              {
+                "farClip": 500,
+                "id": 1,
+                "interpolation": "smooth",
+                "nearClip": 0.05,
+                "timeSeconds": 0.0,
+                "verticalFovDegrees": 26.0
+              },
+              {
+                "farClip": 500,
+                "id": 2,
+                "interpolation": "smooth",
+                "nearClip": 0.05,
+                "timeSeconds": 1.0,
+                "verticalFovDegrees": 26.0
+              }
+            ]
+          }
+        ],
+        "enabled": true,
+        "id": 3,
+        "type": "cameraLens"
+      }
+    ]
+  }
+}

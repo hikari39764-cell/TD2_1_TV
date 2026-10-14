@@ -3,7 +3,7 @@
   "name": "Realistic",
   "post": [
     {
-      "enabled": false,
+      "enabled": true,
       "profile": "3b7cfb7be2ebcc68ed151eade1312505"
     }
   ],
@@ -12,9 +12,9 @@
     "model": "Physical",
     "rim": 0.0,
     "shadowTint": [
-      0.800000011920929,
-      0.7599999904632568,
-      0.949999988079071
+      1.0,
+      1.0,
+      1.0
     ],
     "softness": 0.029999999329447746,
     "specular": 1.0,
