@@ -1,7 +1,9 @@
 #include "TD2MapWorkspaces.h"
 #include "TD2MapCanvas.h"
 #include "TD2EditorChoices.h"
+#include "TD2CameraAuthoring.h"
 #include "../Common/TD2WorldLayout.h"
+#include "../Common/TD2PreviewEntry.h"
 #include <array>
 #include <limits>
 #include <memory>
@@ -659,7 +661,7 @@ public:
         d.options = static_cast<uint32_t>(EditorWorkspaceOption::RequestSceneViewport); return d;
     }
     void OnActivate(EditorWorkspaceHostContext& ctx) override { MapWorkspace::OnActivate(ctx); assetsRefresh_ = true; bindingRefresh_ = true; }
-    void OnDeactivate(EditorWorkspaceHostContext& ctx) override { if (libraryDrag_) { model_->Discard(); } else { MapWorkspace::OnDeactivate(ctx); } moving_ = false; libraryDrag_ = false; }
+    void OnDeactivate(EditorWorkspaceHostContext& ctx) override { if (libraryDrag_) { model_->Discard(); } else { MapWorkspace::OnDeactivate(ctx); } moving_ = false; libraryDrag_ = false; pickingStart_ = false; }
     void Draw(EditorWorkspaceHostContext& ctx) override {
         if (!ctx.ui || !ctx.commands) { return; }
         model_->Poll(ctx); clock_ += ctx.unscaledDeltaSeconds;
@@ -672,7 +674,12 @@ public:
                 HistoryToolbar(ctx, kTelevisionWorkspace, "编辑电视");
                 ui.SameLine(); SaveControls(ctx);
                 ui.Separator();
-                ui.Text("选房间配置相邻区域 / 切换演出 · 3D 视图可切换标签或分屏");
+                if (pickingStart_) {
+                    ui.Text("点击角色脚下的位置开始游玩 · 空中也可选 · 右键取消");
+                    if (ui.Button("td2.world.spawn.cancel", "取消选择出生位置")) { pickingStart_ = false; }
+                } else { ui.Text("选房间配置相邻区域 / 切换演出 · 3D 视图可切换标签或分屏"); }
+                // 試遊の拒否は右欄だけに隠さず、click した主画布にも理由を残す。
+                if (!model_->error.empty()) { ui.Text(model_->error); }
                 DrawCanvas(ctx);
             } ui.EndPanel();
         }
@@ -713,6 +720,7 @@ private:
                 dragReleasedAny_ |= (input.releasedButtons & kPrimary) != 0;
                 DrawThumbnail(ui, room, input);
                 if (input.hovered && (input.pressedButtons & kPrimary)) {
+                    pickingStart_ = false;
                     if (LeaveSequence(ctx) && model_->Select(ctx, room.object.objectId)) {
                         if (lastClick_ == room.object.objectId && clock_ - lastClickTime_ < .3f) { OpenTelevision(ctx, room.object.objectId); lastClick_ = 0; }
                         else {
@@ -762,11 +770,11 @@ private:
         dragReleasedAny_ |= (input.releasedButtons & kPrimary) != 0;
         if (input.size.x > 0 && input.size.y > 0) {
             if (view_.fit && (!model_->gesture || !view_.hasFit)) { FitWorld(input.size); }
-            view_.Navigate(input, hand_, moving_ || libraryDrag_);
+            view_.Navigate(input, !pickingStart_ && hand_, moving_ || libraryDrag_);
             DrawCanvasGrid(ui, view_, input.size);
             const auto p = view_.World(input.pointer);
             const bool geometricInside = PointIn(input.pointer, {0, 0}, input.size);
-            if (!moving_ && !libraryDrag_ && !hand_ && !view_.panning && input.hovered && (input.pressedButtons & kPrimary)) {
+            if (!pickingStart_ && !moving_ && !libraryDrag_ && !hand_ && !view_.panning && input.hovered && (input.pressedButtons & kPrimary)) {
                 bool hitEdge = false;
                 for (const auto& e : Edges()) {
                     const auto [a, b] = EdgePoints(e.edge);
@@ -828,9 +836,43 @@ private:
                 if (sequenceDraft_) { model_->error = "该相邻区域已移动；请撤回演出草稿"; }
                 else { edge_ = {}; bindingRefresh_ = true; }
             }
+            DrawSpawnPicker(ctx, input, p);
         }
         ui.EndCanvas();
-        if (!model_->gesture && !ui.GetInteraction().editing && ui.GetInteraction().deletePressed && edge_.a == 0 && model_->ready) { model_->draft.worldPlaced = false; model_->Commit(ctx); }
+        if (!pickingStart_ && !model_->gesture && !ui.GetInteraction().editing && ui.GetInteraction().deletePressed && edge_.a == 0 && model_->ready) { model_->draft.worldPlaced = false; model_->Commit(ctx); }
+    }
+    // 配置の drag と試遊の click を排他的に扱う。マウスは人物の足元中央を指し、半格へ丸めない。
+    void DrawSpawnPicker(EditorWorkspaceHostContext& ctx, const EditorWorkspaceCanvasInput& input, EditorWorkspacePoint point) {
+        if (!pickingStart_ || !input.hovered || view_.panning) { return; }
+        if (input.pressedButtons & kSecondary) { pickingStart_ = false; return; }
+        for (const auto& room : model_->rooms) {
+            const auto& s = room.settings;
+            if (!ContainsWorldPoint(Placement(s), {point.x, point.y})) { continue; }
+            const PreviewSpawn spawn{double(point.x) - s.worldX - .3125, double(point.y) - s.worldY - .875};
+            bool clear = spawn.x >= 0 && spawn.y >= 0 && spawn.x + .625 <= s.region.cols && spawn.y + .875 <= s.region.rows;
+            // 壁内は赤い枠で示し、勝手に別の空位へ移さない。空中・机关の近くは作者が自由に指定する。
+            if (clear && ValidateRegion(s.region).valid) {
+                for (int y = static_cast<int>(std::floor(spawn.y)); y < static_cast<int>(std::ceil(spawn.y + .875)); ++y)
+                    for (int x = static_cast<int>(std::floor(spawn.x)); x < static_cast<int>(std::ceil(spawn.x + .625)); ++x)
+                        if (s.region.cells[CellIndex(s.region, x, y)] == '1') { clear = false; }
+            } else { clear = false; }
+            const auto a = view_.Screen(point.x - .3125f, point.y - .875f), b = view_.Screen(point.x + .3125f, point.y);
+            const EditorWorkspaceColor color = clear ? EditorWorkspaceColor{.4f, 1, .7f, 1} : EditorWorkspaceColor{1, .3f, .3f, 1};
+            ctx.ui->CanvasRect(a, b, color, 2);
+            ctx.ui->CanvasCircle(view_.Screen(point.x, point.y - .7f), view_.tile * .13f, color, 2);
+            if (input.pressedButtons & kPrimary) {
+                if (!clear) { model_->error = "这里放不下角色，请在区域内的空处点击；也可以选空中"; return; }
+                const auto entry = EncodePreviewSpawn(spawn);
+                const auto started = Execute(ctx, "play.preview", {{"spawnPointId", entry}, {"userData", room.object.objectId}});
+                if (started.ok) { pickingStart_ = false; model_->error.clear(); }
+                else {
+                    model_->error = started.error.find("OPERATION_NOT_FOUND") != std::string::npos
+                        ? "当前引擎尚未更新：请保存并关闭编辑器，完成引擎构建后重新打开，才能从点击位置开始游玩。"
+                        : started.error;
+                }
+            }
+            return;
+        }
     }
     void DrawProperties(EditorWorkspaceHostContext& ctx);
     void ReadBinding(EditorWorkspaceHostContext& ctx);
@@ -840,6 +882,7 @@ private:
     EdgeSelection edge_;
     EditorWorkspacePoint offset_{};
     bool moving_ = false, libraryDrag_ = false, propertyPending_ = false;
+    bool pickingStart_ = false;
     bool dragHeldAny_ = false, dragPressedAny_ = false, dragReleasedAny_ = false;
     bool assetsRefresh_ = true, bindingRefresh_ = true;
     bool sequenceAdvanced_ = false;
@@ -917,13 +960,14 @@ void WorldMapWorkspace::ReadBinding(EditorWorkspaceHostContext& ctx) {
         for (const auto& component : instances.data.value("components", Json::array())) {
             if (component.value("type", "") != kRegionSequenceComponentType) { continue; }
             const auto componentId = ObjectId(component.value("componentId", Json{}));
-            const auto result = Execute(ctx, "component.describe", {{"objectId", item.objectId}, {"componentId", componentId}, {"propertyIds", {"regionA", "regionB", "sequenceAssetGuid", "sequenceSlotName", "cameraObject"}}});
+            const auto result = Execute(ctx, "component.describe", {{"objectId", item.objectId}, {"componentId", componentId}, {"propertyIds", {"regionA", "regionB", "sequenceAssetGuid", "sequenceSlotName", "cameraObject", "speed"}}});
             if (!result.ok) { model_->error = result.error; return; }
             const auto fields = result.data.value("fields", Json::array());
             const auto* fa = FieldValue(fields, "regionA"); const auto* fb = FieldValue(fields, "regionB");
             const auto* guid = FieldValue(fields, "sequenceAssetGuid"); const auto* slot = FieldValue(fields, "sequenceSlotName"); const auto* camera = FieldValue(fields, "cameraObject");
             if (!fa || !fa->is_string() || !fb || !fb->is_string() || !guid || !guid->is_string() || !slot || !slot->is_string() || !camera || !camera->is_number_integer()) { model_->error = "Sequence 绑定字段无效"; return; }
             RegionSequenceBinding value{fa->get<std::string>(), fb->get<std::string>(), guid->get<std::string>(), slot->get<std::string>(), ObjectId(*camera)};
+            if (const auto* speed = FieldValue(fields, "speed"); speed && speed->is_number()) value.speed = speed->get<float>();
             if (!SameRegionPair(binding_, value)) { continue; }
             if (bindingTarget_.objectId) { model_->error = "同一交界有重复 Sequence 绑定"; bindingTarget_ = {}; return; }
             binding_ = std::move(value); bindingTarget_ = {item.objectId, componentId};
@@ -981,6 +1025,12 @@ bool WorldMapWorkspace::WriteBinding(EditorWorkspaceHostContext& ctx, const Regi
 void WorldMapWorkspace::DrawProperties(EditorWorkspaceHostContext& ctx) {
     auto& ui = *ctx.ui;
     if (!model_->error.empty()) { ui.Text(model_->error); }
+    if (pickingStart_) {
+        ui.Text("在世界地图中选择出生位置");
+        ui.Text("绿色轮廓是角色位置；点击立即开始");
+        if (ui.Button("td2.world.spawn.cancel.properties", "取消")) { pickingStart_ = false; }
+        return;
+    }
     if (edge_.a) {
         if (assetsRefresh_) { RefreshAssets(ctx); }
         if (bindingRefresh_ || bindingRevision_ != model_->revision) { ReadBinding(ctx); }
@@ -1033,7 +1083,7 @@ void WorldMapWorkspace::DrawProperties(EditorWorkspaceHostContext& ctx) {
                     ui.Checkbox("td2.world.sequence.advanced", "高级：执行相机 / 绑定槽", &sequenceAdvanced_);
                     if (sequenceAdvanced_) {
                         ui.Text("执行相机承载演出");
-                        ui.Text("起终点机位在下方配置");
+                        ui.Text("机位在原生演出工作区编辑");
                         if (ui.Button("td2.world.sequence.slot.pick", "槽：" + (editable.sequenceSlotName.empty() ? std::string("未指定") : editable.sequenceSlotName))) { picker_ = picker_ == 2 ? 0 : 2; }
                         if (picker_ == 2) {
                             std::vector<EditorChoice> choices;
@@ -1058,6 +1108,9 @@ void WorldMapWorkspace::DrawProperties(EditorWorkspaceHostContext& ctx) {
         if (ui.Button("td2.world.sequence.apply", "应用绑定")) { if (sequenceDraft_) { WriteBinding(ctx, pendingBinding_); } }
         ui.SameLine(); if (ui.Button("td2.world.sequence.discard", "撤回草稿")) { sequenceDraft_ = false; bindingRefresh_ = true; model_->error.clear(); }
         if (!bindingValid_) { ui.Text("绑定读取失败；请刷新或处理上方错误"); return; }
+        if (!editable.sequenceAssetGuid.empty() && ui.Button("td2.world.sequence.edit", "编辑演出 / 预览")) {
+            if (!sequenceDraft_ || WriteBinding(ctx, pendingBinding_)) OpenTransitionCamera(ctx, binding_, model_->error);
+        }
         // 演出の中身（镜头关键帧）は引擎の演出工作区で作る。ここは区域の対へ既存の演出資産を結ぶだけ。
         ui.Text("镜头关键帧请在引擎的演出（Cinematics）工作区编辑");
         return;
@@ -1067,7 +1120,21 @@ void WorldMapWorkspace::DrawProperties(EditorWorkspaceHostContext& ctx) {
     if (const auto* item = model_->Current()) { ui.Text(item->object.name); }
     ui.Text(std::to_string(s.region.cols) + " × " + std::to_string(s.region.rows));
     if (ui.Button("td2.world.room.edit", "编辑电视地图")) { OpenTelevision(ctx, model_->selected); }
+    if (ui.Button("td2.world.room.camera", "编辑关卡机位 / 预览")) {
+        if (model_->Commit(ctx)) {
+            const auto* room = model_->Current();
+            OpenRegionCamera(ctx, s.region.regionId, room ? room->object.name : s.region.regionId, model_->error);
+        }
+    }
     if (s.worldPlaced) {
+        // 正式な出生点は変更せず、次の Canvas click を一回限りの試遊入口にする。
+        if (ui.Button("td2.world.room.play", "从此区域开始")) {
+            if (model_->Commit(ctx)) {
+                pickingStart_ = true; hand_ = false; moving_ = libraryDrag_ = false;
+                view_.Fit(view_.lastSize, static_cast<float>(s.worldX), static_cast<float>(s.worldY),
+                          static_cast<float>(s.region.cols), static_cast<float>(s.region.rows));
+            }
+        }
         const auto before = s;
         EditInt(ui, "td2.world.room.x", "世界 X", s.worldX, -1000000, 1000000);
         EditInt(ui, "td2.world.room.y", "世界 Y", s.worldY, -1000000, 1000000);

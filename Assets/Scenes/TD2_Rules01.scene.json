@@ -17,18 +17,6 @@
             "enabled": true,
             "id": 1,
             "type": "cameraCut"
-          },
-          {
-            "channels": [],
-            "enabled": true,
-            "id": 2,
-            "type": "cameraTransform"
-          },
-          {
-            "channels": [],
-            "enabled": true,
-            "id": 3,
-            "type": "cameraLens"
           }
         ]
       }
@@ -39,6 +27,7 @@
     "1 玩法/区域电视",
     "1 玩法/区域电视/地图5",
     "1 玩法/镜头与演出",
+    "1 玩法/镜头与演出/区域共享机位",
     "1 玩法/镜头与演出/地图5切换",
     "2 工厂布景",
     "2 工厂布景/吊灯",
@@ -10860,14 +10849,14 @@
       "sourcePrefabId": "",
       "transform": {
         "position": [
-          -6.5742998123168945,
+          -6.562174320220947,
           2.8789000511169434,
-          -12.479100227355957
+          -12.369882583618164
         ],
         "rotationEulerDeg": [
           0.0,
-          -44.18600082397461,
-          -0.0
+          -44.185997009277344,
+          0.0
         ],
         "scale": [
           1.2582999467849731,
@@ -15216,6 +15205,38 @@
             "visible": true
           },
           "type": "ModelComponent"
+        },
+        {
+          "id": 2,
+          "properties": {
+            "cameraObject": {
+              "$hikariRef": "SceneObject",
+              "id": 0
+            },
+            "cells": "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111",
+            "cols": 24,
+            "devices": "",
+            "entryRegion": false,
+            "outputHeight": 896,
+            "outputWidth": 1536,
+            "regionId": "td2.region.5382",
+            "rows": 14,
+            "screenBrightness": 2.200000047683716,
+            "screenMaterialIndex": 3,
+            "screenModelAssetGuid": "29c9bce8db98e7fbb6d72c4a6392c3b9",
+            "screenObject": {
+              "$hikariRef": "SceneObject",
+              "id": 5382
+            },
+            "screenSlot": "TD2_Screen",
+            "spawnX": 0.5,
+            "spawnY": 0.5,
+            "tilePixels": 64,
+            "worldPlaced": true,
+            "worldX": 120,
+            "worldY": 84
+          },
+          "type": "TD2.Region"
         }
       ],
       "editorFolder": "2 工厂布景/地面电视",
@@ -15228,14 +15249,14 @@
       "sourcePrefabId": "",
       "transform": {
         "position": [
-          1.2000000476837158,
-          0.0,
-          -14.0
+          2.4679369926452637,
+          0.04103608429431915,
+          -13.986381530761719
         ],
         "rotationEulerDeg": [
           0.0,
-          160.0,
-          -0.0
+          18.21183967590332,
+          0.0
         ],
         "scale": [
           1.0,
@@ -16495,7 +16516,7 @@
         }
       ],
       "editorFolder": "2 工厂布景/杂物",
-      "editorLocked": false,
+      "editorLocked": true,
       "editorVisible": true,
       "enabled": true,
       "id": 5426,
@@ -17987,6 +18008,10 @@
         {
           "id": 2,
           "properties": {
+            "cameraObject": {
+              "$hikariRef": "SceneObject",
+              "id": 6083
+            },
             "cells": "111110000111110000111111111110000111110000111111111110000111110000111111111110000111110000111111111110000111110000111111111110000111110000111111000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000111110000111111111111111111110000111111111111111111110000111111111111111",
             "cols": 24,
             "devices": "ow_5_11 OneWay 5 11 4 1\ntutorial-muz02lmr-5cfal Decal 10 7 4 2 variant=ad opacity=0.8\n",
@@ -18054,6 +18079,10 @@
         {
           "id": 2,
           "properties": {
+            "cameraObject": {
+              "$hikariRef": "SceneObject",
+              "id": 6082
+            },
             "cells": "111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111000000000000000001110000000000000000000001110000000000000000000001110000000000000000000001110000000000000000000001110000111111111111111111111111111111111111111111111111111111111111111111111111",
             "cols": 24,
             "devices": "laser-muyyanv9-qq1vk Laser 9 6 1 1 dir=Down range=12\nlaser-muyyanv9-0ep8x Laser 10 6 1 1 dir=Down range=12\nlaser-muyyanv9-rusno Laser 11 6 1 1 dir=Down range=12\nlaser-muyyanv9-nhbp2 Laser 12 6 1 1 dir=Down range=12\n",
@@ -18121,6 +18150,10 @@
         {
           "id": 2,
           "properties": {
+            "cameraObject": {
+              "$hikariRef": "SceneObject",
+              "id": 6081
+            },
             "cells": "000000000111110000000000000000000111110000000000000000000111110000000000000000000111110000000000000000000111110000000000000000000111110000000000000000000111110000000000000000000111110000000000000000000111110000000000000000000111110000000000000000000111110000000000111110000111110000111111111110000111110000111111111110000111110000111111",
             "cols": 24,
             "devices": "",
@@ -18188,6 +18221,10 @@
         {
           "id": 2,
           "properties": {
+            "cameraObject": {
+              "$hikariRef": "SceneObject",
+              "id": 6080
+            },
             "cells": "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001111111111000000000000001111111111000000000000001111111111",
             "cols": 24,
             "devices": "",
@@ -18255,6 +18292,10 @@
         {
           "id": 2,
           "properties": {
+            "cameraObject": {
+              "$hikariRef": "SceneObject",
+              "id": 6084
+            },
             "cells": "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000111111111111111111111111111111111111111111111111111111111111111111111111",
             "cols": 24,
             "devices": "",
@@ -18322,6 +18363,10 @@
         {
           "id": 2,
           "properties": {
+            "cameraObject": {
+              "$hikariRef": "SceneObject",
+              "id": 6086
+            },
             "cells": "000000000111111111111111000000000111111111111111000000000111111111111111000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
             "cols": 24,
             "devices": "",
@@ -18381,6 +18426,7 @@
           "properties": {
             "assetId": "e5a1324c54ef74f37ae319784887244a",
             "castShadow": true,
+            "materialSetAssetGuid": "",
             "receiveShadow": true,
             "visible": true
           },
@@ -18389,6 +18435,10 @@
         {
           "id": 2,
           "properties": {
+            "cameraObject": {
+              "$hikariRef": "SceneObject",
+              "id": 6085
+            },
             "cells": "111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111000000000000000001110000000000000000000001110000000000000000000001110000000000000000000001110000000000000000000001110000111111111111111111111111111111111111111111111111111111111111111111111111",
             "cols": 24,
             "devices": "sp_7_10 Spikes 7 10 1 1\ncheckpoint-muyyanv9-5rwld Checkpoint 2 10 1 1\n",
@@ -18425,13 +18475,13 @@
       "sourcePrefabId": "",
       "transform": {
         "position": [
-          3.549999952316284,
-          5.0,
-          -8.149999618530273
+          2.4871153831481934,
+          4.23349142074585,
+          -8.01656436920166
         ],
         "rotationEulerDeg": [
           0.0,
-          32.0,
+          40.27781677246094,
           0.0
         ],
         "scale": [
@@ -18456,6 +18506,10 @@
         {
           "id": 2,
           "properties": {
+            "cameraObject": {
+              "$hikariRef": "SceneObject",
+              "id": 6087
+            },
             "cells": "111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000111111111111110000011111111111111111110000011111111111111111110000011111",
             "cols": 24,
             "devices": "sp_14_13 Spikes 14 13 5 1 dir=Up\ndoor-muz3tn5p-3im3n Door 7 6 4 5\nplate-muz3ttos-9zmo7 Plate 4 10 1 1 targets=door-muz3tn5p-3im3n,bridge-muz3uena-90qde\nbridge-muz3uena-90qde Bridge 14 11 5 1\ncheckpoint-muz3wudr-qlb9j Checkpoint 21 10 1 1\n",
@@ -18492,14 +18546,14 @@
       "sourcePrefabId": "",
       "transform": {
         "position": [
-          3.049999952316284,
-          5.300000190734863,
-          -11.100000381469727
+          3.6610562801361084,
+          4.70020866394043,
+          -9.256823539733887
         ],
         "rotationEulerDeg": [
-          -2.0,
-          70.0,
-          0.0
+          -2.0000147819519043,
+          28.18931007385254,
+          -9.262863386538811e-06
         ],
         "scale": [
           1.149999976158142,
@@ -18523,6 +18577,10 @@
         {
           "id": 2,
           "properties": {
+            "cameraObject": {
+              "$hikariRef": "SceneObject",
+              "id": 6088
+            },
             "cells": "111111111111111111000001111111111111111111000001111111111111111111000001111111111111111111000001111111111111111111000001111111111111111111000001000000000000001111000000000000000000001111000000000000000000001111000000000000000000001111111111000000000000001111111111111111110000001111111111111111110000001111111011111111110000001111111111",
             "cols": 24,
             "devices": "ow_22_4 OneWay 22 4 1 1\nplate-muz6f8su-zbnq6 Plate 4 10 1 1 targets=bridge-muz6ffag-2vvk0,map5.c6_r4/bridge-muz6ellz-80lgs\nbridge-muz6ffag-2vvk0 Bridge 8 11 6 1\nspring-mv69ivxu-w8gjk Spring 22 3 1 1 power=20.625 delay=1 cooldown=3\nspring-mv69j5yd-sacy1 Spring 18 8 3 1 power=20.625 delay=1 cooldown=3\ncheckpoint-mv69kvl8-d66zm Checkpoint 22 8 1 1\n",
@@ -18590,6 +18648,10 @@
         {
           "id": 2,
           "properties": {
+            "cameraObject": {
+              "$hikariRef": "SceneObject",
+              "id": 6091
+            },
             "cells": "111111110000001111111111111111110000001111111111111111110000001111111111111111110000000000000111111111110000000000000111111111110000000000000111111111110000000000000111111111110000000000000111111111110000000000000111111111110000000011001111111111110000000011001111111111110000000011001111111111110000000011001111111111111111111111001111",
             "cols": 24,
             "devices": "sp_8_12 Spikes 8 12 8 1 dir=Up\nbridge-muz6ellz-80lgs Bridge 8 9 8 1\ncheckpoint-muz79tcp-odwy8 Checkpoint 16 8 1 1\n",
@@ -18657,6 +18719,10 @@
         {
           "id": 2,
           "properties": {
+            "cameraObject": {
+              "$hikariRef": "SceneObject",
+              "id": 6093
+            },
             "cells": "111111111111111111001111111111111111111111001111111111111111111111001111111111111111111111001111111111111111111111001111111000000000000000000001111000000000000000000001111000000000000000000001111111000111111110111111111111000111111110111111111000000000000000000000111000000000000000000000111111111111111001111111111111111111111001111111",
             "cols": 24,
             "devices": "bridge-muz7ypeh-lgnsv Bridge 17 8 1 1\nplate-mv63qrve-bxu21 Plate 14 7 1 1 targets=bridge-muz7ypeh-lgnsv\nlaser-mv63tjqu-u2wzz Laser 23 11 1 1 dir=Left range=12\ncheckpoint-mv63whow-af9xk Checkpoint 20 7 1 1\n",
@@ -18724,6 +18790,10 @@
         {
           "id": 2,
           "properties": {
+            "cameraObject": {
+              "$hikariRef": "SceneObject",
+              "id": 6094
+            },
             "cells": "111111111111111001111111111111111111111001111111111000000000000000000001111000000000000000000001111110111111100111111111111100011100000011111111111100011100000011111111111100011100000011111111111100011100000011111111111100011100000011111111111100011100000000000000111100011100000000000000111100011100000011111111111100011100000011111111",
             "cols": 24,
             "devices": "plate-muz7bk7l-isshf Plate 12 3 1 1 targets=bridge-muz7pflf-sgtva,bridge-muz7pflf-8jjb2,bridge-muz7pflf-ckwe5\nbridge-muz7pflf-8jjb2 Bridge 5 4 1 1\nbridge-muz7pflf-sgtva Bridge 13 4 2 1 invert=1\nplate-muz7pflf-toy0z Plate 5 13 1 1 targets=bridge-muz7pflf-ckwe5\nbridge-muz7pflf-ckwe5 Bridge 10 12 6 1 invert=1\ncheckpoint-muz7r251-tknbz Checkpoint 17 3 1 1\nlaser-mv63uz6e-efe9h Laser 4 5 1 1 dir=Right range=12\nlaser-mv63uze1-xje67 Laser 4 6 1 1 dir=Right range=12\nlaser-mv63uzm1-uminl Laser 4 8 1 1 dir=Right range=12\nlaser-mv63v01z-tfgpw Laser 4 7 1 1 dir=Right range=12\nlaser-mv63v0a8-2iw6y Laser 4 9 1 1 dir=Right range=12\nlaser-mv63v0ie-209u5 Laser 4 10 1 1 dir=Right range=12\nlaser-mv63v0qi-gvol4 Laser 4 11 1 1 dir=Right range=12\nlaser-mv63v1q1-alx48 Laser 4 12 1 1 dir=Right range=12\nlaser-mv63v1v8-70bn0 Laser 4 13 1 1 dir=Right range=12\nlaser-mv63v6le-vtha8 Laser 10 13 1 1 dir=Up range=12\nlaser-mv63v6sk-klj1c Laser 11 13 1 1 dir=Up range=12\nlaser-mv63v6zr-uj5mi Laser 13 13 1 1 dir=Up range=12\nlaser-mv63v7dx-x1uz1 Laser 12 13 1 1 dir=Up range=12\nlaser-mv63v7m0-u6gnl Laser 14 13 1 1 dir=Up range=12\nlaser-mv63v7sk-jevv4 Laser 15 13 1 1 dir=Up range=12\n",
@@ -18791,6 +18861,10 @@
         {
           "id": 2,
           "properties": {
+            "cameraObject": {
+              "$hikariRef": "SceneObject",
+              "id": 6092
+            },
             "cells": "111111111111111111111111111000000000000000011111111000000000000000011111111000000000000000011111111000000000000000011111000000000000000000011111000000000000000001111111000000000000000001111111000000000000000001111111110000000000000001111111110000000000000001111111110000000000000001111111110000000111111111111111110000000111111111111111",
             "cols": 24,
             "devices": "ow_2_6 OneWay 2 6 15 1\nspring-mv69561j-fe48k Spring 15 11 2 1 power=20.625 delay=1 cooldown=3\nlaser-mv697t5w-rertu Laser 18 5 1 1 dir=Left range=12\ncheckpoint-mv69kzbl-qwp54 Checkpoint 11 11 1 1\n",
@@ -18858,6 +18932,10 @@
         {
           "id": 2,
           "properties": {
+            "cameraObject": {
+              "$hikariRef": "SceneObject",
+              "id": 6096
+            },
             "cells": "100000011111111111111111100000011111111111111111100001111111111111111111100001111111100000000000111000000000000000000000111000000000000111111111100001100011000111111111100001100011000000000000111000000000000000000000111000000000000000000000111111111111100000000011111111111111100000000011111111111111111111111111111111111111111111111111",
             "cols": 24,
             "devices": "checkpoint_import_16 Checkpoint 17 11 1 1\n",
@@ -18925,6 +19003,10 @@
         {
           "id": 2,
           "properties": {
+            "cameraObject": {
+              "$hikariRef": "SceneObject",
+              "id": 6098
+            },
             "cells": "111111111111111111111111110011001111111111111111110011001111111111111111111111111100000011111111110000001100000000000000111111111100000000000000111111111110000011111111111100000000000000111111111100000000000000111111111110011111111111111111111100000000000000000000111100000000000000000000111100000000000000000000111111111111111111100001",
             "cols": 24,
             "devices": "ow_12_5 OneWay 12 5 3 1\now_11_6 OneWay 11 6 5 1\now_5_9 OneWay 5 9 2 1\now_19_13 OneWay 19 13 4 1\nsp_3_2 Spikes 3 2 1 1 dir=Up\nsp_7_2 Spikes 7 2 1 1 dir=Up\nsp_10_3 Spikes 10 3 6 1 dir=Down\nsp_2_4 Spikes 2 4 6 1 dir=Down\nspring_import_9 Spring 5 12 2 1 power=20.625 delay=1 cooldown=3\nspring_import_10 Spring 12 8 3 1 power=20.625 delay=1 cooldown=3\ncheckpoint_import_11 Checkpoint 21 12 1 1\n",
@@ -18992,6 +19074,10 @@
         {
           "id": 2,
           "properties": {
+            "cameraObject": {
+              "$hikariRef": "SceneObject",
+              "id": 6095
+            },
             "cells": "111111111111111111100001111111111111111111100001111111111111111111100001111100000000000000000001111100000000000000000011111100000000000000000011111100000000000000000011111110000000000011111111000000000000000011111111000000000000000011111111000000000000000011111111000000000000000011111111111111111111111111111111111111111111111111111111",
             "cols": 24,
             "devices": "ow_5_7 OneWay 5 7 11 1\nspring_import_1 Spring 7 11 1 1 power=20.625 delay=1 cooldown=3\nspring_import_2 Spring 13 11 1 1 power=20.625 delay=1 cooldown=3\ncheckpoint_import_3 Checkpoint 3 11 1 1\nlaser_import_4 Laser 4 6 1 1 dir=Right range=12\ncheckpoint_import_5 Checkpoint 18 6 1 1\nspring_import_6 Spring 20 6 2 1 power=20.625 delay=1 cooldown=3\nspring_import_7 Spring 22 3 1 1 power=20.625 delay=1 cooldown=3\n",
@@ -19059,6 +19145,10 @@
         {
           "id": 2,
           "properties": {
+            "cameraObject": {
+              "$hikariRef": "SceneObject",
+              "id": 6100
+            },
             "cells": "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001111111111111111000000000111111111111111000000000111111111100011000000000111100000000011000000000111100000000011000000000111100001100011000000000111100001100011000000000111100001100011",
             "cols": 24,
             "devices": "ow_19_11 OneWay 19 11 3 1\n",
@@ -19126,6 +19216,10 @@
         {
           "id": 2,
           "properties": {
+            "cameraObject": {
+              "$hikariRef": "SceneObject",
+              "id": 6097
+            },
             "cells": "111111111111100001100011111111111111100001100011111111111111100001100011111111111111100001100011101111111111100001100011111111111111100001100011111111111111100001100011000000000000000001100011000000000000000001100011000000000000000001100011010010000000000001100011010010000000000001100011111111111111111111100011111111111111111111100011",
             "cols": 24,
             "devices": "ow_0_10 OneWay 0 10 1 1\now_2_10 OneWay 2 10 2 1\now_5_10 OneWay 5 10 4 1\nsp_6_11 Spikes 6 11 3 1 dir=Up\ncheckpoint_import_14 Checkpoint 14 11 1 1\ncollectible_import_15 Collectible 0 11 1 1\ncollectible_import_17 Collectible 1 4 1 1\now_20_10 OneWay 20 10 2 1\nspring-mv69bpr7-qcql3 Spring 19 10 1 1 power=20.625 delay=1 cooldown=3\now_19_6 OneWay 19 6 2 1\nspring-mv69c1u3-xkt3f Spring 21 6 1 1 power=20.625 delay=1 cooldown=3\now_20_2 OneWay 20 2 2 1\nspring-mv69dgyd-btfq4 Spring 19 2 1 1 power=22.5 delay=1 cooldown=3\n",
@@ -19193,6 +19287,10 @@
         {
           "id": 2,
           "properties": {
+            "cameraObject": {
+              "$hikariRef": "SceneObject",
+              "id": 6099
+            },
             "cells": "111111111110000000000011000000000000000000000011000000000000000000000011000000000000000001111111000000000000000001111111000000000000000001111111111111111000000001111111111111111000000001111111111111111000000001111111111111111000000001111111000000000000000001111111000000000000000001111111000000000000000001111111111111111111111111111111",
             "cols": 24,
             "devices": "ow_15_3 OneWay 15 3 2 1\now_9_6 OneWay 9 6 1 1\nspring_import_8 Spring 11 12 4 1 power=20.625 delay=1 cooldown=3\ncheckpoint_import_12 Checkpoint 5 5 1 1\nspring_import_13 Spring 21 2 1 1 power=27.5 delay=1 cooldown=3\n",
@@ -19260,6 +19358,10 @@
         {
           "id": 2,
           "properties": {
+            "cameraObject": {
+              "$hikariRef": "SceneObject",
+              "id": 6089
+            },
             "cells": "110000000000000000000000110000000000000000000000110000000000000000000000111111111111100000000000111111111111100000000000111111111111100000000000111111111111100000000000111111111111100000000000111111111111100000000000111111111111100000000000111111111111100000000000111111111111100000000000111111111111111111000001111111111111111111000001",
             "cols": 24,
             "devices": "ow_18_12 OneWay 18 12 5 1\ncheckpoint-mv69kxko-gwkzc Checkpoint 14 11 1 1\n",
@@ -19327,6 +19429,10 @@
         {
           "id": 2,
           "properties": {
+            "cameraObject": {
+              "$hikariRef": "SceneObject",
+              "id": 6090
+            },
             "cells": "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000111111111111111111111111111111111111111111111111",
             "cols": 24,
             "devices": "",
@@ -20278,7 +20384,7 @@
             "regionB": "map5.c4_r3",
             "sequenceAssetGuid": "0f6ec7e62b9d922dfa4a1760c57e929b",
             "sequenceSlotName": "Camera",
-            "speed": 2.14
+            "speed": 2.140000104904175
           },
           "type": "TD2.RegionSequence"
         }
@@ -20410,7 +20516,7 @@
             "regionB": "map5.c6_r3",
             "sequenceAssetGuid": "90ba959feeee5f27936ae1ebf25f192f",
             "sequenceSlotName": "Camera",
-            "speed": 2.401
+            "speed": 1.2000000476837158
           },
           "type": "TD2.RegionSequence"
         }
@@ -20674,7 +20780,7 @@
             "regionB": "map5.c6_r6",
             "sequenceAssetGuid": "fa369a31fe591cff5ebda083d2466a17",
             "sequenceSlotName": "Camera",
-            "speed": 3.082
+            "speed": 1.2000000476837158
           },
           "type": "TD2.RegionSequence"
         }
@@ -20718,7 +20824,7 @@
             "regionB": "map5.c7_r6",
             "sequenceAssetGuid": "75a296dbc8dbd1a26c00701af1bf6662",
             "sequenceSlotName": "Camera",
-            "speed": 1.818
+            "speed": 0.800000011920929
           },
           "type": "TD2.RegionSequence"
         }
@@ -21102,6 +21208,1069 @@
         "rotationEulerDeg": [
           7.0,
           180.0,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "components": [
+        {
+          "id": 1,
+          "properties": {
+            "depthOfField": {
+              "enabled": true,
+              "farBlurRadius1080pPixels": 12.0,
+              "farTransition": 2.5,
+              "focusDistance": 2.888,
+              "focusRange": 0.9,
+              "nearBlurRadius1080pPixels": 8.0,
+              "nearTransition": 0.6
+            },
+            "enabled": true,
+            "farClip": 500,
+            "nearClip": 0.05,
+            "verticalFovDegrees": 26.0
+          },
+          "type": "CameraComponent"
+        }
+      ],
+      "editorFolder": "1 玩法/镜头与演出/区域共享机位",
+      "editorLocked": false,
+      "editorVisible": true,
+      "enabled": true,
+      "id": 6080,
+      "name": "区域机位 c2_r2",
+      "parent": null,
+      "sourcePrefabId": "",
+      "transform": {
+        "position": [
+          -0.7271999716758728,
+          7.459499835968018,
+          -5.202099800109863
+        ],
+        "rotationEulerDeg": [
+          -4.460999965667725,
+          200.0,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "components": [
+        {
+          "id": 1,
+          "properties": {
+            "depthOfField": {
+              "enabled": true,
+              "farBlurRadius1080pPixels": 12.0,
+              "farTransition": 2.5,
+              "focusDistance": 2.888,
+              "focusRange": 0.9,
+              "nearBlurRadius1080pPixels": 8.0,
+              "nearTransition": 0.6
+            },
+            "enabled": true,
+            "farClip": 500,
+            "nearClip": 0.05,
+            "verticalFovDegrees": 26.0
+          },
+          "type": "CameraComponent"
+        }
+      ],
+      "editorFolder": "1 玩法/镜头与演出/区域共享机位",
+      "editorLocked": false,
+      "editorVisible": true,
+      "enabled": true,
+      "id": 6081,
+      "name": "区域机位 c3_r2",
+      "parent": null,
+      "sourcePrefabId": "",
+      "transform": {
+        "position": [
+          1.0592000484466553,
+          6.653600215911865,
+          -3.921099901199341
+        ],
+        "rotationEulerDeg": [
+          -9.397000312805176,
+          176.0,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "components": [
+        {
+          "id": 1,
+          "properties": {
+            "depthOfField": {
+              "enabled": true,
+              "farBlurRadius1080pPixels": 12.0,
+              "farTransition": 2.5,
+              "focusDistance": 2.888,
+              "focusRange": 0.9,
+              "nearBlurRadius1080pPixels": 8.0,
+              "nearTransition": 0.6
+            },
+            "enabled": true,
+            "farClip": 500.0,
+            "nearClip": 0.05000000074505806,
+            "verticalFovDegrees": 26.0
+          },
+          "type": "CameraComponent"
+        }
+      ],
+      "editorFolder": "1 玩法/镜头与演出/区域共享机位",
+      "editorLocked": false,
+      "editorVisible": true,
+      "enabled": true,
+      "id": 6082,
+      "name": "区域机位 c2_r3",
+      "parent": null,
+      "sourcePrefabId": "",
+      "transform": {
+        "position": [
+          -0.5457853078842163,
+          4.656899929046631,
+          -3.09894061088562
+        ],
+        "rotationEulerDeg": [
+          2.5889999866485596,
+          204.0,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "components": [
+        {
+          "id": 1,
+          "properties": {
+            "depthOfField": {
+              "enabled": true,
+              "farBlurRadius1080pPixels": 12.0,
+              "farTransition": 2.5,
+              "focusDistance": 2.888,
+              "focusRange": 0.9,
+              "nearBlurRadius1080pPixels": 8.0,
+              "nearTransition": 0.6
+            },
+            "enabled": true,
+            "farClip": 500.0,
+            "nearClip": 0.05000000074505806,
+            "verticalFovDegrees": 26.0
+          },
+          "type": "CameraComponent"
+        }
+      ],
+      "editorFolder": "1 玩法/镜头与演出/区域共享机位",
+      "editorLocked": false,
+      "editorVisible": true,
+      "enabled": true,
+      "id": 6083,
+      "name": "区域机位 c3_r3",
+      "parent": null,
+      "sourcePrefabId": "",
+      "transform": {
+        "position": [
+          0.02270364761352539,
+          4.897067070007324,
+          -3.0033278465270996
+        ],
+        "rotationEulerDeg": [
+          -179.55194091796875,
+          7.396970748901367,
+          179.99989318847656
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "components": [
+        {
+          "id": 1,
+          "properties": {
+            "depthOfField": {
+              "enabled": true,
+              "farBlurRadius1080pPixels": 12.0,
+              "farTransition": 2.5,
+              "focusDistance": 2.888,
+              "focusRange": 0.9,
+              "nearBlurRadius1080pPixels": 8.0,
+              "nearTransition": 0.6
+            },
+            "enabled": true,
+            "farClip": 500,
+            "nearClip": 0.05,
+            "verticalFovDegrees": 26.0
+          },
+          "type": "CameraComponent"
+        }
+      ],
+      "editorFolder": "1 玩法/镜头与演出/区域共享机位",
+      "editorLocked": false,
+      "editorVisible": true,
+      "enabled": true,
+      "id": 6084,
+      "name": "区域机位 c4_r2",
+      "parent": null,
+      "sourcePrefabId": "",
+      "transform": {
+        "position": [
+          3.0478999614715576,
+          7.974599838256836,
+          -6.151299953460693
+        ],
+        "rotationEulerDeg": [
+          -1.805999994277954,
+          164.0,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "components": [
+        {
+          "id": 1,
+          "properties": {
+            "depthOfField": {
+              "enabled": true,
+              "farBlurRadius1080pPixels": 12.0,
+              "farTransition": 2.5,
+              "focusDistance": 2.888,
+              "focusRange": 0.9,
+              "nearBlurRadius1080pPixels": 8.0,
+              "nearTransition": 0.6
+            },
+            "enabled": true,
+            "farClip": 500.0,
+            "nearClip": 0.05000000074505806,
+            "verticalFovDegrees": 26.0
+          },
+          "type": "CameraComponent"
+        }
+      ],
+      "editorFolder": "1 玩法/镜头与演出/区域共享机位",
+      "editorLocked": false,
+      "editorVisible": true,
+      "enabled": true,
+      "id": 6085,
+      "name": "区域机位 c4_r3",
+      "parent": null,
+      "sourcePrefabId": "",
+      "transform": {
+        "position": [
+          5.423387050628662,
+          4.992218017578125,
+          -4.871349811553955
+        ],
+        "rotationEulerDeg": [
+          -179.0359344482422,
+          -31.999990463256836,
+          179.99989318847656
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "components": [
+        {
+          "id": 1,
+          "properties": {
+            "depthOfField": {
+              "enabled": true,
+              "farBlurRadius1080pPixels": 12.0,
+              "farTransition": 2.5,
+              "focusDistance": 2.888,
+              "focusRange": 0.9,
+              "nearBlurRadius1080pPixels": 8.0,
+              "nearTransition": 0.6
+            },
+            "enabled": true,
+            "farClip": 500,
+            "nearClip": 0.05,
+            "verticalFovDegrees": 26.0
+          },
+          "type": "CameraComponent"
+        }
+      ],
+      "editorFolder": "1 玩法/镜头与演出/区域共享机位",
+      "editorLocked": false,
+      "editorVisible": true,
+      "enabled": true,
+      "id": 6086,
+      "name": "区域机位 c5_r2",
+      "parent": null,
+      "sourcePrefabId": "",
+      "transform": {
+        "position": [
+          5.226099967956543,
+          8.692700386047363,
+          -8.037300109863281
+        ],
+        "rotationEulerDeg": [
+          1.159999966621399,
+          146.0,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "components": [
+        {
+          "id": 1,
+          "properties": {
+            "depthOfField": {
+              "enabled": true,
+              "farBlurRadius1080pPixels": 12.0,
+              "farTransition": 2.5,
+              "focusDistance": 2.888,
+              "focusRange": 0.9,
+              "nearBlurRadius1080pPixels": 8.0,
+              "nearTransition": 0.6
+            },
+            "enabled": true,
+            "farClip": 500.0,
+            "nearClip": 0.05000000074505806,
+            "verticalFovDegrees": 26.0
+          },
+          "type": "CameraComponent"
+        }
+      ],
+      "editorFolder": "1 玩法/镜头与演出/区域共享机位",
+      "editorLocked": false,
+      "editorVisible": true,
+      "enabled": true,
+      "id": 6087,
+      "name": "区域机位 c5_r3",
+      "parent": null,
+      "sourcePrefabId": "",
+      "transform": {
+        "position": [
+          6.560945510864258,
+          4.8468403816223145,
+          -7.415787220001221
+        ],
+        "rotationEulerDeg": [
+          -179.47930908203125,
+          -61.41621017456055,
+          173.10655212402344
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "components": [
+        {
+          "id": 1,
+          "properties": {
+            "depthOfField": {
+              "enabled": true,
+              "farBlurRadius1080pPixels": 12.0,
+              "farTransition": 2.5,
+              "focusDistance": 2.888,
+              "focusRange": 0.9,
+              "nearBlurRadius1080pPixels": 8.0,
+              "nearTransition": 0.6
+            },
+            "enabled": true,
+            "farClip": 500.0,
+            "nearClip": 0.05000000074505806,
+            "verticalFovDegrees": 26.0
+          },
+          "type": "CameraComponent"
+        }
+      ],
+      "editorFolder": "1 玩法/镜头与演出/区域共享机位",
+      "editorLocked": false,
+      "editorVisible": true,
+      "enabled": true,
+      "id": 6088,
+      "name": "区域机位 c6_r3",
+      "parent": null,
+      "sourcePrefabId": "",
+      "transform": {
+        "position": [
+          3.9670677185058594,
+          6.085372447967529,
+          -9.000179290771484
+        ],
+        "rotationEulerDeg": [
+          -173.0,
+          6.834380149841309,
+          179.99989318847656
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "components": [
+        {
+          "id": 1,
+          "properties": {
+            "depthOfField": {
+              "enabled": true,
+              "farBlurRadius1080pPixels": 12.0,
+              "farTransition": 2.5,
+              "focusDistance": 2.888,
+              "focusRange": 0.9,
+              "nearBlurRadius1080pPixels": 8.0,
+              "nearTransition": 0.6
+            },
+            "enabled": true,
+            "farClip": 500.0,
+            "nearClip": 0.05000000074505806,
+            "verticalFovDegrees": 26.0
+          },
+          "type": "CameraComponent"
+        }
+      ],
+      "editorFolder": "1 玩法/镜头与演出/区域共享机位",
+      "editorLocked": false,
+      "editorVisible": true,
+      "enabled": true,
+      "id": 6089,
+      "name": "区域机位 c6_r2",
+      "parent": null,
+      "sourcePrefabId": "",
+      "transform": {
+        "position": [
+          4.885700225830078,
+          8.838399887084961,
+          -11.183099746704102
+        ],
+        "rotationEulerDeg": [
+          0.42800000309944153,
+          189.0,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "components": [
+        {
+          "id": 1,
+          "properties": {
+            "depthOfField": {
+              "enabled": true,
+              "farBlurRadius1080pPixels": 12.0,
+              "farTransition": 2.5,
+              "focusDistance": 2.888,
+              "focusRange": 0.9,
+              "nearBlurRadius1080pPixels": 8.0,
+              "nearTransition": 0.6
+            },
+            "enabled": true,
+            "farClip": 500,
+            "nearClip": 0.05,
+            "verticalFovDegrees": 26.0
+          },
+          "type": "CameraComponent"
+        }
+      ],
+      "editorFolder": "1 玩法/镜头与演出/区域共享机位",
+      "editorLocked": false,
+      "editorVisible": true,
+      "enabled": true,
+      "id": 6090,
+      "name": "区域机位 c7_r2",
+      "parent": null,
+      "sourcePrefabId": "",
+      "transform": {
+        "position": [
+          9.085399627685547,
+          9.31879997253418,
+          -14.786999702453613
+        ],
+        "rotationEulerDeg": [
+          3.0,
+          254.0,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "components": [
+        {
+          "id": 1,
+          "properties": {
+            "depthOfField": {
+              "enabled": true,
+              "farBlurRadius1080pPixels": 12.0,
+              "farTransition": 2.5,
+              "focusDistance": 2.888,
+              "focusRange": 0.9,
+              "nearBlurRadius1080pPixels": 8.0,
+              "nearTransition": 0.6
+            },
+            "enabled": true,
+            "farClip": 500.0,
+            "nearClip": 0.05000000074505806,
+            "verticalFovDegrees": 26.0
+          },
+          "type": "CameraComponent"
+        }
+      ],
+      "editorFolder": "1 玩法/镜头与演出/区域共享机位",
+      "editorLocked": false,
+      "editorVisible": true,
+      "enabled": true,
+      "id": 6091,
+      "name": "区域机位 c6_r4",
+      "parent": null,
+      "sourcePrefabId": "",
+      "transform": {
+        "position": [
+          4.423976898193359,
+          5.208295822143555,
+          -9.57006549835205
+        ],
+        "rotationEulerDeg": [
+          -173.0,
+          5.169013977050781,
+          179.99989318847656
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "components": [
+        {
+          "id": 1,
+          "properties": {
+            "depthOfField": {
+              "enabled": true,
+              "farBlurRadius1080pPixels": 12.0,
+              "farTransition": 2.5,
+              "focusDistance": 2.888,
+              "focusRange": 0.9,
+              "nearBlurRadius1080pPixels": 8.0,
+              "nearTransition": 0.6
+            },
+            "enabled": true,
+            "farClip": 500.0,
+            "nearClip": 0.05000000074505806,
+            "verticalFovDegrees": 26.0
+          },
+          "type": "CameraComponent"
+        }
+      ],
+      "editorFolder": "1 玩法/镜头与演出/区域共享机位",
+      "editorLocked": false,
+      "editorVisible": true,
+      "enabled": true,
+      "id": 6092,
+      "name": "区域机位 c7_r3",
+      "parent": null,
+      "sourcePrefabId": "",
+      "transform": {
+        "position": [
+          10.14780044555664,
+          6.137499809265137,
+          -16.18000030517578
+        ],
+        "rotationEulerDeg": [
+          1.9520000219345093,
+          270.0,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "components": [
+        {
+          "id": 1,
+          "properties": {
+            "depthOfField": {
+              "enabled": true,
+              "farBlurRadius1080pPixels": 12.0,
+              "farTransition": 2.5,
+              "focusDistance": 2.888,
+              "focusRange": 0.9,
+              "nearBlurRadius1080pPixels": 8.0,
+              "nearTransition": 0.6
+            },
+            "enabled": true,
+            "farClip": 500.0,
+            "nearClip": 0.05000000074505806,
+            "verticalFovDegrees": 26.0
+          },
+          "type": "CameraComponent"
+        }
+      ],
+      "editorFolder": "1 玩法/镜头与演出/区域共享机位",
+      "editorLocked": false,
+      "editorVisible": true,
+      "enabled": true,
+      "id": 6093,
+      "name": "区域机位 c6_r5",
+      "parent": null,
+      "sourcePrefabId": "",
+      "transform": {
+        "position": [
+          4.460000038146973,
+          2.2720999717712402,
+          -10.366399765014648
+        ],
+        "rotationEulerDeg": [
+          -3.690000057220459,
+          180.0,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "components": [
+        {
+          "id": 1,
+          "properties": {
+            "depthOfField": {
+              "enabled": true,
+              "farBlurRadius1080pPixels": 12.0,
+              "farTransition": 2.5,
+              "focusDistance": 2.888,
+              "focusRange": 0.9,
+              "nearBlurRadius1080pPixels": 8.0,
+              "nearTransition": 0.6
+            },
+            "enabled": true,
+            "farClip": 500.0,
+            "nearClip": 0.05000000074505806,
+            "verticalFovDegrees": 26.0
+          },
+          "type": "CameraComponent"
+        }
+      ],
+      "editorFolder": "1 玩法/镜头与演出/区域共享机位",
+      "editorLocked": false,
+      "editorVisible": true,
+      "enabled": true,
+      "id": 6094,
+      "name": "区域机位 c6_r6",
+      "parent": null,
+      "sourcePrefabId": "",
+      "transform": {
+        "position": [
+          4.300000190734863,
+          -0.04449915885925293,
+          -9.66889476776123
+        ],
+        "rotationEulerDeg": [
+          164.02984619140625,
+          2.9754080969723873e-05,
+          -179.99989318847656
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "components": [
+        {
+          "id": 1,
+          "properties": {
+            "depthOfField": {
+              "enabled": true,
+              "farBlurRadius1080pPixels": 12.0,
+              "farTransition": 2.5,
+              "focusDistance": 2.888,
+              "focusRange": 0.9,
+              "nearBlurRadius1080pPixels": 8.0,
+              "nearTransition": 0.6
+            },
+            "enabled": true,
+            "farClip": 500.0,
+            "nearClip": 0.05000000074505806,
+            "verticalFovDegrees": 26.0
+          },
+          "type": "CameraComponent"
+        }
+      ],
+      "editorFolder": "1 玩法/镜头与演出/区域共享机位",
+      "editorLocked": false,
+      "editorVisible": true,
+      "enabled": true,
+      "id": 6095,
+      "name": "区域机位 c7_r6",
+      "parent": null,
+      "sourcePrefabId": "",
+      "transform": {
+        "position": [
+          9.303939819335938,
+          1.0827640295028687,
+          -16.020000457763672
+        ],
+        "rotationEulerDeg": [
+          -90.45455932617188,
+          -89.69609069824219,
+          90.0193099975586
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "components": [
+        {
+          "id": 1,
+          "properties": {
+            "depthOfField": {
+              "enabled": true,
+              "farBlurRadius1080pPixels": 12.0,
+              "farTransition": 2.5,
+              "focusDistance": 2.888,
+              "focusRange": 0.9,
+              "nearBlurRadius1080pPixels": 8.0,
+              "nearTransition": 0.6
+            },
+            "enabled": true,
+            "farClip": 500,
+            "nearClip": 0.05,
+            "verticalFovDegrees": 26.0
+          },
+          "type": "CameraComponent"
+        }
+      ],
+      "editorFolder": "1 玩法/镜头与演出/区域共享机位",
+      "editorLocked": false,
+      "editorVisible": true,
+      "enabled": true,
+      "id": 6096,
+      "name": "区域机位 c7_r4",
+      "parent": null,
+      "sourcePrefabId": "",
+      "transform": {
+        "position": [
+          10.140299797058105,
+          4.190499782562256,
+          -16.020000457763672
+        ],
+        "rotationEulerDeg": [
+          -0.8899999856948853,
+          270.0,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "components": [
+        {
+          "id": 1,
+          "properties": {
+            "depthOfField": {
+              "enabled": true,
+              "farBlurRadius1080pPixels": 12.0,
+              "farTransition": 2.5,
+              "focusDistance": 2.888,
+              "focusRange": 0.9,
+              "nearBlurRadius1080pPixels": 8.0,
+              "nearTransition": 0.6
+            },
+            "enabled": true,
+            "farClip": 500.0,
+            "nearClip": 0.05000000074505806,
+            "verticalFovDegrees": 26.0
+          },
+          "type": "CameraComponent"
+        }
+      ],
+      "editorFolder": "1 玩法/镜头与演出/区域共享机位",
+      "editorLocked": false,
+      "editorVisible": true,
+      "enabled": true,
+      "id": 6097,
+      "name": "区域机位 c8_r4",
+      "parent": null,
+      "sourcePrefabId": "",
+      "transform": {
+        "position": [
+          4.962615966796875,
+          3.7215254306793213,
+          -21.820043563842773
+        ],
+        "rotationEulerDeg": [
+          -12.658830642700195,
+          3.2491392687461484e-08,
+          1.4466026243553642e-07
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "components": [
+        {
+          "id": 1,
+          "properties": {
+            "depthOfField": {
+              "enabled": true,
+              "farBlurRadius1080pPixels": 12.0,
+              "farTransition": 2.5,
+              "focusDistance": 2.888,
+              "focusRange": 0.9,
+              "nearBlurRadius1080pPixels": 8.0,
+              "nearTransition": 0.6
+            },
+            "enabled": true,
+            "farClip": 500.0,
+            "nearClip": 0.05000000074505806,
+            "verticalFovDegrees": 26.0
+          },
+          "type": "CameraComponent"
+        }
+      ],
+      "editorFolder": "1 玩法/镜头与演出/区域共享机位",
+      "editorLocked": false,
+      "editorVisible": true,
+      "enabled": true,
+      "id": 6098,
+      "name": "区域机位 c7_r5",
+      "parent": null,
+      "sourcePrefabId": "",
+      "transform": {
+        "position": [
+          10.476900100708008,
+          2.6991000175476074,
+          -17.444799423217773
+        ],
+        "rotationEulerDeg": [
+          2.4070000648498535,
+          287.0,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "components": [
+        {
+          "id": 1,
+          "properties": {
+            "depthOfField": {
+              "enabled": true,
+              "farBlurRadius1080pPixels": 12.0,
+              "farTransition": 2.5,
+              "focusDistance": 2.888,
+              "focusRange": 0.9,
+              "nearBlurRadius1080pPixels": 8.0,
+              "nearTransition": 0.6
+            },
+            "enabled": true,
+            "farClip": 500.0,
+            "nearClip": 0.05000000074505806,
+            "verticalFovDegrees": 26.0
+          },
+          "type": "CameraComponent"
+        }
+      ],
+      "editorFolder": "1 玩法/镜头与演出/区域共享机位",
+      "editorLocked": false,
+      "editorVisible": true,
+      "enabled": true,
+      "id": 6099,
+      "name": "区域机位 c8_r5",
+      "parent": null,
+      "sourcePrefabId": "",
+      "transform": {
+        "position": [
+          4.420000076293945,
+          1.839238166809082,
+          -22.459003448486328
+        ],
+        "rotationEulerDeg": [
+          -14.151209831237793,
+          1.576267862901659e-07,
+          6.251730724216031e-07
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "components": [
+        {
+          "id": 1,
+          "properties": {
+            "depthOfField": {
+              "enabled": true,
+              "farBlurRadius1080pPixels": 12.0,
+              "farTransition": 2.5,
+              "focusDistance": 2.888,
+              "focusRange": 0.9,
+              "nearBlurRadius1080pPixels": 8.0,
+              "nearTransition": 0.6
+            },
+            "enabled": true,
+            "farClip": 500.0,
+            "nearClip": 0.05000000074505806,
+            "verticalFovDegrees": 26.0
+          },
+          "type": "CameraComponent"
+        }
+      ],
+      "editorFolder": "1 玩法/镜头与演出/区域共享机位",
+      "editorLocked": false,
+      "editorVisible": true,
+      "enabled": true,
+      "id": 6100,
+      "name": "区域机位 c8_r3",
+      "parent": null,
+      "sourcePrefabId": "",
+      "transform": {
+        "position": [
+          4.754284858703613,
+          6.773437023162842,
+          -22.790550231933594
+        ],
+        "rotationEulerDeg": [
+          16.441381454467773,
+          9.450344862216298e-08,
+          -3.2024112783801684e-07
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "components": [
+        {
+          "id": 1,
+          "properties": {
+            "angularFalloff": 1.0,
+            "castsShadows": false,
+            "color": [
+              1.0,
+              0.6858596205711365,
+              0.11469537019729614
+            ],
+            "cookie": "",
+            "enabled": true,
+            "height": 1.0,
+            "iesProfile": "",
+            "innerConeAngleDegrees": 25.0,
+            "intensity": 800.0,
+            "intensityUnit": "SceneRelative",
+            "length": 1.0,
+            "outerConeAngleDegrees": 35.0,
+            "priority": 0,
+            "range": 2.0,
+            "sceneRelativeIntensity": 2.799999952316284,
+            "sourceRadius": 0.0,
+            "type": "Point"
+          },
+          "type": "LightComponent"
+        }
+      ],
+      "editorLocked": false,
+      "editorVisible": true,
+      "enabled": true,
+      "id": 6101,
+      "name": "点光",
+      "parent": null,
+      "sourcePrefabId": "",
+      "transform": {
+        "position": [
+          4.06873083114624,
+          4.848698616027832,
+          -7.484198093414307
+        ],
+        "rotationEulerDeg": [
+          0.0,
+          0.0,
           0.0
         ],
         "scale": [

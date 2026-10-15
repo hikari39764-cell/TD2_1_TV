@@ -396,6 +396,7 @@ public:
         s.echo.reset(); s.pendingEcho.reset(); s.echoOverlapGrace = false;
         s.dash.reset(); s.bounce.reset(); s.blinkBuffer = 0;
         if (s.player.supportId == "echo") Probe(s.player);
+        ++s.recalls;
         Event(EventKind::EchoRecalled, "echo", {}, source);
     }
     bool ConsumeBlink() {
@@ -795,10 +796,11 @@ WorldSnapshot BuildSnapshot(const WorldDefinition& d, const WorldState& s) {
     WorldSnapshot result;
     result.regionId = d.region.regionId; result.playerPresent = s.playerPresent;
     result.player = s.player; result.presentationPlayer = s.player.rect;
-    result.echo = s.echo; if (s.pendingEcho) result.pendingEcho = s.pendingEcho->origin;
+    result.echo = s.echo;
+    if (s.pendingEcho) { result.pendingEcho = s.pendingEcho->origin; result.pendingEchoAge = s.pendingEcho->age; result.pendingEchoFacing = s.pendingEcho->facing; }
     result.beams = s.beams; result.checkpointId = s.checkpointId;
     result.dashing = s.dash.has_value(); result.bouncing = s.bounce.has_value();
-    result.tick = s.tick; result.deaths = s.deaths; result.simulationTime = s.simulationTime; result.realTime = s.realTime;
+    result.tick = s.tick; result.deaths = s.deaths; result.recalls = s.recalls; result.simulationTime = s.simulationTime; result.realTime = s.realTime;
     // 表示位置だけを補間し、当たり判定とセンサーは確定した物理位置を使う。
     if (s.dash) {
         const double t = std::clamp(s.dash->age / s.dash->duration, 0.0, 1.0), ease = t * t * (3 - 2 * t);
@@ -810,6 +812,9 @@ WorldSnapshot BuildSnapshot(const WorldDefinition& d, const WorldState& s) {
         result.presentationPlayer.x = s.bounce->contact.x + (s.player.rect.x - s.bounce->contact.x) * ease;
         result.presentationPlayer.y = s.bounce->contact.y + (s.player.rect.y - s.bounce->contact.y) * ease;
     }
+    // 圧力板から繋がっている機関（繋がっていない扉・橋は通電しない）。
+    std::unordered_set<std::string> linked;
+    for (const auto& dev : d.devices) if (dev.kind == DeviceKind::Plate) linked.insert(dev.targets.begin(), dev.targets.end());
     for (size_t i = 0; i < d.devices.size() && i < s.devices.size(); ++i) {
         const auto& dev = d.devices[i]; const auto& state = s.devices[i];
         const bool solid = dev.kind == DeviceKind::Solid || dev.kind == DeviceKind::OneWay || dev.kind == DeviceKind::Spring ||
@@ -819,6 +824,8 @@ WorldSnapshot BuildSnapshot(const WorldDefinition& d, const WorldState& s) {
             snapshot.charge = std::clamp(state.charge / std::max(0.05, dev.delay), 0.0, 1.0);
             snapshot.cooldown = std::clamp(state.cooldown / std::clamp(dev.cooldown, 3.0, 30.0), 0.0, 1.0);
         }
+        snapshot.powered = dev.kind == DeviceKind::Plate ? state.pressed
+                         : linked.contains(dev.id) && (dev.inverted ? !state.active : state.active);
         snapshot.variant = dev.variant;
         result.devices.push_back(std::move(snapshot));
     }

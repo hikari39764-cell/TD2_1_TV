@@ -15,7 +15,6 @@
    "Plate_Pressed": "bd14db802db1f4f30e5d782fafe11361",
    "Door_Jamb": "182211dc9d91d289da4f222a2466a54e",
    "Door_Lintel": "9d502e28378197a2c41fabeaca75628e",
-   "Door_LintelLit": "a894c6acda4cca9587c2a6822a95a813",
    "Door_LeafTile": "c9d4cdeee7807eaeb374b83df289372e",
    "Door_LeafFolded": "eb7f868a7fca40f3a83da9c64cbeab0a",
    "Checkpoint_Idle": "6de53c2e260e595d0583bd28748c31f7",
@@ -90,12 +89,19 @@
    "Ninja_Air0_L": "3d1368fb08b6920c312a1efa105e3313",
    "Ninja_Echo_R": "5cbc8fabe644ba8003718764626c0549",
    "Ninja_Echo_L": "a95dc821759302aaf0e16598221d62e8",
-   "Bridge_Ghost": "61e05fd0382e1039590ac698dc3aab15",
    "Spring": "7b09ef34a7f57dec1290146c8e6b8e1d",
    "Spring_Hot": "001a5197bba0cf7278859a92fb681891",
    "Spring_Off": "65ee1db899e4cb0a2d3dfe8a6dacd211",
    "Spring_Arrow": "99f9c510cf98f42f3206bdba1d62ecac",
-   "Spring_ArrowDim": "c9119be5e21a8cc299b8a2c7c6e8738d"
+   "Spring_ArrowDim": "c9119be5e21a8cc299b8a2c7c6e8738d",
+   "Bridge_Deck": "ec5685ff9b814c17a69e13c4b48092e3",
+   "Bridge_Anchor": "dcffa59e17bb7c05a3bf1c11943a36d0",
+   "Signal_Lamp": "7de085abe9d66057491b7975405ed83e",
+   "Signal_LampOff": "6db7fdd59b8e2a4f6c1d8ccb79433185",
+   "Ghost_DashH": "f4e097683e0a468a0205c24664a33a6f",
+   "Ghost_DashV": "c1f94a8ed9a58ed53cb47c9ccba6ad65",
+   "Echo_Marker": "df2e299eed21e7cc9550ce69f687b774",
+   "Echo_Streak": "6375ebdf4c76a409bfe49d715119ecb5"
   },
   "teal": {
    "Backdrop": "a822f068678fb232a68acf6c643ef35d",
@@ -103,7 +109,6 @@
    "Plate_Pressed": "1b87112cf3445e65cc09770660aa1594",
    "Door_Jamb": "c38adb91a74184aca460b650f80f64c1",
    "Door_Lintel": "022d5a25b9a66ad72a506b648fe2c84e",
-   "Door_LintelLit": "7ad0734c15d7f3ec0960be3b8b0c411e",
    "Door_LeafTile": "363c3cddf202b039fc673f23d9d79899",
    "Door_LeafFolded": "dad67b6a51357a2a4f6d548f1bc68fa0",
    "Checkpoint_Idle": "8c50fd64ca706be46a9a8fc8f8460df9",
@@ -178,12 +183,19 @@
    "Ninja_Air0_L": "1910069b1edbf86eb0553aa496415a59",
    "Ninja_Echo_R": "0136ba4413c2ab21eab0a65013ff77a6",
    "Ninja_Echo_L": "8517ab8f8c7d9f0577dec00216edc8fa",
-   "Bridge_Ghost": "9c488236cf32c8b439a7fdc147b1d9e8",
    "Spring": "46b66aa88bd7149c7796813b89284492",
    "Spring_Hot": "ff8c020f3ea6cffc6f020dcd89bf1dcd",
    "Spring_Off": "943c75fc7b8d1b94626b860cb4942ff2",
    "Spring_Arrow": "307d6e726c1c56dbe0df75144ac1bff9",
-   "Spring_ArrowDim": "28d93d70b198943fa681db61770d99cf"
+   "Spring_ArrowDim": "28d93d70b198943fa681db61770d99cf",
+   "Bridge_Deck": "0e956e887fe0625f9418591b7763b60f",
+   "Bridge_Anchor": "8d10075b3741c46058db4fd04c3fce03",
+   "Signal_Lamp": "ac2cdb6505c0eb328f74d0c2bf0cf76f",
+   "Signal_LampOff": "c233a3bd01018e00f23a7b98c1a70a09",
+   "Ghost_DashH": "5c43577b961e0ccde4bd495d3b1deed5",
+   "Ghost_DashV": "748104e8fed3cf9e529000524379b256",
+   "Echo_Marker": "f8fd1d25617fe4985fdfcf58004f6ce4",
+   "Echo_Streak": "fd2454373db1abd1375266ff3a11e795"
   }
  },
  "parts": {
@@ -191,22 +203,19 @@
    "triangles": 78
   },
   "Plate": {
-   "triangles": 132
+   "triangles": 88
   },
   "Plate_Pressed": {
-   "triangles": 132
+   "triangles": 72
   },
   "Door_Jamb": {
    "triangles": 88
   },
   "Door_Lintel": {
-   "triangles": 96
-  },
-  "Door_LintelLit": {
-   "triangles": 96
+   "triangles": 52
   },
   "Door_LeafTile": {
-   "triangles": 220
+   "triangles": 192
   },
   "Door_LeafFolded": {
    "triangles": 44
@@ -427,9 +436,6 @@
   "Ninja_Echo_L": {
    "triangles": 4505
   },
-  "Bridge_Ghost": {
-   "triangles": 36
-  },
   "Spring": {
    "triangles": 352
   },
@@ -444,6 +450,30 @@
   },
   "Spring_ArrowDim": {
    "triangles": 4
+  },
+  "Bridge_Deck": {
+   "triangles": 184
+  },
+  "Bridge_Anchor": {
+   "triangles": 52
+  },
+  "Signal_Lamp": {
+   "triangles": 36
+  },
+  "Signal_LampOff": {
+   "triangles": 36
+  },
+  "Ghost_DashH": {
+   "triangles": 36
+  },
+  "Ghost_DashV": {
+   "triangles": 36
+  },
+  "Echo_Marker": {
+   "triangles": 8
+  },
+  "Echo_Streak": {
+   "triangles": 12
   }
  }
 }

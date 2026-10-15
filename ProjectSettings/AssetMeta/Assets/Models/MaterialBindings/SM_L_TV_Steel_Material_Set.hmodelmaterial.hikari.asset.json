@@ -1,0 +1,13 @@
+{
+  "displayName": "SM_L_TV_Steel_Material_Set",
+  "guid": "3a93d3cf38a1405cb0e1796c0a0b4ead",
+  "importSettings": {
+    "runtimeLoader": "ModelMaterialBindingAsset",
+    "sourceAuthoritative": true
+  },
+  "importerId": "ModelMaterialBindingImporter",
+  "importerVersion": 1,
+  "metaVersion": 1,
+  "sourcePath": "Assets/Models/MaterialBindings/SM_L_TV_Steel_Material_Set.hmodelmaterial",
+  "type": "ModelMaterialBinding"
+}

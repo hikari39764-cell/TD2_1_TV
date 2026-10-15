@@ -104,6 +104,7 @@ void ScreenPresentationSystem::Update(HIKARI::WorldView& world, const HIKARI::Fr
     if (!regions.Succeeded()) { status_ = "区域3D数据查询失败"; stage_.Release(world); ReportStatus(); return; }
 
     StageFrame stage;
+    stage.authoring = !playing;
     if (session) {
         stage.snapshot = &session->Snapshot(); stage.activeRegion = session->ActiveRegion(); stage.simulated = true;
     } else {

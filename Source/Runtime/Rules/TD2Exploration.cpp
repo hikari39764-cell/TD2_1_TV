@@ -1,5 +1,6 @@
 #include "TD2Exploration.h"
 #include <algorithm>
+#include <cmath>
 #include <utility>
 
 namespace TD2::Rules {
@@ -10,7 +11,9 @@ std::string DeviceId(std::string_view region, std::string_view local) {
 }
 } // namespace
 
-std::string Exploration::Initialize(std::vector<RegionSource> sources) {
+std::string Exploration::Initialize(std::vector<RegionSource> sources, std::string_view entryOverride,
+                                    std::optional<Vec2> spawnOverride) {
+    if (entryOverride.empty() && spawnOverride) { return "test spawn requires a region"; }
     Exploration next;
     for (const auto& source : sources) next.placements_.push_back(source.placement);
     if (const auto validation = ValidateWorldLayout(next.placements_); !validation.valid)
@@ -23,9 +26,13 @@ std::string Exploration::Initialize(std::vector<RegionSource> sources) {
         if (authored.region.regionId != p.regionId || authored.region.cols != p.cols || authored.region.rows != p.rows)
             return "room definition and placement differ: " + p.regionId;
         if (const auto error = ValidateWorld(authored); !error.empty()) return p.regionId + ": " + error;
-        if (source.entry) {
+        if (entryOverride.empty() ? source.entry : p.regionId == entryOverride) {
             ++entries;
-            next.world_.spawn = {authored.spawn.x + p.worldX, authored.spawn.y + p.worldY};
+            const auto spawn = spawnOverride.value_or(authored.spawn);
+            // 任意の空中位置も許すが、指定区域の外へ黙って丸めたり別区域へ落としたりしない。
+            if (!std::isfinite(spawn.x) || !std::isfinite(spawn.y) || spawn.x < 0 || spawn.y < 0 ||
+                spawn.x + .625 > p.cols || spawn.y + .875 > p.rows) { return "test spawn outside region: " + p.regionId; }
+            next.world_.spawn = {spawn.x + p.worldX, spawn.y + p.worldY};
         }
         RegionRuntime runtime;
         runtime.definition = std::move(source.definition); runtime.placement = p;
@@ -41,7 +48,9 @@ std::string Exploration::Initialize(std::vector<RegionSource> sources) {
         }
         next.regions_.emplace(p.regionId, std::move(runtime));
     }
-    if (entries != 1) return "world requires exactly one placed entryRegion; found " + std::to_string(entries);
+    if (entries != 1) return entryOverride.empty()
+        ? "world requires exactly one placed entryRegion; found " + std::to_string(entries)
+        : "test start region is missing or not placed: " + std::string(entryOverride);
     next.world_.region.regionId = "td2.world";
     next.BuildBoundaries();
     if (const auto error = ValidateWorld(next.world_); !error.empty()) return error;

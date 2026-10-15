@@ -31,14 +31,14 @@ private:
     bool PlayTransition(HIKARI::WorldView& world, const std::string& from, const std::string& to, float rateScale);
     HIKARI::GameProjectSequencePlaybackHandle PlayBoundSequence(HIKARI::WorldView& world,
                                                                const RegionSequenceBinding& binding, float rate);
-    void RememberRegionCameras(const std::string& from, const std::string& to, const RegionSequenceBinding& binding);
     void RestoreRegionCamera(HIKARI::WorldView& world, std::string_view region);
     void TraceSequence(HIKARI::WorldView& world, uint64_t frame);
     void FocusActiveScreen(HIKARI::WorldView& world, double seconds);
 
     // 到着した領域の実 Sequence 端点。物理位置や新しいカメラ経路は保存しない。
-    struct RegionCameraAnchor { RegionSequenceBinding binding; bool atEnd = false; };
-    std::map<std::string, RegionCameraAnchor> regionCameras_;
+    // 区域の唯一の機位は Scene の Camera。演出の停止ハンドルを常設視点にしない。
+    std::map<std::string, uint64_t> regionCameras_;
+    bool cameraInitialized_ = false;
     Rules::Exploration exploration_;
     std::vector<RegionSequenceBinding> bindings_;
     RegionSequenceBinding playbackBinding_;
@@ -49,6 +49,9 @@ private:
     // 区域の電視の物体（焦点を今の部屋の画面へ合わせる）と、なだらかに寄せている焦点距離（0 は未設定）。
     std::map<std::string, HIKARI::GameProjectObjectHandle, std::less<>> regionObjects_;
     double focusDistance_ = 0;
+    // Editor の一回限りの入口。Scene entry を消費した時だけ設定し、保存データへ戻さない。
+    uint64_t previewEntryObject_ = 0;
+    std::optional<Rules::Vec2> previewSpawn_;
     bool sceneActive_ = false, leftHeld_ = false, rightHeld_ = false;
     double traceSeconds_ = 0;
     uint64_t lastFrame_ = (std::numeric_limits<uint64_t>::max)();

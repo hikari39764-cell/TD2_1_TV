@@ -1,0 +1,15 @@
+{
+  "displayName": "TD2F_Steel_Material",
+  "guid": "602ac55fdc58501dc9e52889efc2e19c",
+  "importSettings": {
+    "cookMaterial": true,
+    "outputFormat": "HMAT",
+    "shaderModel": "PBR",
+    "sourceFormat": ".material.json"
+  },
+  "importerId": "MaterialImporter",
+  "importerVersion": 8,
+  "metaVersion": 1,
+  "sourcePath": "Assets/Materials/TD2F_Steel_Material.material.json",
+  "type": "Material"
+}

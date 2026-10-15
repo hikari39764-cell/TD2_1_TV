@@ -93,6 +93,8 @@ struct WorldState {
     double blinkBuffer = 0.0, deathRemaining = 0.0;
     uint64_t tick = 0, deaths = 0;
     bool echoOverlapGrace = false;
+    // 残影を回収した回数（表示だけが読む。回収の瞬間に主角側の特効を一度鳴らすため）。
+    uint64_t recalls = 0;
     // 固定ステップのないフレームでも入力辺沿を保持し、次のステップだけで消費する。
     bool pendingActionPressed = false, pendingActionReleased = false;
 };
@@ -110,6 +112,9 @@ struct DeviceSnapshot {
     bool active = false, pressed = false, solid = false;
     // 表示用：Spring の溜め（0〜1）と冷却の残り（1→0）。Decal の図案。
     double charge = 0.0, cooldown = 0.0;
+    // 表示用：通電しているか。扉・橋・光線は反転を戻した値（圧力板に繋がっていなければ false）、圧力板は踏まれているか。
+    // 圧力板とその先の機関の灯を同時に点け、どれとどれが繋がっているかを見せる。
+    bool powered = false;
     std::string variant;
 };
 struct WorldSnapshot {
@@ -119,11 +124,14 @@ struct WorldSnapshot {
     Rect presentationPlayer;
     std::optional<BodyState> echo;
     std::optional<Rect> pendingEcho;
+    // 予告中の残影の経過秒と向き（蹴り返しの後、残影を足元から刷り出す表示に使う）。
+    double pendingEchoAge = 0.0;
+    int pendingEchoFacing = 1;
     std::vector<DeviceSnapshot> devices;
     std::vector<BeamState> beams;
     std::string checkpointId;
     bool dashing = false, bouncing = false;
-    uint64_t tick = 0, deaths = 0;
+    uint64_t tick = 0, deaths = 0, recalls = 0;
     double simulationTime = 0.0, realTime = 0.0;
 };
 

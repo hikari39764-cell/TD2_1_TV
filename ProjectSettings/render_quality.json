@@ -1,7 +1,7 @@
 {
   "renderQuality": {
-    "antiAliasingMode": "DLAA",
-    "depthOfFieldQuality": "Medium",
+    "antiAliasingMode": "DLSS",
+    "depthOfFieldQuality": "Off",
     "directionalShadow": {
       "cascadeBlend": 0.10000000149011612,
       "cascadeCount": 3,
@@ -13,21 +13,21 @@
       "pcfEnabled": true,
       "pcfRadius": 1.0,
       "penumbraScale": 2.0,
-      "rayTraced": true,
+      "rayTraced": false,
       "rayTracedSamples": 2,
       "resolution": 2048,
       "stabilize": true
     },
-    "dlssQualityMode": "Quality",
+    "dlssQualityMode": "UltraPerformance",
     "dynamicGiQuality": "Off",
     "forwardCostMode": "Full",
     "frameGenerationMode": "Off",
     "frameGenerationMultiplier": 2,
     "geometryPipeline": "MeshShader",
     "lightProbeVolumeSampling": "FullTrilinear",
-    "localShadowQuality": "High",
+    "localShadowQuality": "Balanced",
     "motionBlurQuality": "Medium",
-    "rayTracedReflections": true,
+    "rayTracedReflections": false,
     "sceneDepthPrepass": false,
     "sceneResolution": "1080p",
     "taaDepthRejection": 0.0024999999441206455,
@@ -37,9 +37,9 @@
     "taaVarianceClipGamma": 1.25,
     "vSync": false,
     "viewportScale": 1.0,
-    "volumetricCloudQuality": "Balanced",
-    "volumetricLightingQuality": "Balanced",
-    "windowMode": "Windowed",
+    "volumetricCloudQuality": "Low",
+    "volumetricLightingQuality": "High",
+    "windowMode": "Borderless",
     "windowSize": "1080p"
   },
   "version": 1

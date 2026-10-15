@@ -40,6 +40,7 @@ struct StageFrame {
     const Rules::WorldSnapshot* snapshot = nullptr;
     std::string activeRegion;
     bool simulated = false;
+    bool authoring = false;
 };
 
 // 一つの World に一つの連続した舞台。世界地図の並びのまま部屋を置き、主角・光線・特効は世界に一つずつ。
@@ -97,15 +98,17 @@ private:
         std::vector<PartRequest> parts;
     };
     struct Assigned { const StageRoom* room = nullptr; ViewKind kind = ViewKind::Sharp; };
-    // 鳴らした特効。事件の同一性（種類・tick・位置）で一度だけ鳴らし、瞬移だけは伸びる軌跡に合わせて動かす。
-    struct ActiveFx { std::string key; HIKARI::GameProjectVfxPlaybackHandle handle; };
+    // 事件 ID で一度だけ鳴らす。画面外で止めた後も事件が消えるまで ID を保持する。
+    struct ActiveFx { uint64_t eventId = 0; HIKARI::GameProjectVfxPlaybackHandle handle; };
 
     bool AcquireCameras(HIKARI::WorldView& world, const ScreenStyleSettings& stage);
     void RestoreCamera(HIKARI::WorldView& world, StageCamera& camera);
     void PlaceWindows(const std::vector<const StageRoom*>& rooms, const StageFrame& frame, int maxCols);
+    // 編集中は全テレビを一枚の有限サイズの舞台像へ収める。Play の近傍窓とは分離する。
+    void PlaceEditorWindow(const std::vector<const StageRoom*>& rooms);
     bool SyncCaptures(HIKARI::WorldView& world, const std::vector<Assigned>& screens, int palette, double flash);
     void SubmitParts(HIKARI::WorldView& world, const std::vector<const StageRoom*>& rooms, const std::vector<Assigned>& shown,
-                     const Rules::WorldSnapshot& snapshot, int palette, bool smear, double now);
+                     const Rules::WorldSnapshot& snapshot, int palette, bool smear, double now, bool animate);
     void PlayEffects(HIKARI::WorldView& world, const ScreenFxSettings& fx, bool available, double now);
     const Window& WindowOf(ViewKind kind) const { return windows_[static_cast<size_t>(kind)]; }
 
@@ -116,6 +119,9 @@ private:
     std::map<uint64_t, Binding> bound_;            // 画面の物体 → 今の結び
     std::map<std::string, RoomParts> roomParts_;   // 区域 ID → 背景と地形の提出要求
     std::vector<PartRequest> frameParts_;          // このフレームの装置・人物・演出（毎フレーム作る）
+    // 装置ごとの通電・実体と、それが最後に変わった実時刻（扉・橋の出入りと通電灯の光の輪を動かす）。
+    struct DeviceMemory { bool powered = false, solid = false; double changed = -1e9; };
+    std::map<std::string, DeviceMemory> deviceMemory_;
     std::vector<std::pair<uint64_t, uint64_t>> submitted_;
     size_t accepted_ = 0, failed_ = 0;
     ScreenEffects worldEffects_;

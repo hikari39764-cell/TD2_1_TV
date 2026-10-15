@@ -19,6 +19,7 @@ public:
         DescribeLargeText(fields, "cells", "格数据（行优先，0/1）", region_.cells, 128u * 128u);
         fields.Float("spawnX", "出生点左上 X（格）", spawnX_, 0.0f, 64.0f);
         fields.Float("spawnY", "出生点左上 Y（格）", spawnY_, 0.0f, 64.0f);
+        fields.SceneObject("cameraObject", "区域共享机位", cameraObject_);
         fields.Bool("entryRegion", "初始可控制区块", entryRegion_);
         fields.Bool("worldPlaced", "已布置到世界", worldPlaced_);
         fields.Int("worldX", "世界格 X", worldX_);
@@ -41,6 +42,7 @@ public:
     }
 
     bool BuildDefinition(Rules::WorldDefinition& definition, std::string& error) const;
+    uint64_t CameraObject() const noexcept { return cameraObject_; }
     bool IsEntryRegion() const noexcept { return entryRegion_; }
     RegionPlacement Placement() const { return {region_.regionId, region_.cols, region_.rows, worldPlaced_, worldX_, worldY_}; }
     const ScreenConfiguration& Screen() const noexcept { return screen_; }
@@ -67,6 +69,7 @@ private:
     RegionDefinition region_{};
     ScreenConfiguration screen_{};
     float spawnX_ = 0.5f, spawnY_ = 0.5f;
+    uint64_t cameraObject_ = 0;
     bool entryRegion_ = true;
     // 未配置が既定。旧シーンを読み込んでも全テレビを原点へ重ねて参加させない。
     bool worldPlaced_ = false;

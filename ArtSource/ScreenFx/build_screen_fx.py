@@ -10,12 +10,14 @@
   光が足される。短く切れ味よく（0.25〜0.9 秒）。
 - 演出（電視の中の画面の揺れ・閃光）の既定値も表に持たせ、ゲーム側の TD2.ScreenFx で事件ごとに調整できるようにする。
 出力: Assets/TD2/Screen3D/Fx/TD2_Fx_<名前>.hvfx と meta、Source/Runtime/TD2ScreenFxAssets.h（既定の GUID と演出の表）。
-実行: python build_screen_fx.py
+実行: python build_screen_fx.py [--only 名前,名前]
+  --only は指定した特効の資産とメタだけを書く（VFX 工作区で直したほかの特効を上書きしない）。表（.h）は全部を書き直す。
 """
 
 import copy
 import hashlib
 import json
+import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
@@ -348,8 +350,23 @@ def fx_checkpoint():
     return "Checkpoint", "存档点", 0.9, layers, 0.0, 0.45
 
 
+def fx_echo_absorb():
+    f = "echo_absorb"
+    # 回収した主角の体：周りの菫の欠片が体へ吸い込まれ、体を囲む菫の枠が内へ縮んで消える（残影を取り込んだ合図）。
+    # 素描の描き方でも形が残るよう、霞ではなく太めの棒と欠片で作る（菫は描き方で残影の横縞になる）。
+    gather = bits(radial(burst(f, "gather", 12, (0.22, 0.28)), (-3.2, -2.6), gravity=0.0, drag=0.0, radius=0.95), 0.08)
+    layers = [gather.color(VIOLET_HOT, [(0, 0), (0.15, 1), (0.8, 1), (1, 0)])]
+    for name, pos, size in (("top", (0, 0.55, 0.07), (0.9, 0.07, 0.03)), ("bottom", (0, -0.55, 0.07), (0.9, 0.07, 0.03)),
+                            ("left", (-0.42, 0, 0.07), (0.07, 1.1, 0.03)), ("right", (0.42, 0, 0.07), (0.07, 1.1, 0.03))):
+        bar = shape(f, f"frame_{name}", "MeshBox", 0.04, 0.26).place(pos).scale_fixed(size)
+        bar.position_keys([(0, (0, 0, 0)), (1, (-pos[0] * 0.55, -pos[1] * 0.55, 0))])
+        layers.append(bar.color(VIOLET_HOT, [(0, 0), (0.15, 1), (0.7, 0.8), (1, 0)]))
+    layers.append(sparkle(f, "core", 0.24, 0.18, 0.75, VIOLET_HOT))
+    return "EchoAbsorb", "残影吸收", 0.46, layers, 0.0, 0.0
+
+
 EFFECTS = [fx_dash, fx_impact, fx_land, fx_bounce, fx_echo_form, fx_echo_recall, fx_echo_blocked, fx_death,
-           fx_respawn, fx_device, fx_checkpoint]
+           fx_respawn, fx_device, fx_checkpoint, fx_echo_absorb]
 
 
 def write_meta(rel, guid, display):
@@ -363,17 +380,22 @@ def write_meta(rel, guid, display):
 
 
 def main():
+    args = sys.argv[1:]
+    only = set(args[args.index("--only") + 1].split(",")) if "--only" in args else None
     table = []
     for build in EFFECTS:
         name, label, duration, layers, shake, flash = build()
+        guid = hashlib.md5(f"TD2/ScreenFx/{name}".encode()).hexdigest()
+        rel = f"{FX_REL}/TD2_Fx_{name}.hvfx"
+        if only and name not in only:
+            table.append((name, label, guid, rel, shake, flash))
+            continue
         for order, layer in enumerate(layers):
             layer.e["order"] = order
         asset = {"durationSeconds": duration, "emitters": [layer.e for layer in layers], "inputs": [], "loop": False,
                  "name": f"TD2 {label}", "version": 15}
-        rel = f"{FX_REL}/TD2_Fx_{name}.hvfx"
         (PROJECT / rel).parent.mkdir(parents=True, exist_ok=True)
         (PROJECT / rel).write_text(json.dumps(asset, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-        guid = hashlib.md5(f"TD2/ScreenFx/{name}".encode()).hexdigest()
         write_meta(rel, guid, f"TD2 屏幕特效 · {label}")
         table.append((name, label, guid, rel, shake, flash))
         print("FX", name, guid, len(layers), "layers")

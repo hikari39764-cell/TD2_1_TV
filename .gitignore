@@ -71,8 +71,8 @@ id_ed25519
 /ArtSource/ModularSet02/verification*.py
 /ArtSource/ModularSet02/verify*.py
 
-# スプライト生成時の Python キャッシュはローカルに残す。
-/ArtSource/Sprites04/__pycache__/
+# 素材・レベル生成時の Python キャッシュはローカルに残す。
+__pycache__/
 
 # 工場セットのプレビュー画像と画面テクスチャ等の作業キャッシュはローカルに残す。
 /ArtSource/FactorySet01/Previews/

@@ -38,7 +38,7 @@
     "sourceFormat": ".fbx"
   },
   "importerId": "ModelImporter",
-  "importerVersion": 42,
+  "importerVersion": 43,
   "metaVersion": 1,
   "sourcePath": "Assets/Models/FactorySet01/SM_F_Rack_EndFrame.fbx",
   "type": "Model"

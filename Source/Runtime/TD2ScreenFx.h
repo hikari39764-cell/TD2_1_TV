@@ -11,9 +11,9 @@ namespace TD2 {
 inline constexpr std::string_view kScreenFxComponentType = "TD2.ScreenFx";
 
 // 電視の中の事件ごとの特効の槽。順番は kScreenFxDefaults（build_screen_fx.py の生成表）と同じ。
-enum class ScreenFxSlot : int { Dash, Impact, Land, Bounce, EchoForm, EchoRecall, EchoBlocked, Death, Respawn, Device, Checkpoint };
+enum class ScreenFxSlot : int { Dash, Impact, Land, Bounce, EchoForm, EchoRecall, EchoBlocked, Death, Respawn, Device, Checkpoint, EchoAbsorb };
 inline constexpr size_t kScreenFxSlotCount = kScreenFxDefaults.size();
-static_assert(static_cast<size_t>(ScreenFxSlot::Checkpoint) + 1 == kScreenFxSlotCount);
+static_assert(static_cast<size_t>(ScreenFxSlot::EchoAbsorb) + 1 == kScreenFxSlotCount);
 
 struct ScreenFxEntry {
     HIKARI::GameProjectVfxAssetReference asset{};

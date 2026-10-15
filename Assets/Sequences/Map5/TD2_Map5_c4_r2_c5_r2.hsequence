@@ -1,7 +1,7 @@
 {
   "assetType": "Sequence",
   "displayName": "c4_r2 ↔ c5_r2",
-  "formatVersion": 4,
+  "formatVersion": 5,
   "guid": "b92d9c840ce86694c44dcb3c1d3a748c",
   "sequence": {
     "bindings": [
@@ -11,6 +11,20 @@
         "required": true,
         "slotName": "Camera",
         "targetKind": "slot"
+      },
+      {
+        "id": 2,
+        "name": "区域机位 c4_r2",
+        "required": true,
+        "targetKind": "sceneObject",
+        "sceneObjectId": 6084
+      },
+      {
+        "id": 3,
+        "name": "区域机位 c5_r2",
+        "required": true,
+        "targetKind": "sceneObject",
+        "sceneObjectId": 6086
       }
     ],
     "durationSeconds": 1.0,
@@ -22,7 +36,118 @@
         "clips": [
           {
             "camera": {
-              "owned": false
+              "useScenePose": false,
+              "keys": [
+                {
+                  "time": 0.0,
+                  "position": [
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  "rotation": [
+                    0.0,
+                    1.2956215961201778e-17,
+                    0.0,
+                    0.9999999999999999
+                  ],
+                  "fov": 0.0,
+                  "near": 0.05,
+                  "far": 500,
+                  "interpolation": "smooth",
+                  "reference": 2
+                },
+                {
+                  "time": 0.25,
+                  "position": [
+                    2.978,
+                    7.9836,
+                    -5.5669
+                  ],
+                  "rotation": [
+                    -0.004366029228349236,
+                    0.9836666323941018,
+                    0.02408324091454138,
+                    0.17832804493482335
+                  ],
+                  "fov": 26.0,
+                  "near": 0.05,
+                  "far": 500,
+                  "interpolation": "smooth"
+                },
+                {
+                  "time": 0.5,
+                  "position": [
+                    3.5568,
+                    8.1876,
+                    -5.851
+                  ],
+                  "rotation": [
+                    -0.004856067222936019,
+                    0.9764113872958015,
+                    0.022081147551249035,
+                    0.21473156333672616
+                  ],
+                  "fov": 26.0,
+                  "near": 0.05,
+                  "far": 500,
+                  "interpolation": "smooth"
+                },
+                {
+                  "time": 0.75,
+                  "position": [
+                    4.4755,
+                    8.4773,
+                    -6.8635
+                  ],
+                  "rotation": [
+                    -0.003176128556780123,
+                    0.9677266385037365,
+                    0.01221212983675869,
+                    0.25168617209234856
+                  ],
+                  "fov": 26.0,
+                  "near": 0.05,
+                  "far": 500,
+                  "interpolation": "smooth"
+                },
+                {
+                  "time": 1.0,
+                  "position": [
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  "rotation": [
+                    0.0,
+                    -1.8627948576016573e-17,
+                    0.0,
+                    0.9999999999999998
+                  ],
+                  "fov": 0.0,
+                  "near": 0.05,
+                  "far": 500,
+                  "interpolation": "smooth",
+                  "reference": 3
+                }
+              ],
+              "base": {
+                "position": [
+                  3.0479,
+                  7.9746,
+                  -6.1513
+                ],
+                "rotation": [
+                  -0.002193322242586016,
+                  0.9901450860408209,
+                  0.015606298676328343,
+                  0.13915581686864842
+                ],
+                "fov": 26.0,
+                "near": 0.05,
+                "far": 500,
+                "interpolation": "smooth"
+              }
             },
             "cameraBindingId": 1,
             "durationSeconds": 1.0,
@@ -38,121 +163,6 @@
         "enabled": true,
         "id": 1,
         "type": "cameraCut"
-      },
-      {
-        "channels": [
-          {
-            "cameraBindingId": 1,
-            "keyframes": [
-              {
-                "id": 1,
-                "interpolation": "smooth",
-                "position": [
-                  3.0479,
-                  7.9746,
-                  -6.1513
-                ],
-                "rotationEulerDeg": [
-                  -1.806,
-                  164.0,
-                  0.0
-                ],
-                "timeSeconds": 0.0
-              },
-              {
-                "id": 2,
-                "interpolation": "smooth",
-                "position": [
-                  2.978,
-                  7.9836,
-                  -5.5669
-                ],
-                "rotationEulerDeg": [
-                  -2.805,
-                  159.449,
-                  0.0
-                ],
-                "timeSeconds": 0.25
-              },
-              {
-                "id": 3,
-                "interpolation": "smooth",
-                "position": [
-                  3.5568,
-                  8.1876,
-                  -5.851
-                ],
-                "rotationEulerDeg": [
-                  -2.591,
-                  155.194,
-                  0.0
-                ],
-                "timeSeconds": 0.5
-              },
-              {
-                "id": 4,
-                "interpolation": "smooth",
-                "position": [
-                  4.4755,
-                  8.4773,
-                  -6.8635
-                ],
-                "rotationEulerDeg": [
-                  -1.446,
-                  150.843,
-                  0.0
-                ],
-                "timeSeconds": 0.75
-              },
-              {
-                "id": 5,
-                "interpolation": "smooth",
-                "position": [
-                  5.2261,
-                  8.6927,
-                  -8.0373
-                ],
-                "rotationEulerDeg": [
-                  1.16,
-                  146.0,
-                  0.0
-                ],
-                "timeSeconds": 1.0
-              }
-            ]
-          }
-        ],
-        "enabled": true,
-        "id": 2,
-        "type": "cameraTransform"
-      },
-      {
-        "channels": [
-          {
-            "cameraBindingId": 1,
-            "keyframes": [
-              {
-                "farClip": 500,
-                "id": 1,
-                "interpolation": "smooth",
-                "nearClip": 0.05,
-                "timeSeconds": 0.0,
-                "verticalFovDegrees": 26.0
-              },
-              {
-                "farClip": 500,
-                "id": 2,
-                "interpolation": "smooth",
-                "nearClip": 0.05,
-                "timeSeconds": 1.0,
-                "verticalFovDegrees": 26.0
-              }
-            ]
-          }
-        ],
-        "enabled": true,
-        "id": 3,
-        "type": "cameraLens"
       }
     ]
   }

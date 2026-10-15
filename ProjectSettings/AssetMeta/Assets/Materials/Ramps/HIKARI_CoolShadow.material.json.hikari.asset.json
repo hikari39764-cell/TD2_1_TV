@@ -1,0 +1,15 @@
+{
+  "displayName": "HIKARI_CoolShadow",
+  "guid": "bc922899b6e924ce257402ec916ed786",
+  "importSettings": {
+    "cookMaterial": true,
+    "outputFormat": "HMAT",
+    "shaderModel": "PBR",
+    "sourceFormat": ".material.json"
+  },
+  "importerId": "MaterialImporter",
+  "importerVersion": 8,
+  "metaVersion": 1,
+  "sourcePath": "Assets/Materials/Ramps/HIKARI_CoolShadow.material.json",
+  "type": "Material"
+}

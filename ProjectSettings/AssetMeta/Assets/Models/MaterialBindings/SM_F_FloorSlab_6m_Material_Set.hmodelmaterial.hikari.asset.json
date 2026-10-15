@@ -1,0 +1,13 @@
+{
+  "displayName": "SM_F_FloorSlab_6m_Material_Set",
+  "guid": "6bd0ad2e56f3d8ccc4db953ef138b334",
+  "importSettings": {
+    "runtimeLoader": "ModelMaterialBindingAsset",
+    "sourceAuthoritative": true
+  },
+  "importerId": "ModelMaterialBindingImporter",
+  "importerVersion": 1,
+  "metaVersion": 1,
+  "sourcePath": "Assets/Models/MaterialBindings/SM_F_FloorSlab_6m_Material_Set.hmodelmaterial",
+  "type": "ModelMaterialBinding"
+}

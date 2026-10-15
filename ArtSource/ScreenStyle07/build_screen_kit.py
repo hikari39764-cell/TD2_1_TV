@@ -210,6 +210,12 @@ def bake(ob, palette_name, rotation=None, family_override=None):
         if key not in keys:
             keys.append(key)
         f.material_index = keys.index(key)
+    # 面取りが細い部品で潰した面だけを除く。頂点・色・有効な面は動かさず、
+    # glTF の三角形化後にゼロ面積の面が残って UV 展開を壊すことを防ぐ。
+    bmesh.ops.triangulate(bm, faces=list(bm.faces))
+    collapsed = [f for f in bm.faces if f.calc_area() <= 5e-10]
+    if collapsed:
+        bmesh.ops.delete(bm, geom=collapsed, context="FACES_ONLY")
     # 材質の枠を先に作ってから面を書き戻す（後で clear すると面の材質番号まで 0 に戻る）。
     me.materials.clear()
     for k in keys:
@@ -312,7 +318,7 @@ def plate(pressed):
         s.box((-0.44, 0.06, 0), (0.44, DEPTH - 0.06, 0.16), "ink")
         top = 0.2 if pressed else 0.27
         s.box((-0.34, 0.1, 0.16), (0.34, DEPTH - 0.1, top), "ivory")
-        s.box((-0.06, 0.02, 0.04), (0.06, 0.07, 0.11), "glow_ivory" if pressed else "lamp_off")
+        # 通電灯は別部品（Signal_Lamp）を台の正面に置く。
         return s, 0.025
     return make
 
@@ -326,11 +332,11 @@ def door_jamb():
     return make
 
 
-def door_lintel(lit):
+def door_lintel():
+    """扉の鴨居。通電灯は別部品（Signal_Lamp）を正面の中央に置く。"""
     def make():
         s = Shape()
         s.box((-0.5, -0.03, 0), (0.5, DEPTH, 0.36), "ink", inset=(0.06, 0.02))
-        s.box((-0.08, -0.06, 0.14), (0.08, -0.02, 0.22), "glow_ivory" if lit else "ivory")
         return s, 0.03
     return make
 
@@ -453,14 +459,71 @@ def lockwall_emblem():
     return make
 
 
-def bridge_ghost():
-    """伸縮橋が引っ込んでいる間の影：渡し板の位置に残影の菫色の破線（1 格に 3 本）。
-    残影を戻すとここに板が出る、の手掛かり。菫色なので画面の描き方では残影と同じ横縞の幻に見える。"""
+def bridge_deck():
+    """機関の橋の一格（出ている時）。当たりは格いっぱいなので、絵も格の高さいっぱいにする。扉の羽根と同じ
+    「動く機関」の象牙の羽目板（横の溝三本）で、地形の墨の塊・一方通行の薄い板と一目で見分ける。上面は天板。"""
+    def make():
+        s = Shape()
+        s.box((-0.5, 0.06, 0.06), (0.5, DEPTH - 0.06, 0.86), "ivory")
+        s.box((-0.5, 0.03, 0.86), (0.5, DEPTH - 0.03, 1.0), "ivory")
+        for z in (0.24, 0.45, 0.66):
+            s.box((-0.44, 0.03, z), (0.44, 0.07, z + 0.06), "ink_deep")
+        return s, 0.02
+    return make
+
+
+def bridge_anchor():
+    """橋の両端の受け金具（墨の縦の板）。橋板が出入りしても残り、通電灯を載せる。"""
+    def make():
+        s = Shape()
+        s.box((-0.09, -0.03, 0.0), (0.09, DEPTH, 1.0), "ink", inset=(0.03, 0.01))
+        return s, 0.015
+    return make
+
+
+def signal_lamp(lit):
+    """機関の通電灯。圧力板と、それが動かす扉・橋に同じ灯を付け、通電で一緒に点く（同時に光ることで繋がりを見せる）。
+    消えている時も墨の縁と暗い面が残り「ここに灯がある」と分かる。素描でも明暗の差で読めるよう面を大きめにする。"""
+    def make():
+        s = Shape()
+        # 象牙の外枠・墨の灯座・灯面の三層：明るい板（圧力板）の上でも暗い板（鴨居）の上でも明暗の差で読める。
+        s.box((-0.24, -0.08, 0.0), (0.24, 0.0, 0.28), "ivory")
+        s.box((-0.2, -0.1, 0.04), (0.2, -0.02, 0.24), "ink_deep")
+        s.box((-0.15, -0.12, 0.08), (0.15, -0.08, 0.2), "glow_ivory" if lit else "lamp_off")
+        return s, 0.0
+    return make
+
+
+def ghost_dash(vertical):
+    """引っ込んだ機関の輪郭（残影の菫の破線、長さ 1 格）。扉・橋の「戻るとここに出る」所を同じ線で囲む。
+    横は原点の高さを中心に、縦は原点から上へ 1 格。菫は描き方で残影の横縞になり、残影と関わる物だと読める。"""
     def make():
         s = Shape()
         for j in range(3):
-            x = -0.41 + j * 0.33
-            s.box((x, 0.15, 0.93), (x + 0.16, DEPTH - 0.15, 0.99), "echo")
+            a = 0.05 + j * 0.333
+            if vertical:
+                s.box((-0.04, 0.1, a), (0.04, 0.22, a + 0.2), "echo")
+            else:
+                s.box((a - 0.5, 0.1, -0.04), (a - 0.3, 0.22, 0.04), "echo")
+        return s, 0
+    return make
+
+
+def echo_marker():
+    """残影がいる間、主角の頭の上に浮かべる菫の菱形（いる＝空格で回収できる合図）。残影と同じ菫なので素描でも
+    残影の横縞になり、残影に繋がっている印として読める。原点は菱形の下端。"""
+    def make():
+        s = Shape()
+        s.octahedron((0, 0.3, 0.17), 0.13, "echo")
+        return s, 0.0
+    return make
+
+
+def echo_streak():
+    """回収の光跡：残影から主角へ伸びる菫の棒（中心が原点、長さ 1、厚み 0.12）。ゲーム側が向きと長さを掛ける。"""
+    def make():
+        s = Shape()
+        s.box((-0.5, 0.25, -0.06), (0.5, 0.4, 0.06), "echo")
         return s, 0
     return make
 
@@ -526,10 +589,14 @@ SPIKE_AXES = ("Up", "Down", "Left", "Right")
 PARTS = {
     "Backdrop": backdrop(),
     "Plate": plate(False), "Plate_Pressed": plate(True),
-    "Door_Jamb": door_jamb(), "Door_Lintel": door_lintel(False), "Door_LintelLit": door_lintel(True),
+    "Door_Jamb": door_jamb(), "Door_Lintel": door_lintel(),
     "Door_LeafTile": door_leaf_tile(), "Door_LeafFolded": door_leaf_folded(),
     "Checkpoint_Idle": checkpoint(False), "Checkpoint_Active": checkpoint(True),
-    "OneWay": oneway(), "Bridge_Ghost": bridge_ghost(), "LaserBeam": laser_beam(),
+    "OneWay": oneway(), "LaserBeam": laser_beam(),
+    "Bridge_Deck": bridge_deck(), "Bridge_Anchor": bridge_anchor(),
+    "Signal_Lamp": signal_lamp(True), "Signal_LampOff": signal_lamp(False),
+    "Ghost_DashH": ghost_dash(False), "Ghost_DashV": ghost_dash(True),
+    "Echo_Marker": echo_marker(), "Echo_Streak": echo_streak(),
     "Spring": spring("ready"), "Spring_Hot": spring("hot"), "Spring_Off": spring("off"),
     "Spring_Arrow": spring_arrow(True), "Spring_ArrowDim": spring_arrow(False),
     "LockWall_Tile": lockwall_tile(), "LockWall_Emblem": lockwall_emblem(),

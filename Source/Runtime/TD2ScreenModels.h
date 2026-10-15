@@ -34,15 +34,21 @@ public:
     void Backdrop(int x, int y, int cols, int rows);
     // 地形。occupancy は部屋と周り 1 格の占有（(cols + 2) × (rows + 2)、外周は隣の部屋の格。部屋の無い所は埋まり扱い）。
     void Terrain(int x, int y, int cols, int rows, const std::vector<char>& occupancy);
-    // 装置一つ（世界の格）。状態で変わる部品は全部出し、表示だけを切り替える。
-    void Device(const Rules::DeviceSnapshot& device, bool checkpoint);
+    // 装置一つ（世界の格）。状態で変わる部品は全部出し、表示だけを切り替える。since は通電・実体が最後に変わってからの
+    // 実秒（変わっていなければ大きな値）。扉・橋の出入りと通電灯の光の輪をこれで動かす。
+    void Device(const Rules::DeviceSnapshot& device, bool checkpoint, double since);
     // 光線一組（棒と当たりの火花）。beam が無い時は発射器の場所で隠す。
     void Beam(const Rules::DeviceSnapshot& laser, const Rules::BeamState* beam);
     // 人物：姿勢と向きの模型を全部出し、今の一つだけを rect に立たせる（shown=false なら全部退避）。
-    void Actor(const Rules::BodyState& body, const Rules::Rect& rect, bool echo, double time, bool shown);
+    // grow は縦だけの伸び（足元を固定。残影を足元から刷り出す時に 0→1）。
+    void Actor(const Rules::BodyState& body, const Rules::Rect& rect, bool echo, double time, bool shown, double grow = 1.0);
     size_t Failed() const noexcept { return failed_; }
 
 private:
+    // 機関の通電灯（点灯・消灯の二つを出して片方だけ見せる）と、通電が変わった直後に広がる光の輪。
+    void Lamp(double x, double bottomY, bool lit, double since);
+    // 引っ込んだ機関の輪郭（菫の破線）。部品の数は寸法だけで決まる。
+    void Outline(double left, double top, double right, double bottom, bool visible);
     const StageProjection& projection_;
     int palette_ = 0;
     uint64_t owner_ = 0;

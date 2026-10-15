@@ -1,4 +1,5 @@
 #include "TD2GameSession.h"
+#include "../Common/TD2PreviewEntry.h"
 #include "TD2RegionComponent.h"
 #include "TD2TravelComponents.h"
 #include "HIKARI/Project/ActionViews.h"
@@ -29,30 +30,42 @@ std::string_view EventName(Rules::EventKind event) {
 
 void GameSession::OnGameStarted(HIKARI::WorldView&) {
     exploration_ = {}; bindings_.clear(); playback_ = {}; playbackBinding_ = {};
-    regionCameras_.clear();
+    regionCameras_.clear(); cameraInitialized_ = false;
     sceneActive_ = leftHeld_ = rightHeld_ = false;
     cameraFrom_.clear(); cameraAt_.clear(); cameraQueue_.clear();
-    regionObjects_.clear(); focusDistance_ = 0;
+    regionObjects_.clear();
+    regionCameras_.clear(); focusDistance_ = 0; previewEntryObject_ = 0; previewSpawn_.reset();
     traceSeconds_ = 0; lastFrame_ = (std::numeric_limits<uint64_t>::max)();
 }
 void GameSession::OnSceneEntered(HIKARI::WorldView& world) {
+    HIKARI::GameProjectSceneEntry entry{};
+    previewEntryObject_ = 0; previewSpawn_.reset();
+    if (world.GetSceneFlow().ConsumeSceneEntry(entry) && std::string_view(entry.spawnPointId).starts_with(kPreviewEntryPrefix)) {
+        const auto spawn = DecodePreviewSpawn(entry.spawnPointId);
+        if (!spawn || !entry.userData) { std::fprintf(stderr, "[TD2 configuration] invalid test spawn\n"); return; }
+        previewEntryObject_ = entry.userData; previewSpawn_ = Rules::Vec2{spawn->x, spawn->y};
+    }
     sceneActive_ = true; SyncRegions(world);
 }
 void GameSession::OnSceneExiting(HIKARI::WorldView& world) {
     if (playback_.IsValid()) (void)world.GetSequence().Stop(playback_);
-    playback_ = {}; sceneActive_ = false;
+    playback_ = {}; sceneActive_ = false; cameraInitialized_ = false;
 }
 
 void GameSession::SyncRegions(HIKARI::WorldView& world) {
     std::vector<Rules::RegionSource> sources;
     bool definitionsValid = true;
+    std::string previewEntry;
     regionObjects_.clear();
+    regionCameras_.clear();
     const HIKARI::ComponentTypeId regionTypes[]{HIKARI::MakeComponentTypeId(kRegionComponentType)};
     const auto regions = world.ForEachComponents<RegionComponent>(regionTypes,
         HIKARI::GameProjectWorldQueryAnchor::FirstRequiredTerm,
-        [this, &sources, &definitionsValid](HIKARI::ObjectView object, RegionComponent& component) {
+        [this, &sources, &definitionsValid, &previewEntry](HIKARI::ObjectView object, RegionComponent& component) {
             Rules::RegionSource source; source.placement = component.Placement(); source.entry = component.IsEntryRegion();
+            if (object.GetSceneObjectId() == previewEntryObject_) { previewEntry = source.placement.regionId; }
             regionObjects_[source.placement.regionId] = object.GetHandle();
+            regionCameras_[source.placement.regionId] = component.CameraObject();
             std::string error;
             if (!component.BuildDefinition(source.definition, error) && source.placement.worldPlaced) {
                 std::fprintf(stderr, "[TD2 configuration] region=%s error=%s\n", source.placement.regionId.c_str(), error.c_str());
@@ -65,7 +78,12 @@ void GameSession::SyncRegions(HIKARI::WorldView& world) {
         return;
     }
     if (!exploration_.Ready()) {
-        const auto error = exploration_.Initialize(std::move(sources));
+        // 不正な入口は既定区域へ黙って落とさず診断する。試遊で別の場所を確認したと誤認させない。
+        if (previewEntryObject_ && previewEntry.empty()) {
+            std::fprintf(stderr, "[TD2 configuration] test start object missing: %llu\n",
+                static_cast<unsigned long long>(previewEntryObject_)); return;
+        }
+        const auto error = exploration_.Initialize(std::move(sources), previewEntry, previewSpawn_);
         if (!error.empty()) { std::fprintf(stderr, "[TD2 configuration] %s\n", error.c_str()); return; }
         std::fprintf(stderr, "[TD2 world] ready rooms=%zu entry=%s\n", exploration_.Regions().size(), exploration_.ActiveRegion().c_str());
     }
@@ -85,6 +103,11 @@ void GameSession::SyncRegions(HIKARI::WorldView& world) {
             continue;
         }
         bindings_.push_back(binding);
+    }
+    // 初期・復活・演出終了は区域の共有機位へ戻す。停止した演出を常駐させない。
+    if (world.GetRuntimeSession().IsPlayActive() && exploration_.Ready() && !cameraInitialized_) {
+        RestoreRegionCamera(world, exploration_.ActiveRegion());
+        cameraInitialized_ = true;
     }
     std::fflush(stderr);
 }
@@ -114,13 +137,16 @@ void GameSession::FollowCamera(HIKARI::WorldView& world, const Rules::RegionTran
 }
 
 // 切り替えが止まっていれば、列の次の部屋へ流す。列に残りがある間は速く流して追いつく。
-// 演出の無い組（未接続）は流さず、その部屋の到着の端点があればそこへ置き、無ければ今の画を保つ。
+// 演出の無い組は現在の画を保つ。区域の初期・復活機位への移動とは分ける。
 void GameSession::AdvanceCamera(HIKARI::WorldView& world) {
-    if (cameraQueue_.empty() || world.GetSequence().IsPlaying(playback_)) { return; }
+    if (world.GetSequence().IsPlaying(playback_)) { return; }
+    // 到着時は共有機位へ権限を返す。同じ端点を参照しているため追加の補間を重ねない。
+    if (playback_.IsValid()) RestoreRegionCamera(world, cameraAt_);
+    if (cameraQueue_.empty()) { return; }
     const auto next = cameraQueue_.front();
     cameraQueue_.pop_front();
     const float catchUp = 1.0f + 0.5f * static_cast<float>(cameraQueue_.size());
-    if (!PlayTransition(world, cameraAt_, next, catchUp)) { RestoreRegionCamera(world, next); }
+    (void)PlayTransition(world, cameraAt_, next, catchUp);
     cameraFrom_ = cameraAt_; cameraAt_ = next;
 }
 
@@ -137,14 +163,12 @@ bool GameSession::PlayTransition(HIKARI::WorldView& world, const std::string& fr
         return false;
     }
     // 未設定・失敗した到着で古い鏡頭を復活させない。
-    regionCameras_.erase(to);
     const auto& binding = *found;
     const bool reverse = from == binding.regionB;
     const float speed = std::clamp(binding.speed * rateScale, .25f, 8.f);
     const float rate = reverse ? -speed : speed;
     if (binding == playbackBinding_ && sequence.IsActive(playback_)) {
         if (sequence.SetPlaybackRate(playback_, rate) && (sequence.IsPlaying(playback_) || sequence.Resume(playback_))) {
-            RememberRegionCameras(from, to, binding);
             std::fprintf(stderr, "[TD2 sequence] reused asset=%s reverse=%d rate=%.3f handle=%llu\n", binding.sequenceAssetGuid.c_str(),
                 reverse, rate, static_cast<unsigned long long>(playback_.value));
             return true;
@@ -161,7 +185,6 @@ bool GameSession::PlayTransition(HIKARI::WorldView& world, const std::string& fr
         std::fprintf(stderr, "[TD2 sequence] invalid snapshot or reverse seek failed asset=%s\n", binding.sequenceAssetGuid.c_str());
         return false;
     }
-    RememberRegionCameras(from, to, binding);
     std::fprintf(stderr, "[TD2 sequence] started asset=%s reverse=%d rate=%.3f duration=%.4f handle=%llu\n", binding.sequenceAssetGuid.c_str(),
         reverse, rate, snapshot.durationSeconds, static_cast<unsigned long long>(playback_.value));
     return true;
@@ -193,13 +216,6 @@ HIKARI::GameProjectSequencePlaybackHandle GameSession::PlayBoundSequence(HIKARI:
         return {};
     }
     return started;
-}
-
-void GameSession::RememberRegionCameras(const std::string& from, const std::string& to, const RegionSequenceBinding& binding) {
-    const bool reverse = from == binding.regionB;
-    // 開始領域はまだ到着履歴がないので出発端を補う。既存の領域は直近の到着鏡頭を優先する。
-    regionCameras_.try_emplace(from, RegionCameraAnchor{binding, reverse});
-    regionCameras_[to] = {binding, !reverse};
 }
 
 // 被写界深度の焦点を今の部屋の電視の画面へ合わせ続ける。機位ごとに画面までの距離が違い（2.1〜3.9 m）、
@@ -237,33 +253,12 @@ void GameSession::FocusActiveScreen(HIKARI::WorldView& world, double seconds) {
 }
 
 void GameSession::RestoreRegionCamera(HIKARI::WorldView& world, std::string_view region) {
-    const auto sequence = world.GetSequence();
     const auto found = regionCameras_.find(std::string(region));
-    if (found == regionCameras_.end()) {
-        if (sequence.IsPlaying(playback_)) (void)sequence.Pause(playback_);
-        std::fprintf(stderr, "[TD2 sequence-restore] region=%.*s mode=hold reason=no-bound-arrival\n", static_cast<int>(region.size()), region.data());
-        return;
-    }
-    const auto& anchor = found->second;
-    const bool reused = anchor.binding == playbackBinding_ && sequence.IsActive(playback_);
-    if (!reused) {
-        // 別の区間の演出へ移っていても、保存した同じ既存アセットを同期ロードして端点だけを評価する。
-        const auto started = PlayBoundSequence(world, anchor.binding, 1.f);
-        if (!started.IsValid()) {
-            std::fprintf(stderr, "[TD2 sequence-restore] region=%.*s restored=0 reason=play-rejected\n", static_cast<int>(region.size()), region.data());
-            return;
-        }
-        playback_ = started; playbackBinding_ = anchor.binding;
-    }
-    HIKARI::GameProjectSequencePlaybackSnapshot snapshot;
-    const bool snapshotValid = sequence.GetSnapshot(playback_, snapshot) && std::isfinite(snapshot.durationSeconds) && snapshot.durationSeconds > 0;
-    const float time = anchor.atEnd ? snapshot.durationSeconds : 0.f;
-    const bool sought = snapshotValid && sequence.Seek(playback_, time);
-    // Seek と Pause は同じ更新内。復活で経路を再生せず、保持中のハンドルを入力ロックにしない。
-    const bool paused = sequence.IsPaused(playback_) || sequence.Pause(playback_);
-    std::fprintf(stderr, "[TD2 sequence-restore] region=%.*s asset=%s endpoint=%s time=%.4f reused=%d restored=%d playing=%d\n",
-        static_cast<int>(region.size()), region.data(), anchor.binding.sequenceAssetGuid.c_str(), anchor.atEnd ? "end" : "start", time,
-        reused, sought && paused, sequence.IsPlaying(playback_));
+    if (found == regionCameras_.end()) return;
+    const auto object = world.FindSceneObject(found->second);
+    if (!object.IsValid() || !world.GetCamera().SetGameplayCamera(object.GetHandle().value)) return;
+    if (playback_.IsValid()) (void)world.GetSequence().Stop(playback_);
+    playback_ = {}; playbackBinding_ = {};
 }
 
 void GameSession::TraceEvents(std::string_view region, const Rules::StepOutput& output) {

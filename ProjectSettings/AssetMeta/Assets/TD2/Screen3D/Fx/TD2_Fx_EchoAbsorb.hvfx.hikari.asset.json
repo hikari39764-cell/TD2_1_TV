@@ -1,0 +1,14 @@
+{
+  "displayName": "TD2 屏幕特效 · 残影吸收",
+  "guid": "a6921ba95e3c069f4f5bcbd0c53c9329",
+  "importSettings": {
+    "cookVfx": true,
+    "outputFormat": "HVFXC",
+    "sourceFormat": ".hvfx"
+  },
+  "importerId": "VfxAssetImporter",
+  "importerVersion": 27,
+  "metaVersion": 1,
+  "sourcePath": "Assets/TD2/Screen3D/Fx/TD2_Fx_EchoAbsorb.hvfx",
+  "type": "VfxEffect"
+}

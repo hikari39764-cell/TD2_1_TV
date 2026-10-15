@@ -1,0 +1,31 @@
+{
+  "effect": "engine.post.effect.crtdy",
+  "formatVersion": 1,
+  "name": "CRTDY",
+  "values": {
+    "curvature": [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "glitch": [
+      0.17000000178813934,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "phosphorMask": [
+      0.27000001072883606,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "scanlines": [
+      0.36800000071525574,
+      0.0,
+      0.0,
+      0.0
+    ]
+  }
+}

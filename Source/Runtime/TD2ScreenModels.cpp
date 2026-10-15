@@ -24,6 +24,8 @@ std::string_view DirectionName(Rules::Direction direction) {
     default: return "Up";
     }
 }
+// 扉の羽根・橋板が出入りする秒数（当たりは即座に変わるので短く）と、通電灯の光の輪が広がる秒数。
+constexpr double kSwitchSeconds = 0.14, kPulseSeconds = 0.32;
 // 8・4・2・1 のまとめ部品のうち、残りに収まる一番大きいもの。
 int BundleOf(int left) { return left >= 8 ? 8 : left >= 4 ? 4 : left >= 2 ? 2 : 1; }
 } // namespace
@@ -129,7 +131,30 @@ void StagePartBuilder::Terrain(int x, int y, int cols, int rows, const std::vect
     }
 }
 
-void StagePartBuilder::Device(const Rules::DeviceSnapshot& d, bool checkpoint) {
+void StagePartBuilder::Lamp(double x, double bottomY, bool lit, double since) {
+    Add("Signal_Lamp", x, bottomY, 1, 1, 0, {}, 0, lit);
+    Add("Signal_LampOff", x, bottomY, 1, 1, 0, {}, 0, !lit);
+    // 光の輪は灯の中心（灯は高さ 0.28）から広がる。圧力板と繋がった機関で同時に鳴るので、繋がりが一目で分かる。
+    const double t = since / kPulseSeconds, size = .4 + .9 * std::clamp(t, 0.0, 1.0);
+    Add("FX_Ring", x, bottomY - .14 + size * .5, size, size, .12, {}, -1, t >= 0 && t < 1);
+}
+
+void StagePartBuilder::Outline(double left, double top, double right, double bottom, bool visible) {
+    // 1 格の破線部品を辺に沿って並べ、端の半端は縮める。
+    const auto along = [&](std::string_view part, double from, double to, bool horizontal, double at) {
+        for (double a = from; a < to - 1e-6; a += 1) {
+            const double length = (std::min)(1.0, to - a);
+            if (horizontal) { Add(part, a + length * .5, at, length, 1, .02, {}, 0, visible); }
+            else { Add(part, at, a + length, 1, length, .02, {}, 0, visible); }
+        }
+    };
+    along("Ghost_DashH", left, right, true, top);
+    along("Ghost_DashH", left, right, true, bottom);
+    along("Ghost_DashV", top, bottom, false, left);
+    along("Ghost_DashV", top, bottom, false, right);
+}
+
+void StagePartBuilder::Device(const Rules::DeviceSnapshot& d, bool checkpoint, double since) {
     Begin("device/" + d.id);
     const auto& r = d.rect; const double x = r.x + r.w * .5, bottom = r.y + r.h;
     const auto cells = [&](std::string_view part, bool visible) {
@@ -141,20 +166,30 @@ void StagePartBuilder::Device(const Rules::DeviceSnapshot& d, bool checkpoint) {
     switch (d.kind) {
     case Rules::DeviceKind::Solid: break;   // 地形の占有へ合流させて天板の判定と一緒に描く
     case Rules::DeviceKind::OneWay: row("OneWay", true); break;
+    // 圧力板：踏まれると沈み、正面の通電灯が点く（繋がった扉・橋の灯も同時に点く）。
     case Rules::DeviceKind::Plate: {
         const bool down = d.pressed || d.active;
         Add("Plate", x, bottom, r.w, 1, 0, {}, -1, !down);
         Add("Plate_Pressed", x, bottom, r.w, 1, 0, {}, -1, down);
+        Lamp(x, bottom, d.powered, since);
         break;
     }
     case Rules::DeviceKind::Door: {
-        // 扉：柱は矩形の高さ、鴨居は上端、閉じた扉は 1 格ずつの羽根板。開くと羽根は鴨居の下へ畳まれる。
+        // 扉：柱は矩形の高さ、鴨居は上端（正面に通電灯）、閉じた扉は 1 格ずつの象牙の羽根板。開く時は羽根が下から
+        // 鴨居へ巻き上がって畳まれ、閉じる時は上から下りる（kSwitchSeconds）。開いている間は戸口を菫の破線で囲む
+        // （「ここに扉が戻る」）。
         const bool open = d.active || !d.solid;
+        const double p = std::clamp(since / kSwitchSeconds, 0.0, 1.0);
+        const double leaves = r.h * (open ? 1 - p : p);   // 上から下りている羽根の高さ
         Add("Door_Jamb", x, bottom, r.w, r.h);
-        Add("Door_Lintel", x, r.y + .36, r.w, 1, 0, {}, -1, !open);
-        Add("Door_LintelLit", x, r.y + .36, r.w, 1, 0, {}, -1, open);
-        Add("Door_LeafFolded", x, r.y + .62, r.w, 1, 0, {}, -1, open);
-        for (double cy = 0; cy < r.h; cy += 1) { Add("Door_LeafTile", x, r.y + cy + 1, r.w, 1, 0, {}, -1, !open); }
+        Add("Door_Lintel", x, r.y + .36, r.w, 1);
+        Add("Door_LeafFolded", x, r.y + .62, r.w, 1, 0, {}, -1, leaves < r.h - 1e-3);
+        for (int cy = 0; cy < static_cast<int>(std::ceil(r.h - 1e-6)); ++cy) {
+            const double part = std::clamp(leaves - cy, 0.0, 1.0);
+            Add("Door_LeafTile", x, r.y + cy + part, r.w, (std::max)(part, .01), 0, {}, -1, part > .01);
+        }
+        Lamp(x, r.y + .33, d.powered, since);
+        Outline(x - .34 * r.w, r.y + .62, x + .34 * r.w, bottom, open);
         break;
     }
     case Rules::DeviceKind::Laser: Add(std::string("Laser_") + std::string(DirectionName(d.direction)), x, bottom, r.w, r.h); break;
@@ -180,8 +215,24 @@ void StagePartBuilder::Device(const Rules::DeviceSnapshot& d, bool checkpoint) {
         }
         break;
     }
-    // 伸縮橋：出ている間は渡し板、引っ込んでいる間は同じ位置に残影の菫色の破線（残影を戻すと板が出る所）。
-    case Rules::DeviceKind::Bridge: row("OneWay", d.solid); row("Bridge_Ghost", !d.solid); break;
+    // 伸縮橋：当たりは格いっぱいなので、出ている間は格いっぱいの象牙の羽目板（扉の羽根と同じ「動く機関」の材質）。
+    // 引っ込む時は板が中央から両端の受け金具へ縮み、出る時は両端から伸びる（kSwitchSeconds）。引っ込んでいる間は
+    // 同じ所を菫の破線で囲む。両端の受け金具は残り、通電灯を載せる。
+    case Rules::DeviceKind::Bridge: {
+        const bool out = d.solid;
+        const double p = std::clamp(since / kSwitchSeconds, 0.0, 1.0);
+        const bool moving = p < 1;
+        const double half = r.w * (out ? p : 1 - p) * .5;   // 片側の受け金具から出ている長さ
+        row("Bridge_Deck", out && !moving);
+        Add("Bridge_Deck", r.x + half * .5, bottom, (std::max)(half, .01), r.h, 0, {}, -1, moving && half > .01);
+        Add("Bridge_Deck", r.x + r.w - half * .5, bottom, (std::max)(half, .01), r.h, 0, {}, -1, moving && half > .01);
+        Add("Bridge_Anchor", r.x + .09, bottom, 1, r.h);
+        Add("Bridge_Anchor", r.x + r.w - .09, bottom, 1, r.h);
+        Lamp(r.x + .09, r.y + .6, d.powered, since);
+        Lamp(r.x + r.w - .09, r.y + .6, d.powered, since);
+        Outline(r.x, r.y, r.x + r.w, bottom, !out);
+        break;
+    }
     case Rules::DeviceKind::Collectible: Add("Checkpoint_Idle", x, bottom, r.w, 1, 0, {}, -1, !d.active); break;
     case Rules::DeviceKind::Decal: break;
     case Rules::DeviceKind::LockWall:
@@ -207,7 +258,7 @@ void StagePartBuilder::Beam(const Rules::DeviceSnapshot& laser, const Rules::Bea
 }
 
 // 姿勢（待機・走り・空中）と左右の向きごとに焼いた模型。高さ 1 を Rules の身長へ合わせる。
-void StagePartBuilder::Actor(const Rules::BodyState& body, const Rules::Rect& r, bool echo, double time, bool shown) {
+void StagePartBuilder::Actor(const Rules::BodyState& body, const Rules::Rect& r, bool echo, double time, bool shown, double grow) {
     static constexpr std::array<std::string_view, 18> kPlayerPoses{
         "Ninja_Idle0_R", "Ninja_Idle1_R", "Ninja_Jog0_R", "Ninja_Jog1_R", "Ninja_Jog2_R", "Ninja_Jog3_R", "Ninja_Jog4_R", "Ninja_Jog5_R", "Ninja_Air0_R",
         "Ninja_Idle0_L", "Ninja_Idle1_L", "Ninja_Jog0_L", "Ninja_Jog1_L", "Ninja_Jog2_L", "Ninja_Jog3_L", "Ninja_Jog4_L", "Ninja_Jog5_L", "Ninja_Air0_L"};
@@ -227,7 +278,7 @@ void StagePartBuilder::Actor(const Rules::BodyState& body, const Rules::Rect& r,
     const double depth = kActorDepth + (echo ? -.05 : 0);
     for (size_t i = 0; i < poses.size(); ++i) {
         // 使う一体だけを人物の位置へ。ほかは退避点に留め、人物が動いても触らない。
-        if (visible && i == current) { Add(poses[i], r.x + r.w * .5, r.y + r.h, r.h, r.h, depth); }
+        if (visible && i == current) { Add(poses[i], r.x + r.w * .5, r.y + r.h, r.h, r.h * std::clamp(grow, .01, 1.0), depth); }
         else { Add(poses[i], kParkX, kParkY, 1, 1, depth, {}, -1, false); }
     }
 }

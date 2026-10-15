@@ -22,6 +22,7 @@
 """
 
 import argparse
+import copy
 import hashlib
 import json
 import math
@@ -357,7 +358,40 @@ def screen_share(eye, rotation, tv):
     return inside / 25
 
 
-def write_sequence(a_id, b_id, poses, tvs):
+def ensure_camera_stations(scene, poses):
+    """区域ごとの機位を一度だけ所有し、演出は参照する。明示的な再生成時だけ更新する。"""
+    source = next(c["properties"] for c in scene.find(CAMERA_ID)["components"] if c["type"] == "CameraComponent")
+    folder = "1 玩法/镜头与演出/区域共享机位"
+    ids = {}
+    existing = {o["name"]: o for o in scene.objects if o.get("editorFolder") == folder}
+    for region, pose in poses.items():
+        name = "区域机位 " + chunk_of(region)
+        obj = existing.get(name)
+        props = copy.deepcopy(source)
+        props.update(verticalFovDegrees=FOV, nearClip=.05, farClip=500)
+        if obj is None:
+            obj = scene.new(name, folder, pose["eye"], pose["rot"], components=[("CameraComponent", props)])
+        else:
+            obj["transform"]["position"] = [round(v, 4) for v in pose["eye"]]
+            obj["transform"]["rotationEulerDeg"] = [round(v, 3) for v in pose["rot"]]
+            next(c for c in obj["components"] if c["type"] == "CameraComponent")["properties"] = props
+        ids[region] = obj["id"]
+    for obj in scene.objects:
+        for component in obj["components"]:
+            if component["type"] == "TD2.Region" and component["properties"]["regionId"] in ids:
+                component["properties"]["cameraObject"] = ref(ids[component["properties"]["regionId"]])
+    scene.data["editorFolders"] = sorted(set(scene.data.get("editorFolders", [])) | {folder})
+    return ids
+
+
+def rotation_quaternion(euler):
+    # HIKARI の Euler XYZ と同じ qz * qy * qx。
+    x, y, z = (math.radians(v) / 2 for v in euler)
+    cx, cy, cz, sx, sy, sz = math.cos(x), math.cos(y), math.cos(z), math.sin(x), math.sin(y), math.sin(z)
+    return [sx*cy*cz-cx*sy*sz, cx*sy*cz+sx*cy*sz, cx*cy*sz-sx*sy*cz, cx*cy*cz+sx*sy*sz]
+
+
+def write_sequence(a_id, b_id, poses, tvs, stations):
     """隣り合う二区域の切り替え演出（資産とメタ）を書き、(表示名, GUID, 倍速) を返す。GUID は区域の組で決まる。"""
     pa, pb = poses[a_id], poses[b_id]
     delta = math.dist(pa["eye"], pb["eye"])
@@ -393,21 +427,20 @@ def write_sequence(a_id, b_id, poses, tvs):
     ka, kb = chunk_of(a_id), chunk_of(b_id)
     name = f"{ka} ↔ {kb}"
     guid = hashlib.md5(f"TD2/Map5Sequence/{a_id}|{b_id}".encode("utf-8")).hexdigest()
-    doc = {"assetType": "Sequence", "displayName": name, "formatVersion": 4, "guid": guid, "sequence": {
-        "bindings": [{"id": 1, "name": "游戏摄像机", "required": True, "slotName": "Camera", "targetKind": "slot"}],
+    pose_keys = [{"time": t, "position": [round(v, 4) for v in pos],
+                  "rotation": rotation_quaternion([round(v, 3) for v in r]), "fov": FOV,
+                  "near": .05, "far": 500, "interpolation": "smooth"} for t, pos, r in keys]
+    for index, binding in ((0, 2), (-1, 3)):
+        pose_keys[index].update(reference=binding, position=[0, 0, 0], rotation=[0, 0, 0, 1], fov=0)
+    doc = {"assetType": "Sequence", "displayName": name, "formatVersion": 5, "guid": guid, "sequence": {
+        "bindings": [{"id": 1, "name": "游戏摄像机", "required": True, "slotName": "Camera", "targetKind": "slot"},
+                     {"id": 2, "name": "出发机位", "required": True, "targetKind": "sceneObject", "sceneObjectId": stations[a_id]},
+                     {"id": 3, "name": "到达机位", "required": True, "targetKind": "sceneObject", "sceneObjectId": stations[b_id]}],
         "durationSeconds": duration, "id": 1, "name": name, "screenEffects": [],
-        "tracks": [
-            {"clips": [{"camera": {"owned": False}, "cameraBindingId": 1, "durationSeconds": duration, "effects": [],
-                        "id": 1, "startTimeSeconds": 0, "transition": {"durationSeconds": 0, "mode": "cut"}}],
-             "enabled": True, "id": 1, "type": "cameraCut"},
-            {"channels": [{"cameraBindingId": 1, "keyframes": [
-                {"id": i + 1, "interpolation": "smooth", "position": [round(v, 4) for v in pos],
-                 "rotationEulerDeg": [round(v, 3) for v in r], "timeSeconds": t} for i, (t, pos, r) in enumerate(keys)]}],
-             "enabled": True, "id": 2, "type": "cameraTransform"},
-            {"channels": [{"cameraBindingId": 1, "keyframes": [
-                {"farClip": 500, "id": 1, "interpolation": "smooth", "nearClip": 0.05, "timeSeconds": 0.0, "verticalFovDegrees": FOV},
-                {"farClip": 500, "id": 2, "interpolation": "smooth", "nearClip": 0.05, "timeSeconds": duration, "verticalFovDegrees": FOV}]}],
-             "enabled": True, "id": 3, "type": "cameraLens"}]}}
+        "tracks": [{"clips": [{"camera": {"useScenePose": False, "keys": pose_keys}, "cameraBindingId": 1,
+                               "durationSeconds": duration, "effects": [], "id": 1, "sourceOffsetSeconds": 0,
+                               "startTimeSeconds": 0, "transition": {"durationSeconds": 0, "mode": "cut"}}],
+                    "enabled": True, "id": 1, "type": "cameraCut"}]}}
     fname = f"TD2_Map5_{ka}_{kb}.hsequence"
     (SEQ_DIR / fname).write_text(json.dumps(doc, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     meta = {"displayName": name, "guid": guid, "importSettings": {}, "importerId": "SequenceAssetImporter",
@@ -435,9 +468,10 @@ def update_cameras(tvs, poses, pairs):
             print("moved", key, want)
         elif max(abs(o["transform"]["position"][i] - want[i]) for i in range(3)) > 1e-3:
             print("differs from layout (left as is)", key, o["transform"]["position"], want)
+    stations = ensure_camera_stations(Scene(data), poses)
     speeds = {}
     for a_id, b_id, side in pairs:
-        name, guid, speed = write_sequence(a_id, b_id, poses, tvs)
+        name, guid, speed = write_sequence(a_id, b_id, poses, tvs, stations)
         speeds[frozenset((a_id, b_id))] = (guid, speed)
     for o in data["objects"]:
         for c in o["components"]:
@@ -459,6 +493,8 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--dry", action="store_true")
     ap.add_argument("--cameras", action="store_true")
+    # 手で編集した演出を、布景の生成処理で暗黙に再生成しない。
+    ap.add_argument("--replace-authored-cameras", action="store_true", help="明示的に既存の机位と演出を再生成する")
     a = ap.parse_args()
 
     level = json.loads(LEVEL.read_text(encoding="utf-8"))
@@ -474,6 +510,8 @@ def main():
     print("pairs", len(pairs), "layout problems", len(problems))
     if a.dry:
         return
+    if any(SEQ_DIR.glob("*.hsequence")) and not a.replace_authored_cameras:
+        ap.error("既存の演出を保護しました。再生成する場合だけ --replace-authored-cameras を指定してください。")
     if a.cameras:
         update_cameras(tvs, poses, pairs)
         return
@@ -596,8 +634,9 @@ def main():
     SEQ_META.mkdir(parents=True, exist_ok=True)
     for old in list(SEQ_DIR.glob("*.hsequence")) + list(SEQ_META.glob("*.json")):
         old.unlink()
+    stations = ensure_camera_stations(scene, poses)
     for a_id, b_id, side in pairs:
-        name, guid, speed = write_sequence(a_id, b_id, poses, tvs)
+        name, guid, speed = write_sequence(a_id, b_id, poses, tvs, stations)
         scene.new(f"切换 {name}", F_SEQ, (0, 0, 0), components=[("TD2.RegionSequence", {
             "cameraObject": ref(CAMERA_ID), "regionA": a_id, "regionB": b_id, "sequenceAssetGuid": guid,
             "sequenceSlotName": "Camera", "speed": speed})])

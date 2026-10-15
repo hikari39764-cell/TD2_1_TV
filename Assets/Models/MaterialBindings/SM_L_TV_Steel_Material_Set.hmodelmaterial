@@ -1,0 +1,15 @@
+{
+  "bindings": [
+    {
+      "materialAssetGuid": "3a0caa79d832ffa9c84d54cdaf912867",
+      "slotId": "19c32b1e363aa54a"
+    },
+    {
+      "materialAssetGuid": "602ac55fdc58501dc9e52889efc2e19c",
+      "slotId": "4603210a06a69063"
+    }
+  ],
+  "displayName": "SM_L_TV_Steel_Material_Set",
+  "modelAssetGuid": "e5a1324c54ef74f37ae319784887244a",
+  "version": 1
+}
