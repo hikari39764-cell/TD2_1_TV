@@ -90,3 +90,10 @@ __pycache__/
 # 外部の表示機モデル：確認画像と説明書きはローカルに残す。
 /ArtSource/ExternalDisplays01/Previews/
 /ArtSource/ExternalDisplays01/*.txt
+
+# 確認画像・検証・画風の試作用スクリプトはローカルに残す。
+/ArtSource/ScreenGame06/preview_*.py
+/ArtSource/Sprites04/check_*.py
+/ArtSource/ScreenStyle07/*_study.py
+/ArtSource/ScreenStyleStudy01/
+/ArtSource/ScreenStyleStudy02/
