@@ -5,6 +5,7 @@
 #include "HIKARI/Project/GameFlowViews.h"
 #include "HIKARI/Project/WorldQuery.h"
 #include <algorithm>
+#include <cstdlib>
 #include <chrono>
 #include <cstdio>
 #include <map>
@@ -72,7 +73,9 @@ void ScreenPresentationSystem::Update(HIKARI::WorldView& world, const HIKARI::Fr
 
     // 2. 部屋。Play 中は Session の配置と地図を使う（世界に置いた部屋だけ）。
     // 編集中は作者の地図を写し、装置とスポーン位置は置き場所が決まってから世界のマスへ移す。
-    const bool playing = world.GetRuntimeSession().IsPlayActive();
+    // 診断用（環境変数 TD2_FORCE_AUTHORING）：Play 中でも編集中と同じ舞台を描く（無窓で編集画面の描画を再現する）。
+    static const bool forceAuthoring = std::getenv("TD2_FORCE_AUTHORING") != nullptr;
+    const bool playing = world.GetRuntimeSession().IsPlayActive() && !forceAuthoring;
     auto* session = playing ? dynamic_cast<GameSession*>(world.GetGameSession()) : nullptr;
     if (session && session->ActiveRegion().empty()) { session = nullptr; }
     rooms_.clear();
@@ -92,6 +95,7 @@ void ScreenPresentationSystem::Update(HIKARI::WorldView& world, const HIKARI::Fr
                 const auto* runtime = session->FindRegion(placement.regionId);
                 if (!runtime) { return; }
                 room.x = runtime->placement.worldX; room.y = runtime->placement.worldY; room.region = &runtime->definition.region;
+                room.flipped = runtime->flipped;
                 rooms_.push_back(std::move(room));
                 return;
             }

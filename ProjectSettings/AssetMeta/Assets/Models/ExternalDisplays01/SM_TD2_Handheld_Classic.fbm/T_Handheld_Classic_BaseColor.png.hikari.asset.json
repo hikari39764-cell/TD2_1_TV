@@ -1,0 +1,21 @@
+{
+  "displayName": "T_Handheld_Classic_BaseColor",
+  "guid": "0a7cd5740eee6eb21fa13b11a99a2696",
+  "importSettings": {
+    "allowResize": false,
+    "colorSpace": "Srgb",
+    "compression": "BC7",
+    "debugOutputFormat": "DDS",
+    "dimension": "Texture2D",
+    "forcePowerOfTwo": false,
+    "maxSize": 4096,
+    "mipPolicy": "Generate",
+    "outputFormat": "HTEX",
+    "usage": "BaseColor"
+  },
+  "importerId": "TextureImporter",
+  "importerVersion": 8,
+  "metaVersion": 1,
+  "sourcePath": "Assets/Models/ExternalDisplays01/SM_TD2_Handheld_Classic.fbm/T_Handheld_Classic_BaseColor.png",
+  "type": "Texture"
+}

@@ -1,6 +1,8 @@
 #include "HIKARI/Project/GameFlowViews.h"
 #include "HIKARI/Project/GameProjectModule.h"
 #include "TD2RegionComponent.h"
+#include "TD2Mechanism.h"
+#include "TD2SignalCable.h"
 #include "TD2CameraRig.h"
 #include "TD2GameSession.h"
 #include "TD2LightBudget.h"
@@ -50,6 +52,18 @@ public:
             context.RegisterComponent<TD2::RegionSequenceComponent>({
                 .typeName = TD2::kRegionSequenceComponentType, .displayName = "TD2 区域演出", .category = "TD2",
                 .description = "相邻电视的可选引擎 Sequence 绑定",
+            }) &&
+            context.RegisterComponent<TD2::MechanismComponent>({
+                .typeName = TD2::kMechanismComponentType, .displayName = "TD2 屏外机构", .category = "TD2",
+                .description = "被压板驱动的转台、吊台等：在两个状态之间移动物体与区域在世界地图上的位置",
+            }) &&
+            context.RegisterComponent<TD2::SlideRackComponent>({
+                .typeName = TD2::kSlideRackComponentType, .displayName = "TD2 滑块货架", .category = "TD2",
+                .description = "压板让所在电视滑进相邻的空槽",
+            }) &&
+            context.RegisterComponent<TD2::SignalCableComponent>({
+                .typeName = TD2::kSignalCableComponentType, .displayName = "TD2 信号线", .category = "TD2",
+                .description = "连接的压板通电时换成发光的模型",
             }) &&
             context.RegisterComponent<TD2::CameraAreaComponent>({
                 .typeName = TD2::kCameraAreaComponentType, .displayName = "TD2 镜头大区域", .category = "TD2",

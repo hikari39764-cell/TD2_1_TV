@@ -1,0 +1,21 @@
+{
+  "displayName": "T_TV_Antenna_BaseColor",
+  "guid": "013fdb3ed911a438afcd3140773c5c9e",
+  "importSettings": {
+    "allowResize": false,
+    "colorSpace": "Srgb",
+    "compression": "BC7",
+    "debugOutputFormat": "DDS",
+    "dimension": "Texture2D",
+    "forcePowerOfTwo": false,
+    "maxSize": 4096,
+    "mipPolicy": "Generate",
+    "outputFormat": "HTEX",
+    "usage": "BaseColor"
+  },
+  "importerId": "TextureImporter",
+  "importerVersion": 8,
+  "metaVersion": 1,
+  "sourcePath": "Assets/Models/ExternalDisplays01/SM_TD2_TV_Antenna.fbm/T_TV_Antenna_BaseColor.png",
+  "type": "Texture"
+}

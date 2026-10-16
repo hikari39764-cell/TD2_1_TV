@@ -1,0 +1,21 @@
+{
+  "displayName": "T_TV_FlatStand_BaseColor",
+  "guid": "2a1c45df2512557db11673a600ea5fe0",
+  "importSettings": {
+    "allowResize": false,
+    "colorSpace": "Srgb",
+    "compression": "BC7",
+    "debugOutputFormat": "DDS",
+    "dimension": "Texture2D",
+    "forcePowerOfTwo": false,
+    "maxSize": 4096,
+    "mipPolicy": "Generate",
+    "outputFormat": "HTEX",
+    "usage": "BaseColor"
+  },
+  "importerId": "TextureImporter",
+  "importerVersion": 8,
+  "metaVersion": 1,
+  "sourcePath": "Assets/Models/ExternalDisplays01/SM_TD2_TV_FlatStand.fbm/T_TV_FlatStand_BaseColor.png",
+  "type": "Texture"
+}

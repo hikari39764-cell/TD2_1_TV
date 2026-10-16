@@ -13,12 +13,16 @@
 
 namespace TD2 {
 namespace {
-// 1 マスの texel 数。鮮明は 32（ピクセルの描き方では 2×2 texel が 1 ゲーム画素）、周りと未配置は 16。
-constexpr int kSharpTexelsPerCell = 32, kWideTexelsPerCell = 16, kGamePixelsPerCell = 16;
+// 1 マスの texel 数。部屋のマスが少なく画面の中で 1 マスが大きいので、鮮明は 48（ピクセルの描き方では 3×3 texel が
+// 1 ゲーム画素）、周りと未配置は 32。
+constexpr int kSharpTexelsPerCell = 48, kWideTexelsPerCell = 32, kGamePixelsPerCell = 16;
 // 読みやすさの保護を一度に掛けられる画面の数（エンジンの kScreenReadabilityRegionCount と同じ）。
 constexpr size_t kMaxProtectedScreens = 12;
-// 周りの窓で世界全体を撮る時の 1 マスの最低 texel。これを下回る大きな世界は、見えている所の周りだけを撮る。
-constexpr int kMinWorldTexelsPerCell = 8;
+// 舞台の部品の数の目安。工場の物体（約 400）と合わせ、エンジンの 1 フレームの上限 2048 に余裕を残す。
+constexpr size_t kPartWarning = 1400;
+// 周りの窓で世界全体を撮る時の 1 マスの最低 texel。これを下回る大きな世界は、見えている所の周りだけを撮る
+// （下回ったまま全体を撮ると、鮮明の窓に入らない画面だけが目立ってぼける）。
+constexpr int kMinWorldTexelsPerCell = 24;
 // 演出の長さ（秒）。揺れと閃光は二乗で減衰し、瞬間移動の残像はこの時間で足元へ潰れて消える。
 constexpr double kShakeSeconds = 0.28, kFlashSeconds = 0.22, kSmearSeconds = 0.12;
 // 跳ね返りの残影を足元から現す秒数（ルールの予告と同じ 0.16 秒）と、回収の光跡が消える秒数。
@@ -197,7 +201,7 @@ void Screen3DStage::PlaceWindows(const std::vector<const StageRoom*>& rooms, con
     if (const auto* second = find(focus_[1]); second && second != first) { placeRoom(ViewKind::Unplaced, second); }
     // 周り：世界に置いた全部屋を一枚で撮る固定の窓。窓を動かさないので、どのテレビも Play 中ずっと同じ割り当てのまま
     // （割り当てが変わるとエンジンが GPU のシーンを作り直して画が止まる）。
-    // 世界が大きすぎて 1 マス kMinWorldTexelsPerCell texel を保てない時だけ、見えている部屋の周りの 3 部屋分を撮る。
+    // 世界が大きすぎて 1 マス kMinWorldTexelsPerCell texel を保てない時だけ、見えている部屋の周りの 8 部屋分を撮る。
     const auto& wideCamera = cameras_[static_cast<size_t>(ViewKind::Wide)];
     if (!wideCamera.handle.IsValid()) { return; }
     auto& wide = windows_[static_cast<size_t>(ViewKind::Wide)];
@@ -216,10 +220,11 @@ void Screen3DStage::PlaceWindows(const std::vector<const StageRoom*>& rooms, con
         wide.valid = true;
         return;
     }
-    // 動く窓：中心は見えている部屋の重心に一番近い部屋。重心が別の部屋の方へ部屋の大きさの 1/4 以上
-    // 近づくまで今の中心を保つ。
-    const StageRoom* center = first;
-    if (!seen_.empty() && first) {
+    // 動く窓：中心は操作中の部屋（同じ大区域の部屋は隣り合うので窓に入る）。操作中の部屋が無い時（編集中など）は
+    // 見えている部屋の重心に一番近い部屋。重心が別の部屋の方へ部屋の大きさの 1/4 以上近づくまで今の中心を保つ。
+    const StageRoom* center = find(frame.activeRegion);
+    if (!center) { center = first; }
+    if (!find(frame.activeRegion) && !seen_.empty() && first) {
         double sx = 0, sy = 0, sw = 0;
         for (const auto* room : rooms) {
             const auto found = seen_.find(room->regionId);
@@ -243,7 +248,8 @@ void Screen3DStage::PlaceWindows(const std::vector<const StageRoom*>& rooms, con
     if (!center) { return; }
     wideCenter_ = center->regionId;
     const auto& r = center->Region();
-    FitWindow(wide.rows, 3.0 * maxCols, kWideTexelsPerCell, wide.cols, wide.density, wide.width, wide.height);
+    // 一つの大区域（三部屋前後）と、上下の段や両隣の部屋が入る幅。
+    FitWindow(wide.rows, 8.0 * maxCols, kWideTexelsPerCell, wide.cols, wide.density, wide.width, wide.height);
     wide.x = center->x + r.cols * .5 - wide.cols * .5; wide.y = center->y + r.rows * .5 - wide.rows * .5;
     wide.valid = true;
 }
@@ -291,6 +297,10 @@ void Screen3DStage::Render(HIKARI::WorldView& world, const std::vector<StageRoom
         if (room.placed) { maxCols = (std::max)(maxCols, room.Region().cols); maxRows = (std::max)(maxRows, room.Region().rows); }
     }
     if (valid.empty() || !frame.snapshot) { Release(world); status_ = "3D显示已关闭或没有有效区域"; return; }
+    flippedRooms_.clear();
+    for (const auto* room : valid) if (room->flipped) {
+        flippedRooms_.push_back({room->regionId, {double(room->x), double(room->y), double(room->x + room->Region().cols), double(room->y + room->Region().rows)}});
+    }
     if (!maxRows) for (const auto* room : valid) { maxCols = (std::max)(maxCols, room->Region().cols); maxRows = (std::max)(maxRows, room->Region().rows); }
 
     // 2. 舞台カメラと写し方。1 マスの舞台上の長さは、鮮明カメラの正投影の高さを 1 部屋分の行で割った値。
@@ -495,7 +505,10 @@ void Screen3DStage::Inspect(HIKARI::WorldView& world, const std::vector<const St
                 const double g = scale > 1e-6 ? grow / scale : 0;
                 lo[i] -= g; hi[i] += g;
             }
-            if (SegmentHitsBox(ToLocal(other.tv, pose.eye), ToLocal(other.tv, point), lo, hi)) { return true; }
+            // 画面の点がよその箱の中にあるのは箱の見積もりが大きすぎる時（テレビの背に立て掛けた小さな機械など）。遮りに数えない。
+            const auto local = ToLocal(other.tv, point);
+            if (local.x >= lo[0] && local.x <= hi[0] && local.y >= lo[1] && local.y <= hi[1] && local.z >= lo[2] && local.z <= hi[2]) { continue; }
+            if (SegmentHitsBox(ToLocal(other.tv, pose.eye), local, lo, hi)) { return true; }
         }
         return false;
     };
@@ -547,6 +560,12 @@ void Screen3DStage::ChooseFocus(const StageFrame& frame) {
     }
     if (next[0].empty()) { std::swap(next[0], next[1]); }
     if (next[0].empty()) { next[0] = frame.activeRegion; }
+    // 操作中の部屋が写っていれば必ず鮮明にする（周りの窓は遠い部屋を覆わないことがあり、外れると画面が黒くなる）。
+    const auto active = seen_.find(frame.activeRegion);
+    if (active != seen_.end() && active->second.view.coverage > 0 && next[0] != frame.activeRegion && next[1] != frame.activeRegion) {
+        auto& weakest = next[1].empty() ? next[1] : score(next[0]) <= score(next[1]) ? next[0] : next[1];
+        weakest = frame.activeRegion;
+    }
     focus_ = next;
 }
 
@@ -740,39 +759,68 @@ void Screen3DStage::SubmitParts(HIKARI::WorldView& world, const std::vector<cons
         for (const auto* room : rooms) {
             const auto& r = room->Region();
             if (wx >= room->x && wy >= room->y && wx < room->x + r.cols && wy < room->y + r.rows) {
-                return r.cells[CellIndex(r, wx - room->x, wy - room->y)] == '1';
+                const int lx = wx - room->x, ly = wy - room->y;
+                return r.cells[CellIndex(r, room->flipped ? r.cols - 1 - lx : lx, room->flipped ? r.rows - 1 - ly : ly)] == '1';
             }
         }
         return true;
+    };
+    // 回された部屋：その部屋の中の世界の点を、作者の向きの絵の上の点へ移す中心（無ければ null）。
+    const auto flippedRoomAt = [&](double wx, double wy) -> const StageRoom* {
+        for (const auto* room : rooms) {
+            const auto& r = room->Region();
+            if (room->flipped && wx >= room->x && wy >= room->y && wx < room->x + r.cols && wy < room->y + r.rows) return room;
+        }
+        return nullptr;
+    };
+    const auto mirrorFor = [&](StagePartBuilder& builder, const StageRoom* room) {
+        if (room && room->flipped) builder.Mirror(room->x + room->Region().cols * .5, room->y + room->Region().rows * .5);
+        else builder.NoMirror();
+    };
+    // そのマスに別の部屋があるか（外周の口がどこかへつながっているか）。
+    const auto roomAt = [&](int wx, int wy, const StageRoom* self) {
+        return std::any_of(rooms.begin(), rooms.end(), [&](const StageRoom* room) {
+            const auto& r = room->Region();
+            return room != self && wx >= room->x && wy >= room->y && wx < room->x + r.cols && wy < room->y + r.rows;
+        });
     };
     std::map<std::string_view, const StageRoom*> byRegion;
     for (const auto& item : shown) { byRegion.emplace(item.room->regionId, item.room); }
 
     // 背景と地形：部屋と周り 1 マスの占有が変わった時だけ作り直し、毎フレームは作った要求をそのまま出す。
-    std::vector<char> occupancy;
+    std::vector<char> occupancy, linked;
     for (const auto& item : shown) {
         const auto& room = *item.room; const auto& r = room.Region();
         const int width = r.cols + 2, height = r.rows + 2;
         occupancy.assign(static_cast<size_t>(width * height), 0);
+        linked.assign(static_cast<size_t>(width * height), 1);
+        // 絵の上のマス (i, j)（周り 1 マス込み）が、規則の世界のどのマスか。回された部屋は点対称に読む。
+        const auto worldCell = [&](int i, int j) {
+            return room.flipped ? std::pair{room.x + r.cols - i, room.y + r.rows - j} : std::pair{room.x + i - 1, room.y + j - 1};
+        };
         for (int j = 0; j < height; ++j) for (int i = 0; i < width; ++i) {
             const bool inside = i > 0 && j > 0 && i <= r.cols && j <= r.rows;
-            occupancy[static_cast<size_t>(j * width + i)] =
-                inside ? r.cells[CellIndex(r, i - 1, j - 1)] == '1' : solidAt(room.x + i - 1, room.y + j - 1);
+            const auto [wx, wy] = worldCell(i, j);
+            occupancy[static_cast<size_t>(j * width + i)] = inside ? r.cells[CellIndex(r, i - 1, j - 1)] == '1' : solidAt(wx, wy);
+            if (!inside) { linked[static_cast<size_t>(j * width + i)] = roomAt(wx, wy, &room); }
         }
         for (const auto& device : snapshot.devices) if (device.kind == Rules::DeviceKind::Solid && device.solid) {
-            const int left = static_cast<int>(std::floor(device.rect.x)) - room.x + 1, top = static_cast<int>(std::floor(device.rect.y)) - room.y + 1;
-            const int right = static_cast<int>(std::ceil(device.rect.x + device.rect.w)) - room.x + 1;
-            const int bottom = static_cast<int>(std::ceil(device.rect.y + device.rect.h)) - room.y + 1;
+            auto rect = device.rect;
+            if (room.flipped) { rect.x = 2.0 * room.x + r.cols - rect.x - rect.w; rect.y = 2.0 * room.y + r.rows - rect.y - rect.h; }
+            const int left = static_cast<int>(std::floor(rect.x)) - room.x + 1, top = static_cast<int>(std::floor(rect.y)) - room.y + 1;
+            const int right = static_cast<int>(std::ceil(rect.x + rect.w)) - room.x + 1;
+            const int bottom = static_cast<int>(std::ceil(rect.y + rect.h)) - room.y + 1;
             for (int j = (std::max)(top, 0); j < (std::min)(bottom, height); ++j)
                 for (int i = (std::max)(left, 0); i < (std::min)(right, width); ++i) { occupancy[static_cast<size_t>(j * width + i)] = 1; }
         }
         auto& cache = roomParts_[room.regionId];
-        if (cache.occupancy != occupancy || cache.x != room.x || cache.y != room.y || cache.palette != palette ||
+        if (cache.occupancy != occupancy || cache.linked != linked || cache.x != room.x || cache.y != room.y || cache.palette != palette ||
             cache.scale != projection_.scale || cache.pitch != projection_.pitch || cache.yaw != projection_.yaw) {
-            cache = {occupancy, room.x, room.y, palette, projection_.scale, projection_.pitch, projection_.yaw, {}};
+            cache = {occupancy, linked, room.x, room.y, palette, projection_.scale, projection_.pitch, projection_.yaw, {}};
             StagePartBuilder builder{projection_, palette, room.owner.value, cache.parts};
             builder.Backdrop(room.x, room.y, r.cols, r.rows);
             builder.Terrain(room.x, room.y, r.cols, r.rows, occupancy);
+            builder.Edges(room.x, room.y, r.cols, r.rows, occupancy, linked);
             failed_ += builder.Failed();
         }
         for (const auto& request : cache.parts) { submit(request); }
@@ -793,6 +841,7 @@ void Screen3DStage::SubmitParts(HIKARI::WorldView& world, const std::vector<cons
         const auto room = byRegion.find(std::string_view(device.id).substr(0, slash));
         if (slash == std::string::npos || room == byRegion.end()) { continue; }
         StagePartBuilder builder{projection_, palette, room->second->owner.value, frameParts_};
+        mirrorFor(builder, room->second);
         builder.Device(device, device.id == snapshot.checkpointId, now - memory->second.changed);
         if (device.kind == Rules::DeviceKind::Laser) {
             const auto beam = std::find_if(snapshot.beams.begin(), snapshot.beams.end(), [&](const Rules::BeamState& b) { return b.sourceId == device.id; });
@@ -805,7 +854,10 @@ void Screen3DStage::SubmitParts(HIKARI::WorldView& world, const std::vector<cons
     // 両側のテレビの切り出しにそれぞれ写る。
     StagePartBuilder global{projection_, palette, cameras_[static_cast<size_t>(ViewKind::Sharp)].handle.value, frameParts_};
     Rules::BodyState idle; idle.grounded = true;
+    const auto& shownPlayer = snapshot.presentationPlayer;
+    mirrorFor(global, flippedRoomAt(shownPlayer.x + shownPlayer.w * .5, shownPlayer.y + shownPlayer.h * .5));
     global.Actor(snapshot.player, snapshot.presentationPlayer, false, snapshot.realTime, snapshot.playerPresent);
+    global.NoMirror();
     // 残影：いる時はその姿。跳ね返りの予告中は、出る所で姿を足元から現す（0.16 秒で全高、
     // 生成のエフェクトも同時に出る）。出る所が塞がって予告が長引く間は明滅させる。
     Rules::BodyState echoBody = snapshot.echo ? *snapshot.echo : idle;
@@ -817,7 +869,9 @@ void Screen3DStage::SubmitParts(HIKARI::WorldView& world, const std::vector<cons
         echoGrow = std::clamp(snapshot.pendingEchoAge / kEchoPrintSeconds, .08, 1.0);
         echoShown = snapshot.pendingEchoAge < kEchoPrintSeconds || std::fmod(snapshot.pendingEchoAge, .1) < .06;
     }
+    mirrorFor(global, flippedRoomAt(echoRect.x + echoRect.w * .5, echoRect.y + echoRect.h * .5));
     global.Actor(echoBody, echoRect, true, snapshot.realTime, echoShown, echoGrow);
+    mirrorFor(global, flippedRoomAt(shownPlayer.x + shownPlayer.w * .5, shownPlayer.y + shownPlayer.h * .5));
     // 残影の印：残影がいる間、プレイヤーの頭上に菫の菱形を浮かべる（スペースで回収できる合図）。
     // 残影が別のテレビにいても分かる。
     global.Begin("echoMarker");
@@ -860,8 +914,15 @@ void Screen3DStage::SubmitParts(HIKARI::WorldView& world, const std::vector<cons
         if (used) { global.Add(pose, sx + dx * k, sb + db * k, h * 1.3, (std::max)(h * (1 - t), .01), kActorDepth - .08); }
         else { global.Add(pose, kParkX, kParkY, 1, 1, kActorDepth - .08, {}, -1, false); }
     }
+    global.NoMirror();
     failed_ += global.Failed();
     for (const auto& request : frameParts_) { submit(request); }
+    // エンジンの 1 フレームの描画物体は 2048 まで（工場の物体と合わせて超えると画面全体の描画が止まる）。
+    // 舞台の部品が多すぎる時は一度だけ知らせる。
+    if (static bool warned = false; !warned && submitted_.size() > kPartWarning) {
+        std::fprintf(stderr, "[TD2 Screen3D] stage parts=%zu exceed %zu; the engine frame may reject drawing\n", submitted_.size(), kPartWarning);
+        warned = true;
+    }
 }
 
 void Screen3DStage::PlayEffects(HIKARI::WorldView& world, const ScreenFxSettings& fx, bool available, double now) {
@@ -895,7 +956,17 @@ void Screen3DStage::PlayEffects(HIKARI::WorldView& world, const ScreenFxSettings
         }
         // 装置が切れる側は同じエフェクトを小さく出す。
         const double scale = fx.scale * entry.scale * (item.kind == ScreenEffectKind::DeviceSwitch && item.reversed ? .7 : 1.0);
-        const auto transform = FxTransform(item, projection_, scale);
+        auto transform = FxTransform(item, projection_, scale);
+        // 回された部屋の中のエフェクトは、部屋の中心について点対称に置いて 180° 回す（画面では正立して見える）。
+        for (const auto& [id, room] : flippedRooms_) {
+            if (anchor.x + anchor.w * .5 < room[0] || anchor.y + anchor.h * .5 < room[1] || anchor.x + anchor.w * .5 >= room[2] ||
+                anchor.y + anchor.h * .5 >= room[3]) { continue; }
+            const auto center = projection_.Point((room[0] + room[2]) * .5, (room[1] + room[3]) * .5, kFxDepth);
+            transform.position = {2 * center.x - transform.position.x, 2 * center.y - transform.position.y, transform.position.z};
+            const auto q = transform.rotation;
+            transform.rotation = {-q.y, q.x, q.w, -q.z};   // Z 軸 180° を左から掛ける
+            break;
+        }
         if (found != activeFx_.end()) {
             if (found->handle.IsValid() && (item.kind == ScreenEffectKind::BlinkTrail || item.kind == ScreenEffectKind::EchoAbsorb)) {
                 HIKARI::GameProjectVfxUpdateRequest update{}; update.updateTransform = 1; update.transform = transform;

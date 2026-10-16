@@ -536,13 +536,14 @@ private:
                 for (size_t i = 0; i < directions.size(); ++i) { if (i) { ui.SameLine(); } if (ui.Button("td2.television.device.direction." + std::to_string(i), d->direction == directions[i] ? std::string(names[i]) + " ●" : std::string(names[i]))) { d->direction = directions[i]; } }
             }
             if (d->kind == "Laser") { EditFloat(ui, "td2.television.device.range", "射程", d->range, .125f, 128); }
-            if (d->kind == "Laser" || d->kind == "Door") { ui.Checkbox("td2.television.device.invert", "反向激活", &d->inverted); }
+            if (d->kind == "Laser" || d->kind == "Door" || d->kind == "Bridge") { ui.Checkbox("td2.television.device.invert", "反向激活", &d->inverted); }
+            if (d->kind == "Plate") { ui.Checkbox("td2.television.device.latch", "踩一下切换（关：踩住时才通电）", &d->latch); }
             if (d->kind == "Plate") {
                 ui.Separator(); ui.Text("连接目标（" + std::to_string(d->targets.size()) + "）");
                 if (ui.Button("td2.television.device.link", "在地图上连线")) { tool_ = 4; linkSource_ = d->id; hand_ = false; }
                 std::vector<int> targets;
-                for (size_t i = 0; i < model_->devices.Items().size(); ++i) { const auto& target = model_->devices.Items()[i]; if (target.kind == "Door" || target.kind == "Laser") { targets.push_back(static_cast<int>(i)); } }
-                if (targets.empty()) { ui.Text("先放置门或激光"); }
+                for (size_t i = 0; i < model_->devices.Items().size(); ++i) { const auto& target = model_->devices.Items()[i]; if (target.kind == "Door" || target.kind == "Laser" || target.kind == "Bridge") { targets.push_back(static_cast<int>(i)); } }
+                if (targets.empty()) { ui.Text("先放置门、激光或桥"); }
                 for (size_t i = 0; i < targets.size(); ++i) {
                     const int index = targets[i]; const auto& target = model_->devices.Items()[static_cast<size_t>(index)];
                     bool linked = std::find(d->targets.begin(), d->targets.end(), target.id) != d->targets.end();

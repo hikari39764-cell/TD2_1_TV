@@ -24,8 +24,8 @@ std::string_view DirectionName(Rules::Direction direction) {
     default: return "Up";
     }
 }
-// 扉の羽根・橋板が出入りする秒数（当たりは即座に変わるので短く）と、通電灯の光の輪が広がる秒数。
-constexpr double kSwitchSeconds = 0.14, kPulseSeconds = 0.32;
+// 扉の羽根・橋板が出入りする秒数（当たりは即座に変わるので短く）と、通電灯が点いた時の膨らみの秒数。
+constexpr double kSwitchSeconds = 0.14, kPulseSeconds = 0.26;
 // バネの冷却が終わった時に矢印が一度弾む秒数。
 constexpr double kReadyPopSeconds = 0.28;
 // 8・4・2・1 のまとめ部品のうち、残りに収まる一番大きいもの。
@@ -48,7 +48,14 @@ bool StagePartBuilder::Add(std::string_view part, double x, double bottomY, doub
     std::memcpy(request.model.assetGuid, guid.data(), guid.size());
     // 俯角と側角を両方付けた時の傾きは部品の中ほどで釣り合わせ、マスの中心からのずれを上下に半分ずつにする。
     // 光線は中心が原点なのでずらさない。
-    const double pivot = leanPivot >= 0 ? leanPivot : (part == "LaserBeam" ? 0.0 : height * .5);
+    double pivot = leanPivot >= 0 ? leanPivot : (part == "LaserBeam" ? 0.0 : height * .5);
+    if (mirror_) {
+        // 点対称に移すと部品は原点から下へ伸びるので、傾きの釣り合いも下向きに取る。
+        x = 2 * mirrorX_ - x; bottomY = 2 * mirrorY_ - bottomY; pivot = -pivot;
+        const auto half = RotateZ(kPi);
+        rotation = {half.w * rotation.x - half.z * rotation.y, half.w * rotation.y + half.z * rotation.x,
+                    half.w * rotation.z + half.z * rotation.w, half.w * rotation.w - half.z * rotation.z};
+    }
     request.worldTransform.position = projection_.Point(x + projection_.Lean() * pivot, bottomY, depth);
     request.worldTransform.rotation = rotation;
     const bool quarterTurn = std::abs(std::abs(rotation.z) - .70710678f) < .0001f && rotation.x == 0 && rotation.y == 0;
@@ -134,11 +141,38 @@ void StagePartBuilder::Terrain(int x, int y, int cols, int rows, const std::vect
 }
 
 void StagePartBuilder::Lamp(double x, double bottomY, bool lit, double since) {
-    Add("Signal_Lamp", x, bottomY, 1, 1, 0, {}, 0, lit);
+    // 点いた瞬間、灯が一度膨らんで戻り、灯の中心（高さ 0.14）から光の粒が三つ斜め上へ散る。
+    // つながった仕掛けで同時に起きるので、どれとどれがつながっているかが分かる。消える時は灯が消えるだけ。
+    const double t = since / kPulseSeconds;
+    const bool burst = lit && t >= 0 && t < 1;
+    const double ease = burst ? 1 - (1 - t) * (1 - t) : 1.0;
+    const double pop = burst ? 1 + .5 * (1 - ease) : 1.0;
+    Add("Signal_Lamp", x, bottomY + .14 * (pop - 1), pop, pop, 0, {}, 0, lit);
     Add("Signal_LampOff", x, bottomY, 1, 1, 0, {}, 0, !lit);
-    // 光の輪は灯の中心（高さ 0.28）から広がる。つながった仕掛けで同時に出るので、つながりが一目で分かる。
-    const double t = since / kPulseSeconds, size = .4 + .9 * std::clamp(t, 0.0, 1.0);
-    Add("FX_Ring", x, bottomY - .14 + size * .5, size, size, .12, {}, -1, t >= 0 && t < 1);
+    static constexpr double kAngles[]{.55, 1.5708, 2.59};
+    for (const double a : kAngles) {
+        const double reach = .18 + .42 * ease, size = .13 * (1 - ease) + .02;
+        const double cx = x + std::cos(a) * reach, cy = bottomY - .14 - std::sin(a) * reach;
+        Add("FX_Shard", cx, cy + size * .5, size, size, .1, {}, -1, burst);
+    }
+}
+
+void StagePartBuilder::Edges(int x, int y, int cols, int rows, const std::vector<char>& occupancy, const std::vector<char>& linked) {
+    // 並びは occupancy と同じ（(cols + 2) × (rows + 2)、周り 1 マス込み）。
+    const auto index = [cols](int col, int row) { return static_cast<size_t>((row + 1) * (cols + 2) + col + 1); };
+    const auto open = [&](int col, int row) { return occupancy[index(col, row)] == 0; };
+    // 口：外周の空いたマスで、外側に部屋が無いもの。左右は縦の鎧戸、上下は横の鎧戸。
+    // 部品は口のマスにだけ置く（壁のマスにまで置くと、部屋の多い編集画面で描画の上限を超える）。
+    // 口がつながっている間は退避して隠す（機構で部屋が動くたびに部品の数が変わらないように）。
+    Begin("edges");
+    for (int row = 0; row < rows; ++row) {
+        if (open(0, row)) { Add("Edge_Shutter", x + .15, y + row + .5, 1, 1, .05, {}, 0, !linked[index(-1, row)]); }
+        if (open(cols - 1, row)) { Add("Edge_Shutter", x + cols - .15, y + row + .5, 1, 1, .05, {}, 0, !linked[index(cols, row)]); }
+    }
+    for (int col = 0; col < cols; ++col) {
+        if (open(col, 0)) { Add("Edge_Shutter", x + col + .5, y + .15, 1, 1, .05, RotateZ(kPi * .5), 0, !linked[index(col, -1)]); }
+        if (open(col, rows - 1)) { Add("Edge_Shutter", x + col + .5, y + rows - .15, 1, 1, .05, RotateZ(kPi * .5), 0, !linked[index(col, rows)]); }
+    }
 }
 
 void StagePartBuilder::Outline(double left, double top, double right, double bottom, bool visible) {
@@ -169,10 +203,11 @@ void StagePartBuilder::Device(const Rules::DeviceSnapshot& d, bool checkpoint, d
     case Rules::DeviceKind::Solid: break;   // 地形の占有へ合流させて天板の判定と一緒に描く
     case Rules::DeviceKind::OneWay: row("OneWay", true); break;
     // 圧力板：踏まれると沈み、正面の通電灯が点く（つながった扉・橋の灯も同時に点く）。
+    // 切り替え式は天板が二枚に割れ両端に留め金がある別の形で、入っている間は沈んだまま残る。
     case Rules::DeviceKind::Plate: {
         const bool down = d.pressed || d.active;
-        Add("Plate", x, bottom, r.w, 1, 0, {}, -1, !down);
-        Add("Plate_Pressed", x, bottom, r.w, 1, 0, {}, -1, down);
+        Add(d.latch ? "Plate_Latch" : "Plate", x, bottom, r.w, 1, 0, {}, -1, !down);
+        Add(d.latch ? "Plate_LatchPressed" : "Plate_Pressed", x, bottom, r.w, 1, 0, {}, -1, down);
         Lamp(x, bottom, d.powered, since);
         break;
     }
@@ -243,7 +278,20 @@ void StagePartBuilder::Device(const Rules::DeviceSnapshot& d, bool checkpoint, d
         break;
     }
     case Rules::DeviceKind::Collectible: Add("Checkpoint_Idle", x, bottom, r.w, 1, 0, {}, -1, !d.active); break;
-    case Rules::DeviceKind::Decal: break;
+    // 操作の貼り絵：壁（背景板のすぐ手前）に描いたキーの絵。ad は A と D を左右に、space / spaceHold は空格キー。
+    // 素描の線で細部がつぶれないよう、キーは 1.4 マスの大きさで描く。
+    case Rules::DeviceKind::Decal: {
+        constexpr double kWall = -.83, kKey = 1.4;
+        const double cy = r.y + r.h * .5 + .5 * kKey;   // キーの絵を矩形の縦の中ほどへ
+        if (d.variant == "ad") {
+            Add("Key_A", x - .75 * kKey, cy, kKey, kKey, kWall, {}, 0);
+            Add("Key_D", x + .75 * kKey, cy, kKey, kKey, kWall, {}, 0);
+        } else if (d.variant == "space" || d.variant == "spaceHold") {
+            Add(d.variant == "space" ? "Key_Space" : "Key_SpaceHold", x, cy, kKey, kKey, kWall, {}, 0);
+        }
+        break;
+    }
+    case Rules::DeviceKind::Mechanism: break;   // 画面の外の機構は画面に描かない
     case Rules::DeviceKind::LockWall:
         cells("LockWall_Tile", d.solid);
         Add("LockWall_Emblem", x, r.y + r.h * .5 + .35, 1, 1, 0, {}, -1, d.solid);

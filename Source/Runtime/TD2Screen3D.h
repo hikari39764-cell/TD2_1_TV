@@ -34,6 +34,8 @@ struct StageRoom {
     std::string regionId;
     int x = 0, y = 0;
     bool placed = true;
+    // 機構で 180° 回されている。region は作者の向きのまま（画面は絵ごと逆さに写る）。
+    bool flipped = false;
     const RegionDefinition* region = nullptr;
     RegionDefinition ownedRegion;
     ScreenConfiguration configuration;
@@ -105,7 +107,7 @@ private:
     };
     // 部屋の背景と地形の描画要求。占有・置き場所・写し方・配色が同じ間は作り直さない。
     struct RoomParts {
-        std::vector<char> occupancy;
+        std::vector<char> occupancy, linked;
         int x = 0, y = 0, palette = -1;
         double scale = 0, pitch = 0, yaw = 0;
         std::vector<PartRequest> parts;
@@ -142,8 +144,10 @@ private:
     std::array<std::string, 2> focus_{};          // Play で鮮明に撮る二部屋（区域 ID）
     std::string wideCenter_;                      // 周りの窓の中心の部屋（区域 ID）
     std::map<std::string, RoomParts> roomParts_;   // 区域 ID → 背景と地形の描画要求
+    // 180° 回されている部屋の世界の範囲（左・上・右・下）。エフェクトを点対称に置くのに使う。
+    std::vector<std::pair<std::string, std::array<double, 4>>> flippedRooms_;
     std::vector<PartRequest> frameParts_;          // このフレームの装置・人物・演出（毎フレーム作る）
-    // 装置ごとの通電・実体と、それが最後に変わった実時刻（扉・橋の出入りと通電灯の光の輪を動かす）。
+    // 装置ごとの通電・実体と、それが最後に変わった実時刻（扉・橋の出入りと通電灯の点灯を動かす）。
     struct DeviceMemory { bool powered = false, solid = false, ready = false; double changed = -1e9; };
     std::map<std::string, DeviceMemory> deviceMemory_;
     std::vector<std::pair<uint64_t, uint64_t>> submitted_;

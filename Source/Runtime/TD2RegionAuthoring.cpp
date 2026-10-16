@@ -74,6 +74,9 @@ bool ParseDevices(std::string_view text, std::vector<Rules::DeviceDefinition>& d
             } else if (key == "invert") {
                 if (value != "0" && value != "1") { return fail("invert 使用 0 或 1"); }
                 device.inverted = value == "1";
+            } else if (key == "latch") {
+                if (value != "0" && value != "1") { return fail("latch 使用 0 或 1"); }
+                device.latch = value == "1";
             } else if (key == "power" || key == "delay" || key == "cooldown" || key == "opacity") {
                 // バネの強さ（マス/秒）・溜めと冷却の秒数、貼り絵の不透明度。
                 double number = 0;

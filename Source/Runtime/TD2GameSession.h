@@ -3,6 +3,7 @@
 #include "Rules/TD2Exploration.h"
 #include "TD2CameraRig.h"
 #include "TD2RegionComponent.h"
+#include "TD2Mechanism.h"
 #include "HIKARI/Project/GameProjectSession.h"
 #include "HIKARI/Project/FrameContext.h"
 #include "HIKARI/Project/SequenceTypes.h"
@@ -36,6 +37,12 @@ private:
     void TraceEvents(std::string_view region, const Rules::StepOutput& output);
     void TraceSequence(HIKARI::WorldView& world, uint64_t frame);
     void FocusActiveScreen(HIKARI::WorldView& world, double seconds);
+    void SyncMechanisms(HIKARI::WorldView& world, std::vector<Rules::MechanismSource>& sources);
+    void UpdateMechanismObjects(HIKARI::WorldView& world);
+    void SyncCables(HIKARI::WorldView& world);
+    void SyncSlides(HIKARI::WorldView& world, std::vector<Rules::SlideSource>& sources);
+    void UpdateSlideObjects(HIKARI::WorldView& world, double seconds);
+    void UpdateCables(HIKARI::WorldView& world);
 
     // ---- カメラ（大区域の中は追従、大区域どうしは演出） ----
     bool RegionFrame(HIKARI::WorldView& world, std::string_view region, CameraRegionFrame& out) const;
@@ -76,7 +83,40 @@ private:
     HIKARI::GameProjectObjectHandle driverCamera_{};   // ゲームカメラ（演出の Camera スロットと同じ物体）
     bool cameraInitialized_ = false;
     double cameraTime_ = 0, focusDistance_ = 0;
+    double swapBoost_ = 0;   // 交換の直後、区域カメラの乗り換えを速めている残り秒
 
+    // 機構で動かす物体（状態 A と B の姿勢）と、動くテレビに付いて行く区域カメラ。
+    // 状態 0・1・-1（天平のもう一方）の姿勢。
+    // pivot：その点を中心に回す（位置は回転から求める）。
+    struct MechanismObject {
+        HIKARI::GameProjectObjectHandle handle{}; HIKARI::GameProjectTransform a{}, b{}, c{};
+        bool pivot = false; HIKARI::GameProjectFloat3 center{};
+    };
+    // turn：大きく回る転台に付いたカメラ（途中で向こう側へ切り替える）。reach はテレビまでの距離。
+    struct MechanismAttachment {
+        HIKARI::GameProjectObjectHandle handle{}; size_t parent = 0; HIKARI::GameProjectTransform relative{};
+        bool turn = false; float reach = 0;
+    };
+    struct MechanismView {
+        std::string id;
+        std::vector<MechanismObject> objects;
+        std::vector<MechanismAttachment> attached;
+        double written = -1;   // 最後に書いた進み（変わった時だけ書く）
+        float cameraLift = 0, cameraPull = 0;   // 動きの途中だけカメラを持ち上げ・引く量（転台以外）
+    };
+    std::vector<MechanismView> mechanismViews_;
+    // 槽の棚：メンバーのテレビ、槽ごとのテレビの位置。動けなかった時は shake 秒だけ揺らす（区域カメラは動かさない）。
+    struct SlideMember { HIKARI::GameProjectObjectHandle tv{}, camera{}; HIKARI::GameProjectTransform tvPose{}, cameraPose{}; };
+    struct SlideView {
+        std::vector<SlideSlotPose> slots;
+        std::vector<SlideMember> members;
+        int lastMoving = -1; uint64_t blockedCount = 0; int shaking = -1; double shake = 0;
+    };
+    std::vector<SlideView> slideViews_;
+    // 信号線：つながった圧力板の通電で、光る版と元のモデルを差し替える。
+    struct SignalCable { HIKARI::GameProjectObjectHandle handle{}; std::string plate, normal, lit; bool shown = false; };
+    std::vector<SignalCable> cables_;
+    std::map<uint64_t, HIKARI::GameProjectTransform> movedPose_;   // 動かした物体の今の姿勢
     Rules::Exploration exploration_;
     std::vector<RegionSequenceBinding> bindings_;
     RegionSequenceBinding playbackBinding_;

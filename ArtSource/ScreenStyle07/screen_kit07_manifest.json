@@ -102,7 +102,14 @@
    "Ghost_DashV": "c1f94a8ed9a58ed53cb47c9ccba6ad65",
    "Echo_Marker": "df2e299eed21e7cc9550ce69f687b774",
    "Echo_Streak": "6375ebdf4c76a409bfe49d715119ecb5",
-   "Spring_Gauge": "7a02a8f8c84685c53252cd167e5196f6"
+   "Spring_Gauge": "7a02a8f8c84685c53252cd167e5196f6",
+   "Plate_Latch": "f9ddcea5fa787c823632943aa2feda9e",
+   "Plate_LatchPressed": "6044535f5328e2df74bfdf5c8c2d9e06",
+   "Edge_Shutter": "2229dbae5a3c5bf6a9b9d7a5f5fcd4a2",
+   "Key_A": "3299c23d8be1ea7ada3d17c09e249e76",
+   "Key_D": "f1cb5f91516c16d2addb49dbd0b28baa",
+   "Key_Space": "dcd78556e0e3c4351c9a9bd3567c3add",
+   "Key_SpaceHold": "43f9e7ef19f47696dcccb494d5c5a7ef"
   },
   "teal": {
    "Backdrop": "a822f068678fb232a68acf6c643ef35d",
@@ -197,7 +204,14 @@
    "Ghost_DashV": "748104e8fed3cf9e529000524379b256",
    "Echo_Marker": "f8fd1d25617fe4985fdfcf58004f6ce4",
    "Echo_Streak": "fd2454373db1abd1375266ff3a11e795",
-   "Spring_Gauge": "334b3aa52da65ec7cf6d56492cf986bc"
+   "Spring_Gauge": "334b3aa52da65ec7cf6d56492cf986bc",
+   "Plate_Latch": "d5e463e48e9b2ae43e3394ec1ad96715",
+   "Plate_LatchPressed": "ab73008b352858a13fad04573c3798c7",
+   "Edge_Shutter": "31d9ff69c9635be9a35ba0e4c1cd64f0",
+   "Key_A": "ac626b399f3095414f332f23e2e57450",
+   "Key_D": "377abd19e0f8631e8a3b5c89fe1ced99",
+   "Key_Space": "b4fc15fdc92530ea60efde13207b66eb",
+   "Key_SpaceHold": "d8cf236ca63c11fe283ee4b08a130f6b"
   }
  },
  "parts": {
@@ -479,6 +493,27 @@
   },
   "Spring_Gauge": {
    "triangles": 2
+  },
+  "Plate_Latch": {
+   "triangles": 220
+  },
+  "Plate_LatchPressed": {
+   "triangles": 208
+  },
+  "Edge_Shutter": {
+   "triangles": 220
+  },
+  "Key_A": {
+   "triangles": 228
+  },
+  "Key_D": {
+   "triangles": 228
+  },
+  "Key_Space": {
+   "triangles": 192
+  },
+  "Key_SpaceHold": {
+   "triangles": 216
   }
  }
 }

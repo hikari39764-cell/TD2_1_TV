@@ -7,8 +7,10 @@ namespace TD2::Editor {
 struct DeviceDraft {
     std::string id, kind = "Solid", direction = "Up";
     double x = 0, y = 0, w = 1, h = 1, range = 20;
-    bool inverted = false;
+    bool inverted = false, latch = false;
     std::vector<std::string> targets;
+    // 一覧で編集しない項目（バネの強さ、貼り絵の図案など）は原文のまま持ち、書き出しで戻す。
+    std::vector<std::string> extra;
 };
 
 class DeviceEditor {

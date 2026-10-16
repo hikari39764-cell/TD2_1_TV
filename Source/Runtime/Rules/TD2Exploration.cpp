@@ -11,8 +11,8 @@ std::string DeviceId(std::string_view region, std::string_view local) {
 }
 }
 
-std::string Exploration::Initialize(std::vector<RegionSource> sources, std::string_view entryOverride,
-                                    std::optional<Vec2> spawnOverride) {
+std::string Exploration::Initialize(std::vector<RegionSource> sources, std::vector<MechanismSource> mechanisms,
+                                    std::vector<SlideSource> slides, std::string_view entryOverride, std::optional<Vec2> spawnOverride) {
     if (entryOverride.empty() && spawnOverride) { return "test spawn requires a region"; }
     Exploration next;
     for (const auto& source : sources) next.placements_.push_back(source.placement);
@@ -52,6 +52,43 @@ std::string Exploration::Initialize(std::vector<RegionSource> sources, std::stri
         ? "world requires exactly one placed entryRegion; found " + std::to_string(entries)
         : "test start region is missing or not placed: " + std::string(entryOverride);
     next.world_.region.regionId = "td2.world";
+    // 機構は「mech/機構ID」という当たりの無い受け口を世界に置き、圧力板の targets から指せるようにする。
+    const auto receiver = [&next](std::string id) {
+        DeviceDefinition device;
+        device.id = std::move(id); device.kind = DeviceKind::Mechanism; device.rect = {-100000, -100000, .01, .01};
+        next.world_.devices.push_back(std::move(device));
+        return next.world_.devices.size() - 1;
+    };
+    for (auto& source : mechanisms) {
+        MechanismRuntime runtime;
+        for (const auto* list : {&source.moves, &source.movesC}) for (const auto& move : *list) {
+            const auto found = next.regions_.find(move.regionId);
+            if (found == next.regions_.end()) return "mechanism " + source.id + " moves an unplaced region: " + move.regionId;
+            if (std::none_of(runtime.origins.begin(), runtime.origins.end(), [&](const auto& o) { return o.regionId == move.regionId; }))
+                runtime.origins.push_back({move.regionId, found->second.placement.worldX, found->second.placement.worldY, false});
+        }
+        runtime.device = receiver("mech/" + source.id);
+        if (source.balance) runtime.deviceR = receiver("mech/" + source.id + "/r");
+        runtime.source = std::move(source);
+        next.mechanisms_.push_back(std::move(runtime));
+    }
+    // 槽の棚：メンバーごとに「slide/区域ID」の受け口を置く。今の配置と同じ位置の槽を、そのメンバーの槽とする。
+    for (auto& source : slides) {
+        SlideRuntime runtime;
+        for (const auto& member : source.members) {
+            const auto found = next.regions_.find(member);
+            if (found == next.regions_.end()) return "slide " + source.id + " has an unplaced region: " + member;
+            const auto& p = found->second.placement;
+            const auto slot = std::find_if(source.slots.begin(), source.slots.end(), [&](const SlideSlot& s) { return s.worldX == p.worldX && s.worldY == p.worldY; });
+            if (slot == source.slots.end()) return "slide " + source.id + ": region is not on a slot: " + member;
+            runtime.slotOf.push_back(static_cast<int>(slot - source.slots.begin()));
+            runtime.devices.push_back(receiver("slide/" + member));
+            runtime.powered.push_back(0);
+        }
+        if (runtime.slotOf.size() >= source.slots.size()) return "slide " + source.id + " needs an empty slot";
+        runtime.source = std::move(source);
+        next.slides_.push_back(std::move(runtime));
+    }
     next.BuildBoundaries();
     if (const auto error = ValidateWorld(next.world_); !error.empty()) return error;
     next.state_ = CreateWorldState(next.world_);
@@ -61,15 +98,19 @@ std::string Exploration::Initialize(std::vector<RegionSource> sources, std::stri
 }
 
 void Exploration::BuildBoundaries() {
+    world_.boundaries.clear();
     for (const auto& p : placements_) {
         if (!p.worldPlaced) continue;
         const auto bounds = WorldBounds(p);
         for (const auto side : {WorldSide::Left, WorldSide::Right, WorldSide::Top, WorldSide::Bottom}) {
             const bool vertical = side == WorldSide::Left || side == WorldSide::Right;
             std::vector<std::pair<int64_t, int64_t>> exposed{{vertical ? bounds.top : bounds.left, vertical ? bounds.bottom : bounds.right}};
+            // 動いている部屋との共有辺は、境の線の上の薄い壁で閉じる（1 マスの壁だと隣の部屋の端の列を潰してしまう）。
+            std::vector<std::pair<int64_t, int64_t>> thin;
             for (const auto& other : placements_) {
                 const auto shared = FindSharedWorldEdge(p, other);
                 if (!shared || shared->sideA != side) continue;
+                if (isolated_.contains(p.regionId) || isolated_.contains(other.regionId)) thin.emplace_back(shared->overlapBegin, shared->overlapEnd);
                 std::vector<std::pair<int64_t, int64_t>> remainder;
                 for (const auto& [begin, end] : exposed) {
                     if (shared->overlapBegin >= end || shared->overlapEnd <= begin) remainder.emplace_back(begin, end);
@@ -84,6 +125,13 @@ void Exploration::BuildBoundaries() {
             for (const auto& [begin, end] : exposed) {
                 if (vertical) world_.boundaries.push_back({double(side == WorldSide::Left ? bounds.left - 1 : bounds.right), double(begin), 1, double(end - begin)});
                 else world_.boundaries.push_back({double(begin), double(side == WorldSide::Top ? bounds.top - 1 : bounds.bottom), double(end - begin), 1});
+            }
+            constexpr double kThin = .02;
+            for (const auto& [begin, end] : thin) {
+                const double edge = side == WorldSide::Left ? bounds.left : side == WorldSide::Right ? bounds.right
+                                  : side == WorldSide::Top ? bounds.top : bounds.bottom;
+                if (vertical) world_.boundaries.push_back({edge - kThin * .5, double(begin), kThin, double(end - begin)});
+                else world_.boundaries.push_back({double(begin), edge - kThin * .5, double(end - begin), kThin});
             }
         }
     }
@@ -101,6 +149,7 @@ std::string Exploration::RegionAt(const Rect& body) const {
 void Exploration::Record(StepOutput output, ExplorationOutput& out) {
     std::map<std::string, StepOutput> grouped;
     for (auto& event : output.events) {
+        if (event.subjectId.starts_with("mech/") || event.subjectId.starts_with("slide/")) continue;   // 機構の受け口は画面に出ない
         const auto owner = deviceOwners_.find(event.subjectId);
         std::string region = owner != deviceOwners_.end() ? owner->second : RegionAt({event.position.x, event.position.y, .625, .875});
         if (region.empty()) region = activeRegion_;
@@ -112,6 +161,12 @@ void Exploration::Record(StepOutput output, ExplorationOutput& out) {
         result.events.push_back(std::move(event));
     }
     for (auto& [region, events] : grouped) out.regions.push_back({region, std::move(events)});
+}
+
+void Exploration::ClearEcho() {
+    if (!state_.echo && !state_.pendingEcho) return;
+    (void)RemoveWorldEcho(world_, state_);
+    snapshotDirty_ = true;
 }
 
 bool Exploration::StepBack(std::string_view region, int direction) {
@@ -138,13 +193,155 @@ ExplorationOutput Exploration::Step(const InputState& input, double seconds) {
     if (!Ready()) return out;
     // 部屋の切り替え（カメラの演出）中も操作は効く。
     auto result = StepRules(world_, state_, input, seconds);
+    UpdateMechanisms(seconds);
+    UpdateSlides(seconds);
+    const bool swapped = std::any_of(result.events.begin(), result.events.end(), [](const RuleEvent& e) { return e.kind == EventKind::EchoSwapped; });
     const bool respawn = std::any_of(result.events.begin(), result.events.end(), [](const RuleEvent& e) { return e.kind == EventKind::PlayerRespawned; });
     const auto current = RegionAt(state_.player.rect);
     if (!current.empty() && current != activeRegion_) {
-        out.transitions.push_back({respawn ? "respawn" : "crossed", activeRegion_, current, {state_.player.rect.x, state_.player.rect.y}});
+        out.transitions.push_back({respawn ? "respawn" : swapped ? "swap" : "crossed", activeRegion_, current, {state_.player.rect.x, state_.player.rect.y}});
         activeRegion_ = current;
     }
     Record(std::move(result), out); snapshotDirty_ = true;
     return out;
+}
+
+void Exploration::UpdateMechanisms(double seconds) {
+    for (auto& m : mechanisms_) {
+        const auto active = [this](size_t index) { return index < state_.devices.size() && state_.devices[index].active; };
+        const bool powered = active(m.device);
+        if (m.source.dwell > 0) {
+            // 自動往復：端で dwell 秒止まったら反対の端へ向かう（圧力板は見ない）。
+            if (!m.moving && std::abs(m.progress - m.target) < 1e-9 && (m.rest += seconds) >= m.source.dwell) {
+                m.target = m.target ? 0 : 1; m.rest = 0;
+            }
+        } else if (m.source.toggle) { if (powered && !m.powered) m.target = m.target ? 0 : 1; }
+        else {
+            const bool right = m.source.balance && active(m.deviceR);
+            const int desired = m.source.balance ? (powered && !right ? 1 : right && !powered ? -1 : 0) : powered ? 1 : 0;
+            // 踏まれ方が settle 秒続いた時だけ向かう先を変える。
+            if (desired == m.target) { m.pending = desired; m.pendingTime = 0; }
+            else {
+                if (desired != m.pending) { m.pending = desired; m.pendingTime = 0; } else m.pendingTime += seconds;
+                if (m.pendingTime + 1e-9 >= m.source.settle) m.target = desired;
+            }
+        }
+        m.powered = powered;
+        const double goal = m.target;
+        if (std::abs(m.progress - goal) < 1e-9) continue;
+        if (!m.moving) {
+            // 動き始め：動く部屋をどこともつながない（中にいる体は出られず、外からも入れない）。
+            m.moving = true;
+            for (const auto& origin : m.origins) isolated_.insert(origin.regionId);
+            BuildBoundaries();
+        }
+        const double step = std::max(0.0, seconds) / std::max(.05, m.source.seconds);
+        m.progress = goal > m.progress ? std::min(goal, m.progress + step) : std::max(goal, m.progress - step);
+        if (std::abs(m.progress - goal) > 1e-9) continue;
+        // 着いた：向かっていた状態が今と違えば部屋の位置を切り替え、つなぎ直す。重なって切り替えられない時は元の状態へ戻す。
+        if (m.target != m.state && MoveRegions(TargetsFor(m, m.target))) m.state = m.target;
+        else if (m.target != m.state) { m.target = m.state; m.progress = m.state; }
+        m.moving = false;
+        for (const auto& origin : m.origins) isolated_.erase(origin.regionId);
+        BuildBoundaries();
+        snapshotDirty_ = true;
+    }
+}
+
+std::vector<MechanismMove> Exploration::TargetsFor(const MechanismRuntime& m, int state) const {
+    auto targets = m.origins;
+    const auto& list = state > 0 ? m.source.moves : m.source.movesC;
+    if (state != 0)
+        for (auto& target : targets)
+            for (const auto& move : list) if (move.regionId == target.regionId) target = move;
+    return targets;
+}
+
+void Exploration::UpdateSlides(double seconds) {
+    for (auto& s : slides_) {
+        const auto& slots = s.source.slots;
+        for (size_t i = 0; i < s.source.members.size(); ++i) {
+            const bool powered = s.devices[i] < state_.devices.size() && state_.devices[s.devices[i]].active;
+            if (powered && !s.powered[i] && s.moving < 0) {
+                // 空いた槽が上下左右の隣にあれば滑る。無ければ動かずに揺れの合図だけ出す。
+                int gap = -1;
+                for (int k = 0; k < static_cast<int>(slots.size()) && gap < 0; ++k)
+                    if (std::find(s.slotOf.begin(), s.slotOf.end(), k) == s.slotOf.end()) gap = k;
+                const auto& a = slots[static_cast<size_t>(s.slotOf[i])];
+                const bool adjacent = gap >= 0 && std::abs(a.col - slots[static_cast<size_t>(gap)].col) + std::abs(a.row - slots[static_cast<size_t>(gap)].row) == 1;
+                if (adjacent) {
+                    s.moving = static_cast<int>(i); s.from = s.slotOf[i]; s.to = gap; s.progress = 0;
+                    isolated_.insert(s.source.members[i]); BuildBoundaries();
+                } else { s.blocked = static_cast<int>(i); ++s.blockedCount; }
+            }
+            s.powered[i] = powered;
+        }
+        if (s.moving < 0) continue;
+        s.progress = std::min(1.0, s.progress + std::max(0.0, seconds) / std::max(.05, s.source.seconds));
+        if (s.progress < 1.0) continue;
+        const auto& member = s.source.members[static_cast<size_t>(s.moving)];
+        const auto& slot = slots[static_cast<size_t>(s.to)];
+        if (MoveRegions({{member, slot.worldX, slot.worldY, regions_.at(member).flipped}})) s.slotOf[static_cast<size_t>(s.moving)] = s.to;
+        isolated_.erase(member); BuildBoundaries();
+        s.moving = s.from = s.to = -1; s.progress = 0;
+        snapshotDirty_ = true;
+    }
+}
+
+bool Exploration::MoveRegions(const std::vector<MechanismMove>& targets) {
+    // 新しい配置が重ならないか先に確かめる。重なるなら動かさない。
+    auto next = placements_;
+    for (const auto& move : targets)
+        for (auto& p : next) if (p.regionId == move.regionId) { p.worldX = move.worldX; p.worldY = move.worldY; }
+    if (const auto validation = ValidateWorldLayout(next); !validation.valid) return false;
+    for (const auto& move : targets) {
+        auto& runtime = regions_.at(move.regionId);
+        const auto old = runtime.placement;
+        const bool flip = move.flip != runtime.flipped;
+        if (move.worldX == old.worldX && move.worldY == old.worldY && !flip) continue;
+        // 部屋の中の体・装置・記録を、部屋と一緒に運ぶ（判定は動かす前の位置で行う）。
+        // 回す時は部屋の中心について点対称に移し、勢いは捨てる（新しい床へ落ちる）。
+        const auto inside = [&](const Rect& r) { return RegionAt(r) == move.regionId; };
+        const auto map = [&](Rect& r) {
+            double x = r.x - old.worldX, y = r.y - old.worldY;
+            if (flip) { x = old.cols - x - r.w; y = old.rows - y - r.h; }
+            r.x = move.worldX + x; r.y = move.worldY + y;
+        };
+        const auto carryBody = [&](BodyState& b) {
+            map(b.rect);
+            if (!flip) return;
+            b.vx = b.vy = b.walkVx = b.reboundTime = 0; b.reboundDirection = 0; b.facing = -b.facing;
+            b.grounded = false; b.supportId.clear();
+        };
+        if (state_.playerPresent && inside(state_.player.rect)) carryBody(state_.player);
+        if (state_.echo && inside(state_.echo->rect)) carryBody(*state_.echo);
+        if (state_.pendingEcho && inside(state_.pendingEcho->origin)) map(state_.pendingEcho->origin);
+        if (state_.dash && inside(state_.dash->contact)) {
+            if (flip) state_.dash.reset(); else { map(state_.dash->source); map(state_.dash->contact); }
+        }
+        if (state_.bounce && inside(state_.bounce->contact)) { if (flip) state_.bounce.reset(); else map(state_.bounce->contact); }
+        if (Rect point{state_.checkpointPosition.x, state_.checkpointPosition.y, .625, .875}; inside(point)) {
+            map(point); state_.checkpointPosition = {point.x, point.y};
+        }
+        if (Rect point{world_.spawn.x, world_.spawn.y, .625, .875}; inside(point)) { map(point); world_.spawn = {point.x, point.y}; }
+        for (auto& device : world_.devices) {
+            const auto owner = deviceOwners_.find(device.id);
+            if (owner == deviceOwners_.end() || owner->second != move.regionId) continue;
+            map(device.rect);
+            if (flip) {
+                device.direction = device.direction == Direction::Up ? Direction::Down : device.direction == Direction::Down ? Direction::Up
+                                 : device.direction == Direction::Left ? Direction::Right : Direction::Left;
+            }
+        }
+        for (auto& chunk : world_.chunks) {
+            if (chunk.region.regionId != move.regionId) continue;
+            chunk.x = move.worldX; chunk.y = move.worldY;
+            // 行ごとに並んだマスは、逆順にすると 180° 回したものになる。
+            if (flip) std::reverse(chunk.region.cells.begin(), chunk.region.cells.end());
+        }
+        runtime.placement.worldX = move.worldX; runtime.placement.worldY = move.worldY; runtime.flipped = move.flip;
+    }
+    placements_ = std::move(next);
+    return true;
 }
 }

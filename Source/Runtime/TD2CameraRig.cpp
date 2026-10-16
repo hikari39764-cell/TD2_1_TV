@@ -1,4 +1,5 @@
 #include "TD2CameraRig.h"
+#include "TD2Transform.h"
 #include <algorithm>
 #include <cmath>
 
@@ -92,6 +93,9 @@ void BreathAlong(const CameraAreaSettings& area, double time, const double right
     const double hand = (std::max)(0.0, static_cast<double>(area.handheld));
     bx += hand * .008 * (wave(2.7, .4) + .6 * wave(1.9, 2.2));
     by += hand * .006 * (wave(3.3, 1.1) + .5 * wave(2.1, .3));
+    // 揺れの幅（m）は 4 m より近い構図では距離に比例して小さくする（手のひらの画面に寄った時も画が泳がない）。
+    const double reach = (std::min)(1.0, distance / 4.0);
+    bx *= reach; by *= reach;
     const double handAngle = std::tan(hand * .18 * kPi / 180) * distance;
     lx += handAngle * (wave(2.3, .9) + .5 * wave(1.6, 2.7));
     ly += handAngle * .8 * (wave(2.9, 1.7) + .5 * wave(1.7, .2));
@@ -123,6 +127,18 @@ void CameraRig::BreathAround(const CameraAreaSettings& area, double time, const 
         }
     }
     BreathAlong(area, time, right, up, distance, eyeOffset, lookOffset, roll);
+}
+
+void CameraRig::Carry(const HIKARI::GameProjectTransform& from, const HIKARI::GameProjectTransform& to) {
+    if (!ready_) { return; }
+    const auto delta = QMul(to.rotation, QConj(from.rotation));
+    for (Spring* spring : {&baseEye_, &baseLook_}) {
+        const auto p = QRotate(delta, {static_cast<float>(spring->value[0] - from.position.x), static_cast<float>(spring->value[1] - from.position.y),
+                                       static_cast<float>(spring->value[2] - from.position.z)});
+        const auto v = QRotate(delta, {static_cast<float>(spring->velocity[0]), static_cast<float>(spring->velocity[1]), static_cast<float>(spring->velocity[2])});
+        spring->value[0] = p.x + to.position.x; spring->value[1] = p.y + to.position.y; spring->value[2] = p.z + to.position.z;
+        spring->velocity[0] = v.x; spring->velocity[1] = v.y; spring->velocity[2] = v.z;
+    }
 }
 
 CameraRigPose CameraRig::Update(const CameraRegionFrame& frame, const CameraAreaSettings& area, const F3& target, const F3& velocity,

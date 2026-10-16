@@ -1,6 +1,8 @@
 #include "TD2GameSession.h"
 #include "../Common/TD2PreviewEntry.h"
 #include "TD2TravelComponents.h"
+#include "TD2Transform.h"
+#include "TD2SignalCable.h"
 #include "HIKARI/Project/ActionViews.h"
 #include "HIKARI/Project/GameFlowViews.h"
 #include "HIKARI/Project/SequenceView.h"
@@ -23,6 +25,7 @@ std::string_view EventName(Rules::EventKind event) {
     case E::PlayerDied: return "PlayerDied"; case E::PlayerRespawned: return "PlayerRespawned";
     case E::ExplorationRestarted: return "ExplorationRestarted";
     case E::SpringLaunched: return "SpringLaunched"; case E::CollectibleTaken: return "CollectibleTaken";
+    case E::EchoSwapped: return "EchoSwapped";
     }
     return "Unknown";
 }
@@ -31,6 +34,11 @@ std::string_view EventName(Rules::EventKind event) {
 constexpr double kTravelPressSeconds = .7, kTravelCoastSeconds = 1.8, kTravelBrakeSeconds = .55;
 // 歩いて越えた時に持ち込む勢い（全速に対する割合）。
 constexpr double kTravelCarry = .55;
+// 大きく回る転台で、カメラがテレビと一緒に回り込む割合（切り替えの前後で同じ向きに動き続ける）。
+constexpr float kTurnOrbit = .24f;
+// 交換の直後だけ区域カメラの乗り換えをこの秒数まで速める（その状態をこの秒数続ける）。
+constexpr float kSwapRegionSeconds = .38f;
+constexpr double kSwapBoostSeconds = 1.0;
 // 演出の序盤のこの割合までに、開始時のカメラのずれを 0 に戻す。
 constexpr double kTravelBlendIn = .35;
 constexpr uint64_t kFollowSource = 0x5444325F464F4C4Cull;   // 識別値 "TD2_FOLL"
@@ -53,6 +61,7 @@ HIKARI::GameProjectFloat3 Mad(const HIKARI::GameProjectFloat3& a, const HIKARI::
 void GameSession::OnGameStarted(HIKARI::WorldView&) {
     exploration_ = {}; bindings_.clear(); playback_ = {}; playbackBinding_ = {};
     regionCameras_.clear(); regionObjects_.clear(); regionGeometry_.clear(); areaSettings_.clear(); areaKey_.clear();
+    mechanismViews_.clear(); movedPose_.clear();
     travel_.reset(); rig_ = {}; driverCamera_ = {}; cameraInitialized_ = false; cameraTime_ = 0;
     sceneActive_ = leftHeld_ = rightHeld_ = false;
     focusDistance_ = 0; previewEntryObject_ = 0; previewSpawn_.reset();
@@ -106,7 +115,12 @@ void GameSession::SyncRegions(HIKARI::WorldView& world) {
             std::fprintf(stderr, "[TD2 configuration] test start object missing: %llu\n",
                 static_cast<unsigned long long>(previewEntryObject_)); return;
         }
-        const auto error = exploration_.Initialize(std::move(sources), previewEntry, previewSpawn_);
+        std::vector<Rules::MechanismSource> mechanisms;
+        SyncMechanisms(world, mechanisms);
+        std::vector<Rules::SlideSource> slides;
+        SyncSlides(world, slides);
+        SyncCables(world);
+        const auto error = exploration_.Initialize(std::move(sources), std::move(mechanisms), std::move(slides), previewEntry, previewSpawn_);
         if (!error.empty()) { std::fprintf(stderr, "[TD2 configuration] %s\n", error.c_str()); return; }
         std::fprintf(stderr, "[TD2 world] ready rooms=%zu entry=%s\n", exploration_.Regions().size(), exploration_.ActiveRegion().c_str());
     }
@@ -133,6 +147,254 @@ void GameSession::SyncRegions(HIKARI::WorldView& world) {
         InitializeCamera(world);
     }
     std::fflush(stderr);
+}
+
+// ---------------------------------------------------------------- 機構
+void GameSession::SyncMechanisms(HIKARI::WorldView& world, std::vector<Rules::MechanismSource>& sources) {
+    mechanismViews_.clear(); movedPose_.clear();
+    const HIKARI::ComponentTypeId types[]{HIKARI::MakeComponentTypeId(kMechanismComponentType)};
+    (void)world.ForEachComponents<MechanismComponent>(types, HIKARI::GameProjectWorldQueryAnchor::FirstRequiredTerm,
+        [&](HIKARI::ObjectView, MechanismComponent& component) {
+            Rules::MechanismSource source; std::vector<MechanismObjectMove> moves, movesC; std::string error;
+            if (!component.BuildSource(source, moves, movesC, error)) {
+                std::fprintf(stderr, "[TD2 mechanism] rejected error=%s\n", error.c_str()); return;
+            }
+            MechanismView view; view.id = source.id; view.cameraLift = component.CameraLift(); view.cameraPull = component.CameraPull();
+            // 状態 1 と -1 の表に出てくる物体をまとめる（片方にしか無ければ、もう片方は元の姿勢のまま）。
+            std::vector<uint64_t> ids;
+            for (const auto* list : {&moves, &movesC}) for (const auto& move : *list)
+                if (std::find(ids.begin(), ids.end(), move.object) == ids.end()) ids.push_back(move.object);
+            const auto poseOf = [](const MechanismObjectMove& move, HIKARI::GameProjectTransform pose) {
+                const auto start = pose;
+                pose.position = {move.position[0], move.position[1], move.position[2]};
+                pose.rotation = QFromEulerDeg(move.rotation[0], move.rotation[1], move.rotation[2]);
+                if (move.hasPivot) {
+                    // 中心のまわりに回した位置。
+                    const auto turned = QRotate(QMul(pose.rotation, QConj(start.rotation)),
+                        {start.position.x - move.pivot[0], start.position.y - move.pivot[1], start.position.z - move.pivot[2]});
+                    pose.position = {move.pivot[0] + turned.x, move.pivot[1] + turned.y, move.pivot[2] + turned.z};
+                }
+                return pose;
+            };
+            for (const auto id : ids) {
+                const auto object = world.FindSceneObject(id);
+                MechanismObject item;
+                if (!object.IsValid() || !object.GetLocalTransform(item.a)) {
+                    std::fprintf(stderr, "[TD2 mechanism] %s missing object=%llu\n", source.id.c_str(), static_cast<unsigned long long>(id));
+                    continue;
+                }
+                item.handle = object.GetHandle(); item.b = item.c = item.a;
+                for (const auto* list : {&moves, &movesC}) for (const auto& move : *list) {
+                    if (move.object != id) continue;
+                    (list == &moves ? item.b : item.c) = poseOf(move, item.a);
+                    if (move.hasPivot) { item.pivot = true; item.center = {move.pivot[0], move.pivot[1], move.pivot[2]}; }
+                }
+                // その場で画面の向きの軸に回すだけ（倒立）なら、区域カメラは動かさない（カメラまで逆さにしない）。
+                const auto& qa = item.a.rotation; const auto& qb = item.b.rotation;
+                const float dx = item.b.position.x - item.a.position.x, dy = item.b.position.y - item.a.position.y, dz = item.b.position.z - item.a.position.z;
+                const auto delta = QMul(qb, QConj(qa));
+                const float axis = std::sqrt(delta.x * delta.x + delta.y * delta.y + delta.z * delta.z);
+                const bool roll = (item.pivot || dx * dx + dy * dy + dz * dz < 1e-6f) && axis > .05f && std::abs(delta.y) / axis < .7f;
+                // 動かすのが区域のテレビなら、その区域カメラもテレビに付いて一緒に動く（乗っている間も画面が正面に残る）。
+                for (const auto& [region, handle] : regionObjects_) {
+                    if (roll || handle.value != item.handle.value) continue;
+                    const auto camera = regionCameras_.find(region);
+                    if (camera == regionCameras_.end() || !camera->second) continue;
+                    const auto cameraObject = world.FindSceneObject(camera->second);
+                    HIKARI::GameProjectTransform pose{};
+                    if (!cameraObject.IsValid() || !cameraObject.GetLocalTransform(pose)) continue;
+                    MechanismAttachment attachment{cameraObject.GetHandle(), view.objects.size(), Relative(item.a, pose)};
+                    // 状態 A と B の向きの差が 120°以上なら、カメラは途中で向こう側へ切り替える。
+                    const auto& qa = item.a.rotation; const auto& qb = item.b.rotation;
+                    const float dot = std::abs(qa.x * qb.x + qa.y * qb.y + qa.z * qb.z + qa.w * qb.w);
+                    attachment.turn = 2.f * std::acos(std::clamp(dot, 0.f, 1.f)) >= 120.f * 3.14159265f / 180.f;
+                    const auto& r = attachment.relative.position;
+                    attachment.reach = std::sqrt(r.x * r.x + r.y * r.y + r.z * r.z);
+                    view.attached.push_back(attachment);
+                }
+                view.objects.push_back(item);
+            }
+            std::fprintf(stderr, "[TD2 mechanism] %s toggle=%d seconds=%.2f dwell=%.2f regions=%zu objects=%zu cameras=%zu\n", source.id.c_str(),
+                source.toggle, source.seconds, source.dwell, source.moves.size(), view.objects.size(), view.attached.size());
+            sources.push_back(std::move(source)); mechanismViews_.push_back(std::move(view));
+        });
+}
+
+// ---------------------------------------------------------------- 槽の棚
+void GameSession::SyncSlides(HIKARI::WorldView& world, std::vector<Rules::SlideSource>& sources) {
+    slideViews_.clear();
+    const HIKARI::ComponentTypeId types[]{HIKARI::MakeComponentTypeId(kSlideRackComponentType)};
+    (void)world.ForEachComponents<SlideRackComponent>(types, HIKARI::GameProjectWorldQueryAnchor::FirstRequiredTerm,
+        [&](HIKARI::ObjectView, SlideRackComponent& component) {
+            Rules::SlideSource source; SlideView view; std::string error;
+            if (!component.BuildSource(source, view.slots, error)) { std::fprintf(stderr, "[TD2 slide] rejected error=%s\n", error.c_str()); return; }
+            for (const auto& region : source.members) {
+                SlideMember member;
+                const auto tv = regionObjects_.find(region);
+                if (tv != regionObjects_.end()) {
+                    member.tv = tv->second;
+                    if (const auto object = world.FindObject(member.tv); object.IsValid()) (void)object.GetLocalTransform(member.tvPose);
+                }
+                // 区域カメラは動かさない（棚全体を写す同じ構図のまま、空いた槽と並びが見え続ける）。
+                view.members.push_back(member);
+            }
+            std::fprintf(stderr, "[TD2 slide] %s slots=%zu members=%zu\n", source.id.c_str(), source.slots.size(), source.members.size());
+            sources.push_back(std::move(source)); slideViews_.push_back(std::move(view));
+        });
+}
+
+void GameSession::UpdateSlideObjects(HIKARI::WorldView& world, double seconds) {
+    const auto& runtimes = exploration_.Slides();
+    std::vector<HIKARI::GameProjectWorldTransformWrite> writes;
+    const auto active = regionObjects_.find(exploration_.ActiveRegion());
+    for (size_t i = 0; i < slideViews_.size() && i < runtimes.size(); ++i) {
+        auto& view = slideViews_[i]; const auto& runtime = runtimes[i];
+        // 動けなかった：そのテレビを 0.35 秒だけ左右に細かく揺らす。
+        if (runtime.blockedCount != view.blockedCount) { view.blockedCount = runtime.blockedCount; view.shaking = runtime.blocked; view.shake = 0; }
+        const bool moving = runtime.moving >= 0;
+        if (!moving && view.lastMoving < 0 && view.shaking < 0) continue;
+        for (size_t m = 0; m < view.members.size() && m < runtime.slotOf.size(); ++m) {
+            auto& member = view.members[m];
+            if (!member.tv.IsValid()) continue;
+            const bool thisMoving = moving && runtime.moving == static_cast<int>(m);
+            if (!thisMoving && view.lastMoving != static_cast<int>(m) && view.shaking != static_cast<int>(m)) continue;
+            // 槽の位置の間を、両端でゆっくり止まるように運ぶ。
+            const auto& to = view.slots[static_cast<size_t>(thisMoving ? runtime.to : runtime.slotOf[m])].position;
+            const auto& from = view.slots[static_cast<size_t>(thisMoving ? runtime.from : runtime.slotOf[m])].position;
+            const float t = thisMoving ? static_cast<float>(runtime.progress) : 1.f, e = t * t * (3 - 2 * t);
+            auto pose = member.tvPose;
+            pose.position = {from[0] + (to[0] - from[0]) * e, from[1] + (to[1] - from[1]) * e, from[2] + (to[2] - from[2]) * e};
+            if (view.shaking == static_cast<int>(m)) {
+                view.shake += seconds;
+                const double left = (std::max)(0.0, 1 - view.shake / .35);
+                pose.position.x += static_cast<float>(.025 * left * std::sin(view.shake * 70));
+                if (left <= 0) view.shaking = -1;
+            }
+            writes.push_back({}); writes.back().object = member.tv; writes.back().localTransform = pose;
+            if (member.camera.IsValid()) {
+                auto camera = member.cameraPose;
+                camera.position = {camera.position.x + pose.position.x - member.tvPose.position.x, camera.position.y + pose.position.y - member.tvPose.position.y,
+                                   camera.position.z + pose.position.z - member.tvPose.position.z};
+                // 操作中の区域なら追従のばねも同じだけ運ぶ。
+                const auto last = movedPose_.find(member.camera.value);
+                if (active != regionObjects_.end() && active->second.value == member.tv.value && rig_.Ready())
+                    rig_.Carry(last != movedPose_.end() ? last->second : member.cameraPose, camera);
+                movedPose_[member.camera.value] = camera;
+                writes.push_back({}); writes.back().object = member.camera; writes.back().localTransform = camera;
+            }
+        }
+        view.lastMoving = runtime.moving;
+    }
+    if (writes.empty()) return;
+    std::vector<HIKARI::GameProjectWorldResult> results(writes.size());
+    if (!world.SetLocalTransforms(writes, results)) std::fprintf(stderr, "[TD2 slide] transform write failed count=%zu\n", writes.size());
+}
+
+void GameSession::SyncCables(HIKARI::WorldView& world) {
+    cables_.clear();
+    const HIKARI::ComponentTypeId types[]{HIKARI::MakeComponentTypeId(kSignalCableComponentType)};
+    (void)world.ForEachComponents<SignalCableComponent>(types, HIKARI::GameProjectWorldQueryAnchor::FirstRequiredTerm,
+        [&](HIKARI::ObjectView object, SignalCableComponent& component) {
+            HIKARI::GameProjectModelAppearance appearance{};
+            if (component.Plate().empty() || component.LitModel().empty() || !object.GetModel().TryGetAppearance(appearance)) return;
+            cables_.push_back({object.GetHandle(), component.Plate(), appearance.assetId, component.LitModel()});
+        });
+    std::fprintf(stderr, "[TD2 cable] count=%zu\n", cables_.size());
+}
+
+void GameSession::UpdateCables(HIKARI::WorldView& world) {
+    if (cables_.empty()) return;
+    const auto& devices = exploration_.Snapshot().devices;
+    for (auto& cable : cables_) {
+        const auto plate = std::find_if(devices.begin(), devices.end(), [&](const auto& d) { return d.id == cable.plate; });
+        const bool lit = plate != devices.end() && plate->powered;
+        if (lit == cable.shown) continue;
+        const auto& asset = lit ? cable.lit : cable.normal;
+        HIKARI::GameProjectModelAppearance appearance{};
+        const auto object = world.FindObject(cable.handle);
+        if (!object.IsValid() || !object.GetModel().TryGetAppearance(appearance) || asset.size() >= sizeof(appearance.assetId)) continue;
+        std::memset(appearance.assetId, 0, sizeof(appearance.assetId));
+        std::memcpy(appearance.assetId, asset.data(), asset.size());
+        if (object.GetModel().ApplyAppearance(appearance).Accepted()) cable.shown = lit;
+    }
+}
+
+void GameSession::UpdateMechanismObjects(HIKARI::WorldView& world) {
+    const auto& runtimes = exploration_.Mechanisms();
+    std::vector<HIKARI::GameProjectWorldTransformWrite> writes;
+    const auto active = regionObjects_.find(exploration_.ActiveRegion());
+    for (size_t i = 0; i < mechanismViews_.size() && i < runtimes.size(); ++i) {
+        auto& view = mechanismViews_[i];
+        const double progress = runtimes[i].progress;
+        if (progress == view.written) continue;
+        view.written = progress;
+        // 両端でゆっくり止まる。転台は四元数で回し、吊り台は直線で運ぶ。天平の状態 -1 側は c へ向かう。
+        const bool sideC = progress < 0;
+        const float t = static_cast<float>(std::abs(progress)), e = t * t * (3 - 2 * t);
+        // 操作中の区域の物が動いたら、追従カメラのばねも同じだけ運ぶ（ばねの遅れで画面を見失わない）。
+        const auto carry = [&](HIKARI::GameProjectObjectHandle tv, uint64_t key, const HIKARI::GameProjectTransform& first,
+                               const HIKARI::GameProjectTransform& pose) {
+            const auto last = movedPose_.find(key);
+            if (active != regionObjects_.end() && active->second.value == tv.value && rig_.Ready())
+                rig_.Carry(last != movedPose_.end() ? last->second : first, pose);
+            movedPose_[key] = pose;
+        };
+        std::vector<HIKARI::GameProjectTransform> poses;
+        for (size_t k = 0; k < view.objects.size(); ++k) {
+            const auto& object = view.objects[k];
+            const auto& end = sideC ? object.c : object.b;
+            auto pose = object.a;
+            pose.position = {object.a.position.x + (end.position.x - object.a.position.x) * e,
+                             object.a.position.y + (end.position.y - object.a.position.y) * e,
+                             object.a.position.z + (end.position.z - object.a.position.z) * e};
+            pose.rotation = QSlerp(object.a.rotation, end.rotation, e);
+            if (object.pivot) {
+                // 中心を動かさずに回す（途中も画面の中心が同じ所に留まる）。
+                const auto& c = object.center;
+                const auto turned = QRotate(QMul(pose.rotation, QConj(object.a.rotation)),
+                    {object.a.position.x - c.x, object.a.position.y - c.y, object.a.position.z - c.z});
+                pose.position = {c.x + turned.x, c.y + turned.y, c.z + turned.z};
+            }
+            poses.push_back(pose);
+            // 区域カメラが付いたテレビは、下でカメラ自身の動きで運ぶ。
+            const bool hasCamera = std::any_of(view.attached.begin(), view.attached.end(), [k](const auto& a) { return a.parent == k; });
+            if (hasCamera) movedPose_[object.handle.value] = pose;
+            else carry(object.handle, object.handle.value, object.a, pose);
+            HIKARI::GameProjectWorldTransformWrite write{}; write.object = object.handle; write.localTransform = pose;
+            writes.push_back(write);
+        }
+        // 付いて行くカメラ。
+        // ・大きく回る転台（120°以上）：前半はテレビの回る向きへ回転の kTurnOrbit 割だけ一緒に回り込み、画面が真横を向いて
+        //   表も裏も見えない折り返しの瞬間に転台の向こう側へ切り替え、後半も同じ向きへ回り続けて落ち着く（動きが途切れない）。
+        //   前後とも画面へわずかに寄り、切り替えを動きの中に隠す。
+        // ・それ以外（吊り台など）：一緒に運び、途中だけ上へ持ち上げて視線の後ろへ引く（両端では元の構図に戻る）。
+        const float arc = std::sin(e * 3.14159265f);
+        for (const auto& attached : view.attached) {
+            HIKARI::GameProjectWorldTransformWrite write{}; write.object = attached.handle;
+            const auto& object = view.objects[attached.parent];
+            HIKARI::GameProjectTransform pose;
+            if (attached.turn) {
+                // カメラを載せる仮のテレビの姿勢：前半は回転の一部、後半は終わりから同じ割だけ手前。
+                auto carrier = poses[attached.parent];
+                carrier.rotation = QSlerp(object.a.rotation, object.b.rotation, e < .5f ? kTurnOrbit * e : 1.f - kTurnOrbit * (1.f - e));
+                pose = Attach(carrier, attached.relative);
+                const auto forward = QRotate(pose.rotation, {0, 0, 1});
+                const float push = attached.reach * .05f * (1.f - std::abs(2.f * e - 1.f));
+                pose.position = {pose.position.x + forward.x * push, pose.position.y + forward.y * push, pose.position.z + forward.z * push};
+            } else {
+                pose = Attach(poses[attached.parent], attached.relative);
+                const auto forward = QRotate(pose.rotation, {0, 0, 1});
+                pose.position = {pose.position.x - forward.x * view.cameraPull * arc, pose.position.y + view.cameraLift * arc,
+                                 pose.position.z - forward.z * view.cameraPull * arc};
+            }
+            carry(object.handle, attached.handle.value, Attach(object.a, attached.relative), pose);
+            write.localTransform = pose;
+            writes.push_back(write);
+        }
+    }
+    if (writes.empty()) return;
+    std::vector<HIKARI::GameProjectWorldResult> results(writes.size());
+    if (!world.SetLocalTransforms(writes, results)) std::fprintf(stderr, "[TD2 mechanism] transform write failed count=%zu\n", writes.size());
 }
 
 // ---------------------------------------------------------------- カメラ
@@ -236,6 +498,11 @@ void GameSession::OnCrossing(HIKARI::WorldView& world, const Rules::RegionTransi
         StopTravel(world); SnapCamera(world, to);
         return;
     }
+    if (transition.kind == "swap") {      // 交換は演出を流さず、追従が新しい区域カメラへ速めに滑って行く
+        if (travel_) StopTravel(world);
+        swapBoost_ = kSwapBoostSeconds;
+        return;
+    }
     if (travel_) {
         // 自動の切り替え中：来た部屋へ戻れば逆再生にし、先へ進めば終了後に追従が引き継ぐ。
         if (from == travel_->to && to == travel_->from) {
@@ -249,6 +516,7 @@ void GameSession::OnCrossing(HIKARI::WorldView& world, const Rules::RegionTransi
         return;
     }
     if (SameArea(from, to)) return;   // 大区域の中：追従の基準が次の区域カメラへ移る
+    exploration_.ClearEcho();         // 大区域を出たら残影は置いて行かない
     const auto* a = exploration_.FindRegion(from);
     const auto* b = exploration_.FindRegion(to);
     int direction = 0;
@@ -393,7 +661,10 @@ void GameSession::UpdateFollow(HIKARI::WorldView& world, double dt) {
     const auto& body = state.player.rect;
     const auto target = CameraRig::ScreenPoint(frame, body.x + body.w * .5, body.y + body.h * .5);
     const auto velocity = CameraRig::ScreenVelocity(frame, state.player.vx, state.player.vy);
-    const auto pose = rig_.Update(frame, AreaOf(region), target, velocity, state.playerPresent && !state.player.dead, dt, cameraTime_);
+    // 交換の直後は区域カメラの乗り換えを速くする（本体が一瞬で移ったのに画が遅れて付いて来ないように）。
+    auto area = AreaOf(region);
+    if (swapBoost_ > 0) { area.regionSeconds = (std::min)(area.regionSeconds, kSwapRegionSeconds); swapBoost_ -= dt; }
+    const auto pose = rig_.Update(frame, area, target, velocity, state.playerPresent && !state.player.dead, dt, cameraTime_);
     HIKARI::GameProjectCameraPoseRequest request{};
     request.cameraObjectHandle = driverCamera_.value; request.sourceId = kFollowSource; request.priority = 50;
     request.pose.eye = pose.eye; request.pose.target = pose.look; request.pose.up = pose.up;
@@ -433,6 +704,7 @@ HIKARI::GameProjectSequencePlaybackHandle GameSession::PlayBoundSequence(HIKARI:
 // 焦点は画面の中心の視線方向の深さ。部屋が変わった時に跳ばないよう、時定数 0.12 秒で寄せる。
 void GameSession::FocusActiveScreen(HIKARI::WorldView& world, double seconds) {
     // 焦点は画で一番目立つ画面へゆっくり送る。目立ち具合は写る面積を、画の中心から離れるほど割り引いた値。
+    // 候補は今いる大区域の画面だけ（隙間の奥に写る遠い箱庭の画面へ焦点が逃げない）。
     constexpr double kFocusSeconds = .35;
     constexpr uint64_t kFocusSource = 0x5444325F464F4355ull; // 識別値 "TD2_FOCU"
     auto camera = world.GetCamera();
@@ -444,6 +716,7 @@ void GameSession::FocusActiveScreen(HIKARI::WorldView& world, double seconds) {
         // 切り替え中は出る部屋と入る部屋の画面だけを見る（途中で遠くの画面に焦点が飛ばないように）。
         const bool travelRoom = travel_ && (region == travel_->from || region == travel_->to);
         if (travel_ && !travelRoom) { continue; }
+        if (!travel_ && !SameArea(region, exploration_.ActiveRegion())) { continue; }
         const auto geometry = regionGeometry_.find(region);
         HIKARI::GameProjectTransform tv{};
         const auto object = world.FindObject(handle);
@@ -530,11 +803,16 @@ void GameSession::Update(HIKARI::WorldView& world, const HIKARI::FrameContext& f
         }
         buttons.action.pressed = buttons.action.released = false; remaining -= slice;
     }
+    UpdateMechanismObjects(world);
+    UpdateSlideObjects(world, frameSeconds);
+    UpdateCables(world);
     if (travel_) UpdateTravel(world, moveValid ? move.x : 0.f, frameSeconds);
     if (!travel_) UpdateFollow(world, frameSeconds);
     FocusActiveScreen(world, std::isfinite(frame.gameDt) ? std::max(0.0, double(frame.gameDt)) : 0.0);
     traceSeconds_ += std::max(0.0, double(frame.gameDt));
-    if (traceSeconds_ >= 1) {
+    // 状態の記録は 1 秒ごと（検証で細かく見たい時は TD2_TRACE_SECONDS で間隔を変える）。
+    static const double traceInterval = std::getenv("TD2_TRACE_SECONDS") ? std::atof(std::getenv("TD2_TRACE_SECONDS")) : 1.0;
+    if (traceSeconds_ >= traceInterval) {
         traceSeconds_ = 0;
         const auto& state = exploration_.State();
         std::fprintf(stderr, "[TD2 world-state] region=%s tick=%llu sim=%.4f real=%.4f player=(%.5f,%.5f) velocity=(%.5f,%.5f) echo=%d echoPos=(%.5f,%.5f) deaths=%llu checkpoint=%s travel=%s progress=%.3f frame=%llu\n",

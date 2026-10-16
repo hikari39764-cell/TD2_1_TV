@@ -1,0 +1,174 @@
+{
+ "asset": {
+  "generator": "TD2 td2_props.py",
+  "version": "2.0"
+ },
+ "scene": 0,
+ "scenes": [
+  {
+   "name": "Scene",
+   "nodes": [
+    0
+   ]
+  }
+ ],
+ "nodes": [
+  {
+   "mesh": 0,
+   "name": "SM_TD2_MonolithBrace"
+  }
+ ],
+ "meshes": [
+  {
+   "name": "SM_TD2_MonolithBrace",
+   "primitives": [
+    {
+     "attributes": {
+      "POSITION": 0,
+      "NORMAL": 1
+     },
+     "indices": 2,
+     "material": 0
+    },
+    {
+     "attributes": {
+      "POSITION": 3,
+      "NORMAL": 4
+     },
+     "indices": 5,
+     "material": 1
+    }
+   ]
+  }
+ ],
+ "materials": [
+  {
+   "name": "TD2P_steel_dark",
+   "pbrMetallicRoughness": {
+    "baseColorFactor": [
+     0.085,
+     0.088,
+     0.095,
+     1
+    ],
+    "metallicFactor": 0.55,
+    "roughnessFactor": 0.5
+   }
+  },
+  {
+   "name": "TD2P_steel",
+   "pbrMetallicRoughness": {
+    "baseColorFactor": [
+     0.16,
+     0.165,
+     0.17,
+     1
+    ],
+    "metallicFactor": 0.45,
+    "roughnessFactor": 0.55
+   }
+  }
+ ],
+ "buffers": [
+  {
+   "byteLength": 10368,
+   "uri": "SM_TD2_MonolithBrace.bin"
+  }
+ ],
+ "bufferViews": [
+  {
+   "buffer": 0,
+   "byteOffset": 0,
+   "byteLength": 1152,
+   "target": 34962
+  },
+  {
+   "buffer": 0,
+   "byteOffset": 1152,
+   "byteLength": 1152,
+   "target": 34962
+  },
+  {
+   "buffer": 0,
+   "byteOffset": 2304,
+   "byteLength": 288,
+   "target": 34963
+  },
+  {
+   "buffer": 0,
+   "byteOffset": 2592,
+   "byteLength": 3456,
+   "target": 34962
+  },
+  {
+   "buffer": 0,
+   "byteOffset": 6048,
+   "byteLength": 3456,
+   "target": 34962
+  },
+  {
+   "buffer": 0,
+   "byteOffset": 9504,
+   "byteLength": 864,
+   "target": 34963
+  }
+ ],
+ "accessors": [
+  {
+   "bufferView": 0,
+   "componentType": 5126,
+   "count": 96,
+   "type": "VEC3",
+   "min": [
+    -1.06,
+    0.0,
+    -1.62
+   ],
+   "max": [
+    1.24,
+    3.99,
+    0.36
+   ]
+  },
+  {
+   "bufferView": 1,
+   "componentType": 5126,
+   "count": 96,
+   "type": "VEC3"
+  },
+  {
+   "bufferView": 2,
+   "componentType": 5123,
+   "count": 144,
+   "type": "SCALAR"
+  },
+  {
+   "bufferView": 3,
+   "componentType": 5126,
+   "count": 288,
+   "type": "VEC3",
+   "min": [
+    -1.06,
+    0.0,
+    -1.55
+   ],
+   "max": [
+    1.26,
+    3.99,
+    0.37
+   ]
+  },
+  {
+   "bufferView": 4,
+   "componentType": 5126,
+   "count": 288,
+   "type": "VEC3"
+  },
+  {
+   "bufferView": 5,
+   "componentType": 5123,
+   "count": 432,
+   "type": "SCALAR"
+  }
+ ]
+}

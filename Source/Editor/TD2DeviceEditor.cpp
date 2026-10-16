@@ -59,6 +59,11 @@ void DeviceEditor::Load(std::string_view text) {
             } else if (key == "invert") {
                 if (value != "0" && value != "1") { invalid(); return; }
                 device.inverted = value == "1";
+            } else if (key == "latch") {
+                if (value != "0" && value != "1") { invalid(); return; }
+                device.latch = value == "1";
+            } else if (key == "power" || key == "delay" || key == "cooldown" || key == "variant" || key == "opacity") {
+                device.extra.push_back(option);
             } else { invalid(); return; }
         }
         if (device.id == selectedId) { selected_ = static_cast<int>(devices_.size()); }
@@ -138,7 +143,7 @@ bool DeviceEditor::Paste(const std::vector<DeviceDraft>& copied, double x, doubl
 bool DeviceEditor::ToggleLink(std::string_view sourceId, int targetIndex) {
     if (!IsLoaded() || targetIndex < 0 || targetIndex >= static_cast<int>(devices_.size())) { return false; }
     const auto& target = devices_[targetIndex];
-    if (target.kind != "Door" && target.kind != "Laser") { return false; }
+    if (target.kind != "Door" && target.kind != "Laser" && target.kind != "Bridge") { return false; }
     auto source = std::find_if(devices_.begin(), devices_.end(), [sourceId](const auto& d) { return d.id == sourceId && d.kind == "Plate"; });
     if (source == devices_.end()) { return false; }
     const auto found = std::find(source->targets.begin(), source->targets.end(), target.id);
@@ -160,6 +165,8 @@ std::string DeviceEditor::Serialize() const {
         if (device.direction != "Up") { text << " dir=" << device.direction; }
         if (device.range != 20) { text << " range=" << device.range; }
         if (device.inverted) { text << " invert=1"; }
+        if (device.latch) { text << " latch=1"; }
+        for (const auto& option : device.extra) { text << ' ' << option; }
         text << '\n';
     }
     return text.str();

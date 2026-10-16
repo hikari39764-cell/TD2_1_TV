@@ -47,7 +47,7 @@ public:
         fields.Int("outputHeight", "屏幕目标高度", screen_.outputHeight, 32, 2048);
         fields.Note("格数据与电视缩放无关。修改行列后，明确重建测试网格；不要自动覆盖原数据。");
         fields.Note("多个区域须使用不同的稳定 ID；真实3D风格由 TD2.ScreenStyle 配置。");
-        fields.Note("设备：id kind x y w h；可选 targets=id,区域ID/id dir=Up/Down/Left/Right range=n invert=0/1 "
+        fields.Note("设备：id kind x y w h；可选 targets=id,区域ID/id dir=Up/Down/Left/Right range=n invert=0/1 latch=0/1 "
                     "power=格每秒 delay=秒 cooldown=秒 variant=ad/space/spaceHold opacity=0~1。");
     }
 

@@ -1,0 +1,107 @@
+{
+ "asset": {
+  "generator": "TD2 td2_props.py",
+  "version": "2.0"
+ },
+ "scene": 0,
+ "scenes": [
+  {
+   "name": "Scene",
+   "nodes": [
+    0
+   ]
+  }
+ ],
+ "nodes": [
+  {
+   "mesh": 0,
+   "name": "SM_TD2_PalletStack"
+  }
+ ],
+ "meshes": [
+  {
+   "name": "SM_TD2_PalletStack",
+   "primitives": [
+    {
+     "attributes": {
+      "POSITION": 0,
+      "NORMAL": 1
+     },
+     "indices": 2,
+     "material": 0
+    }
+   ]
+  }
+ ],
+ "materials": [
+  {
+   "name": "TD2P_wood",
+   "pbrMetallicRoughness": {
+    "baseColorFactor": [
+     0.105,
+     0.058,
+     0.033,
+     1
+    ],
+    "metallicFactor": 0.0,
+    "roughnessFactor": 0.72
+   }
+  }
+ ],
+ "buffers": [
+  {
+   "byteLength": 71280,
+   "uri": "SM_TD2_PalletStack.bin"
+  }
+ ],
+ "bufferViews": [
+  {
+   "buffer": 0,
+   "byteOffset": 0,
+   "byteLength": 31680,
+   "target": 34962
+  },
+  {
+   "buffer": 0,
+   "byteOffset": 31680,
+   "byteLength": 31680,
+   "target": 34962
+  },
+  {
+   "buffer": 0,
+   "byteOffset": 63360,
+   "byteLength": 7920,
+   "target": 34963
+  }
+ ],
+ "accessors": [
+  {
+   "bufferView": 0,
+   "componentType": 5126,
+   "count": 2640,
+   "type": "VEC3",
+   "min": [
+    -0.6448106763290732,
+    0.0,
+    -0.531017869666688
+   ],
+   "max": [
+    0.6180787855167328,
+    1.375,
+    0.5255693147292135
+   ]
+  },
+  {
+   "bufferView": 1,
+   "componentType": 5126,
+   "count": 2640,
+   "type": "VEC3"
+  },
+  {
+   "bufferView": 2,
+   "componentType": 5123,
+   "count": 3960,
+   "type": "SCALAR"
+  }
+ ]
+}

@@ -1,0 +1,45 @@
+{
+  "displayName": "SM_TD2_Rail",
+  "guid": "5d4acd03d06f7e251b9bdbca83fa3e9b",
+  "importSettings": {
+    "clusterGeometry": {
+      "balancePlanarStaticSurfaces": true,
+      "clusterMergeNormalMinDot": 0.20000000298023224,
+      "compactUnderfilledClusters": true,
+      "enabled": true,
+      "largeSurfaceTargetExtent": 4.0,
+      "largeTriangleMaxEdgeLength": 3.0,
+      "largeTriangleMaxGeneratedTriangles": 16384,
+      "largeTriangleMaxSubdivisions": 4,
+      "lockPartitionBorders": true,
+      "lodQualityBias": 1.0,
+      "maxLodCount": 5,
+      "maxNormalBucketClusterOverhead": 1.100000023841858,
+      "meshletConeWeight": 0.3499999940395355,
+      "meshletSplitFactor": 1.0,
+      "minClusterOccupancyRatio": 0.75,
+      "normalBucketCoherentGroupMinDot": 0.3499999940395355,
+      "normalBucketQualityBonusRatio": 0.15000000596046448,
+      "partitionLargeSurfaces": true,
+      "partitionMinClusterEstimate": 16,
+      "planarSurfaceMaxDepth": 4,
+      "planarSurfaceMinPartitionExtent": 5.0,
+      "planarSurfaceMinTrianglesPerChunk": 1024,
+      "profile": "Scene",
+      "subdivideLargeTriangles": false
+    },
+    "lightmapUv": {
+      "mode": "GenerateIfMissingOrInvalid",
+      "padding": 8,
+      "resolution": 64
+    },
+    "meshFormat": "HCMESH",
+    "outputFormat": "HMODEL",
+    "sourceFormat": ".gltf"
+  },
+  "importerId": "ModelImporter",
+  "importerVersion": 43,
+  "metaVersion": 1,
+  "sourcePath": "Assets/Models/TD2Props/SM_TD2_Rail.gltf",
+  "type": "Model"
+}

@@ -25,6 +25,11 @@ void ScreenEffects::Observe(const Rules::WorldSnapshot& s) {
         if (s.pendingEcho && !p.pendingEcho) { add(ScreenEffectKind::EchoCreate, *s.pendingEcho, .28); }
         if (s.echo && !p.echo && !p.pendingEcho) { add(ScreenEffectKind::EchoCreate, s.echo->rect, .28); }
         if (p.echo && !s.echo) { add(ScreenEffectKind::EchoRecall, p.echo->rect, .22, {}, true); }
+        // 交換：入れ替わった本体に復活の光、元の場所へ移った残影に生成の光。
+        if (s.swaps > p.swaps && s.playerPresent) {
+            add(ScreenEffectKind::Respawn, s.presentationPlayer, .3);
+            if (s.echo) { add(ScreenEffectKind::EchoCreate, s.echo->rect, .28); }
+        }
         // 回収：残影が消えるエフェクト、プレイヤーへの吸い込み、残影からプレイヤーへの光跡。
         if (s.recalls > p.recalls && s.playerPresent && !s.player.dead) {
             add(ScreenEffectKind::EchoAbsorb, s.presentationPlayer, .42);

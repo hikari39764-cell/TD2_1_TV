@@ -14,7 +14,8 @@ struct Rect { double x = 0.0, y = 0.0, w = 1.0, h = 1.0; };
 enum class Direction { Up, Down, Left, Right };
 // Spring は上面 10/32 マスの踏み板。Bridge は Door と同じ通電規則（通電で収納）。Collectible は本体だけが拾う。
 // Decal はチュートリアルの貼り絵。衝突も光線の遮断もない。
-enum class DeviceKind { Solid, OneWay, Plate, Door, Laser, Spikes, Checkpoint, LockWall, Spring, Bridge, Collectible, Decal };
+// Mechanism は画面の外の機構（転台・吊り台など）の受け口。当たりも表示も持たず、圧力板の通電だけを受ける。
+enum class DeviceKind { Solid, OneWay, Plate, Door, Laser, Spikes, Checkpoint, LockWall, Spring, Bridge, Collectible, Decal, Mechanism };
 
 // 地形は RegionDefinition だけから作り、センサーと動く障害物だけを別に定義する。
 // targets は Plate から装置 ID への OR 接続。Door は active 時に実体を失う。
@@ -24,6 +25,8 @@ struct DeviceDefinition {
     Rect rect;
     std::vector<std::string> targets;
     bool inverted = false;
+    // Plate：踏むたびに入・切が切り替わる（離しても保つ）。false は踏んでいる間だけ通電。
+    bool latch = false;
     Direction direction = Direction::Up;
     double range = 20.0;
     // Spring：基礎の打ち上げ速度（マス/秒）、溜める秒数、発射後の冷却秒数（3〜30）。
@@ -64,7 +67,7 @@ struct BeamState { std::string sourceId; Rect rect; };
 enum class EventKind {
     Blink, Bounce, BlinkRejected, EchoCreated, EchoRecalled, EchoRemoved,
     EchoSpawnBlocked, PlateChanged, DeviceChanged, CheckpointActivated,
-    PlayerDied, PlayerRespawned, ExplorationRestarted, SpringLaunched, CollectibleTaken
+    PlayerDied, PlayerRespawned, ExplorationRestarted, SpringLaunched, CollectibleTaken, EchoSwapped
 };
 struct RuleEvent {
     EventKind kind = EventKind::Blink;
@@ -95,8 +98,12 @@ struct WorldState {
     bool echoOverlapGrace = false;
     // 残影を回収した回数（表示用。回収時にプレイヤー側のエフェクトを一度出す）。
     uint64_t recalls = 0;
+    uint64_t swaps = 0;   // 交換の回数（表示用）
     // 固定ステップの無いフレームでも入力の押下を持ち越し、次のステップで使う。
     bool pendingActionPressed = false, pendingActionReleased = false;
+    // 残影がいる時の空格：押してからの秒数。短く離せば回収、押し続ければ交換。
+    double actionHold = 0.0;
+    bool actionArmed = false;
 };
 struct StepOutput {
     std::vector<RuleEvent> events;
@@ -112,10 +119,11 @@ struct DeviceSnapshot {
     bool active = false, pressed = false, solid = false;
     // 表示用：Spring の溜め（0〜1）と冷却の残り（1→0）。Decal の図案。
     double charge = 0.0, cooldown = 0.0;
-    // 表示用：通電しているか（扉・橋・光線は反転前の値、つながっていなければ false）。圧力板は踏まれているか。
+    // 表示用：通電しているか（扉・橋・光線は反転前の値、つながっていなければ false）。圧力板は通電を出しているか。
     // 圧力板とその先の仕掛けの灯を同時に点け、どれとどれがつながっているかを見せる。
     bool powered = false;
     std::string variant;
+    bool latch = false;   // 切り替え式の圧力板
 };
 struct WorldSnapshot {
     std::string regionId;
@@ -131,7 +139,7 @@ struct WorldSnapshot {
     std::vector<BeamState> beams;
     std::string checkpointId;
     bool dashing = false, bouncing = false;
-    uint64_t tick = 0, deaths = 0, recalls = 0;
+    uint64_t tick = 0, deaths = 0, recalls = 0, swaps = 0;
     double simulationTime = 0.0, realTime = 0.0;
 };
 
@@ -156,5 +164,7 @@ StepOutput RemovePlayer(const WorldDefinition& definition, WorldState& state);
 StepOutput PlacePlayer(const WorldDefinition& definition, WorldState& state, Vec2 position,
                       int facing, bool respawning = false);
 StepOutput RecallWorldEcho(const WorldDefinition& definition, WorldState& state);
+// 残影を回収の演出なしで消す（大区域を出た時など）。消えた残影が押していた装置はその場で戻る。
+StepOutput RemoveWorldEcho(const WorldDefinition& definition, WorldState& state);
 
 }
