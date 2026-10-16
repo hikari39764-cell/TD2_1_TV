@@ -1,10 +1,13 @@
 #include "TD2Screen3D.h"
 #include "TD2StageProjection.h"
 #include "HIKARI/Project/ActionViews.h"
+#include "HIKARI/Project/GameFlowViews.h"
 #include "HIKARI/Project/PresentationViews.h"
 #include "HIKARI/Project/VfxView.h"
 #include <algorithm>
 #include <cmath>
+#include <cstdio>
+#include <cstdlib>
 #include <cstring>
 #include <functional>
 
@@ -12,6 +15,11 @@ namespace TD2 {
 namespace {
 // 1 格の texel 数。清晰は 32（像素の描き方で 2×2 texel が一つのゲーム画素）、周りと未配置は 16。
 constexpr int kSharpTexelsPerCell = 32, kWideTexelsPerCell = 16, kGamePixelsPerCell = 16;
+// 可読性の保護を一度に掛けられる画面の数（引擎の kScreenReadabilityRegionCount と同じ）。画面が多く写る場面で上限を
+// 超えると、镜头が動くたびに守る画面が入れ替わって色調が跳ぶ。
+constexpr size_t kMaxProtectedScreens = 12;
+// 周りの窓で世界全体を一枚に撮る時の 1 格の最低 texel。これを下回る大きな世界は、見えている所の周りだけを撮る。
+constexpr int kMinWorldTexelsPerCell = 8;
 // 演出の長さ（秒）。揺れと閃光は二乗で減衰し、瞬移の残像はこの時間で足元へ潰れて消える。
 constexpr double kShakeSeconds = 0.28, kFlashSeconds = 0.22, kSmearSeconds = 0.12;
 // 蹴り返しの残影を足元から刷り出す秒数（Rules の予告と同じ 0.16 秒）。回収の光跡が細って消える秒数。
@@ -41,7 +49,9 @@ HIKARI::GameProjectSceneCaptureStyleDesc StyleDesc(const ScreenStyleSettings& st
              : mode == ScreenStyleMode::Sketch   ? HIKARI::GameProjectSceneCaptureStyle::Sketch
                                                  : HIKARI::GameProjectSceneCaptureStyle::Pixel;
     fx.pixelSize = (std::max)(1.0f, static_cast<float>(density) / kGamePixelsPerCell);
-    fx.lineWidth = mode == ScreenStyleMode::Sketch ? 1.0f : std::clamp(style.outline, 0.0f, 4.0f);
+    // 素描の線の太さはゲーム画素で 1（清晰の 2 texel、周りの 1 texel）。texel で 1 にすると窓の密度ごとに線の太さが
+    // 倍違い、並んだ画面の描き方がそろわない。
+    fx.lineWidth = mode == ScreenStyleMode::Sketch ? 2.0f : std::clamp(style.outline, 0.0f, 4.0f);
     // 素描では shadowStrength が纵深の強さ（落ち影・暗い面・接地・空気・外形の太さ）。0 で平らな草図。
     fx.shadowStrength = std::clamp(mode == ScreenStyleMode::Sketch ? style.sketchDepth : style.shadow, 0.0f, 1.0f);
     // 光は左上・手前から（試作の焼き込みと同じ向き）。足場から右へ半格、下へ 1 格の帯が奥の壁に落ちる。
@@ -104,7 +114,9 @@ void FitWindow(double rows, double wantedCols, int density, double& outCols, int
     const double limit = HIKARI::kGameProjectSceneCaptureMaximumExtent;
     outDensity = (std::max)(1, (std::min)(density, static_cast<int>(std::floor(limit / (std::max)(rows, wantedCols)))));
     height = static_cast<uint32_t>(std::clamp(std::lround(rows * outDensity), 1l, static_cast<long>(limit)));
-    width = static_cast<uint32_t>(std::clamp(std::lround(wantedCols * outDensity), 1l, static_cast<long>(limit)));
+    // 行数はカメラの正交の高さで決まるので、窓の列数は幅と高さの比で決まる。高さを丸めた分だけ列が欲しい数を下回ると
+    // 両端の部屋が窓に入りきらず結ばれない（黒い画面）ので、幅は欲しい列数を必ず覆うよう切り上げる。
+    width = static_cast<uint32_t>(std::clamp(static_cast<long>(std::ceil(wantedCols * height / rows - 1e-6)), 1l, static_cast<long>(limit)));
     outCols = rows * width / height;
 }
 } // namespace
@@ -162,47 +174,82 @@ bool Screen3DStage::AcquireCameras(HIKARI::WorldView& world, const ScreenStyleSe
 
 void Screen3DStage::PlaceWindows(const std::vector<const StageRoom*>& rooms, const StageFrame& frame, int maxCols) {
     windows_ = {};
-    const StageRoom* active = nullptr;
-    for (const auto* room : rooms) {
-        if (room->placed && (!active || room->regionId == frame.activeRegion)) { active = room; }
-        if (active && active->regionId == frame.activeRegion) { break; }
+    const auto find = [&](std::string_view id) -> const StageRoom* {
+        for (const auto* room : rooms) { if (room->placed && !id.empty() && room->regionId == id) { return room; } }
+        return nullptr;
+    };
+    const StageRoom* first = find(focus_[0]);
+    if (!first) { first = find(frame.activeRegion); }
+    if (!first) { for (const auto* room : rooms) { if (room->placed) { first = room; break; } } }
+    // 清晰：一部屋を中央に撮る。主窓は一番目立つ部屋、副窓（未配置の舞台カメラを Play の間だけ借りる）は二番目。
+    // 目立つ二台が同じ密度で写るので、切り替えの演出や落下で並んだ二台の画面の細かさがそろう。
+    // ここは Play の間だけ通る。未配置の作者地図は遊ぶ世界に入らず、Play では呈示側（ScreenPresenter）が部屋の一覧に
+    // 入れないので、未配置のカメラはいつでも副窓に使える。
+    const auto placeRoom = [&](ViewKind kind, const StageRoom* room) {
+        const auto& camera = cameras_[static_cast<size_t>(kind)];
+        if (!room || !camera.handle.IsValid()) { return; }
+        auto& window = windows_[static_cast<size_t>(kind)];
+        window.rows = camera.orthographicHeight / projection_.scale;
+        FitWindow(window.rows, maxCols, kSharpTexelsPerCell, window.cols, window.density, window.width, window.height);
+        const auto& r = room->Region();
+        window.x = room->x + r.cols * .5 - window.cols * .5; window.y = room->y + r.rows * .5 - window.rows * .5;
+        window.regionId = room->regionId;
+        window.valid = true;
+    };
+    placeRoom(ViewKind::Sharp, first);
+    if (const auto* second = find(focus_[1]); second && second != first) { placeRoom(ViewKind::Unplaced, second); }
+    // 周り：世界に置いた全部屋を一枚で撮る固定の窓（行数はカメラの正交の高さ）。窓を動かさないので、どの電視も Play の
+    // 間ずっと同じ捕捉の同じ場所に結ばれたままになる。動く窓では、窓に出入りする電視の結びを作る・解くたびに引擎が
+    // GPU の場景を作り直して画が止まり（1 回 20〜70 ms）、镜头に写っているのに窓の外で何も映らない電視も出た。
+    // 世界が大きすぎて 1 格 kMinWorldTexelsPerCell texel を保てない時だけ、見えている部屋の重心の周りの 3 部屋分を撮る。
+    const auto& wideCamera = cameras_[static_cast<size_t>(ViewKind::Wide)];
+    if (!wideCamera.handle.IsValid()) { return; }
+    auto& wide = windows_[static_cast<size_t>(ViewKind::Wide)];
+    wide.rows = wideCamera.orthographicHeight / projection_.scale;
+    double left = 0, top = 0, right = 0, bottom = 0; bool any = false;
+    for (const auto* room : rooms) if (room->placed) {
+        const auto& r = room->Region();
+        if (!any) { left = room->x; top = room->y; right = room->x + r.cols; bottom = room->y + r.rows; any = true; }
+        left = (std::min)(left, double(room->x)); top = (std::min)(top, double(room->y));
+        right = (std::max)(right, double(room->x + r.cols)); bottom = (std::max)(bottom, double(room->y + r.rows));
     }
-    if (active) {
-        const auto& r = active->Region();
-        const double cx = active->x + r.cols * .5, cy = active->y + r.rows * .5;
-        // 清晰：操作中の部屋一つ（左上をそろえる）。隣の電視は周りの窓が写しているので、部屋を移る時は
-        // 同じ舞台を撮る別の捕捉へ結び直すだけで、画面の中身は途切れない。
-        auto& sharp = windows_[static_cast<size_t>(ViewKind::Sharp)];
-        sharp.rows = cameras_[static_cast<size_t>(ViewKind::Sharp)].orthographicHeight / projection_.scale;
-        FitWindow(sharp.rows, maxCols, kSharpTexelsPerCell, sharp.cols, sharp.density, sharp.width, sharp.height);
-        sharp.x = active->x; sharp.y = active->y;
-        sharp.valid = true;
-        // 周り：操作中の部屋を中心に 3 部屋分の列（行数はカメラの正交の高さ。清晰の 3 倍で 3 部屋分）。
-        if (const auto& camera = cameras_[static_cast<size_t>(ViewKind::Wide)]; camera.handle.IsValid()) {
-            auto& wide = windows_[static_cast<size_t>(ViewKind::Wide)];
-            wide.rows = camera.orthographicHeight / projection_.scale;
-            FitWindow(wide.rows, 3.0 * maxCols, kWideTexelsPerCell, wide.cols, wide.density, wide.width, wide.height);
-            wide.x = cx - wide.cols * .5; wide.y = cy - wide.rows * .5;
-            wide.valid = true;
-        }
+    if (!any) { return; }
+    FitWindow(wide.rows, right - left, kWideTexelsPerCell, wide.cols, wide.density, wide.width, wide.height);
+    if (bottom - top <= wide.rows && wide.density >= kMinWorldTexelsPerCell) {
+        wide.x = (left + right) * .5 - wide.cols * .5; wide.y = (top + bottom) * .5 - wide.rows * .5;
+        wide.valid = true;
+        return;
     }
-    // 未配置：世界の外に並べた作者地図の外接矩形を、上下の中央で撮る。
-    if (const auto& camera = cameras_[static_cast<size_t>(ViewKind::Unplaced)]; camera.handle.IsValid()) {
-        double left = 0, top = 0, right = 0, bottom = 0; bool any = false;
-        for (const auto* room : rooms) if (!room->placed) {
+    // 動く窓：中心は見えている部屋の重心（目立ち具合の重み）に一番近い部屋。今の中心は、重心が別の部屋の方へ部屋の
+    // 大きさの 1/4 以上近づくまで保つ。
+    const StageRoom* center = first;
+    if (!seen_.empty() && first) {
+        double sx = 0, sy = 0, sw = 0;
+        for (const auto* room : rooms) {
+            const auto found = seen_.find(room->regionId);
+            if (!room->placed || found == seen_.end()) { continue; }
+            const double weight = found->second.view.coverage * (1 - found->second.blocked / 9.0);
             const auto& r = room->Region();
-            if (!any) { left = room->x; top = room->y; right = room->x + r.cols; bottom = room->y + r.rows; any = true; }
-            left = (std::min)(left, double(room->x)); top = (std::min)(top, double(room->y));
-            right = (std::max)(right, double(room->x + r.cols)); bottom = (std::max)(bottom, double(room->y + r.rows));
+            sx += weight * (room->x + r.cols * .5); sy += weight * (room->y + r.rows * .5); sw += weight;
         }
-        if (any) {
-            auto& unplaced = windows_[static_cast<size_t>(ViewKind::Unplaced)];
-            unplaced.rows = camera.orthographicHeight / projection_.scale;
-            FitWindow(unplaced.rows, right - left, kWideTexelsPerCell, unplaced.cols, unplaced.density, unplaced.width, unplaced.height);
-            unplaced.x = left; unplaced.y = (top + bottom) * .5 - unplaced.rows * .5;
-            unplaced.valid = true;
+        if (sw > 0) {
+            const double cx = sx / sw, cy = sy / sw;
+            const auto distance = [&](const StageRoom* room) {
+                const auto& r = room->Region();
+                return std::hypot((room->x + r.cols * .5 - cx) / r.cols, (room->y + r.rows * .5 - cy) / r.rows);
+            };
+            const StageRoom* nearest = first;
+            for (const auto* room : rooms) { if (room->placed && distance(room) < distance(nearest)) { nearest = room; } }
+            const auto* current = find(wideCenter_);
+            center = current && distance(current) <= distance(nearest) + .25 ? current : nearest;
         }
     }
+    if (!center) { return; }
+    wideCenter_ = center->regionId;
+    const auto& r = center->Region();
+    FitWindow(wide.rows, 3.0 * maxCols, kWideTexelsPerCell, wide.cols, wide.density, wide.width, wide.height);
+    wide.x = center->x + r.cols * .5 - wide.cols * .5; wide.y = center->y + r.rows * .5 - wide.rows * .5;
+    wide.valid = true;
 }
 
 void Screen3DStage::PlaceEditorWindow(const std::vector<const StageRoom*>& rooms) {
@@ -255,19 +302,24 @@ void Screen3DStage::Render(HIKARI::WorldView& world, const std::vector<StageRoom
     projection_.scale = cameras_[static_cast<size_t>(ViewKind::Sharp)].orthographicHeight / maxRows;
     projection_.pitch = std::clamp(static_cast<double>(stage.pitch), 0.0, kMaxStagePitchDegrees) * kPi / 180.0;
     projection_.yaw = std::clamp(static_cast<double>(stage.yaw), -kMaxStageYawDegrees, kMaxStageYawDegrees) * kPi / 180.0;
-    if (frame.authoring) { PlaceEditorWindow(valid); }
-    else { PlaceWindows(valid, frame, maxCols); }
+    travel_ = {frame.travelFrom, frame.travelTo};
+    ++frame_;
+    if (frame.authoring) { seen_.clear(); focus_ = {}; PlaceEditorWindow(valid); }
+    else { Inspect(world, valid, frame); ChooseFocus(frame); PlaceWindows(valid, frame, maxCols); }
 
-    // 3. 電視ごとの窓（清晰を優先）。どの窓にも入らない部屋は描かず、舞台にも出さない。
+    // 3. 電視ごとの窓（清晰を優先）。一部屋だけを撮る窓（Play の清晰二枚）にはその部屋だけを、残りは窓に収まる部屋を写す。
+    //    どの窓にも入らない部屋は描かず、舞台にも出さない。
+    //    窓を動かしたフレームに画面の切り出しも同じ窓で行う：引擎は捕捉を主描画より先に同じフレームで描くので、
+    //    切り出しを一フレーム遅らせると、窓を移した瞬間に別の部屋が一瞬映る。
     std::vector<Assigned> shown;
-    for (const auto kind : {ViewKind::Sharp, ViewKind::Wide, ViewKind::Unplaced}) {
+    for (const auto kind : {ViewKind::Sharp, ViewKind::Unplaced, ViewKind::Wide}) {
         const auto& window = WindowOf(kind);
         for (const auto* room : valid) {
             const auto& r = room->Region();
-            if ((!frame.authoring && room->placed != (kind != ViewKind::Unplaced)) ||
-                std::any_of(shown.begin(), shown.end(), [room](const Assigned& a) { return a.room == room; }) ||
-                !window.Contains(room->x, room->y, room->x + r.cols, room->y + r.rows)) { continue; }
-            shown.push_back({room, kind});
+            if (std::any_of(shown.begin(), shown.end(), [room](const Assigned& a) { return a.room == room; })) { continue; }
+            const bool fits = !window.regionId.empty() ? window.valid && room->regionId == window.regionId
+                : (frame.authoring || room->placed == (kind != ViewKind::Unplaced)) && window.Contains(room->x, room->y, room->x + r.cols, room->y + r.rows);
+            if (fits) { shown.push_back({room, kind}); }
         }
     }
 
@@ -292,6 +344,7 @@ void Screen3DStage::Render(HIKARI::WorldView& world, const std::vector<StageRoom
 
     // 5〜7. 捕捉と画面の結び、事件、部品、特効。
     if (!SyncCaptures(world, shown, stage.palette, flashAmount_ * fade(flashStart_, kFlashSeconds))) { return; }
+    if (!frame.authoring) { TraceFrame(); }
     if (frame.simulated) { worldEffects_.Observe(*frame.snapshot); } else { worldEffects_.Reset(); }
     SubmitParts(world, valid, shown, *frame.snapshot, stage.palette, fx.enabled && fx.smear, now, frame.simulated);
     PlayEffects(world, fx, frame.simulated, now);
@@ -311,6 +364,283 @@ void Screen3DStage::Render(HIKARI::WorldView& world, const std::vector<StageRoom
         " ready=" + std::to_string(ready) + " gpuFailed=" + std::to_string(failedCaptures) + " screens=" + std::to_string(bound_.size()) +
         " rooms=" + std::to_string(shown.size()) + " models=" + std::to_string(accepted_) + " rejected=" + std::to_string(failed_) +
         " fxRejected=" + std::to_string(fxRejected_);
+}
+
+namespace {
+using F3 = HIKARI::GameProjectFloat3;
+// 四元数 q で v を回す（v' = v + 2w(q×v) + 2q×(q×v)）。inverse は共役で戻す。
+F3 Rotate(const HIKARI::GameProjectQuaternion& q, const F3& v, bool inverse) {
+    const double w = q.w, x = inverse ? -q.x : q.x, y = inverse ? -q.y : q.y, z = inverse ? -q.z : q.z;
+    const double cx = 2 * (y * v.z - z * v.y), cy = 2 * (z * v.x - x * v.z), cz = 2 * (x * v.y - y * v.x);
+    return {static_cast<float>(v.x + w * cx + (y * cz - z * cy)), static_cast<float>(v.y + w * cy + (z * cx - x * cz)),
+            static_cast<float>(v.z + w * cz + (x * cy - y * cx))};
+}
+F3 ToWorld(const HIKARI::GameProjectTransform& t, double x, double y, double z) {
+    const auto r = Rotate(t.rotation, {static_cast<float>(x * t.scale.x), static_cast<float>(y * t.scale.y), static_cast<float>(z * t.scale.z)}, false);
+    return {r.x + t.position.x, r.y + t.position.y, r.z + t.position.z};
+}
+F3 ToLocal(const HIKARI::GameProjectTransform& t, const F3& p) {
+    const auto r = Rotate(t.rotation, {p.x - t.position.x, p.y - t.position.y, p.z - t.position.z}, true);
+    const auto safe = [](float s) { return std::abs(s) > 1e-6f ? s : 1.f; };
+    return {r.x / safe(t.scale.x), r.y / safe(t.scale.y), r.z / safe(t.scale.z)};
+}
+// 線分 a→b が軸平行の箱を通るか（両端の少し手前までで判定し、画面自体の面は数えない）。
+bool SegmentHitsBox(const F3& a, const F3& b, const double lo[3], const double hi[3]) {
+    const double p[3]{a.x, a.y, a.z}, d[3]{b.x - a.x, b.y - a.y, b.z - a.z};
+    double t0 = 0, t1 = .97;
+    for (int i = 0; i < 3; ++i) {
+        if (std::abs(d[i]) < 1e-9) { if (p[i] < lo[i] || p[i] > hi[i]) { return false; } continue; }
+        double ta = (lo[i] - p[i]) / d[i], tb = (hi[i] - p[i]) / d[i];
+        if (ta > tb) { std::swap(ta, tb); }
+        t0 = (std::max)(t0, ta); t1 = (std::min)(t1, tb);
+        if (t0 > t1) { return false; }
+    }
+    return true;
+}
+// 游戏镜头の基底（前・右・上）と、画の半分の幅・高さの正接。点を画の座標（-1〜1）と奥行きへ移す。
+struct ViewBasis {
+    double eye[3]{}, f[3]{}, r[3]{}, u[3]{}, tx = 1, ty = 1;
+    bool valid = false;
+    // 奥行き 0.05 より手前の点は 0.05 として写す（画の外へ大きく振れ、重なりの判定では広めに出る）。
+    std::pair<double, double> ToView(const F3& q, double* depth = nullptr) const {
+        const double d[3]{q.x - eye[0], q.y - eye[1], q.z - eye[2]};
+        const double raw = d[0] * f[0] + d[1] * f[1] + d[2] * f[2];
+        if (depth) { *depth = raw; }
+        const double z = (std::max)(raw, .05);
+        return {(d[0] * r[0] + d[1] * r[1] + d[2] * r[2]) / (z * tx), (d[0] * u[0] + d[1] * u[1] + d[2] * u[2]) / (z * ty)};
+    }
+};
+ViewBasis MakeBasis(const HIKARI::GameProjectCameraPose& pose) {
+    ViewBasis b;
+    const double f[3]{pose.target.x - pose.eye.x, pose.target.y - pose.eye.y, pose.target.z - pose.eye.z};
+    const double fl = std::sqrt(f[0] * f[0] + f[1] * f[1] + f[2] * f[2]);
+    b.ty = std::tan(pose.verticalFovRadians * .5); b.tx = b.ty * (std::max)(static_cast<double>(pose.aspectRatio), .1);
+    if (fl < 1e-6 || !(b.ty > 0)) { return b; }
+    for (int i = 0; i < 3; ++i) { b.f[i] = f[i] / fl; }
+    const double r[3]{b.f[1] * pose.up.z - b.f[2] * pose.up.y, b.f[2] * pose.up.x - b.f[0] * pose.up.z, b.f[0] * pose.up.y - b.f[1] * pose.up.x};
+    const double rl = std::sqrt(r[0] * r[0] + r[1] * r[1] + r[2] * r[2]);
+    if (rl < 1e-6) { return b; }
+    for (int i = 0; i < 3; ++i) { b.r[i] = r[i] / rl; }
+    b.u[0] = b.r[1] * b.f[2] - b.r[2] * b.f[1]; b.u[1] = b.r[2] * b.f[0] - b.r[0] * b.f[2]; b.u[2] = b.r[0] * b.f[1] - b.r[1] * b.f[0];
+    b.eye[0] = pose.eye.x; b.eye[1] = pose.eye.y; b.eye[2] = pose.eye.z;
+    b.valid = true;
+    return b;
+}
+// 電視の筐体の見積もりの箱（局所・縮尺前）。画面の寸法から：縁を含めた幅、原点（筐体の下）から画面の上の縁の少し上まで、
+// 画面の正面から奥へ。
+void BodyBox(const ScreenSurface& s, double lo[3], double hi[3]) {
+    lo[0] = s.centerX - s.width * .65; lo[1] = 0; lo[2] = s.centerZ - s.width * .8;
+    hi[0] = s.centerX + s.width * .65; hi[1] = s.centerY + s.height * .75; hi[2] = s.centerZ;
+}
+} // namespace
+
+ScreenOnCamera ProjectScreen(const HIKARI::GameProjectCameraPose& pose, const HIKARI::GameProjectTransform& tv, const ScreenSurface& s) {
+    ScreenOnCamera out;
+    const auto basis = MakeBasis(pose);
+    if (!basis.valid) { return out; }
+    // 向き：画面の法線（局所 +Z）と镜头への向きの余弦。裏向きはどこにも写らない扱い。
+    const auto center = ToWorld(tv, s.centerX, s.centerY, s.centerZ);
+    const auto normal = Rotate(tv.rotation, {0, 0, 1}, false);
+    const double ex = basis.eye[0] - center.x, ey = basis.eye[1] - center.y, ez = basis.eye[2] - center.z;
+    const double el = std::sqrt(ex * ex + ey * ey + ez * ez);
+    out.facing = el > 1e-6 ? (normal.x * ex + normal.y * ey + normal.z * ez) / el : 0;
+    out.depth = -(ex * basis.f[0] + ey * basis.f[1] + ez * basis.f[2]);
+    if (out.facing <= .05 || out.depth <= .05) { return out; }
+    const auto c = basis.ToView(center);
+    out.centerX = c.first; out.centerY = c.second;
+    // 四隅を画へ写し、画の枠（-1〜1）で切り取った多角形の面積を画の面積（4）で割る。
+    constexpr std::pair<double, double> kCorners[]{{-.5, -.5}, {.5, -.5}, {.5, .5}, {-.5, .5}};
+    std::vector<std::pair<double, double>> poly;
+    for (const auto& [a, b] : kCorners) { poly.push_back(basis.ToView(ToWorld(tv, s.centerX + a * s.width, s.centerY + b * s.height, s.centerZ))); }
+    for (int edge = 0; edge < 4 && !poly.empty(); ++edge) {
+        const int axis = edge / 2; const double sign = edge % 2 ? -1.0 : 1.0;   // x≤1, x≥-1, y≤1, y≥-1 の順
+        const auto inside = [&](const std::pair<double, double>& q) { return sign * (axis ? q.second : q.first) <= 1; };
+        std::vector<std::pair<double, double>> clipped;
+        for (size_t i = 0; i < poly.size(); ++i) {
+            const auto& a = poly[i]; const auto& b = poly[(i + 1) % poly.size()];
+            if (inside(a)) { clipped.push_back(a); }
+            if (inside(a) != inside(b)) {
+                const double va = axis ? a.second : a.first, vb = axis ? b.second : b.first;
+                const double t = (sign - va) / (vb - va);
+                clipped.push_back({a.first + (b.first - a.first) * t, a.second + (b.second - a.second) * t});
+            }
+        }
+        poly = std::move(clipped);
+    }
+    double area = 0;
+    for (size_t i = 0; i < poly.size(); ++i) {
+        const auto& a = poly[i]; const auto& b = poly[(i + 1) % poly.size()];
+        area += a.first * b.second - b.first * a.second;
+    }
+    out.coverage = std::abs(area) * .5 / 4;
+    return out;
+}
+
+void Screen3DStage::Inspect(HIKARI::WorldView& world, const std::vector<const StageRoom*>& rooms, const StageFrame& frame) {
+    seen_.clear();
+    HIKARI::GameProjectCameraPose pose{};
+    if (frame.authoring || !world.GetRuntimeSession().IsPlayActive() || !world.GetCamera().GetRenderedPose(pose)) { return; }
+    struct Item { const StageRoom* room; HIKARI::GameProjectTransform tv; };
+    std::vector<Item> items;
+    for (const auto* room : rooms) {
+        HIKARI::GameProjectTransform tv{};
+        const auto object = world.FindSceneObject(room->configuration.screenObject);
+        if (room->placed && object.IsValid() && object.GetWorldTransform(tv)) { items.push_back({room, tv}); }
+    }
+    // 画面の点から镜头への線が、他の電視の箱（筐体の見積もり。grow だけ太らせる）を通るか。
+    const auto hidden = [&](const Item& item, double u, double v, double grow) {
+        const auto& s = item.room->surface;
+        const auto point = ToWorld(item.tv, s.centerX + u * s.width, s.centerY + v * s.height, s.centerZ);
+        for (const auto& other : items) {
+            if (other.room == item.room || other.room->configuration.screenObject == item.room->configuration.screenObject) { continue; }
+            double lo[3], hi[3]; BodyBox(other.room->surface, lo, hi);
+            for (int i = 0; i < 3; ++i) {
+                const double scale = std::abs(i == 0 ? other.tv.scale.x : i == 1 ? other.tv.scale.y : other.tv.scale.z);
+                const double g = scale > 1e-6 ? grow / scale : 0;
+                lo[i] -= g; hi[i] += g;
+            }
+            if (SegmentHitsBox(ToLocal(other.tv, pose.eye), ToLocal(other.tv, point), lo, hi)) { return true; }
+        }
+        return false;
+    };
+    for (const auto& item : items) {
+        Seen seen;
+        seen.view = ProjectScreen(pose, item.tv, item.room->surface);
+        if (seen.view.coverage > 0) {
+            // 遮りの標本：画面の 3×3 の点のうち隠れている数（目立ち具合の割引に使う）。
+            constexpr double kSamples[]{-.4, 0.0, .4};
+            for (const double a : kSamples) for (const double b : kSamples) { seen.blocked += hidden(item, a, b, 0) ? 1 : 0; }
+        }
+        seen_[item.room->regionId] = seen;
+    }
+}
+
+void Screen3DStage::ChooseFocus(const StageFrame& frame) {
+    // 切り替えの演出の間は、出る部屋と入る部屋を清晰に保つ（道筋はどの瞬間もこの二台のどちらかが画の半分以上に入る
+    // ように作ってある）。镜头が大きく回る間に目立つ画面が替わるたびに清晰の窓を移すと、画面の細かさが行き来する。
+    // 今どちらかが入っている枠はそのまま、空いている方の枠へもう一部屋を入れる。
+    if (!travel_[0].empty()) {
+        auto next = focus_;
+        for (const auto& id : travel_) {
+            if (id.empty() || next[0] == id || next[1] == id) { continue; }
+            auto& slot = next[0] != travel_[0] && next[0] != travel_[1] ? next[0] : next[1];
+            slot = id;
+        }
+        focus_ = next;
+        return;
+    }
+    // 目立ち具合：画に占める割合を、遮られた分だけ割り引く。游戏镜头が無い時は操作中の部屋だけを清晰にする。
+    const auto score = [&](std::string_view id) {
+        const auto found = seen_.find(id);
+        return found == seen_.end() ? 0.0 : found->second.view.coverage * (1 - found->second.blocked / 9.0);
+    };
+    if (seen_.empty()) { focus_ = {frame.activeRegion, std::string{}}; return; }
+    constexpr double kVisible = .003, kChallenge = 1.3;
+    std::vector<std::pair<double, std::string>> ranked;
+    for (const auto& [id, seen] : seen_) { if (const double value = score(id); value > kVisible) { ranked.emplace_back(value, id); } }
+    std::sort(ranked.begin(), ranked.end(), [](const auto& a, const auto& b) { return a.first > b.first; });
+    // 今の二部屋は保ち、外の部屋が弱い方の 1.3 倍を超えて写った時だけ入れ替える（見えなくなった部屋は 0 なので、
+    // 写っている部屋が来ればすぐ替わる）。空いた枠は大きい順に埋める。一度埋まった枠は空にしない：副窓の捕捉を
+    // 消して作り直すと、作り直した最初のフレームは画面が空になり点滅する。
+    auto next = focus_;
+    for (const auto& [value, id] : ranked) {
+        if (id == next[0] || id == next[1]) { continue; }
+        if (next[0].empty()) { next[0] = id; continue; }
+        if (next[1].empty()) { next[1] = id; continue; }
+        auto& weakest = score(next[0]) <= score(next[1]) ? next[0] : next[1];
+        if (value > score(weakest) * kChallenge) { weakest = id; }
+    }
+    if (next[0].empty()) { std::swap(next[0], next[1]); }
+    if (next[0].empty()) { next[0] = frame.activeRegion; }
+    focus_ = next;
+}
+
+void Screen3DStage::ChooseProtected(std::map<uint64_t, Binding>& next) const {
+    // 游戏镜头が無い時（編集中）は従来どおり全画面に掛ける（引擎が面積の大きい順に上限まで選ぶ）。
+    if (seen_.empty()) { for (auto& [id, binding] : next) { binding.protect = true; } return; }
+    // 保護の有無で画面の見え方が大きく変わる（守らない画面は後処理で地が黒くなる）ので、写っている画面は全部守る。
+    // 他の電視などに一部が隠れていても守ってよい：引擎は保護を画素ごとに場景の深度で確かめ、画面の前にある物の上では
+    // 外す（前の電視の上に画面が透けない）。守る・外すが切り替わるのは画の外へ出る時と裏を向く時だけになる。
+    const bool travelling = !travel_[0].empty();
+    struct Candidate { uint64_t id; double coverage; bool was, travel; };
+    std::vector<Candidate> eligible;
+    for (auto& [id, binding] : next) {
+        binding.protect = false;
+        const auto seen = seen_.find(binding.regionId);
+        if (seen == seen_.end()) { continue; }
+        const auto old = bound_.find(id);
+        const bool was = old != bound_.end() && old->second.protect;
+        const bool travel = travelling && (binding.regionId == travel_[0] || binding.regionId == travel_[1]);
+        const auto& v = seen->second;
+        if (v.view.coverage <= 0 || v.view.facing <= .05) { continue; }
+        eligible.push_back({id, v.view.coverage, was, travel});
+    }
+    // 上限（kMaxProtectedScreens）を超える時だけ選ぶ：演出の間は出る部屋・入る部屋を先に、次に保っていた画面、残りは
+    // 大きい順。演出の外では、外の画面が選んだ中の最小の 1.6 倍を超えた時だけ入れ替える。
+    std::sort(eligible.begin(), eligible.end(), [](const auto& a, const auto& b) {
+        if (a.travel != b.travel) { return a.travel; }
+        if (a.was != b.was) { return a.was; }
+        return a.coverage > b.coverage;
+    });
+    std::vector<Candidate> chosen(eligible.begin(), eligible.begin() + static_cast<std::ptrdiff_t>((std::min)(eligible.size(), kMaxProtectedScreens)));
+    for (size_t i = chosen.size(); i < eligible.size() && !travelling; ++i) {
+        auto smallest = std::min_element(chosen.begin(), chosen.end(), [](const auto& a, const auto& b) { return a.coverage < b.coverage; });
+        if (smallest != chosen.end() && eligible[i].coverage > smallest->coverage * 1.6) { *smallest = eligible[i]; }
+    }
+    for (const auto& candidate : chosen) { next[candidate.id].protect = true; }
+}
+
+void Screen3DStage::TraceFrame() {
+    static const bool enabled = std::getenv("TD2_SCREEN_TRACE") != nullptr;
+    traceFrame_ = frame_;
+    if (!enabled) { return; }
+    std::string state = "focus=" + focus_[0] + "," + focus_[1] + " wide=" + wideCenter_ + " protect=";
+    std::vector<std::string> kinds, protect;
+    int moved = 0;
+    for (const auto& [id, binding] : bound_) {
+        const auto view = std::find_if(views_.begin(), views_.end(), [&](const View& v) { return v.handle.value == binding.capture.value; });
+        const char kind = view == views_.end() ? '?' : view->kind == ViewKind::Sharp ? 'S' : view->kind == ViewKind::Unplaced ? 'U' : 'W';
+        const auto short_id = binding.regionId.substr(binding.regionId.find('.') + 1);
+        kinds.push_back(short_id + ":" + kind);
+        if (binding.protect) {
+            const auto seen = seen_.find(binding.regionId);
+            protect.push_back(short_id);
+        }
+        const auto old = traceRects_.find(id);
+        if (old != traceRects_.end() && std::memcmp(&old->second, &binding.rect, sizeof(binding.rect)) != 0) { ++moved; }
+        traceRects_[id] = binding.rect;
+    }
+    // 保護が変わった画面ごとに理由を残す（遮り・裏向き・小さい・上限か待ち・窓から外れた）。
+    std::map<std::string, bool, std::less<>> nowProtect;
+    for (const auto& [id, binding] : bound_) { nowProtect[binding.regionId] = binding.protect; }
+    for (const auto& [region, on] : nowProtect) {
+        const auto old = traceProtect_.find(region);
+        if (old != traceProtect_.end() && old->second == on) { continue; }
+        std::string reason = "on";
+        if (!on) {
+            const auto seen = seen_.find(region);
+            reason = seen == seen_.end() ? "unseen" : seen->second.view.facing <= .05 ? "backface"
+                : seen->second.view.coverage < .002 ? "small" : "limit-or-delay";
+        }
+        std::fprintf(stderr, "[TD2 protect-trace] n=%zu region=%s %s\n", traceFrame_, region.c_str(), reason.c_str());
+    }
+    for (const auto& [region, on] : traceProtect_) {
+        if (on && !nowProtect.contains(region)) { std::fprintf(stderr, "[TD2 protect-trace] n=%zu region=%s unbound\n", traceFrame_, region.c_str()); }
+    }
+    traceProtect_ = std::move(nowProtect);
+    for (const auto& p : protect) { state += p + " "; }
+    // 画に写っているのに結ばれていない画面（周りの窓から外れている）。
+    state += "visibleUnbound=";
+    for (const auto& [region, seen] : seen_) {
+        const bool bound = std::any_of(bound_.begin(), bound_.end(), [&](const auto& item) { return item.second.regionId == region; });
+        if (!bound && seen.view.coverage > .0005) { state += region.substr(region.find('.') + 1) + "(" + std::to_string(static_cast<int>(seen.view.coverage * 1000)) + ") "; }
+    }
+    state += "bind=";
+    for (const auto& k : kinds) { state += k + " "; }
+    if (state != traceLast_ || moved) {
+        std::fprintf(stderr, "[TD2 screen-trace] n=%zu moved=%d %s\n", traceFrame_, moved, state.c_str());
+        traceLast_ = state;
+    }
 }
 
 bool Screen3DStage::SyncCaptures(HIKARI::WorldView& world, const std::vector<Assigned>& screens, int palette, double flash) {
@@ -379,8 +709,10 @@ bool Screen3DStage::SyncCaptures(HIKARI::WorldView& world, const std::vector<Ass
         const HIKARI::GameProjectSceneCaptureSourceRect rect{
             static_cast<float>((room.x - window.x) / window.cols), static_cast<float>((room.y - window.y) / window.rows),
             static_cast<float>(r.cols / window.cols), static_cast<float>(r.rows / window.rows)};
-        next[screen.GetHandle().value] = {screen.GetHandle(), view.handle, config.screenSlot, rect};
+        next[screen.GetHandle().value] = {screen.GetHandle(), view.handle, config.screenSlot, rect, false, room.regionId};
     }
+    // 保護は前のフレームに描いた镜头で測った見え方で選ぶ（1 フレームの遅れは入りと出の幅に収まる）。
+    ChooseProtected(next);
     for (const auto& [id, old] : bound_) {
         const auto found = next.find(id);
         if ((found == next.end() || found->second.slot != old.slot) && world.FindObject(old.object).IsValid()) {
@@ -390,11 +722,12 @@ bool Screen3DStage::SyncCaptures(HIKARI::WorldView& world, const std::vector<Ass
     for (const auto& [id, binding] : next) {
         const auto old = bound_.find(id);
         if (old != bound_.end() && old->second.capture.value == binding.capture.value && old->second.slot == binding.slot &&
-            std::memcmp(&old->second.rect, &binding.rect, sizeof(binding.rect)) == 0) { continue; }
+            std::memcmp(&old->second.rect, &binding.rect, sizeof(binding.rect)) == 0 && old->second.protect == binding.protect) { continue; }
         HIKARI::GameProjectSceneCaptureMaterialRegionBindingDesc desc{};
         desc.capture = binding.capture; desc.modelObject = binding.object; desc.sourceRect = binding.rect;
         std::memcpy(desc.materialSlotName, binding.slot.c_str(), binding.slot.size() + 1);
-        desc.flags = HIKARI::GameProjectSceneCaptureMaterialBindingFlags(HIKARI::GameProjectSceneCaptureMaterialBindingFlag::ProtectReadability);
+        desc.flags = binding.protect ? HIKARI::GameProjectSceneCaptureMaterialBindingFlags(HIKARI::GameProjectSceneCaptureMaterialBindingFlag::ProtectReadability)
+                                     : HIKARI::GameProjectSceneCaptureMaterialBindingFlags(HIKARI::GameProjectSceneCaptureMaterialBindingFlag::None);
         if (!captures.BindMaterialRegion(desc)) { status_ = "屏幕3D绑定失败：" + binding.slot; bound_ = std::move(next); return false; }
     }
     bound_ = std::move(next);
@@ -457,9 +790,11 @@ void Screen3DStage::SubmitParts(HIKARI::WorldView& world, const std::vector<cons
     // 通電・実体が変わった時刻は描かない部屋の装置も覚える（後で画面に入った時に古い変化を動かし直さない）。
     // 編集中（模擬していない）は時刻が進まないので、動きを付けず最終の姿にする。
     for (const auto& device : snapshot.devices) {
-        auto [memory, fresh] = deviceMemory_.try_emplace(device.id, DeviceMemory{device.powered, device.solid});
-        if (!fresh && (memory->second.powered != device.powered || memory->second.solid != device.solid)) {
-            memory->second = {device.powered, device.solid, animate ? now : -1e9};
+        // 弾簧は「使える（冷却が終わった）」の変化も覚える（満ちた瞬間に矢印を弾ませる）。
+        const bool ready = device.kind == Rules::DeviceKind::Spring && device.cooldown <= 0;
+        auto [memory, fresh] = deviceMemory_.try_emplace(device.id, DeviceMemory{device.powered, device.solid, ready});
+        if (!fresh && (memory->second.powered != device.powered || memory->second.solid != device.solid || memory->second.ready != ready)) {
+            memory->second = {device.powered, device.solid, ready, animate ? now : -1e9};
         }
         const auto slash = device.id.find('/');
         const auto room = byRegion.find(std::string_view(device.id).substr(0, slash));

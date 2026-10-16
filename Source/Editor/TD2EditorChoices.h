@@ -26,6 +26,16 @@ inline std::string ShortChoiceLabel(std::string_view value, size_t maximum = 18)
 
 struct EditorChoice { std::string id, label; bool selected = false; };
 
+// 候補を全部並べる（頁送りなし。面板自体が縦に流れる）。長い一覧は呼び手が検索欄で絞る。
+inline int DrawChoices(IEditorWorkspaceUi& ui, const std::vector<EditorChoice>& choices) {
+    if (choices.empty()) { ui.Text("没有可选项"); return -1; }
+    int chosen = -1;
+    for (size_t i = 0; i < choices.size(); ++i) {
+        if (ui.Selectable(choices[i].id, ShortChoiceLabel(choices[i].label, 24), choices[i].selected)) { chosen = static_cast<int>(i); }
+    }
+    return chosen;
+}
+
 // 一度に表示する候補数を固定し、資産・相機・装置の長い一覧で下の保存操作を隠さない。
 inline int DrawPagedChoices(IEditorWorkspaceUi& ui, const std::vector<EditorChoice>& choices, int& page,
                             std::string_view group, int pageSize = 5) {

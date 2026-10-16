@@ -20,6 +20,9 @@ public:
         fields.Float("spawnX", "出生点左上 X（格）", spawnX_, 0.0f, 64.0f);
         fields.Float("spawnY", "出生点左上 Y（格）", spawnY_, 0.0f, 64.0f);
         fields.SceneObject("cameraObject", "区域共享机位", cameraObject_);
+        // 編集器が机位を自動で置いた時の姿勢（"x y z rx ry rz"）。今の机位と違えば作者が手で調整したとみなし、
+        // 重新生成で上書きしない。空は作者が自分で置いた机位。
+        fields.Text("cameraAuto", "机位自动记录（自动）", cameraAuto_);
         fields.Bool("entryRegion", "初始可控制区块", entryRegion_);
         fields.Bool("worldPlaced", "已布置到世界", worldPlaced_);
         fields.Int("worldX", "世界格 X", worldX_);
@@ -33,6 +36,13 @@ public:
         fields.Int("screenMaterialIndex", "屏幕材质索引（自动）", screen_.materialIndex);
         fields.Text("screenModelAssetGuid", "屏幕模型身份（自动）", screen_.modelAssetGuid);
         // これはプロジェクトの初期編集範囲であり、SDK の受理寸法を保証する値ではない。
+        // 電視の局所での画面の中心と大きさ（m、縮尺前）。镜头が主角の画面上の位置と焦点を求めるのに使う。
+        // 布置の脚本が電視の型ごとに書く。既定値は ScreenKit の電視で一番多い型。
+        fields.Float("screenCenterX", "屏幕中心 X（局部）", screenGeometry_.centerX, -2, 2);
+        fields.Float("screenCenterY", "屏幕中心 Y（局部）", screenGeometry_.centerY, -2, 4);
+        fields.Float("screenCenterZ", "屏幕中心 Z（局部）", screenGeometry_.centerZ, -2, 2);
+        fields.Float("screenWidth", "屏幕宽（局部）", screenGeometry_.width, .05f, 8);
+        fields.Float("screenHeight", "屏幕高（局部）", screenGeometry_.height, .05f, 8);
         fields.Int("outputWidth", "屏幕目标宽度", screen_.outputWidth, 32, 2048);
         fields.Int("outputHeight", "屏幕目标高度", screen_.outputHeight, 32, 2048);
         fields.Note("格数据与电视缩放无关。修改行列后，明确重建测试网格；不要自动覆盖原数据。");
@@ -43,6 +53,8 @@ public:
 
     bool BuildDefinition(Rules::WorldDefinition& definition, std::string& error) const;
     uint64_t CameraObject() const noexcept { return cameraObject_; }
+    using ScreenGeometry = ScreenSurface;
+    const ScreenGeometry& Geometry() const noexcept { return screenGeometry_; }
     bool IsEntryRegion() const noexcept { return entryRegion_; }
     RegionPlacement Placement() const { return {region_.regionId, region_.cols, region_.rows, worldPlaced_, worldX_, worldY_}; }
     const ScreenConfiguration& Screen() const noexcept { return screen_; }
@@ -70,6 +82,8 @@ private:
     ScreenConfiguration screen_{};
     float spawnX_ = 0.5f, spawnY_ = 0.5f;
     uint64_t cameraObject_ = 0;
+    std::string cameraAuto_;
+    ScreenGeometry screenGeometry_{};
     bool entryRegion_ = true;
     // 未配置が既定。旧シーンを読み込んでも全テレビを原点へ重ねて参加させない。
     bool worldPlaced_ = false;

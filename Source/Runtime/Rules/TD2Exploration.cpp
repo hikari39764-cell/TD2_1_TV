@@ -114,6 +114,20 @@ void Exploration::Record(StepOutput output, ExplorationOutput& out) {
     for (auto& [region, events] : grouped) out.regions.push_back({region, std::move(events)});
 }
 
+bool Exploration::StepBack(std::string_view region, int direction) {
+    const auto* from = FindRegion(region);
+    if (!from || direction == 0) return false;
+    auto& body = state_.player;
+    const auto& p = from->placement;
+    const double edge = direction > 0 ? p.worldX + p.cols : p.worldX;
+    Rect back = body.rect;
+    back.x = edge - direction * .55 - back.w * .5;
+    if (RegionAt(back) != region) return false;
+    body.rect = back; body.vx = body.walkVx = 0; body.facing = -direction;
+    activeRegion_ = std::string(region); snapshotDirty_ = true;
+    return true;
+}
+
 const WorldSnapshot& Exploration::Snapshot() {
     if (snapshotDirty_) { snapshot_ = BuildSnapshot(world_, state_); snapshotDirty_ = false; }
     return snapshot_;

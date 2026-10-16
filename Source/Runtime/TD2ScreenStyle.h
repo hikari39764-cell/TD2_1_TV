@@ -32,16 +32,12 @@ public:
     const ScreenStyleSettings& Settings() const noexcept { return settings_; }
     void DescribeProperties(HIKARI::PropertyFields& fields) override {
         fields.Bool("enabled", "显示电视内3D画面", settings_.enabled);
-        // 切り替えの入口：押すとその場で描き方が変わる（Play 中も可）。原版は後処理を掛けない 3D 描画。
-        if (fields.IsInspecting()) {
-            static constexpr std::string_view kNames[]{"当前：原版（3D 原画面）", "当前：像素", "当前：素描"};
-            fields.Note(kNames[settings_.mode >= 0 && settings_.mode <= 2 ? settings_.mode : 1]);
-            if (fields.Button("原版")) { settings_.mode = static_cast<int>(ScreenStyleMode::Original); }
-            if (fields.Button("像素")) { settings_.mode = static_cast<int>(ScreenStyleMode::Pixel); }
-            if (fields.Button("素描")) { settings_.mode = static_cast<int>(ScreenStyleMode::Sketch); }
-        }
-        fields.Int("mode", "风格：0原版 1像素 2素描", settings_.mode, 0, 2);
-        fields.Int("palette", "配色：0墨蓝 1青绿", settings_.palette, 0, 1);
+        // 描き方と配色は名前付きの選択肢（Inspector では下拉、場景には名前で保存）。選ぶとその場で変わる（Play 中も可）。
+        // 並びは ScreenStyleMode と palette の値の順。保存名は場景に残るので、表示を変えたい時も名前は変えない。
+        static constexpr std::string_view kModeNames[]{"原版", "像素", "素描"};
+        static constexpr std::string_view kPaletteNames[]{"墨蓝", "青绿"};
+        fields.Choice("mode", "风格（原版为不加后处理的3D画面）", settings_.mode, kModeNames);
+        fields.Choice("palette", "配色", settings_.palette, kPaletteNames);
         fields.Float("outline", "像素轮廓", settings_.outline, 0, 2);
         fields.Float("shadow", "墙面投影（像素）", settings_.shadow, 0, 1);
         fields.Float("sketchDepth", "素描纵深（0平面 1立体）", settings_.sketchDepth, 0, 1);
@@ -52,7 +48,7 @@ public:
         if (fields.IsInspecting() && fields.Button("镜头复位")) { settings_.pitch = 7.0f; settings_.yaw = 0.0f; }
         fields.SceneObject("captureCameraObject", "舞台正交镜头（当前与相邻电视）", settings_.captureCameraObject);
         fields.SceneObject("wideCameraObject", "舞台正交镜头（周围电视，高度为主镜头3倍）", settings_.wideCameraObject);
-        fields.SceneObject("unplacedCameraObject", "舞台正交镜头（编辑时未布置的地图）", settings_.unplacedCameraObject);
+        fields.SceneObject("unplacedCameraObject", "舞台正交镜头（Play 时第二台清晰电视，高度同主镜头；编辑时未布置的地图）", settings_.unplacedCameraObject);
         fields.Note("挂在舞台镜头上是全部电视的设置；挂在某台电视的区域对象上只改那一台的风格（配色和镜头角度以舞台镜头为准）。"
                     "俯角和侧角同时较大时，竖墙会出现轻微错位。");
     }

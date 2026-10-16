@@ -83,6 +83,7 @@ void ScreenPresentationSystem::Update(HIKARI::WorldView& world, const HIKARI::Fr
             const auto placement = region.Placement();
             StageRoom room;
             room.owner = object.GetHandle(); room.regionId = placement.regionId; room.configuration = region.Screen();
+            room.surface = region.Geometry();
             room.style = globalStyle;
             if (const auto own = localStyles.find(object.GetHandle().value); own != localStyles.end()) {
                 room.style = own->second; room.style.captureCameraObject = globalStyle.captureCameraObject;
@@ -107,6 +108,7 @@ void ScreenPresentationSystem::Update(HIKARI::WorldView& world, const HIKARI::Fr
     stage.authoring = !playing;
     if (session) {
         stage.snapshot = &session->Snapshot(); stage.activeRegion = session->ActiveRegion(); stage.simulated = true;
+        (void)session->TravelRooms(stage.travelFrom, stage.travelTo);
     } else {
         // 世界に置いていない作者地図（机の画面など）は、世界の下に 1 格ずつ空けて横一列に並べる（隣り合わせない）。
         int left = 0, bottom = 0, maxCols = 1, maxRows = 1; bool any = false;

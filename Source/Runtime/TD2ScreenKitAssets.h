@@ -6,7 +6,7 @@
 #include <string_view>
 
 namespace TD2 {
-inline constexpr std::array<std::string_view, 92> kScreenKitParts{
+inline constexpr std::array<std::string_view, 93> kScreenKitParts{
     "Backdrop",
     "Backdrop_GridH1",
     "Backdrop_GridH2",
@@ -69,6 +69,7 @@ inline constexpr std::array<std::string_view, 92> kScreenKitParts{
     "Spring",
     "Spring_Arrow",
     "Spring_ArrowDim",
+    "Spring_Gauge",
     "Spring_Hot",
     "Spring_Off",
     "Terrain_Block1x1",
@@ -100,7 +101,7 @@ inline constexpr std::array<std::string_view, 92> kScreenKitParts{
     "Terrain_TopRun8LR",
     "Terrain_TopRun8R",
 };
-inline constexpr std::array<std::array<std::string_view, 92>, 2> kScreenKitGuids{{
+inline constexpr std::array<std::array<std::string_view, 93>, 2> kScreenKitGuids{{
     {{
         "d0570d8147e0a19421e95f250d12cb71",
         "48175433f9e9bc58270a8785d38327d8",
@@ -164,6 +165,7 @@ inline constexpr std::array<std::array<std::string_view, 92>, 2> kScreenKitGuids
         "7b09ef34a7f57dec1290146c8e6b8e1d",
         "99f9c510cf98f42f3206bdba1d62ecac",
         "c9119be5e21a8cc299b8a2c7c6e8738d",
+        "7a02a8f8c84685c53252cd167e5196f6",
         "001a5197bba0cf7278859a92fb681891",
         "65ee1db899e4cb0a2d3dfe8a6dacd211",
         "5c98722ee9ef39c546717a80a919d6fc",
@@ -258,6 +260,7 @@ inline constexpr std::array<std::array<std::string_view, 92>, 2> kScreenKitGuids
         "46b66aa88bd7149c7796813b89284492",
         "307d6e726c1c56dbe0df75144ac1bff9",
         "28d93d70b198943fa681db61770d99cf",
+        "334b3aa52da65ec7cf6d56492cf986bc",
         "ff8c020f3ea6cffc6f020dcd89bf1dcd",
         "943c75fc7b8d1b94626b860cb4942ff2",
         "b863f062ccc82c11170272d93475500c",

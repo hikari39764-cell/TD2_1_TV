@@ -86,3 +86,7 @@ __pycache__/
 # 画面スタイル試作の .blend は生成スクリプトから再作成できるためローカルに残す。
 /ArtSource/ScreenStyleStudy01/*.blend
 /ArtSource/ScreenStyleStudy02/*.blend
+
+# 外部の表示機モデル：確認画像と説明書きはローカルに残す。
+/ArtSource/ExternalDisplays01/Previews/
+/ArtSource/ExternalDisplays01/*.txt

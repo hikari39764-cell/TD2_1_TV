@@ -28,9 +28,9 @@ struct ScreenFxSettings {
     bool smear = true;        // 瞬移の時に主角の残像（潰れて消える二体）を置く
     float scale = 1.0f;       // 全体の大きさ（1 格基準）
     // 揺れ全体の倍率。既定は 0（揺れなし）：揺れは舞台カメラをずらすので、部屋の外の隣の地形が捕捉の端に入った
-    // 瞬間だけその落ち影が画面の縁に現れ、黒い帯がちらつく（2026-10-14 利用者の判断で試しに切る）。
+    // 瞬間だけその落ち影が画面の縁に現れ、黒い帯がちらつく。
     float shake = 0.0f;
-    float flash = 1.0f;       // 閃光全体の倍率
+    float flash = 0.0f;       // 閃光全体の倍率
     std::array<ScreenFxEntry, kScreenFxSlotCount> entries{};
     ScreenFxSettings() {
         for (size_t i = 0; i < entries.size(); ++i) {

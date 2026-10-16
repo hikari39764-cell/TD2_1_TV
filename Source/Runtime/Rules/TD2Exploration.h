@@ -34,6 +34,9 @@ public:
     // 世界座標の表示状態。進めた後に初めて読まれた時だけ作る（刻みごとには作らない）。
     const WorldSnapshot& Snapshot();
     bool Ready() const noexcept { return !activeRegion_.empty(); }
+    // 手動で押していた大区域の切り替えを起点まで戻した時：主角を元の区域の境の内側（半格余り）へ戻し、
+    // 元の区域を操作中に戻す。direction は越えた向き（+1 右、-1 左）。世界の時間や装置は巻き戻さない。
+    bool StepBack(std::string_view region, int direction);
 private:
     void BuildBoundaries();
     void Record(StepOutput output, ExplorationOutput& out);

@@ -78,12 +78,12 @@
 			"extensions":{
 				"KHR_materials_unlit":{}
 			},
-			"name":"K07_ink_ivory_shadow",
+			"name":"K07_ink_go_shadow",
 			"pbrMetallicRoughness":{
 				"baseColorFactor":[
-					0.3324515223503113,
-					0.34191441535949707,
-					0.30054378509521484,
+					0.013702083379030228,
+					0.2541520893573761,
+					0.06847816705703735,
 					1
 				],
 				"metallicFactor":0,
@@ -95,12 +95,12 @@
 			"extensions":{
 				"KHR_materials_unlit":{}
 			},
-			"name":"K07_ink_ivory_light",
+			"name":"K07_ink_go_light",
 			"pbrMetallicRoughness":{
 				"baseColorFactor":[
-					0.9046611785888672,
-					0.8631572127342224,
-					0.7681511640548706,
+					0.26635560393333435,
+					0.8879231214523315,
+					0.423267662525177,
 					1
 				],
 				"metallicFactor":0,
@@ -112,12 +112,12 @@
 			"extensions":{
 				"KHR_materials_unlit":{}
 			},
-			"name":"K07_ink_ivory",
+			"name":"K07_ink_go",
 			"pbrMetallicRoughness":{
 				"baseColorFactor":[
-					0.7230551242828369,
-					0.6653872728347778,
-					0.533276379108429,
+					0.04970656707882881,
+					0.637596845626831,
+					0.1946178376674652,
 					1
 				],
 				"metallicFactor":0,
@@ -268,14 +268,14 @@
 		{
 			"bufferView":9,
 			"componentType":5126,
-			"count":263,
+			"count":235,
 			"max":[
-				0.2800000011920929,
-				0.24500000476837158,
+				0.30000001192092896,
+				0.25,
 				-0.19999998807907104
 			],
 			"min":[
-				-0.2800000011920929,
+				-0.30000001192092896,
 				0.08500000089406967,
 				-0.5
 			],
@@ -284,19 +284,19 @@
 		{
 			"bufferView":10,
 			"componentType":5126,
-			"count":263,
+			"count":235,
 			"type":"VEC3"
 		},
 		{
 			"bufferView":11,
 			"componentType":5123,
-			"count":429,
+			"count":315,
 			"type":"SCALAR"
 		},
 		{
 			"bufferView":12,
 			"componentType":5126,
-			"count":251,
+			"count":235,
 			"max":[
 				0.46000000834465027,
 				0.3125,
@@ -304,7 +304,7 @@
 			],
 			"min":[
 				-0.46000000834465027,
-				0.10000000149011612,
+				0.10499999672174454,
 				-0.6600000262260437
 			],
 			"type":"VEC3"
@@ -312,26 +312,26 @@
 		{
 			"bufferView":13,
 			"componentType":5126,
-			"count":251,
+			"count":235,
 			"type":"VEC3"
 		},
 		{
 			"bufferView":14,
 			"componentType":5123,
-			"count":369,
+			"count":321,
 			"type":"SCALAR"
 		},
 		{
 			"bufferView":15,
 			"componentType":5126,
-			"count":94,
+			"count":106,
 			"max":[
-				0.2800000011920929,
-				0.24500000476837158,
+				0.30000001192092896,
+				0.25,
 				-0.19999998807907104
 			],
 			"min":[
-				-0.2800000011920929,
+				-0.30000001192092896,
 				0.10000000149011612,
 				-0.5
 			],
@@ -340,13 +340,13 @@
 		{
 			"bufferView":16,
 			"componentType":5126,
-			"count":94,
+			"count":106,
 			"type":"VEC3"
 		},
 		{
 			"bufferView":17,
 			"componentType":5123,
-			"count":126,
+			"count":144,
 			"type":"SCALAR"
 		}
 	],
@@ -407,62 +407,62 @@
 		},
 		{
 			"buffer":0,
-			"byteLength":3156,
+			"byteLength":2820,
 			"byteOffset":2572,
 			"target":34962
 		},
 		{
 			"buffer":0,
-			"byteLength":3156,
-			"byteOffset":5728,
+			"byteLength":2820,
+			"byteOffset":5392,
 			"target":34962
 		},
 		{
 			"buffer":0,
-			"byteLength":858,
-			"byteOffset":8884,
+			"byteLength":630,
+			"byteOffset":8212,
 			"target":34963
 		},
 		{
 			"buffer":0,
-			"byteLength":3012,
-			"byteOffset":9744,
+			"byteLength":2820,
+			"byteOffset":8844,
 			"target":34962
 		},
 		{
 			"buffer":0,
-			"byteLength":3012,
-			"byteOffset":12756,
+			"byteLength":2820,
+			"byteOffset":11664,
 			"target":34962
 		},
 		{
 			"buffer":0,
-			"byteLength":738,
-			"byteOffset":15768,
+			"byteLength":642,
+			"byteOffset":14484,
 			"target":34963
 		},
 		{
 			"buffer":0,
-			"byteLength":1128,
-			"byteOffset":16508,
+			"byteLength":1272,
+			"byteOffset":15128,
 			"target":34962
 		},
 		{
 			"buffer":0,
-			"byteLength":1128,
-			"byteOffset":17636,
+			"byteLength":1272,
+			"byteOffset":16400,
 			"target":34962
 		},
 		{
 			"buffer":0,
-			"byteLength":252,
-			"byteOffset":18764,
+			"byteLength":288,
+			"byteOffset":17672,
 			"target":34963
 		}
 	],
 	"buffers":[
 		{
-			"byteLength":19016,
+			"byteLength":17960,
 			"uri":"Spring_Hot.bin"
 		}
 	]

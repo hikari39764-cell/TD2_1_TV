@@ -46,7 +46,8 @@
     "2 工厂布景/货架电视墙",
     "3 灯光",
     "3 灯光/地图5",
-    "3 灯光/电视补光"
+    "3 灯光/电视补光",
+    "1 玩法/镜头与演出/镜头大区域"
   ],
   "environment": {
     "location": {
@@ -77,9 +78,9 @@
               "farBlurRadius1080pPixels": 12.0,
               "farTransition": 2.5,
               "focusDistance": 2.888,
-              "focusRange": 0.9,
+              "focusRange": 2.0,
               "nearBlurRadius1080pPixels": 8.0,
-              "nearTransition": 0.6
+              "nearTransition": 1.0
             },
             "enabled": true,
             "farClip": 2000.0,
@@ -11746,9 +11747,9 @@
       "sourcePrefabId": "",
       "transform": {
         "position": [
-          9.199999809265137,
+          12.399999618530273,
           0.0,
-          -15.199999809265137
+          -15.59999942779541
         ],
         "rotationEulerDeg": [
           0.0,
@@ -11785,9 +11786,9 @@
       "sourcePrefabId": "",
       "transform": {
         "position": [
-          9.21560001373291,
+          12.415599822998047,
           0.125,
-          -15.27869987487793
+          -15.678699493408203
         ],
         "rotationEulerDeg": [
           0.0,
@@ -11824,9 +11825,9 @@
       "sourcePrefabId": "",
       "transform": {
         "position": [
-          9.263799667358398,
+          12.463799476623535,
           0.7555000185966492,
-          -15.13379955291748
+          -15.533799171447754
         ],
         "rotationEulerDeg": [
           0.0,
@@ -11863,9 +11864,9 @@
       "sourcePrefabId": "",
       "transform": {
         "position": [
-          9.193099975585938,
+          12.393099784851074,
           1.614300012588501,
-          -15.18589973449707
+          -15.585899353027344
         ],
         "rotationEulerDeg": [
           0.0,
@@ -11902,9 +11903,9 @@
       "sourcePrefabId": "",
       "transform": {
         "position": [
-          9.193099975585938,
+          12.393099784851074,
           1.614300012588501,
-          -15.18589973449707
+          -15.585899353027344
         ],
         "rotationEulerDeg": [
           0.0,
@@ -11941,9 +11942,9 @@
       "sourcePrefabId": "",
       "transform": {
         "position": [
-          9.273599624633789,
+          12.473599433898926,
           2.120699882507324,
-          -15.174599647521973
+          -15.574599266052246
         ],
         "rotationEulerDeg": [
           0.0,
@@ -11980,9 +11981,9 @@
       "sourcePrefabId": "",
       "transform": {
         "position": [
-          9.240900039672852,
+          12.440899848937988,
           2.621999979019165,
-          -15.261300086975098
+          -15.661299705505371
         ],
         "rotationEulerDeg": [
           0.0,
@@ -12019,9 +12020,9 @@
       "sourcePrefabId": "",
       "transform": {
         "position": [
-          9.162199974060059,
+          12.362199783325195,
           3.2221999168395996,
-          -15.256400108337402
+          -15.656399726867676
         ],
         "rotationEulerDeg": [
           0.0,
@@ -12058,9 +12059,9 @@
       "sourcePrefabId": "",
       "transform": {
         "position": [
-          9.164400100708008,
+          12.364399909973145,
           3.9516000747680664,
-          -15.2431001663208
+          -15.643099784851074
         ],
         "rotationEulerDeg": [
           0.0,
@@ -12097,9 +12098,9 @@
       "sourcePrefabId": "",
       "transform": {
         "position": [
-          9.159600257873535,
+          12.359600067138672,
           4.627299785614014,
-          -15.277199745178223
+          -15.677199363708496
         ],
         "rotationEulerDeg": [
           0.0,
@@ -12136,9 +12137,9 @@
       "sourcePrefabId": "",
       "transform": {
         "position": [
-          9.152099609375,
+          12.352099418640137,
           5.22160005569458,
-          -15.210399627685547
+          -15.61039924621582
         ],
         "rotationEulerDeg": [
           0.0,
@@ -12175,9 +12176,9 @@
       "sourcePrefabId": "",
       "transform": {
         "position": [
-          9.152099609375,
+          12.352099418640137,
           5.22160005569458,
-          -15.210399627685547
+          -15.61039924621582
         ],
         "rotationEulerDeg": [
           0.0,
@@ -12214,9 +12215,9 @@
       "sourcePrefabId": "",
       "transform": {
         "position": [
-          9.217700004577637,
+          12.417699813842773,
           5.8491997718811035,
-          -15.177800178527832
+          -15.577799797058105
         ],
         "rotationEulerDeg": [
           0.0,
@@ -12253,9 +12254,9 @@
       "sourcePrefabId": "",
       "transform": {
         "position": [
-          9.147100448608398,
+          12.347100257873535,
           6.4257001876831055,
-          -15.276200294494629
+          -15.676199913024902
         ],
         "rotationEulerDeg": [
           0.0,
@@ -12292,9 +12293,9 @@
       "sourcePrefabId": "",
       "transform": {
         "position": [
-          9.229299545288086,
+          12.429299354553223,
           7.168000221252441,
-          -15.269200325012207
+          -15.66919994354248
         ],
         "rotationEulerDeg": [
           0.0,
@@ -12331,9 +12332,9 @@
       "sourcePrefabId": "",
       "transform": {
         "position": [
-          9.127599716186523,
+          12.32759952545166,
           8.162799835205078,
-          -15.126899719238281
+          -15.526899337768555
         ],
         "rotationEulerDeg": [
           0.0,
@@ -12370,9 +12371,9 @@
       "sourcePrefabId": "",
       "transform": {
         "position": [
-          9.13479995727539,
+          12.334799766540527,
           8.953100204467773,
-          -15.257100105285645
+          -15.657099723815918
         ],
         "rotationEulerDeg": [
           0.0,
@@ -13072,9 +13073,9 @@
       "sourcePrefabId": "",
       "transform": {
         "position": [
-          6.599999904632568,
+          8.300000190734863,
           0.0,
-          -20.200000762939453
+          -23.600000381469727
         ],
         "rotationEulerDeg": [
           0.0,
@@ -13111,9 +13112,9 @@
       "sourcePrefabId": "",
       "transform": {
         "position": [
-          6.6641998291015625,
+          8.3641996383667,
           0.125,
-          -20.144500732421875
+          -23.54450035095215
         ],
         "rotationEulerDeg": [
           0.0,
@@ -13150,9 +13151,9 @@
       "sourcePrefabId": "",
       "transform": {
         "position": [
-          6.667300224304199,
+          8.367300033569336,
           1.061900019645691,
-          -20.275100708007813
+          -23.675100326538086
         ],
         "rotationEulerDeg": [
           0.0,
@@ -13189,9 +13190,9 @@
       "sourcePrefabId": "",
       "transform": {
         "position": [
-          6.647299766540527,
+          8.347299575805664,
           1.962399959564209,
-          -20.235200881958008
+          -23.63520050048828
         ],
         "rotationEulerDeg": [
           0.0,
@@ -13228,9 +13229,9 @@
       "sourcePrefabId": "",
       "transform": {
         "position": [
-          6.647299766540527,
+          8.347299575805664,
           1.962399959564209,
-          -20.235200881958008
+          -23.63520050048828
         ],
         "rotationEulerDeg": [
           0.0,
@@ -13267,9 +13268,9 @@
       "sourcePrefabId": "",
       "transform": {
         "position": [
-          6.607100009918213,
+          8.307100296020508,
           2.5160999298095703,
-          -20.1875
+          -23.587499618530273
         ],
         "rotationEulerDeg": [
           0.0,
@@ -13306,9 +13307,9 @@
       "sourcePrefabId": "",
       "transform": {
         "position": [
-          6.637599945068359,
+          8.337599754333496,
           3.2295000553131104,
-          -20.23710060119629
+          -23.637100219726563
         ],
         "rotationEulerDeg": [
           0.0,
@@ -13345,9 +13346,9 @@
       "sourcePrefabId": "",
       "transform": {
         "position": [
-          6.529799938201904,
+          8.2298002243042,
           3.962899923324585,
-          -20.22599983215332
+          -23.625999450683594
         ],
         "rotationEulerDeg": [
           0.0,
@@ -13384,9 +13385,9 @@
       "sourcePrefabId": "",
       "transform": {
         "position": [
-          6.527299880981445,
+          8.227299690246582,
           4.7179999351501465,
-          -20.241300582885742
+          -23.641300201416016
         ],
         "rotationEulerDeg": [
           0.0,
@@ -13423,9 +13424,9 @@
       "sourcePrefabId": "",
       "transform": {
         "position": [
-          6.647500038146973,
+          8.34749984741211,
           5.389200210571289,
-          -20.176599502563477
+          -23.57659912109375
         ],
         "rotationEulerDeg": [
           0.0,
@@ -15366,9 +15367,9 @@
       "sourcePrefabId": "",
       "transform": {
         "position": [
-          6.097235679626465,
-          0.49673348665237427,
-          -12.258232116699219
+          -0.30000001192092896,
+          0.4966999888420105,
+          -15.199999809265137
         ],
         "rotationEulerDeg": [
           3.904043197631836,
@@ -17825,20 +17826,20 @@
             "castsShadows": false,
             "color": [
               1.0,
-              1.0,
-              1.0
+              0.86,
+              0.72
             ],
             "cookie": "",
             "enabled": true,
             "height": 1.0,
             "iesProfile": "",
             "innerConeAngleDegrees": 25.0,
-            "intensity": 800.0,
+            "intensity": 120.0,
             "intensityUnit": "SceneRelative",
             "length": 1.0,
             "outerConeAngleDegrees": 35.0,
             "priority": 0,
-            "range": 10.0,
+            "range": 2.5,
             "sceneRelativeIntensity": 1.0,
             "sourceRadius": 0.0,
             "type": "Point"
@@ -17864,9 +17865,9 @@
       "sourcePrefabId": "",
       "transform": {
         "position": [
-          4.645941257476807,
-          2.0,
-          -18.357622146606445
+          4.0,
+          1.9500000476837158,
+          -20.299999237060547
         ],
         "rotationEulerDeg": [
           0.0,
@@ -17911,9 +17912,9 @@
               "id": 0
             },
             "enabled": true,
-            "mode": 2,
+            "mode": "素描",
             "outline": 1.0,
-            "palette": 0,
+            "palette": "墨蓝",
             "pitch": 0.0,
             "shadow": 1.0,
             "unplacedCameraObject": {
@@ -17977,9 +17978,9 @@
       "sourcePrefabId": "",
       "transform": {
         "position": [
-          4.5,
+          5.300000190734863,
           0.0,
-          -16.0
+          -17.0
         ],
         "rotationEulerDeg": [
           0.0,
@@ -18008,6 +18009,7 @@
         {
           "id": 2,
           "properties": {
+            "cameraAuto": "1.043 5.024 -4.501 6.66 -161.53 0.00",
             "cameraObject": {
               "$hikariRef": "SceneObject",
               "id": 6083
@@ -18021,6 +18023,10 @@
             "regionId": "map5.c3_r3",
             "rows": 14,
             "screenBrightness": 2.2,
+            "screenCenterX": 0.0,
+            "screenCenterY": 0.48,
+            "screenCenterZ": 0.304,
+            "screenHeight": 0.56,
             "screenMaterialIndex": -1,
             "screenModelAssetGuid": "",
             "screenObject": {
@@ -18028,6 +18034,7 @@
               "id": 6021
             },
             "screenSlot": "TD2_Screen",
+            "screenWidth": 0.96,
             "spawnX": 13.1875,
             "spawnY": 10.125,
             "tilePixels": 64,
@@ -18048,13 +18055,90 @@
       "sourcePrefabId": "",
       "transform": {
         "position": [
-          1.0,
-          4.599999904632568,
-          -7.0
+          -0.20000000298023224,
+          4.119999885559082,
+          -8.25
+        ],
+        "rotationEulerDeg": [
+          -2.0,
+          6.0,
+          0.0
+        ],
+        "scale": [
+          1.0800000429153442,
+          1.0800000429153442,
+          1.0800000429153442
+        ]
+      }
+    },
+    {
+      "components": [
+        {
+          "id": 1,
+          "properties": {
+            "assetId": "28aa6fabccdc0527b4833a67e3818076",
+            "castShadow": true,
+            "receiveShadow": true,
+            "visible": true
+          },
+          "type": "ModelComponent"
+        },
+        {
+          "id": 2,
+          "properties": {
+            "cameraAuto": "-0.136 4.600 -4.857 5.80 -153.47 0.00",
+            "cameraObject": {
+              "$hikariRef": "SceneObject",
+              "id": 6082
+            },
+            "cells": "111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111000000000000000001110000000000000000000001110000000000000000000001110000000000000000000001110000000000000000000001110000111111111111111111111111111111111111111111111111111111111111111111111111",
+            "cols": 24,
+            "devices": "laser-muyyanv9-qq1vk Laser 9 6 1 1 dir=Down range=12\nlaser-muyyanv9-0ep8x Laser 10 6 1 1 dir=Down range=12\nlaser-muyyanv9-rusno Laser 11 6 1 1 dir=Down range=12\nlaser-muyyanv9-nhbp2 Laser 12 6 1 1 dir=Down range=12\n",
+            "entryRegion": false,
+            "outputHeight": 448,
+            "outputWidth": 768,
+            "regionId": "map5.c2_r3",
+            "rows": 14,
+            "screenBrightness": 2.2,
+            "screenCenterX": 0.0,
+            "screenCenterY": 0.4,
+            "screenCenterZ": 0.273,
+            "screenHeight": 0.49,
+            "screenMaterialIndex": -1,
+            "screenModelAssetGuid": "",
+            "screenObject": {
+              "$hikariRef": "SceneObject",
+              "id": 6022
+            },
+            "screenSlot": "TD2_Screen",
+            "screenWidth": 0.84,
+            "spawnX": 0.5,
+            "spawnY": 0.5,
+            "tilePixels": 64,
+            "worldPlaced": true,
+            "worldX": 48,
+            "worldY": 42
+          },
+          "type": "TD2.Region"
+        }
+      ],
+      "editorFolder": "1 玩法/区域电视/地图5",
+      "editorLocked": false,
+      "editorVisible": true,
+      "enabled": true,
+      "id": 6022,
+      "name": "区域 c2_r3",
+      "parent": null,
+      "sourcePrefabId": "",
+      "transform": {
+        "position": [
+          -1.5800000429153442,
+          3.950000047683716,
+          -7.75
         ],
         "rotationEulerDeg": [
           0.0,
-          0.0,
+          14.0,
           0.0
         ],
         "scale": [
@@ -18079,77 +18163,7 @@
         {
           "id": 2,
           "properties": {
-            "cameraObject": {
-              "$hikariRef": "SceneObject",
-              "id": 6082
-            },
-            "cells": "111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111000000000000000001110000000000000000000001110000000000000000000001110000000000000000000001110000000000000000000001110000111111111111111111111111111111111111111111111111111111111111111111111111",
-            "cols": 24,
-            "devices": "laser-muyyanv9-qq1vk Laser 9 6 1 1 dir=Down range=12\nlaser-muyyanv9-0ep8x Laser 10 6 1 1 dir=Down range=12\nlaser-muyyanv9-rusno Laser 11 6 1 1 dir=Down range=12\nlaser-muyyanv9-nhbp2 Laser 12 6 1 1 dir=Down range=12\n",
-            "entryRegion": false,
-            "outputHeight": 448,
-            "outputWidth": 768,
-            "regionId": "map5.c2_r3",
-            "rows": 14,
-            "screenBrightness": 2.2,
-            "screenMaterialIndex": -1,
-            "screenModelAssetGuid": "",
-            "screenObject": {
-              "$hikariRef": "SceneObject",
-              "id": 6022
-            },
-            "screenSlot": "TD2_Screen",
-            "spawnX": 0.5,
-            "spawnY": 0.5,
-            "tilePixels": 64,
-            "worldPlaced": true,
-            "worldX": 48,
-            "worldY": 42
-          },
-          "type": "TD2.Region"
-        }
-      ],
-      "editorFolder": "1 玩法/区域电视/地图5",
-      "editorLocked": false,
-      "editorVisible": true,
-      "enabled": true,
-      "id": 6022,
-      "name": "区域 c2_r3",
-      "parent": null,
-      "sourcePrefabId": "",
-      "transform": {
-        "position": [
-          -1.850000023841858,
-          4.150000095367432,
-          -6.065096855163574
-        ],
-        "rotationEulerDeg": [
-          -3.000000476837158,
-          24.000001907348633,
-          0.0
-        ],
-        "scale": [
-          0.949999988079071,
-          0.949999988079071,
-          0.949999988079071
-        ]
-      }
-    },
-    {
-      "components": [
-        {
-          "id": 1,
-          "properties": {
-            "assetId": "28aa6fabccdc0527b4833a67e3818076",
-            "castShadow": true,
-            "receiveShadow": true,
-            "visible": true
-          },
-          "type": "ModelComponent"
-        },
-        {
-          "id": 2,
-          "properties": {
+            "cameraAuto": "0.769 6.021 -5.308 2.13 -163.51 0.00",
             "cameraObject": {
               "$hikariRef": "SceneObject",
               "id": 6081
@@ -18163,6 +18177,10 @@
             "regionId": "map5.c3_r2",
             "rows": 14,
             "screenBrightness": 2.2,
+            "screenCenterX": 0.0,
+            "screenCenterY": 0.4,
+            "screenCenterZ": 0.273,
+            "screenHeight": 0.49,
             "screenMaterialIndex": -1,
             "screenModelAssetGuid": "",
             "screenObject": {
@@ -18170,6 +18188,7 @@
               "id": 6023
             },
             "screenSlot": "TD2_Screen",
+            "screenWidth": 0.84,
             "spawnX": 0.5,
             "spawnY": 0.5,
             "tilePixels": 64,
@@ -18190,13 +18209,90 @@
       "sourcePrefabId": "",
       "transform": {
         "position": [
-          1.25,
-          6.75,
-          -6.650000095367432
+          -0.11999999731779099,
+          5.599999904632568,
+          -8.319999694824219
         ],
         "rotationEulerDeg": [
-          13.0,
-          -4.0,
+          4.0,
+          4.0,
+          0.0
+        ],
+        "scale": [
+          0.9599999785423279,
+          0.9599999785423279,
+          0.9599999785423279
+        ]
+      }
+    },
+    {
+      "components": [
+        {
+          "id": 1,
+          "properties": {
+            "assetId": "e5a1324c54ef74f37ae319784887244a",
+            "castShadow": true,
+            "receiveShadow": true,
+            "visible": true
+          },
+          "type": "ModelComponent"
+        },
+        {
+          "id": 2,
+          "properties": {
+            "cameraAuto": "-0.090 5.713 -5.351 0.44 -149.50 0.00",
+            "cameraObject": {
+              "$hikariRef": "SceneObject",
+              "id": 6080
+            },
+            "cells": "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001111111111000000000000001111111111000000000000001111111111",
+            "cols": 24,
+            "devices": "",
+            "entryRegion": false,
+            "outputHeight": 448,
+            "outputWidth": 768,
+            "regionId": "map5.c2_r2",
+            "rows": 14,
+            "screenBrightness": 2.2,
+            "screenCenterX": 0.0,
+            "screenCenterY": 0.38,
+            "screenCenterZ": 0.266,
+            "screenHeight": 0.49,
+            "screenMaterialIndex": -1,
+            "screenModelAssetGuid": "",
+            "screenObject": {
+              "$hikariRef": "SceneObject",
+              "id": 6024
+            },
+            "screenSlot": "TD2_Screen",
+            "screenWidth": 0.84,
+            "spawnX": 0.5,
+            "spawnY": 0.5,
+            "tilePixels": 64,
+            "worldPlaced": true,
+            "worldX": 48,
+            "worldY": 28
+          },
+          "type": "TD2.Region"
+        }
+      ],
+      "editorFolder": "1 玩法/区域电视/地图5",
+      "editorLocked": false,
+      "editorVisible": true,
+      "enabled": true,
+      "id": 6024,
+      "name": "区域 c2_r2",
+      "parent": null,
+      "sourcePrefabId": "",
+      "transform": {
+        "position": [
+          -1.6200000047683716,
+          5.420000076293945,
+          -7.949999809265137
+        ],
+        "rotationEulerDeg": [
+          6.0,
+          18.0,
           0.0
         ],
         "scale": [
@@ -18221,77 +18317,7 @@
         {
           "id": 2,
           "properties": {
-            "cameraObject": {
-              "$hikariRef": "SceneObject",
-              "id": 6080
-            },
-            "cells": "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001111111111000000000000001111111111000000000000001111111111",
-            "cols": 24,
-            "devices": "",
-            "entryRegion": false,
-            "outputHeight": 448,
-            "outputWidth": 768,
-            "regionId": "map5.c2_r2",
-            "rows": 14,
-            "screenBrightness": 2.2,
-            "screenMaterialIndex": -1,
-            "screenModelAssetGuid": "",
-            "screenObject": {
-              "$hikariRef": "SceneObject",
-              "id": 6024
-            },
-            "screenSlot": "TD2_Screen",
-            "spawnX": 0.5,
-            "spawnY": 0.5,
-            "tilePixels": 64,
-            "worldPlaced": true,
-            "worldX": 48,
-            "worldY": 28
-          },
-          "type": "TD2.Region"
-        }
-      ],
-      "editorFolder": "1 玩法/区域电视/地图5",
-      "editorLocked": false,
-      "editorVisible": true,
-      "enabled": true,
-      "id": 6024,
-      "name": "区域 c2_r2",
-      "parent": null,
-      "sourcePrefabId": "",
-      "transform": {
-        "position": [
-          -1.600000023841858,
-          7.349999904632568,
-          -7.599999904632568
-        ],
-        "rotationEulerDeg": [
-          9.0,
-          20.0,
-          0.0
-        ],
-        "scale": [
-          0.8600000143051147,
-          0.8600000143051147,
-          0.8600000143051147
-        ]
-      }
-    },
-    {
-      "components": [
-        {
-          "id": 1,
-          "properties": {
-            "assetId": "e5a1324c54ef74f37ae319784887244a",
-            "castShadow": true,
-            "receiveShadow": true,
-            "visible": true
-          },
-          "type": "ModelComponent"
-        },
-        {
-          "id": 2,
-          "properties": {
+            "cameraAuto": "1.780 6.102 -6.100 -0.40 -176.49 0.00",
             "cameraObject": {
               "$hikariRef": "SceneObject",
               "id": 6084
@@ -18305,6 +18331,10 @@
             "regionId": "map5.c4_r2",
             "rows": 14,
             "screenBrightness": 2.2,
+            "screenCenterX": 0.0,
+            "screenCenterY": 0.38,
+            "screenCenterZ": 0.266,
+            "screenHeight": 0.49,
             "screenMaterialIndex": -1,
             "screenModelAssetGuid": "",
             "screenObject": {
@@ -18312,6 +18342,7 @@
               "id": 6025
             },
             "screenSlot": "TD2_Screen",
+            "screenWidth": 0.84,
             "spawnX": 0.5,
             "spawnY": 0.5,
             "tilePixels": 64,
@@ -18332,19 +18363,19 @@
       "sourcePrefabId": "",
       "transform": {
         "position": [
-          3.75,
-          7.75,
-          -8.600000381469727
+          1.600000023841858,
+          5.860000133514404,
+          -9.050000190734863
         ],
         "rotationEulerDeg": [
           7.0,
-          -16.0,
+          -9.0,
           0.0
         ],
         "scale": [
-          0.8600000143051147,
-          0.8600000143051147,
-          0.8600000143051147
+          0.8999999761581421,
+          0.8999999761581421,
+          0.8999999761581421
         ]
       }
     },
@@ -18363,6 +18394,7 @@
         {
           "id": 2,
           "properties": {
+            "cameraAuto": "2.788 5.845 -6.710 2.01 174.48 0.00",
             "cameraObject": {
               "$hikariRef": "SceneObject",
               "id": 6086
@@ -18376,6 +18408,10 @@
             "regionId": "map5.c5_r2",
             "rows": 14,
             "screenBrightness": 2.2,
+            "screenCenterX": 0.0,
+            "screenCenterY": 0.4,
+            "screenCenterZ": 0.273,
+            "screenHeight": 0.49,
             "screenMaterialIndex": -1,
             "screenModelAssetGuid": "",
             "screenObject": {
@@ -18383,6 +18419,7 @@
               "id": 6026
             },
             "screenSlot": "TD2_Screen",
+            "screenWidth": 0.84,
             "spawnX": 0.5,
             "spawnY": 0.5,
             "tilePixels": 64,
@@ -18403,19 +18440,19 @@
       "sourcePrefabId": "",
       "transform": {
         "position": [
-          6.550000190734863,
-          8.350000381469727,
-          -10.0
+          3.0999999046325684,
+          5.420000076293945,
+          -9.899999618530273
         ],
         "rotationEulerDeg": [
-          5.0,
-          -34.0,
+          4.0,
+          -18.0,
           0.0
         ],
         "scale": [
-          0.800000011920929,
-          0.800000011920929,
-          0.800000011920929
+          0.9800000190734863,
+          0.9800000190734863,
+          0.9800000190734863
         ]
       }
     },
@@ -18435,6 +18472,7 @@
         {
           "id": 2,
           "properties": {
+            "cameraAuto": "1.843 4.873 -5.603 2.65 -171.54 0.00",
             "cameraObject": {
               "$hikariRef": "SceneObject",
               "id": 6085
@@ -18448,6 +18486,10 @@
             "regionId": "map5.c4_r3",
             "rows": 14,
             "screenBrightness": 2.2,
+            "screenCenterX": 0.0,
+            "screenCenterY": 0.38,
+            "screenCenterZ": 0.266,
+            "screenHeight": 0.49,
             "screenMaterialIndex": -1,
             "screenModelAssetGuid": "",
             "screenObject": {
@@ -18455,6 +18497,7 @@
               "id": 6027
             },
             "screenSlot": "TD2_Screen",
+            "screenWidth": 0.84,
             "spawnX": 0.5,
             "spawnY": 0.5,
             "tilePixels": 64,
@@ -18475,19 +18518,19 @@
       "sourcePrefabId": "",
       "transform": {
         "position": [
-          2.4871153831481934,
-          4.23349142074585,
-          -8.01656436920166
+          1.350000023841858,
+          4.400000095367432,
+          -8.949999809265137
         ],
         "rotationEulerDeg": [
-          0.0,
-          40.27781677246094,
+          3.0,
+          -4.0,
           0.0
         ],
         "scale": [
-          1.059999942779541,
-          1.059999942779541,
-          1.059999942779541
+          1.0399999618530273,
+          1.0399999618530273,
+          1.0399999618530273
         ]
       }
     },
@@ -18506,6 +18549,7 @@
         {
           "id": 2,
           "properties": {
+            "cameraAuto": "2.344 4.748 -6.232 5.18 170.47 0.00",
             "cameraObject": {
               "$hikariRef": "SceneObject",
               "id": 6087
@@ -18519,6 +18563,10 @@
             "regionId": "map5.c5_r3",
             "rows": 14,
             "screenBrightness": 2.2,
+            "screenCenterX": 0.0,
+            "screenCenterY": 0.4,
+            "screenCenterZ": 0.273,
+            "screenHeight": 0.49,
             "screenMaterialIndex": -1,
             "screenModelAssetGuid": "",
             "screenObject": {
@@ -18526,6 +18574,7 @@
               "id": 6028
             },
             "screenSlot": "TD2_Screen",
+            "screenWidth": 0.84,
             "spawnX": 0.5,
             "spawnY": 0.5,
             "tilePixels": 64,
@@ -18546,19 +18595,19 @@
       "sourcePrefabId": "",
       "transform": {
         "position": [
-          3.6610562801361084,
-          4.70020866394043,
-          -9.256823539733887
+          2.950000047683716,
+          4.050000190734863,
+          -9.800000190734863
         ],
         "rotationEulerDeg": [
-          -2.0000147819519043,
-          28.18931007385254,
-          -9.262863386538811e-06
+          0.0,
+          -22.0,
+          0.0
         ],
         "scale": [
-          1.149999976158142,
-          1.149999976158142,
-          1.149999976158142
+          1.1200000047683716,
+          1.1200000047683716,
+          1.1200000047683716
         ]
       }
     },
@@ -18577,6 +18626,7 @@
         {
           "id": 2,
           "properties": {
+            "cameraAuto": "6.582 4.731 -11.047 7.52 -167.00 0.00",
             "cameraObject": {
               "$hikariRef": "SceneObject",
               "id": 6088
@@ -18590,6 +18640,10 @@
             "regionId": "map5.c6_r3",
             "rows": 14,
             "screenBrightness": 2.2,
+            "screenCenterX": 0.0,
+            "screenCenterY": 0.38,
+            "screenCenterZ": 0.266,
+            "screenHeight": 0.49,
             "screenMaterialIndex": -1,
             "screenModelAssetGuid": "",
             "screenObject": {
@@ -18597,6 +18651,7 @@
               "id": 6029
             },
             "screenSlot": "TD2_Screen",
+            "screenWidth": 0.84,
             "spawnX": 0.5,
             "spawnY": 0.5,
             "tilePixels": 64,
@@ -18617,13 +18672,13 @@
       "sourcePrefabId": "",
       "transform": {
         "position": [
-          4.460000038146973,
-          5.5,
-          -14.154000282287598
+          5.599999904632568,
+          3.916800022125244,
+          -15.240500450134277
         ],
         "rotationEulerDeg": [
           0.0,
-          0.0,
+          -4.0,
           0.0
         ],
         "scale": [
@@ -18648,6 +18703,7 @@
         {
           "id": 2,
           "properties": {
+            "cameraAuto": "4.511 3.487 -10.393 7.08 175.80 0.00",
             "cameraObject": {
               "$hikariRef": "SceneObject",
               "id": 6091
@@ -18661,6 +18717,10 @@
             "regionId": "map5.c6_r4",
             "rows": 14,
             "screenBrightness": 2.2,
+            "screenCenterX": 0.0,
+            "screenCenterY": 0.4,
+            "screenCenterZ": 0.273,
+            "screenHeight": 0.49,
             "screenMaterialIndex": -1,
             "screenModelAssetGuid": "",
             "screenObject": {
@@ -18668,6 +18728,7 @@
               "id": 6030
             },
             "screenSlot": "TD2_Screen",
+            "screenWidth": 0.84,
             "spawnX": 0.5,
             "spawnY": 0.5,
             "tilePixels": 64,
@@ -18688,19 +18749,19 @@
       "sourcePrefabId": "",
       "transform": {
         "position": [
-          4.300000190734863,
-          4.300000190734863,
-          -14.154000282287598
+          4.849999904632568,
+          2.615499973297119,
+          -14.947699546813965
         ],
         "rotationEulerDeg": [
           0.0,
-          0.0,
+          6.0,
           0.0
         ],
         "scale": [
-          1.2999999523162842,
-          1.2999999523162842,
-          1.2999999523162842
+          1.3799999952316284,
+          1.3799999952316284,
+          1.3799999952316284
         ]
       }
     },
@@ -18719,6 +18780,7 @@
         {
           "id": 2,
           "properties": {
+            "cameraAuto": "5.988 2.304 -11.229 8.00 -176.80 0.00",
             "cameraObject": {
               "$hikariRef": "SceneObject",
               "id": 6093
@@ -18732,6 +18794,10 @@
             "regionId": "map5.c6_r5",
             "rows": 14,
             "screenBrightness": 2.2,
+            "screenCenterX": 0.0,
+            "screenCenterY": 0.38,
+            "screenCenterZ": 0.266,
+            "screenHeight": 0.49,
             "screenMaterialIndex": -1,
             "screenModelAssetGuid": "",
             "screenObject": {
@@ -18739,6 +18805,7 @@
               "id": 6031
             },
             "screenSlot": "TD2_Screen",
+            "screenWidth": 0.84,
             "spawnX": 0.5,
             "spawnY": 0.5,
             "tilePixels": 64,
@@ -18759,19 +18826,19 @@
       "sourcePrefabId": "",
       "transform": {
         "position": [
-          4.460000038146973,
-          2.0,
-          -14.154000282287598
+          5.75,
+          1.5199999809265137,
+          -15.253100395202637
         ],
         "rotationEulerDeg": [
           0.0,
-          0.0,
+          -7.0,
           0.0
         ],
         "scale": [
-          1.2999999523162842,
-          1.2999999523162842,
-          1.2999999523162842
+          1.2200000286102295,
+          1.2200000286102295,
+          1.2200000286102295
         ]
       }
     },
@@ -18790,6 +18857,7 @@
         {
           "id": 2,
           "properties": {
+            "cameraAuto": "7.167 1.029 -10.717 0.93 -154.00 0.00",
             "cameraObject": {
               "$hikariRef": "SceneObject",
               "id": 6094
@@ -18803,6 +18871,10 @@
             "regionId": "map5.c6_r6",
             "rows": 14,
             "screenBrightness": 2.2,
+            "screenCenterX": 0.0,
+            "screenCenterY": 0.64,
+            "screenCenterZ": 0.276,
+            "screenHeight": 0.49,
             "screenMaterialIndex": -1,
             "screenModelAssetGuid": "",
             "screenObject": {
@@ -18810,6 +18882,7 @@
               "id": 6032
             },
             "screenSlot": "TD2_Screen",
+            "screenWidth": 0.84,
             "spawnX": 0.5,
             "spawnY": 0.5,
             "tilePixels": 64,
@@ -18830,19 +18903,19 @@
       "sourcePrefabId": "",
       "transform": {
         "position": [
-          4.300000190734863,
-          0.25,
-          -14.154000282287598
+          5.099999904632568,
+          0.0,
+          -14.955499649047852
         ],
         "rotationEulerDeg": [
           0.0,
-          0.0,
+          9.0,
           0.0
         ],
         "scale": [
-          1.2999999523162842,
-          1.2999999523162842,
-          1.2999999523162842
+          1.4199999570846558,
+          1.4199999570846558,
+          1.4199999570846558
         ]
       }
     },
@@ -18861,6 +18934,7 @@
         {
           "id": 2,
           "properties": {
+            "cameraAuto": "11.209 3.925 -15.290 1.89 -111.85 0.00",
             "cameraObject": {
               "$hikariRef": "SceneObject",
               "id": 6092
@@ -18874,6 +18948,10 @@
             "regionId": "map5.c7_r3",
             "rows": 14,
             "screenBrightness": 2.2,
+            "screenCenterX": 0.0,
+            "screenCenterY": 0.4,
+            "screenCenterZ": 0.273,
+            "screenHeight": 0.49,
             "screenMaterialIndex": -1,
             "screenModelAssetGuid": "",
             "screenObject": {
@@ -18881,6 +18959,7 @@
               "id": 6033
             },
             "screenSlot": "TD2_Screen",
+            "screenWidth": 0.84,
             "spawnX": 0.5,
             "spawnY": 0.5,
             "tilePixels": 64,
@@ -18901,19 +18980,19 @@
       "sourcePrefabId": "",
       "transform": {
         "position": [
-          6.3460001945495605,
-          5.5,
-          -16.18000030517578
+          7.208700180053711,
+          3.5216000080108643,
+          -16.899999618530273
         ],
         "rotationEulerDeg": [
-          0.0,
-          90.0,
+          6.0,
+          85.0,
           0.0
         ],
         "scale": [
-          1.2999999523162842,
-          1.2999999523162842,
-          1.2999999523162842
+          1.2799999713897705,
+          1.2799999713897705,
+          1.2799999713897705
         ]
       }
     },
@@ -18932,6 +19011,7 @@
         {
           "id": 2,
           "properties": {
+            "cameraAuto": "10.580 3.027 -18.875 8.27 -65.00 0.00",
             "cameraObject": {
               "$hikariRef": "SceneObject",
               "id": 6096
@@ -18945,6 +19025,10 @@
             "regionId": "map5.c7_r4",
             "rows": 14,
             "screenBrightness": 2.2,
+            "screenCenterX": 0.0,
+            "screenCenterY": 0.38,
+            "screenCenterZ": 0.266,
+            "screenHeight": 0.49,
             "screenMaterialIndex": -1,
             "screenModelAssetGuid": "",
             "screenObject": {
@@ -18952,6 +19036,7 @@
               "id": 6034
             },
             "screenSlot": "TD2_Screen",
+            "screenWidth": 0.84,
             "spawnX": 0.5,
             "spawnY": 0.5,
             "tilePixels": 64,
@@ -18972,19 +19057,19 @@
       "sourcePrefabId": "",
       "transform": {
         "position": [
-          6.3460001945495605,
-          3.75,
-          -16.020000457763672
+          7.043499946594238,
+          2.258699893951416,
+          -17.200000762939453
         ],
         "rotationEulerDeg": [
           0.0,
-          90.0,
+          98.0,
           0.0
         ],
         "scale": [
-          1.2999999523162842,
-          1.2999999523162842,
-          1.2999999523162842
+          1.1799999475479126,
+          1.1799999475479126,
+          1.1799999475479126
         ]
       }
     },
@@ -19003,6 +19088,7 @@
         {
           "id": 2,
           "properties": {
+            "cameraAuto": "10.911 2.068 -17.164 8.71 -84.00 0.00",
             "cameraObject": {
               "$hikariRef": "SceneObject",
               "id": 6098
@@ -19016,6 +19102,10 @@
             "regionId": "map5.c7_r5",
             "rows": 14,
             "screenBrightness": 2.2,
+            "screenCenterX": 0.0,
+            "screenCenterY": 0.4,
+            "screenCenterZ": 0.273,
+            "screenHeight": 0.49,
             "screenMaterialIndex": -1,
             "screenModelAssetGuid": "",
             "screenObject": {
@@ -19023,6 +19113,7 @@
               "id": 6035
             },
             "screenSlot": "TD2_Screen",
+            "screenWidth": 0.84,
             "spawnX": 0.5,
             "spawnY": 0.5,
             "tilePixels": 64,
@@ -19043,19 +19134,19 @@
       "sourcePrefabId": "",
       "transform": {
         "position": [
-          6.895999908447266,
-          2.0,
-          -16.350000381469727
+          7.2104997634887695,
+          1.2999999523162842,
+          -16.75
         ],
         "rotationEulerDeg": [
-          -6.0,
-          107.0,
+          0.0,
+          79.0,
           0.0
         ],
         "scale": [
-          1.2999999523162842,
-          1.2999999523162842,
-          1.2999999523162842
+          1.1200000047683716,
+          1.1200000047683716,
+          1.1200000047683716
         ]
       }
     },
@@ -19074,6 +19165,7 @@
         {
           "id": 2,
           "properties": {
+            "cameraAuto": "11.529 0.952 -16.390 1.02 -100.00 0.00",
             "cameraObject": {
               "$hikariRef": "SceneObject",
               "id": 6095
@@ -19087,6 +19179,10 @@
             "regionId": "map5.c7_r6",
             "rows": 14,
             "screenBrightness": 2.2,
+            "screenCenterX": 0.0,
+            "screenCenterY": 0.64,
+            "screenCenterZ": 0.276,
+            "screenHeight": 0.49,
             "screenMaterialIndex": -1,
             "screenModelAssetGuid": "",
             "screenObject": {
@@ -19094,6 +19190,7 @@
               "id": 6036
             },
             "screenSlot": "TD2_Screen",
+            "screenWidth": 0.84,
             "spawnX": 0.5,
             "spawnY": 0.5,
             "tilePixels": 64,
@@ -19114,13 +19211,13 @@
       "sourcePrefabId": "",
       "transform": {
         "position": [
-          6.3460001945495605,
-          0.25,
-          -16.020000457763672
+          7.276700019836426,
+          0.0,
+          -17.149999618530273
         ],
         "rotationEulerDeg": [
           0.0,
-          90.0,
+          97.0,
           0.0
         ],
         "scale": [
@@ -19145,6 +19242,7 @@
         {
           "id": 2,
           "properties": {
+            "cameraAuto": "6.328 4.234 -22.274 8.71 -15.00 0.00",
             "cameraObject": {
               "$hikariRef": "SceneObject",
               "id": 6100
@@ -19158,6 +19256,10 @@
             "regionId": "map5.c8_r3",
             "rows": 14,
             "screenBrightness": 2.2,
+            "screenCenterX": 0.0,
+            "screenCenterY": 0.38,
+            "screenCenterZ": 0.266,
+            "screenHeight": 0.49,
             "screenMaterialIndex": -1,
             "screenModelAssetGuid": "",
             "screenObject": {
@@ -19165,6 +19267,7 @@
               "id": 6037
             },
             "screenSlot": "TD2_Screen",
+            "screenWidth": 0.84,
             "spawnX": 0.5,
             "spawnY": 0.5,
             "tilePixels": 64,
@@ -19185,19 +19288,19 @@
       "sourcePrefabId": "",
       "transform": {
         "position": [
-          4.420000076293945,
-          5.5,
-          -17.84600067138672
+          5.340000152587891,
+          3.488800048828125,
+          -18.69230079650879
         ],
         "rotationEulerDeg": [
           0.0,
-          180.0,
+          182.0,
           0.0
         ],
         "scale": [
-          1.2999999523162842,
-          1.2999999523162842,
-          1.2999999523162842
+          1.1200000047683716,
+          1.1200000047683716,
+          1.1200000047683716
         ]
       }
     },
@@ -19216,6 +19319,7 @@
         {
           "id": 2,
           "properties": {
+            "cameraAuto": "6.622 3.152 -22.714 8.00 -20.00 0.00",
             "cameraObject": {
               "$hikariRef": "SceneObject",
               "id": 6097
@@ -19229,6 +19333,10 @@
             "regionId": "map5.c8_r4",
             "rows": 14,
             "screenBrightness": 2.2,
+            "screenCenterX": 0.0,
+            "screenCenterY": 0.4,
+            "screenCenterZ": 0.273,
+            "screenHeight": 0.49,
             "screenMaterialIndex": -1,
             "screenModelAssetGuid": "",
             "screenObject": {
@@ -19236,6 +19344,7 @@
               "id": 6038
             },
             "screenSlot": "TD2_Screen",
+            "screenWidth": 0.84,
             "spawnX": 0.5,
             "spawnY": 0.5,
             "tilePixels": 64,
@@ -19256,19 +19365,19 @@
       "sourcePrefabId": "",
       "transform": {
         "position": [
-          4.579999923706055,
-          3.75,
-          -17.84600067138672
+          5.21999979019165,
+          2.3445000648498535,
+          -18.91160011291504
         ],
         "rotationEulerDeg": [
           0.0,
-          180.0,
+          177.0,
           0.0
         ],
         "scale": [
-          1.2999999523162842,
-          1.2999999523162842,
-          1.2999999523162842
+          1.2200000286102295,
+          1.2200000286102295,
+          1.2200000286102295
         ]
       }
     },
@@ -19287,6 +19396,7 @@
         {
           "id": 2,
           "properties": {
+            "cameraAuto": "6.319 2.006 -22.913 7.63 -13.00 0.00",
             "cameraObject": {
               "$hikariRef": "SceneObject",
               "id": 6099
@@ -19300,6 +19410,10 @@
             "regionId": "map5.c8_r5",
             "rows": 14,
             "screenBrightness": 2.2,
+            "screenCenterX": 0.0,
+            "screenCenterY": 0.38,
+            "screenCenterZ": 0.266,
+            "screenHeight": 0.49,
             "screenMaterialIndex": -1,
             "screenModelAssetGuid": "",
             "screenObject": {
@@ -19307,6 +19421,7 @@
               "id": 6039
             },
             "screenSlot": "TD2_Screen",
+            "screenWidth": 0.84,
             "spawnX": 0.5,
             "spawnY": 0.5,
             "tilePixels": 64,
@@ -19327,19 +19442,19 @@
       "sourcePrefabId": "",
       "transform": {
         "position": [
-          4.420000076293945,
-          2.0,
-          -17.84600067138672
+          5.349999904632568,
+          1.2000000476837158,
+          -18.783199310302734
         ],
         "rotationEulerDeg": [
           0.0,
-          180.0,
+          184.0,
           0.0
         ],
         "scale": [
-          1.2999999523162842,
-          1.2999999523162842,
-          1.2999999523162842
+          1.2799999713897705,
+          1.2799999713897705,
+          1.2799999713897705
         ]
       }
     },
@@ -19358,6 +19473,7 @@
         {
           "id": 2,
           "properties": {
+            "cameraAuto": "6.404 5.489 -11.764 2.96 -155.18 0.00",
             "cameraObject": {
               "$hikariRef": "SceneObject",
               "id": 6089
@@ -19371,6 +19487,10 @@
             "regionId": "map5.c6_r2",
             "rows": 14,
             "screenBrightness": 2.2,
+            "screenCenterX": 0.0,
+            "screenCenterY": 0.38,
+            "screenCenterZ": 0.266,
+            "screenHeight": 0.49,
             "screenMaterialIndex": -1,
             "screenModelAssetGuid": "",
             "screenObject": {
@@ -19378,6 +19498,7 @@
               "id": 6040
             },
             "screenSlot": "TD2_Screen",
+            "screenWidth": 0.84,
             "spawnX": 0.5,
             "spawnY": 0.5,
             "tilePixels": 64,
@@ -19398,19 +19519,19 @@
       "sourcePrefabId": "",
       "transform": {
         "position": [
-          4.400000095367432,
-          8.449999809265137,
-          -14.25
+          4.800000190734863,
+          5.117599964141846,
+          -15.177499771118164
         ],
         "rotationEulerDeg": [
           6.0,
-          9.0,
+          8.0,
           0.0
         ],
         "scale": [
-          1.0499999523162842,
-          1.0499999523162842,
-          1.0499999523162842
+          1.1200000047683716,
+          1.1200000047683716,
+          1.1200000047683716
         ]
       }
     },
@@ -19429,6 +19550,7 @@
         {
           "id": 2,
           "properties": {
+            "cameraAuto": "9.770 5.766 -12.530 2.21 -135.00 0.00",
             "cameraObject": {
               "$hikariRef": "SceneObject",
               "id": 6090
@@ -19442,6 +19564,10 @@
             "regionId": "map5.c7_r2",
             "rows": 14,
             "screenBrightness": 2.2,
+            "screenCenterX": 0.0,
+            "screenCenterY": 0.4,
+            "screenCenterZ": 0.273,
+            "screenHeight": 0.49,
             "screenMaterialIndex": -1,
             "screenModelAssetGuid": "",
             "screenObject": {
@@ -19449,6 +19575,7 @@
               "id": 6041
             },
             "screenSlot": "TD2_Screen",
+            "screenWidth": 0.84,
             "spawnX": 0.5,
             "spawnY": 0.5,
             "tilePixels": 64,
@@ -19469,19 +19596,19 @@
       "sourcePrefabId": "",
       "transform": {
         "position": [
-          6.25,
-          8.800000190734863,
-          -15.600000381469727
+          7.300000190734863,
+          5.349999904632568,
+          -15.0
         ],
         "rotationEulerDeg": [
-          4.0,
-          74.0,
+          5.0,
+          45.0,
           0.0
         ],
         "scale": [
-          1.0,
-          1.0,
-          1.0
+          1.0499999523162842,
+          1.0499999523162842,
+          1.0499999523162842
         ]
       }
     },
@@ -19508,17 +19635,17 @@
       "sourcePrefabId": "",
       "transform": {
         "position": [
-          -1.6432000398635864,
-          7.7617998123168945,
-          -7.718699932098389
+          -1.6687999963760376,
+          5.85290002822876,
+          -8.100299835205078
         ],
         "rotationEulerDeg": [
           0.0,
-          -18.086000442504883,
-          -10.982999801635742
+          14.479700088500977,
+          7.1529998779296875
         ],
         "scale": [
-          3.108099937438965,
+          1.5990999937057495,
           1.0,
           1.0
         ]
@@ -19547,17 +19674,17 @@
       "sourcePrefabId": "",
       "transform": {
         "position": [
-          -1.944000005722046,
-          4.565999984741211,
-          -6.361100196838379
+          -1.6332000494003296,
+          4.400000095367432,
+          -7.963500022888184
         ],
         "rotationEulerDeg": [
           0.0,
-          16.059999465942383,
-          9.336999893188477
+          20.799699783325195,
+          7.988900184631348
         ],
         "scale": [
-          3.1047000885009766,
+          1.5194000005722046,
           1.0,
           1.0
         ]
@@ -19586,17 +19713,17 @@
       "sourcePrefabId": "",
       "transform": {
         "position": [
-          1.2573000192642212,
-          7.19890022277832,
-          -6.753799915313721
+          -0.13259999454021454,
+          6.0457000732421875,
+          -8.500100135803223
         ],
         "rotationEulerDeg": [
           0.0,
-          12.154999732971191,
-          -96.8270034790039
+          0.11500000208616257,
+          -93.7135009765625
         ],
         "scale": [
-          2.213900089263916,
+          1.451300024986267,
           1.0,
           1.0
         ]
@@ -19625,17 +19752,17 @@
       "sourcePrefabId": "",
       "transform": {
         "position": [
-          1.2573000192642212,
-          7.19890022277832,
-          -6.753799915313721
+          -0.13259999454021454,
+          6.0457000732421875,
+          -8.500100135803223
         ],
         "rotationEulerDeg": [
           0.0,
-          36.20399856567383,
-          20.732999801635742
+          21.422500610351563,
+          7.798099994659424
         ],
         "scale": [
-          3.3545000553131104,
+          1.903499960899353,
           1.0,
           1.0
         ]
@@ -19664,17 +19791,17 @@
       "sourcePrefabId": "",
       "transform": {
         "position": [
-          1.0,
-          5.050000190734863,
-          -7.21999979019165
+          -0.22660000622272491,
+          4.597400188446045,
+          -8.503000259399414
         ],
         "rotationEulerDeg": [
           0.0,
-          24.59600067138672,
-          9.980999946594238
+          21.930599212646484,
+          10.049500465393066
         ],
         "scale": [
-          2.7095999717712402,
+          1.7416000366210938,
           1.0,
           1.0
         ]
@@ -19703,17 +19830,17 @@
       "sourcePrefabId": "",
       "transform": {
         "position": [
-          3.788800001144409,
-          8.15719985961914,
-          -8.735199928283691
+          1.6230000257492065,
+          6.286099910736084,
+          -9.19540023803711
         ],
         "rotationEulerDeg": [
           0.0,
-          25.533000946044922,
-          11.279999732971191
+          28.990299224853516,
+          -15.004500389099121
         ],
         "scale": [
-          3.2112998962402344,
+          1.815600037574768,
           1.0,
           1.0
         ]
@@ -19742,17 +19869,17 @@
       "sourcePrefabId": "",
       "transform": {
         "position": [
-          3.4263999462127686,
-          5.4770002365112305,
-          -8.347800254821777
+          1.3641999959945679,
+          4.879300117492676,
+          -9.153499603271484
         ],
         "rotationEulerDeg": [
           0.0,
-          75.93599700927734,
-          152.2949981689453
+          27.10689926147461,
+          -10.972000122070313
         ],
         "scale": [
-          2.932800054550171,
+          1.920199990272522,
           1.0,
           1.0
         ]
@@ -19781,17 +19908,17 @@
       "sourcePrefabId": "",
       "transform": {
         "position": [
-          4.371799945831299,
-          8.944100379943848,
-          -14.428099632263184
+          4.773200035095215,
+          5.644599914550781,
+          -15.368000030517578
         ],
         "rotationEulerDeg": [
           0.0,
-          35.314998626708984,
-          10.682000160217285
+          -5.575300216674805,
+          4.68779993057251
         ],
         "scale": [
-          2.1168999671936035,
+          2.412600040435791,
           1.0,
           1.0
         ]
@@ -19820,9 +19947,9 @@
       "sourcePrefabId": "",
       "transform": {
         "position": [
-          0.3799999952316284,
-          5.579999923706055,
-          -6.449999809265137
+          -0.7200000286102295,
+          5.099999904632568,
+          -7.333499908447266
         ],
         "rotationEulerDeg": [
           0.0,
@@ -19859,9 +19986,9 @@
       "sourcePrefabId": "",
       "transform": {
         "position": [
-          0.3799999952316284,
-          6.0,
-          -6.449999809265137
+          -0.7200000286102295,
+          5.519999980926514,
+          -7.333499908447266
         ],
         "rotationEulerDeg": [
           0.0,
@@ -19870,7 +19997,7 @@
         ],
         "scale": [
           1.0,
-          4.900000095367432,
+          5.380000114440918,
           1.0
         ]
       }
@@ -19923,9 +20050,9 @@
       "sourcePrefabId": "",
       "transform": {
         "position": [
-          0.3799999952316284,
-          5.75,
-          -6.449999809265137
+          -0.7200000286102295,
+          5.269999980926514,
+          -7.333499908447266
         ],
         "rotationEulerDeg": [
           0.0,
@@ -19987,13 +20114,13 @@
       "sourcePrefabId": "",
       "transform": {
         "position": [
-          -0.10000000149011612,
-          7.0,
-          -5.400000095367432
+          -1.0944000482559204,
+          6.705399990081787,
+          -6.236400127410889
         ],
         "rotationEulerDeg": [
-          44.95100021362305,
-          139.76400756835938,
+          43.71739959716797,
+          151.47520446777344,
           0.0
         ],
         "scale": [
@@ -20019,13 +20146,13 @@
             "enabled": true,
             "height": 0.45,
             "iesProfile": "",
-            "innerConeAngleDegrees": 8.0,
-            "intensity": 26000.0,
+            "innerConeAngleDegrees": 10.0,
+            "intensity": 30000.0,
             "intensityUnit": "Lumens",
             "length": 0.8,
-            "outerConeAngleDegrees": 14.0,
+            "outerConeAngleDegrees": 26.0,
             "priority": 0,
-            "range": 14.0,
+            "range": 18.0,
             "sceneRelativeIntensity": 1.0,
             "sourceRadius": 0.0,
             "type": "Spot"
@@ -20051,13 +20178,13 @@
       "sourcePrefabId": "",
       "transform": {
         "position": [
-          4.5,
-          10.600000381469727,
-          -13.800000190734863
+          1.7999999523162842,
+          10.5,
+          -10.0
         ],
         "rotationEulerDeg": [
-          84.3550033569336,
-          180.0,
+          51.352699279785156,
+          149.18429565429688,
           0.0
         ],
         "scale": [
@@ -20083,13 +20210,13 @@
             "enabled": true,
             "height": 0.45,
             "iesProfile": "",
-            "innerConeAngleDegrees": 8.0,
-            "intensity": 26000.0,
+            "innerConeAngleDegrees": 14.0,
+            "intensity": 24000.0,
             "intensityUnit": "Lumens",
             "length": 0.8,
-            "outerConeAngleDegrees": 14.0,
+            "outerConeAngleDegrees": 30.0,
             "priority": 0,
-            "range": 14.0,
+            "range": 16.0,
             "sceneRelativeIntensity": 1.0,
             "sourceRadius": 0.0,
             "type": "Spot"
@@ -20115,13 +20242,13 @@
       "sourcePrefabId": "",
       "transform": {
         "position": [
-          6.699999809265137,
-          10.600000381469727,
-          -16.0
+          9.600000381469727,
+          8.600000381469727,
+          -13.199999809265137
         ],
         "rotationEulerDeg": [
-          84.3550033569336,
-          -90.0,
+          54.500301361083984,
+          -147.26480102539063,
           0.0
         ],
         "scale": [
@@ -20139,21 +20266,21 @@
             "angularFalloff": 1.0,
             "castsShadows": false,
             "color": [
-              0.8,
-              0.88,
-              1.0
+              1.0,
+              0.86,
+              0.72
             ],
             "cookie": "",
             "enabled": true,
             "height": 0.45,
             "iesProfile": "",
-            "innerConeAngleDegrees": 8.0,
-            "intensity": 26000.0,
+            "innerConeAngleDegrees": 26.0,
+            "intensity": 1100.0,
             "intensityUnit": "Lumens",
             "length": 0.8,
-            "outerConeAngleDegrees": 14.0,
+            "outerConeAngleDegrees": 52.0,
             "priority": 0,
-            "range": 14.0,
+            "range": 9.0,
             "sceneRelativeIntensity": 1.0,
             "sourceRadius": 0.0,
             "type": "Spot"
@@ -20179,13 +20306,13 @@
       "sourcePrefabId": "",
       "transform": {
         "position": [
-          4.5,
-          10.600000381469727,
-          -18.200000762939453
+          4.0,
+          1.850000023841858,
+          -20.149999618530273
         ],
         "rotationEulerDeg": [
-          84.3550033569336,
-          0.0,
+          -49.83399963378906,
+          30.73550033569336,
           0.0
         ],
         "scale": [
@@ -20200,323 +20327,19 @@
         {
           "id": 1,
           "properties": {
+            "autoHash": "0.0000,0.0000,2.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,1.0000;0.2400,27.0000,0.0000,3.7345,5.0980,-6.4702,0.0026,0.9962,-0.0806,0.0326;0.5200,31.0000,0.0000,5.7000,6.2000,-9.2000,-0.0059,0.9751,-0.2203,-0.0262;0.8000,27.5000,0.0000,6.3176,5.4216,-10.4926,-0.0118,0.9852,-0.1538,-0.0754;1.0000,0.0000,3.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,1.0000",
             "cameraObject": {
               "$hikariRef": "SceneObject",
               "id": 3
             },
-            "regionA": "map5.c2_r2",
-            "regionB": "map5.c3_r2",
-            "sequenceAssetGuid": "cf3612a3876cc17da1549da91b8b4ecf",
-            "sequenceSlotName": "Camera",
-            "speed": 2.626
-          },
-          "type": "TD2.RegionSequence"
-        }
-      ],
-      "editorFolder": "1 玩法/镜头与演出/地图5切换",
-      "editorLocked": false,
-      "editorVisible": true,
-      "enabled": true,
-      "id": 6057,
-      "name": "切换 c2_r2 ↔ c3_r2",
-      "parent": null,
-      "sourcePrefabId": "",
-      "transform": {
-        "position": [
-          0.0,
-          0.0,
-          0.0
-        ],
-        "rotationEulerDeg": [
-          0.0,
-          0.0,
-          0.0
-        ],
-        "scale": [
-          1.0,
-          1.0,
-          1.0
-        ]
-      }
-    },
-    {
-      "components": [
-        {
-          "id": 1,
-          "properties": {
-            "cameraObject": {
-              "$hikariRef": "SceneObject",
-              "id": 3
-            },
-            "regionA": "map5.c2_r3",
-            "regionB": "map5.c3_r3",
-            "sequenceAssetGuid": "94aedd5f6b955d505a396c78d20c0d2d",
-            "sequenceSlotName": "Camera",
-            "speed": 2.766
-          },
-          "type": "TD2.RegionSequence"
-        }
-      ],
-      "editorFolder": "1 玩法/镜头与演出/地图5切换",
-      "editorLocked": false,
-      "editorVisible": true,
-      "enabled": true,
-      "id": 6058,
-      "name": "切换 c2_r3 ↔ c3_r3",
-      "parent": null,
-      "sourcePrefabId": "",
-      "transform": {
-        "position": [
-          0.0,
-          0.0,
-          0.0
-        ],
-        "rotationEulerDeg": [
-          0.0,
-          0.0,
-          0.0
-        ],
-        "scale": [
-          1.0,
-          1.0,
-          1.0
-        ]
-      }
-    },
-    {
-      "components": [
-        {
-          "id": 1,
-          "properties": {
-            "cameraObject": {
-              "$hikariRef": "SceneObject",
-              "id": 3
-            },
-            "regionA": "map5.c3_r2",
-            "regionB": "map5.c3_r3",
-            "sequenceAssetGuid": "400b756eb9688fefe1b7990d470c0a7f",
-            "sequenceSlotName": "Camera",
-            "speed": 3.037
-          },
-          "type": "TD2.RegionSequence"
-        }
-      ],
-      "editorFolder": "1 玩法/镜头与演出/地图5切换",
-      "editorLocked": false,
-      "editorVisible": true,
-      "enabled": true,
-      "id": 6059,
-      "name": "切换 c3_r2 ↔ c3_r3",
-      "parent": null,
-      "sourcePrefabId": "",
-      "transform": {
-        "position": [
-          0.0,
-          0.0,
-          0.0
-        ],
-        "rotationEulerDeg": [
-          0.0,
-          0.0,
-          0.0
-        ],
-        "scale": [
-          1.0,
-          1.0,
-          1.0
-        ]
-      }
-    },
-    {
-      "components": [
-        {
-          "id": 1,
-          "properties": {
-            "cameraObject": {
-              "$hikariRef": "SceneObject",
-              "id": 3
-            },
-            "regionA": "map5.c3_r2",
-            "regionB": "map5.c4_r2",
-            "sequenceAssetGuid": "ad58e1ffd2e33ae1d0cc97b83649cd42",
-            "sequenceSlotName": "Camera",
-            "speed": 2.508
-          },
-          "type": "TD2.RegionSequence"
-        }
-      ],
-      "editorFolder": "1 玩法/镜头与演出/地图5切换",
-      "editorLocked": false,
-      "editorVisible": true,
-      "enabled": true,
-      "id": 6060,
-      "name": "切换 c3_r2 ↔ c4_r2",
-      "parent": null,
-      "sourcePrefabId": "",
-      "transform": {
-        "position": [
-          0.0,
-          0.0,
-          0.0
-        ],
-        "rotationEulerDeg": [
-          0.0,
-          0.0,
-          0.0
-        ],
-        "scale": [
-          1.0,
-          1.0,
-          1.0
-        ]
-      }
-    },
-    {
-      "components": [
-        {
-          "id": 1,
-          "properties": {
-            "cameraObject": {
-              "$hikariRef": "SceneObject",
-              "id": 3
-            },
-            "regionA": "map5.c3_r3",
-            "regionB": "map5.c4_r3",
-            "sequenceAssetGuid": "0f6ec7e62b9d922dfa4a1760c57e929b",
-            "sequenceSlotName": "Camera",
-            "speed": 2.140000104904175
-          },
-          "type": "TD2.RegionSequence"
-        }
-      ],
-      "editorFolder": "1 玩法/镜头与演出/地图5切换",
-      "editorLocked": false,
-      "editorVisible": true,
-      "enabled": true,
-      "id": 6061,
-      "name": "切换 c3_r3 ↔ c4_r3",
-      "parent": null,
-      "sourcePrefabId": "",
-      "transform": {
-        "position": [
-          0.0,
-          0.0,
-          0.0
-        ],
-        "rotationEulerDeg": [
-          0.0,
-          0.0,
-          0.0
-        ],
-        "scale": [
-          1.0,
-          1.0,
-          1.0
-        ]
-      }
-    },
-    {
-      "components": [
-        {
-          "id": 1,
-          "properties": {
-            "cameraObject": {
-              "$hikariRef": "SceneObject",
-              "id": 3
-            },
-            "regionA": "map5.c4_r2",
-            "regionB": "map5.c5_r2",
-            "sequenceAssetGuid": "b92d9c840ce86694c44dcb3c1d3a748c",
-            "sequenceSlotName": "Camera",
-            "speed": 2.528
-          },
-          "type": "TD2.RegionSequence"
-        }
-      ],
-      "editorFolder": "1 玩法/镜头与演出/地图5切换",
-      "editorLocked": false,
-      "editorVisible": true,
-      "enabled": true,
-      "id": 6062,
-      "name": "切换 c4_r2 ↔ c5_r2",
-      "parent": null,
-      "sourcePrefabId": "",
-      "transform": {
-        "position": [
-          0.0,
-          0.0,
-          0.0
-        ],
-        "rotationEulerDeg": [
-          0.0,
-          0.0,
-          0.0
-        ],
-        "scale": [
-          1.0,
-          1.0,
-          1.0
-        ]
-      }
-    },
-    {
-      "components": [
-        {
-          "id": 1,
-          "properties": {
-            "cameraObject": {
-              "$hikariRef": "SceneObject",
-              "id": 3
-            },
-            "regionA": "map5.c4_r3",
-            "regionB": "map5.c5_r3",
-            "sequenceAssetGuid": "634815ead83c1147558fb97d25a81057",
-            "sequenceSlotName": "Camera",
-            "speed": 2.103
-          },
-          "type": "TD2.RegionSequence"
-        }
-      ],
-      "editorFolder": "1 玩法/镜头与演出/地图5切换",
-      "editorLocked": false,
-      "editorVisible": true,
-      "enabled": true,
-      "id": 6063,
-      "name": "切换 c4_r3 ↔ c5_r3",
-      "parent": null,
-      "sourcePrefabId": "",
-      "transform": {
-        "position": [
-          0.0,
-          0.0,
-          0.0
-        ],
-        "rotationEulerDeg": [
-          0.0,
-          0.0,
-          0.0
-        ],
-        "scale": [
-          1.0,
-          1.0,
-          1.0
-        ]
-      }
-    },
-    {
-      "components": [
-        {
-          "id": 1,
-          "properties": {
-            "cameraObject": {
-              "$hikariRef": "SceneObject",
-              "id": 3
-            },
+            "keepAuthored": false,
             "regionA": "map5.c5_r3",
             "regionB": "map5.c6_r3",
+            "seconds": 3.8,
             "sequenceAssetGuid": "90ba959feeee5f27936ae1ebf25f192f",
             "sequenceSlotName": "Camera",
-            "speed": 1.2000000476837158
+            "speed": 0.2632,
+            "style": "reveal"
           },
           "type": "TD2.RegionSequence"
         }
@@ -20552,147 +20375,19 @@
         {
           "id": 1,
           "properties": {
+            "autoHash": "0.0000,0.0000,2.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,1.0000;0.2600,27.0000,0.0000,7.6823,5.2808,-10.6466,-0.0194,0.9777,-0.1050,-0.1806;0.5500,30.0000,0.0000,10.4184,5.8000,-11.8816,-0.0706,0.9080,-0.1703,-0.3761;0.8000,27.5000,0.0000,10.9324,4.8810,-14.0974,-0.0516,0.8759,-0.0961,-0.4700;1.0000,0.0000,3.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,1.0000",
             "cameraObject": {
               "$hikariRef": "SceneObject",
               "id": 3
             },
-            "regionA": "map5.c6_r2",
-            "regionB": "map5.c6_r3",
-            "sequenceAssetGuid": "c24fe727daaf4a983a44552eb9e41970",
-            "sequenceSlotName": "Camera",
-            "speed": 2.587
-          },
-          "type": "TD2.RegionSequence"
-        }
-      ],
-      "editorFolder": "1 玩法/镜头与演出/地图5切换",
-      "editorLocked": false,
-      "editorVisible": true,
-      "enabled": true,
-      "id": 6065,
-      "name": "切换 c6_r2 ↔ c6_r3",
-      "parent": null,
-      "sourcePrefabId": "",
-      "transform": {
-        "position": [
-          0.0,
-          0.0,
-          0.0
-        ],
-        "rotationEulerDeg": [
-          0.0,
-          0.0,
-          0.0
-        ],
-        "scale": [
-          1.0,
-          1.0,
-          1.0
-        ]
-      }
-    },
-    {
-      "components": [
-        {
-          "id": 1,
-          "properties": {
-            "cameraObject": {
-              "$hikariRef": "SceneObject",
-              "id": 3
-            },
-            "regionA": "map5.c6_r2",
-            "regionB": "map5.c7_r2",
-            "sequenceAssetGuid": "feea187af4ea8384b5feedc9ecf2f3e1",
-            "sequenceSlotName": "Camera",
-            "speed": 1.844
-          },
-          "type": "TD2.RegionSequence"
-        }
-      ],
-      "editorFolder": "1 玩法/镜头与演出/地图5切换",
-      "editorLocked": false,
-      "editorVisible": true,
-      "enabled": true,
-      "id": 6066,
-      "name": "切换 c6_r2 ↔ c7_r2",
-      "parent": null,
-      "sourcePrefabId": "",
-      "transform": {
-        "position": [
-          0.0,
-          0.0,
-          0.0
-        ],
-        "rotationEulerDeg": [
-          0.0,
-          0.0,
-          0.0
-        ],
-        "scale": [
-          1.0,
-          1.0,
-          1.0
-        ]
-      }
-    },
-    {
-      "components": [
-        {
-          "id": 1,
-          "properties": {
-            "cameraObject": {
-              "$hikariRef": "SceneObject",
-              "id": 3
-            },
-            "regionA": "map5.c6_r3",
-            "regionB": "map5.c6_r4",
-            "sequenceAssetGuid": "b45394cfdabfd20f4c8b803807da2fd6",
-            "sequenceSlotName": "Camera",
-            "speed": 3.125
-          },
-          "type": "TD2.RegionSequence"
-        }
-      ],
-      "editorFolder": "1 玩法/镜头与演出/地图5切换",
-      "editorLocked": false,
-      "editorVisible": true,
-      "enabled": true,
-      "id": 6067,
-      "name": "切换 c6_r3 ↔ c6_r4",
-      "parent": null,
-      "sourcePrefabId": "",
-      "transform": {
-        "position": [
-          0.0,
-          0.0,
-          0.0
-        ],
-        "rotationEulerDeg": [
-          0.0,
-          0.0,
-          0.0
-        ],
-        "scale": [
-          1.0,
-          1.0,
-          1.0
-        ]
-      }
-    },
-    {
-      "components": [
-        {
-          "id": 1,
-          "properties": {
-            "cameraObject": {
-              "$hikariRef": "SceneObject",
-              "id": 3
-            },
+            "keepAuthored": false,
             "regionA": "map5.c6_r3",
             "regionB": "map5.c7_r3",
+            "seconds": 3.3,
             "sequenceAssetGuid": "b3602b9ac2bc1419f9acebbc69e83b4d",
             "sequenceSlotName": "Camera",
-            "speed": 1.818
+            "speed": 0.303,
+            "style": "arc"
           },
           "type": "TD2.RegionSequence"
         }
@@ -20728,103 +20423,19 @@
         {
           "id": 1,
           "properties": {
+            "autoHash": "0.0000,0.0000,2.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,1.0000;0.2800,28.0000,0.0000,8.0672,0.4500,-10.7174,0.0195,0.9659,0.0765,-0.2465;0.5800,32.0000,0.0000,9.9835,0.4000,-12.3165,0.0579,0.9132,0.1398,-0.3783;0.8200,28.0000,0.0000,10.9882,0.7588,-14.9644,-0.0173,-0.8537,-0.0285,0.5197;1.0000,0.0000,3.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,1.0000",
             "cameraObject": {
               "$hikariRef": "SceneObject",
               "id": 3
             },
-            "regionA": "map5.c6_r4",
-            "regionB": "map5.c6_r5",
-            "sequenceAssetGuid": "185d3aeea2d9b83650e9fd7916ae7404",
-            "sequenceSlotName": "Camera",
-            "speed": 2.572
-          },
-          "type": "TD2.RegionSequence"
-        }
-      ],
-      "editorFolder": "1 玩法/镜头与演出/地图5切换",
-      "editorLocked": false,
-      "editorVisible": true,
-      "enabled": true,
-      "id": 6069,
-      "name": "切换 c6_r4 ↔ c6_r5",
-      "parent": null,
-      "sourcePrefabId": "",
-      "transform": {
-        "position": [
-          0.0,
-          0.0,
-          0.0
-        ],
-        "rotationEulerDeg": [
-          0.0,
-          0.0,
-          0.0
-        ],
-        "scale": [
-          1.0,
-          1.0,
-          1.0
-        ]
-      }
-    },
-    {
-      "components": [
-        {
-          "id": 1,
-          "properties": {
-            "cameraObject": {
-              "$hikariRef": "SceneObject",
-              "id": 3
-            },
-            "regionA": "map5.c6_r5",
-            "regionB": "map5.c6_r6",
-            "sequenceAssetGuid": "fa369a31fe591cff5ebda083d2466a17",
-            "sequenceSlotName": "Camera",
-            "speed": 1.2000000476837158
-          },
-          "type": "TD2.RegionSequence"
-        }
-      ],
-      "editorFolder": "1 玩法/镜头与演出/地图5切换",
-      "editorLocked": false,
-      "editorVisible": true,
-      "enabled": true,
-      "id": 6070,
-      "name": "切换 c6_r5 ↔ c6_r6",
-      "parent": null,
-      "sourcePrefabId": "",
-      "transform": {
-        "position": [
-          0.0,
-          0.0,
-          0.0
-        ],
-        "rotationEulerDeg": [
-          0.0,
-          0.0,
-          0.0
-        ],
-        "scale": [
-          1.0,
-          1.0,
-          1.0
-        ]
-      }
-    },
-    {
-      "components": [
-        {
-          "id": 1,
-          "properties": {
-            "cameraObject": {
-              "$hikariRef": "SceneObject",
-              "id": 3
-            },
+            "keepAuthored": false,
             "regionA": "map5.c6_r6",
             "regionB": "map5.c7_r6",
+            "seconds": 3.1,
             "sequenceAssetGuid": "75a296dbc8dbd1a26c00701af1bf6662",
             "sequenceSlotName": "Camera",
-            "speed": 0.800000011920929
+            "speed": 0.3226,
+            "style": "low"
           },
           "type": "TD2.RegionSequence"
         }
@@ -20860,59 +20471,19 @@
         {
           "id": 1,
           "properties": {
+            "autoHash": "0.0000,0.0000,2.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,1.0000;0.2800,25.0000,0.0000,11.5802,3.9271,-19.6746,0.1239,-0.5062,0.0738,0.8503;0.5600,23.0000,0.0000,12.2191,3.8000,-20.9202,0.0870,-0.5344,0.0554,0.8389;0.8200,25.0000,0.0000,8.5813,3.5791,-22.0862,0.0978,-0.3759,0.0399,0.9206;1.0000,0.0000,3.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,1.0000",
             "cameraObject": {
               "$hikariRef": "SceneObject",
               "id": 3
             },
-            "regionA": "map5.c7_r3",
-            "regionB": "map5.c7_r4",
-            "sequenceAssetGuid": "b2dc0a114c46034c7f33f1853812e5a4",
-            "sequenceSlotName": "Camera",
-            "speed": 2.955
-          },
-          "type": "TD2.RegionSequence"
-        }
-      ],
-      "editorFolder": "1 玩法/镜头与演出/地图5切换",
-      "editorLocked": false,
-      "editorVisible": true,
-      "enabled": true,
-      "id": 6072,
-      "name": "切换 c7_r3 ↔ c7_r4",
-      "parent": null,
-      "sourcePrefabId": "",
-      "transform": {
-        "position": [
-          0.0,
-          0.0,
-          0.0
-        ],
-        "rotationEulerDeg": [
-          0.0,
-          0.0,
-          0.0
-        ],
-        "scale": [
-          1.0,
-          1.0,
-          1.0
-        ]
-      }
-    },
-    {
-      "components": [
-        {
-          "id": 1,
-          "properties": {
-            "cameraObject": {
-              "$hikariRef": "SceneObject",
-              "id": 3
-            },
+            "keepAuthored": false,
             "regionA": "map5.c7_r4",
             "regionB": "map5.c8_r4",
+            "seconds": 3.6,
             "sequenceAssetGuid": "7416aae1a962eb068d158067f493b4f6",
             "sequenceSlotName": "Camera",
-            "speed": 1.818
+            "speed": 0.2778,
+            "style": "pull"
           },
           "type": "TD2.RegionSequence"
         }
@@ -20948,59 +20519,19 @@
         {
           "id": 1,
           "properties": {
+            "autoHash": "0.0000,0.0000,2.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,1.0000;0.3000,29.0000,0.0000,9.7558,2.0000,-19.2648,0.0495,-0.4414,-0.0096,0.8959;0.5000,35.0000,0.0000,9.0501,2.0500,-20.7501,0.0383,-0.3820,0.0017,0.9234;0.7000,29.0000,0.0000,7.5648,1.9000,-21.4558,0.0246,-0.2800,0.0299,0.9592;1.0000,0.0000,3.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,1.0000",
             "cameraObject": {
               "$hikariRef": "SceneObject",
               "id": 3
             },
-            "regionA": "map5.c7_r5",
-            "regionB": "map5.c7_r6",
-            "sequenceAssetGuid": "8840b1531cb8de6b11f32a862597bd9c",
-            "sequenceSlotName": "Camera",
-            "speed": 2.656
-          },
-          "type": "TD2.RegionSequence"
-        }
-      ],
-      "editorFolder": "1 玩法/镜头与演出/地图5切换",
-      "editorLocked": false,
-      "editorVisible": true,
-      "enabled": true,
-      "id": 6074,
-      "name": "切换 c7_r5 ↔ c7_r6",
-      "parent": null,
-      "sourcePrefabId": "",
-      "transform": {
-        "position": [
-          0.0,
-          0.0,
-          0.0
-        ],
-        "rotationEulerDeg": [
-          0.0,
-          0.0,
-          0.0
-        ],
-        "scale": [
-          1.0,
-          1.0,
-          1.0
-        ]
-      }
-    },
-    {
-      "components": [
-        {
-          "id": 1,
-          "properties": {
-            "cameraObject": {
-              "$hikariRef": "SceneObject",
-              "id": 3
-            },
+            "keepAuthored": false,
             "regionA": "map5.c7_r5",
             "regionB": "map5.c8_r5",
+            "seconds": 2.9,
             "sequenceAssetGuid": "879724b8bd51057bec2fe3e98eebf87b",
             "sequenceSlotName": "Camera",
-            "speed": 1.818
+            "speed": 0.3448,
+            "style": "hug"
           },
           "type": "TD2.RegionSequence"
         }
@@ -21036,94 +20567,6 @@
         {
           "id": 1,
           "properties": {
-            "cameraObject": {
-              "$hikariRef": "SceneObject",
-              "id": 3
-            },
-            "regionA": "map5.c8_r3",
-            "regionB": "map5.c8_r4",
-            "sequenceAssetGuid": "722bd9a4ac6ce6cad568e10c46b08b6f",
-            "sequenceSlotName": "Camera",
-            "speed": 2.973
-          },
-          "type": "TD2.RegionSequence"
-        }
-      ],
-      "editorFolder": "1 玩法/镜头与演出/地图5切换",
-      "editorLocked": false,
-      "editorVisible": true,
-      "enabled": true,
-      "id": 6076,
-      "name": "切换 c8_r3 ↔ c8_r4",
-      "parent": null,
-      "sourcePrefabId": "",
-      "transform": {
-        "position": [
-          0.0,
-          0.0,
-          0.0
-        ],
-        "rotationEulerDeg": [
-          0.0,
-          0.0,
-          0.0
-        ],
-        "scale": [
-          1.0,
-          1.0,
-          1.0
-        ]
-      }
-    },
-    {
-      "components": [
-        {
-          "id": 1,
-          "properties": {
-            "cameraObject": {
-              "$hikariRef": "SceneObject",
-              "id": 3
-            },
-            "regionA": "map5.c8_r4",
-            "regionB": "map5.c8_r5",
-            "sequenceAssetGuid": "25442608a51db00e8bcf18ef60d23620",
-            "sequenceSlotName": "Camera",
-            "speed": 2.955
-          },
-          "type": "TD2.RegionSequence"
-        }
-      ],
-      "editorFolder": "1 玩法/镜头与演出/地图5切换",
-      "editorLocked": false,
-      "editorVisible": true,
-      "enabled": true,
-      "id": 6077,
-      "name": "切换 c8_r4 ↔ c8_r5",
-      "parent": null,
-      "sourcePrefabId": "",
-      "transform": {
-        "position": [
-          0.0,
-          0.0,
-          0.0
-        ],
-        "rotationEulerDeg": [
-          0.0,
-          0.0,
-          0.0
-        ],
-        "scale": [
-          1.0,
-          1.0,
-          1.0
-        ]
-      }
-    },
-    {
-      "components": [
-        {
-          "id": 1,
-          "properties": {
             "depthOfField": {
               "enabled": false
             },
@@ -21134,7 +20577,7 @@
             },
             "nearClip": 0.1,
             "orthographic": true,
-            "orthographicHeight": 30.0,
+            "orthographicHeight": 52.0,
             "pixelSnap": false,
             "pixelsPerUnit": 64.0,
             "verticalFovDegrees": 45.0
@@ -21183,7 +20626,7 @@
             },
             "nearClip": 0.1,
             "orthographic": true,
-            "orthographicHeight": 15.0,
+            "orthographicHeight": 10.0,
             "pixelSnap": false,
             "pixelsPerUnit": 64.0,
             "verticalFovDegrees": 45.0
@@ -21196,7 +20639,7 @@
       "editorVisible": true,
       "enabled": true,
       "id": 6079,
-      "name": "TD2 舞台镜头 · 未布置地图",
+      "name": "TD2 舞台镜头 · 第二清晰／未布置地图",
       "parent": null,
       "sourcePrefabId": "",
       "transform": {
@@ -21249,13 +20692,13 @@
       "sourcePrefabId": "",
       "transform": {
         "position": [
-          -0.7271999716758728,
-          7.459499835968018,
-          -5.202099800109863
+          -0.09019999951124191,
+          5.713500022888184,
+          -5.35129976272583
         ],
         "rotationEulerDeg": [
-          -4.460999965667725,
-          200.0,
+          0.4415000081062317,
+          -149.49940490722656,
           0.0
         ],
         "scale": [
@@ -21297,13 +20740,13 @@
       "sourcePrefabId": "",
       "transform": {
         "position": [
-          1.0592000484466553,
-          6.653600215911865,
-          -3.921099901199341
+          0.7687000036239624,
+          6.021100044250488,
+          -5.307700157165527
         ],
         "rotationEulerDeg": [
-          -9.397000312805176,
-          176.0,
+          2.1338000297546387,
+          -163.50860595703125,
           0.0
         ],
         "scale": [
@@ -21345,13 +20788,13 @@
       "sourcePrefabId": "",
       "transform": {
         "position": [
-          -0.5457853078842163,
-          4.656899929046631,
-          -3.09894061088562
+          -0.1362999975681305,
+          4.599999904632568,
+          -4.856900215148926
         ],
         "rotationEulerDeg": [
-          2.5889999866485596,
-          204.0,
+          5.7993998527526855,
+          -153.4687042236328,
           0.0
         ],
         "scale": [
@@ -21393,14 +20836,14 @@
       "sourcePrefabId": "",
       "transform": {
         "position": [
-          0.02270364761352539,
-          4.897067070007324,
-          -3.0033278465270996
+          1.0430999994277954,
+          5.023600101470947,
+          -4.501299858093262
         ],
         "rotationEulerDeg": [
-          -179.55194091796875,
-          7.396970748901367,
-          179.99989318847656
+          6.658899784088135,
+          -161.52650451660156,
+          0.0
         ],
         "scale": [
           1.0,
@@ -21441,13 +20884,13 @@
       "sourcePrefabId": "",
       "transform": {
         "position": [
-          3.0478999614715576,
-          7.974599838256836,
-          -6.151299953460693
+          1.7803000211715698,
+          6.102200031280518,
+          -6.099999904632568
         ],
         "rotationEulerDeg": [
-          -1.805999994277954,
-          164.0,
+          -0.3959999978542328,
+          -176.49020385742188,
           0.0
         ],
         "scale": [
@@ -21489,14 +20932,14 @@
       "sourcePrefabId": "",
       "transform": {
         "position": [
-          5.423387050628662,
-          4.992218017578125,
-          -4.871349811553955
+          1.8430999517440796,
+          4.872900009155273,
+          -5.602799892425537
         ],
         "rotationEulerDeg": [
-          -179.0359344482422,
-          -31.999990463256836,
-          179.99989318847656
+          2.6491000652313232,
+          -171.53579711914063,
+          0.0
         ],
         "scale": [
           1.0,
@@ -21537,13 +20980,13 @@
       "sourcePrefabId": "",
       "transform": {
         "position": [
-          5.226099967956543,
-          8.692700386047363,
-          -8.037300109863281
+          2.7874999046325684,
+          5.844699859619141,
+          -6.70989990234375
         ],
         "rotationEulerDeg": [
-          1.159999966621399,
-          146.0,
+          2.0116000175476074,
+          174.48199462890625,
           0.0
         ],
         "scale": [
@@ -21585,14 +21028,14 @@
       "sourcePrefabId": "",
       "transform": {
         "position": [
-          6.560945510864258,
-          4.8468403816223145,
-          -7.415787220001221
+          2.3436999320983887,
+          4.748000144958496,
+          -6.232100009918213
         ],
         "rotationEulerDeg": [
-          -179.47930908203125,
-          -61.41621017456055,
-          173.10655212402344
+          5.182700157165527,
+          170.47450256347656,
+          0.0
         ],
         "scale": [
           1.0,
@@ -21633,14 +21076,14 @@
       "sourcePrefabId": "",
       "transform": {
         "position": [
-          3.9670677185058594,
-          6.085372447967529,
-          -9.000179290771484
+          6.582300186157227,
+          4.730800151824951,
+          -11.046600341796875
         ],
         "rotationEulerDeg": [
-          -173.0,
-          6.834380149841309,
-          179.99989318847656
+          7.5152997970581055,
+          -167.0,
+          0.0
         ],
         "scale": [
           1.0,
@@ -21681,13 +21124,13 @@
       "sourcePrefabId": "",
       "transform": {
         "position": [
-          4.885700225830078,
-          8.838399887084961,
-          -11.183099746704102
+          6.403600215911865,
+          5.488500118255615,
+          -11.763500213623047
         ],
         "rotationEulerDeg": [
-          0.42800000309944153,
-          189.0,
+          2.964900016784668,
+          -155.17849731445313,
           0.0
         ],
         "scale": [
@@ -21729,13 +21172,13 @@
       "sourcePrefabId": "",
       "transform": {
         "position": [
-          9.085399627685547,
-          9.31879997253418,
-          -14.786999702453613
+          9.770400047302246,
+          5.765900135040283,
+          -12.529600143432617
         ],
         "rotationEulerDeg": [
-          3.0,
-          254.0,
+          2.2125000953674316,
+          -135.0,
           0.0
         ],
         "scale": [
@@ -21777,14 +21220,14 @@
       "sourcePrefabId": "",
       "transform": {
         "position": [
-          4.423976898193359,
-          5.208295822143555,
-          -9.57006549835205
+          4.511300086975098,
+          3.487499952316284,
+          -10.392499923706055
         ],
         "rotationEulerDeg": [
-          -173.0,
-          5.169013977050781,
-          179.99989318847656
+          7.084199905395508,
+          175.8000030517578,
+          0.0
         ],
         "scale": [
           1.0,
@@ -21825,13 +21268,13 @@
       "sourcePrefabId": "",
       "transform": {
         "position": [
-          10.14780044555664,
-          6.137499809265137,
-          -16.18000030517578
+          11.209199905395508,
+          3.9245998859405518,
+          -15.290499687194824
         ],
         "rotationEulerDeg": [
-          1.9520000219345093,
-          270.0,
+          1.8909000158309937,
+          -111.85440063476563,
           0.0
         ],
         "scale": [
@@ -21873,13 +21316,13 @@
       "sourcePrefabId": "",
       "transform": {
         "position": [
-          4.460000038146973,
-          2.2720999717712402,
-          -10.366399765014648
+          5.988399982452393,
+          2.3036000728607178,
+          -11.228899955749512
         ],
         "rotationEulerDeg": [
-          -3.690000057220459,
-          180.0,
+          8.001899719238281,
+          -176.8000030517578,
           0.0
         ],
         "scale": [
@@ -21921,14 +21364,14 @@
       "sourcePrefabId": "",
       "transform": {
         "position": [
-          4.300000190734863,
-          -0.04449915885925293,
-          -9.66889476776123
+          7.167200088500977,
+          1.0288000106811523,
+          -10.717399597167969
         ],
         "rotationEulerDeg": [
-          164.02984619140625,
-          2.9754080969723873e-05,
-          -179.99989318847656
+          0.9315000176429749,
+          -154.0,
+          0.0
         ],
         "scale": [
           1.0,
@@ -21969,14 +21412,14 @@
       "sourcePrefabId": "",
       "transform": {
         "position": [
-          9.303939819335938,
-          1.0827640295028687,
-          -16.020000457763672
+          11.529199600219727,
+          0.9520000219345093,
+          -16.390199661254883
         ],
         "rotationEulerDeg": [
-          -90.45455932617188,
-          -89.69609069824219,
-          90.0193099975586
+          1.0174000263214111,
+          -100.0,
+          0.0
         ],
         "scale": [
           1.0,
@@ -22017,13 +21460,13 @@
       "sourcePrefabId": "",
       "transform": {
         "position": [
-          10.140299797058105,
-          4.190499782562256,
-          -16.020000457763672
+          10.5802001953125,
+          3.027100086212158,
+          -18.87459945678711
         ],
         "rotationEulerDeg": [
-          -0.8899999856948853,
-          270.0,
+          8.269499778747559,
+          -65.0,
           0.0
         ],
         "scale": [
@@ -22065,14 +21508,14 @@
       "sourcePrefabId": "",
       "transform": {
         "position": [
-          4.962615966796875,
-          3.7215254306793213,
-          -21.820043563842773
+          6.622399806976318,
+          3.1524999141693115,
+          -22.714000701904297
         ],
         "rotationEulerDeg": [
-          -12.658830642700195,
-          3.2491392687461484e-08,
-          1.4466026243553642e-07
+          8.001899719238281,
+          -20.0,
+          0.0
         ],
         "scale": [
           1.0,
@@ -22113,13 +21556,13 @@
       "sourcePrefabId": "",
       "transform": {
         "position": [
-          10.476900100708008,
-          2.6991000175476074,
-          -17.444799423217773
+          10.910799980163574,
+          2.068000078201294,
+          -17.164400100708008
         ],
         "rotationEulerDeg": [
-          2.4070000648498535,
-          287.0,
+          8.705900192260742,
+          -84.0,
           0.0
         ],
         "scale": [
@@ -22161,14 +21604,14 @@
       "sourcePrefabId": "",
       "transform": {
         "position": [
-          4.420000076293945,
-          1.839238166809082,
-          -22.459003448486328
+          6.318999767303467,
+          2.0064001083374023,
+          -22.912700653076172
         ],
         "rotationEulerDeg": [
-          -14.151209831237793,
-          1.576267862901659e-07,
-          6.251730724216031e-07
+          7.631400108337402,
+          -13.0,
+          0.0
         ],
         "scale": [
           1.0,
@@ -22209,14 +21652,14 @@
       "sourcePrefabId": "",
       "transform": {
         "position": [
-          4.754284858703613,
-          6.773437023162842,
-          -22.790550231933594
+          6.328400135040283,
+          4.234399795532227,
+          -22.27440071105957
         ],
         "rotationEulerDeg": [
-          16.441381454467773,
-          9.450344862216298e-08,
-          -3.2024112783801684e-07
+          8.705900192260742,
+          -15.0,
+          0.0
         ],
         "scale": [
           1.0,
@@ -22267,6 +21710,1166 @@
           4.06873083114624,
           4.848698616027832,
           -7.484198093414307
+        ],
+        "rotationEulerDeg": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "components": [
+        {
+          "id": 1,
+          "properties": {
+            "assetId": "4385e0e8ee74d06c5da7f2a12f61ec22",
+            "castShadow": false,
+            "receiveShadow": true,
+            "visible": true
+          },
+          "type": "ModelComponent"
+        }
+      ],
+      "editorFolder": "2 工厂布景/地图5布景",
+      "editorLocked": false,
+      "editorVisible": true,
+      "enabled": true,
+      "id": 6106,
+      "name": "吊链 c2_r2 顶1",
+      "parent": null,
+      "sourcePrefabId": "",
+      "transform": {
+        "position": [
+          -1.9458999633789063,
+          6.161099910736084,
+          -7.762199878692627
+        ],
+        "rotationEulerDeg": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          4.738900184631348,
+          1.0
+        ]
+      }
+    },
+    {
+      "components": [
+        {
+          "id": 1,
+          "properties": {
+            "assetId": "4385e0e8ee74d06c5da7f2a12f61ec22",
+            "castShadow": false,
+            "receiveShadow": true,
+            "visible": true
+          },
+          "type": "ModelComponent"
+        }
+      ],
+      "editorFolder": "2 工厂布景/地图5布景",
+      "editorLocked": false,
+      "editorVisible": true,
+      "enabled": true,
+      "id": 6107,
+      "name": "吊链 c2_r2 顶2",
+      "parent": null,
+      "sourcePrefabId": "",
+      "transform": {
+        "position": [
+          -1.24590003490448,
+          6.161099910736084,
+          -7.98960018157959
+        ],
+        "rotationEulerDeg": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          4.738900184631348,
+          1.0
+        ]
+      }
+    },
+    {
+      "components": [
+        {
+          "id": 1,
+          "properties": {
+            "assetId": "4385e0e8ee74d06c5da7f2a12f61ec22",
+            "castShadow": false,
+            "receiveShadow": true,
+            "visible": true
+          },
+          "type": "ModelComponent"
+        }
+      ],
+      "editorFolder": "2 工厂布景/地图5布景",
+      "editorLocked": false,
+      "editorVisible": true,
+      "enabled": true,
+      "id": 6108,
+      "name": "吊链 c3_r2 顶1",
+      "parent": null,
+      "sourcePrefabId": "",
+      "transform": {
+        "position": [
+          -0.5181999802589417,
+          6.414000034332275,
+          -8.235099792480469
+        ],
+        "rotationEulerDeg": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          4.486000061035156,
+          1.0
+        ]
+      }
+    },
+    {
+      "components": [
+        {
+          "id": 1,
+          "properties": {
+            "assetId": "4385e0e8ee74d06c5da7f2a12f61ec22",
+            "castShadow": false,
+            "receiveShadow": true,
+            "visible": true
+          },
+          "type": "ModelComponent"
+        }
+      ],
+      "editorFolder": "2 工厂布景/地图5布景",
+      "editorLocked": false,
+      "editorVisible": true,
+      "enabled": true,
+      "id": 6109,
+      "name": "吊链 c3_r2 顶2",
+      "parent": null,
+      "sourcePrefabId": "",
+      "transform": {
+        "position": [
+          0.28619998693466187,
+          6.414000034332275,
+          -8.291299819946289
+        ],
+        "rotationEulerDeg": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          4.486000061035156,
+          1.0
+        ]
+      }
+    },
+    {
+      "components": [
+        {
+          "id": 1,
+          "properties": {
+            "assetId": "4385e0e8ee74d06c5da7f2a12f61ec22",
+            "castShadow": false,
+            "receiveShadow": true,
+            "visible": true
+          },
+          "type": "ModelComponent"
+        }
+      ],
+      "editorFolder": "2 工厂布景/地图5布景",
+      "editorLocked": false,
+      "editorVisible": true,
+      "enabled": true,
+      "id": 6110,
+      "name": "吊链 c4_r2 顶1",
+      "parent": null,
+      "sourcePrefabId": "",
+      "transform": {
+        "position": [
+          1.2304999828338623,
+          6.583600044250488,
+          -9.018600463867188
+        ],
+        "rotationEulerDeg": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          4.316400051116943,
+          1.0
+        ]
+      }
+    },
+    {
+      "components": [
+        {
+          "id": 1,
+          "properties": {
+            "assetId": "4385e0e8ee74d06c5da7f2a12f61ec22",
+            "castShadow": false,
+            "receiveShadow": true,
+            "visible": true
+          },
+          "type": "ModelComponent"
+        }
+      ],
+      "editorFolder": "2 工厂布景/地图5布景",
+      "editorLocked": false,
+      "editorVisible": true,
+      "enabled": true,
+      "id": 6111,
+      "name": "吊链 c4_r2 顶2",
+      "parent": null,
+      "sourcePrefabId": "",
+      "transform": {
+        "position": [
+          1.9416999816894531,
+          6.583600044250488,
+          -8.905900001525879
+        ],
+        "rotationEulerDeg": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          4.316400051116943,
+          1.0
+        ]
+      }
+    },
+    {
+      "components": [
+        {
+          "id": 1,
+          "properties": {
+            "assetId": "4385e0e8ee74d06c5da7f2a12f61ec22",
+            "castShadow": false,
+            "receiveShadow": true,
+            "visible": true
+          },
+          "type": "ModelComponent"
+        }
+      ],
+      "editorFolder": "2 工厂布景/地图5布景",
+      "editorLocked": false,
+      "editorVisible": true,
+      "enabled": true,
+      "id": 6112,
+      "name": "吊链 c5_r2 顶1",
+      "parent": null,
+      "sourcePrefabId": "",
+      "transform": {
+        "position": [
+          2.6905999183654785,
+          6.250999927520752,
+          -9.97189998626709
+        ],
+        "rotationEulerDeg": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          4.64900016784668,
+          1.0
+        ]
+      }
+    },
+    {
+      "components": [
+        {
+          "id": 1,
+          "properties": {
+            "assetId": "4385e0e8ee74d06c5da7f2a12f61ec22",
+            "castShadow": false,
+            "receiveShadow": true,
+            "visible": true
+          },
+          "type": "ModelComponent"
+        }
+      ],
+      "editorFolder": "2 工厂布景/地图5布景",
+      "editorLocked": false,
+      "editorVisible": true,
+      "enabled": true,
+      "id": 6113,
+      "name": "吊链 c5_r2 顶2",
+      "parent": null,
+      "sourcePrefabId": "",
+      "transform": {
+        "position": [
+          3.4735000133514404,
+          6.250999927520752,
+          -9.717499732971191
+        ],
+        "rotationEulerDeg": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          4.64900016784668,
+          1.0
+        ]
+      }
+    },
+    {
+      "components": [
+        {
+          "id": 1,
+          "properties": {
+            "assetId": "4385e0e8ee74d06c5da7f2a12f61ec22",
+            "castShadow": false,
+            "receiveShadow": true,
+            "visible": true
+          },
+          "type": "ModelComponent"
+        }
+      ],
+      "editorFolder": "2 工厂布景/地图5布景",
+      "editorLocked": false,
+      "editorVisible": true,
+      "enabled": true,
+      "id": 6114,
+      "name": "吊链 c7_r3 顶1",
+      "parent": null,
+      "sourcePrefabId": "",
+      "transform": {
+        "position": [
+          7.275100231170654,
+          4.603600025177002,
+          -16.35449981689453
+        ],
+        "rotationEulerDeg": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          6.29640007019043,
+          1.0
+        ]
+      }
+    },
+    {
+      "components": [
+        {
+          "id": 1,
+          "properties": {
+            "assetId": "4385e0e8ee74d06c5da7f2a12f61ec22",
+            "castShadow": false,
+            "receiveShadow": true,
+            "visible": true
+          },
+          "type": "ModelComponent"
+        }
+      ],
+      "editorFolder": "2 工厂布景/地图5布景",
+      "editorLocked": false,
+      "editorVisible": true,
+      "enabled": true,
+      "id": 6115,
+      "name": "吊链 c7_r3 顶2",
+      "parent": null,
+      "sourcePrefabId": "",
+      "transform": {
+        "position": [
+          7.368800163269043,
+          4.603600025177002,
+          -17.425600051879883
+        ],
+        "rotationEulerDeg": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          6.29640007019043,
+          1.0
+        ]
+      }
+    },
+    {
+      "components": [
+        {
+          "id": 1,
+          "properties": {
+            "assetId": "4385e0e8ee74d06c5da7f2a12f61ec22",
+            "castShadow": false,
+            "receiveShadow": true,
+            "visible": true
+          },
+          "type": "ModelComponent"
+        }
+      ],
+      "editorFolder": "2 工厂布景/地图5布景",
+      "editorLocked": false,
+      "editorVisible": true,
+      "enabled": true,
+      "id": 6116,
+      "name": "吊链 c8_r3 顶1",
+      "parent": null,
+      "sourcePrefabId": "",
+      "transform": {
+        "position": [
+          5.787700176239014,
+          4.395999908447266,
+          -18.70789909362793
+        ],
+        "rotationEulerDeg": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          6.504000186920166,
+          1.0
+        ]
+      }
+    },
+    {
+      "components": [
+        {
+          "id": 1,
+          "properties": {
+            "assetId": "4385e0e8ee74d06c5da7f2a12f61ec22",
+            "castShadow": false,
+            "receiveShadow": true,
+            "visible": true
+          },
+          "type": "ModelComponent"
+        }
+      ],
+      "editorFolder": "2 工厂布景/地图5布景",
+      "editorLocked": false,
+      "editorVisible": true,
+      "enabled": true,
+      "id": 6117,
+      "name": "吊链 c8_r3 顶2",
+      "parent": null,
+      "sourcePrefabId": "",
+      "transform": {
+        "position": [
+          4.892300128936768,
+          4.395999908447266,
+          -18.676599502563477
+        ],
+        "rotationEulerDeg": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          6.504000186920166,
+          1.0
+        ]
+      }
+    },
+    {
+      "components": [
+        {
+          "id": 1,
+          "properties": {
+            "assetId": "4385e0e8ee74d06c5da7f2a12f61ec22",
+            "castShadow": false,
+            "receiveShadow": true,
+            "visible": true
+          },
+          "type": "ModelComponent"
+        }
+      ],
+      "editorFolder": "2 工厂布景/地图5布景",
+      "editorLocked": false,
+      "editorVisible": true,
+      "enabled": true,
+      "id": 6118,
+      "name": "吊链 c2_r2-c2_r3 1",
+      "parent": null,
+      "sourcePrefabId": "",
+      "transform": {
+        "position": [
+          -1.9874999523162842,
+          4.800000190734863,
+          -7.648399829864502
+        ],
+        "rotationEulerDeg": [
+          -16.8528995513916,
+          0.0,
+          -1.6201000213623047
+        ],
+        "scale": [
+          1.0,
+          0.6481000185012817,
+          1.0
+        ]
+      }
+    },
+    {
+      "components": [
+        {
+          "id": 1,
+          "properties": {
+            "assetId": "4385e0e8ee74d06c5da7f2a12f61ec22",
+            "castShadow": false,
+            "receiveShadow": true,
+            "visible": true
+          },
+          "type": "ModelComponent"
+        }
+      ],
+      "editorFolder": "2 工厂布景/地图5布景",
+      "editorLocked": false,
+      "editorVisible": true,
+      "enabled": true,
+      "id": 6119,
+      "name": "吊链 c2_r2-c2_r3 2",
+      "parent": null,
+      "sourcePrefabId": "",
+      "transform": {
+        "position": [
+          -1.1725000143051147,
+          4.800000190734863,
+          -7.851600170135498
+        ],
+        "rotationEulerDeg": [
+          -18.673099517822266,
+          0.0,
+          8.940199851989746
+        ],
+        "scale": [
+          1.0,
+          0.6625000238418579,
+          1.0
+        ]
+      }
+    },
+    {
+      "components": [
+        {
+          "id": 1,
+          "properties": {
+            "assetId": "4385e0e8ee74d06c5da7f2a12f61ec22",
+            "castShadow": false,
+            "receiveShadow": true,
+            "visible": true
+          },
+          "type": "ModelComponent"
+        }
+      ],
+      "editorFolder": "2 工厂布景/地图5布景",
+      "editorLocked": false,
+      "editorVisible": true,
+      "enabled": true,
+      "id": 6120,
+      "name": "吊链 c3_r2-c3_r3 1",
+      "parent": null,
+      "sourcePrefabId": "",
+      "transform": {
+        "position": [
+          -0.6977999806404114,
+          5.145400047302246,
+          -8.233699798583984
+        ],
+        "rotationEulerDeg": [
+          -6.809199810028076,
+          0.0,
+          -21.119600296020508
+        ],
+        "scale": [
+          1.0,
+          0.49079999327659607,
+          1.0
+        ]
+      }
+    },
+    {
+      "components": [
+        {
+          "id": 1,
+          "properties": {
+            "assetId": "4385e0e8ee74d06c5da7f2a12f61ec22",
+            "castShadow": false,
+            "receiveShadow": true,
+            "visible": true
+          },
+          "type": "ModelComponent"
+        }
+      ],
+      "editorFolder": "2 工厂布景/地图5布景",
+      "editorLocked": false,
+      "editorVisible": true,
+      "enabled": true,
+      "id": 6121,
+      "name": "吊链 c3_r2-c3_r3 2",
+      "parent": null,
+      "sourcePrefabId": "",
+      "transform": {
+        "position": [
+          0.29030001163482666,
+          5.145400047302246,
+          -8.337499618530273
+        ],
+        "rotationEulerDeg": [
+          -1.3336000442504883,
+          0.0,
+          1.0230000019073486
+        ],
+        "scale": [
+          1.0,
+          0.454800009727478,
+          1.0
+        ]
+      }
+    },
+    {
+      "components": [
+        {
+          "id": 1,
+          "properties": {
+            "assetId": "4385e0e8ee74d06c5da7f2a12f61ec22",
+            "castShadow": false,
+            "receiveShadow": true,
+            "visible": true
+          },
+          "type": "ModelComponent"
+        }
+      ],
+      "editorFolder": "2 工厂布景/地图5布景",
+      "editorLocked": false,
+      "editorVisible": true,
+      "enabled": true,
+      "id": 6122,
+      "name": "吊链 c4_r2-c4_r3 1",
+      "parent": null,
+      "sourcePrefabId": "",
+      "transform": {
+        "position": [
+          0.9319000244140625,
+          5.241199970245361,
+          -8.9350004196167
+        ],
+        "rotationEulerDeg": [
+          -13.87909984588623,
+          0.0,
+          -26.795499801635742
+        ],
+        "scale": [
+          1.0,
+          0.7139999866485596,
+          1.0
+        ]
+      }
+    },
+    {
+      "components": [
+        {
+          "id": 1,
+          "properties": {
+            "assetId": "4385e0e8ee74d06c5da7f2a12f61ec22",
+            "castShadow": false,
+            "receiveShadow": true,
+            "visible": true
+          },
+          "type": "ModelComponent"
+        }
+      ],
+      "editorFolder": "2 工厂布景/地图5布景",
+      "editorLocked": false,
+      "editorVisible": true,
+      "enabled": true,
+      "id": 6123,
+      "name": "吊链 c4_r2-c4_r3 2",
+      "parent": null,
+      "sourcePrefabId": "",
+      "transform": {
+        "position": [
+          1.7618999481201172,
+          5.241199970245361,
+          -8.876999855041504
+        ],
+        "rotationEulerDeg": [
+          -10.202199935913086,
+          0.0,
+          -17.378999710083008
+        ],
+        "scale": [
+          1.0,
+          0.6588000059127808,
+          1.0
+        ]
+      }
+    },
+    {
+      "components": [
+        {
+          "id": 1,
+          "properties": {
+            "assetId": "4385e0e8ee74d06c5da7f2a12f61ec22",
+            "castShadow": false,
+            "receiveShadow": true,
+            "visible": true
+          },
+          "type": "ModelComponent"
+        }
+      ],
+      "editorFolder": "2 工厂布景/地图5布景",
+      "editorLocked": false,
+      "editorVisible": true,
+      "enabled": true,
+      "id": 6124,
+      "name": "吊链 c5_r2-c5_r3 1",
+      "parent": null,
+      "sourcePrefabId": "",
+      "transform": {
+        "position": [
+          2.5139000415802,
+          5.001999855041504,
+          -9.976200103759766
+        ],
+        "rotationEulerDeg": [
+          -6.3084001541137695,
+          0.0,
+          -24.97480010986328
+        ],
+        "scale": [
+          1.0,
+          0.46389999985694885,
+          1.0
+        ]
+      }
+    },
+    {
+      "components": [
+        {
+          "id": 1,
+          "properties": {
+            "assetId": "4385e0e8ee74d06c5da7f2a12f61ec22",
+            "castShadow": false,
+            "receiveShadow": true,
+            "visible": true
+          },
+          "type": "ModelComponent"
+        }
+      ],
+      "editorFolder": "2 工厂布景/地图5布景",
+      "editorLocked": false,
+      "editorVisible": true,
+      "enabled": true,
+      "id": 6125,
+      "name": "吊链 c5_r2-c5_r3 2",
+      "parent": null,
+      "sourcePrefabId": "",
+      "transform": {
+        "position": [
+          3.3861000537872314,
+          5.001999855041504,
+          -9.623800277709961
+        ],
+        "rotationEulerDeg": [
+          -19.070899963378906,
+          0.0,
+          -14.140399932861328
+        ],
+        "scale": [
+          1.0,
+          0.4560999870300293,
+          1.0
+        ]
+      }
+    },
+    {
+      "components": [
+        {
+          "id": 1,
+          "properties": {
+            "assetId": "4385e0e8ee74d06c5da7f2a12f61ec22",
+            "castShadow": false,
+            "receiveShadow": true,
+            "visible": true
+          },
+          "type": "ModelComponent"
+        }
+      ],
+      "editorFolder": "2 工厂布景/地图5布景",
+      "editorLocked": false,
+      "editorVisible": true,
+      "enabled": true,
+      "id": 6126,
+      "name": "吊链 c8_r3-c8_r4 1",
+      "parent": null,
+      "sourcePrefabId": "",
+      "transform": {
+        "position": [
+          5.7316999435424805,
+          3.381500005722046,
+          -18.88479995727539
+        ],
+        "rotationEulerDeg": [
+          55.61410140991211,
+          0.0,
+          -27.56800079345703
+        ],
+        "scale": [
+          1.0,
+          0.21439999341964722,
+          1.0
+        ]
+      }
+    },
+    {
+      "components": [
+        {
+          "id": 1,
+          "properties": {
+            "assetId": "4385e0e8ee74d06c5da7f2a12f61ec22",
+            "castShadow": false,
+            "receiveShadow": true,
+            "visible": true
+          },
+          "type": "ModelComponent"
+        }
+      ],
+      "editorFolder": "2 工厂布景/地图5布景",
+      "editorLocked": false,
+      "editorVisible": true,
+      "enabled": true,
+      "id": 6127,
+      "name": "吊链 c8_r3-c8_r4 2",
+      "parent": null,
+      "sourcePrefabId": "",
+      "transform": {
+        "position": [
+          4.7083001136779785,
+          3.381500005722046,
+          -18.938499450683594
+        ],
+        "rotationEulerDeg": [
+          50.87110137939453,
+          0.0,
+          -59.742698669433594
+        ],
+        "scale": [
+          1.0,
+          0.3375000059604645,
+          1.0
+        ]
+      }
+    },
+    {
+      "components": [
+        {
+          "id": 1,
+          "properties": {
+            "assetId": "4385e0e8ee74d06c5da7f2a12f61ec22",
+            "castShadow": false,
+            "receiveShadow": true,
+            "visible": true
+          },
+          "type": "ModelComponent"
+        }
+      ],
+      "editorFolder": "2 工厂布景/地图5布景",
+      "editorLocked": false,
+      "editorVisible": true,
+      "enabled": true,
+      "id": 6128,
+      "name": "吊链 c8_r4-c8_r5 1",
+      "parent": null,
+      "sourcePrefabId": "",
+      "transform": {
+        "position": [
+          5.860799789428711,
+          2.236799955368042,
+          -18.818899154663086
+        ],
+        "rotationEulerDeg": [
+          -21.41320037841797,
+          0.0,
+          50.1593017578125
+        ],
+        "scale": [
+          1.0,
+          0.18050000071525574,
+          1.0
+        ]
+      }
+    },
+    {
+      "components": [
+        {
+          "id": 1,
+          "properties": {
+            "assetId": "4385e0e8ee74d06c5da7f2a12f61ec22",
+            "castShadow": false,
+            "receiveShadow": true,
+            "visible": true
+          },
+          "type": "ModelComponent"
+        }
+      ],
+      "editorFolder": "2 工厂布景/地图5布景",
+      "editorLocked": false,
+      "editorVisible": true,
+      "enabled": true,
+      "id": 6129,
+      "name": "吊链 c8_r4-c8_r5 2",
+      "parent": null,
+      "sourcePrefabId": "",
+      "transform": {
+        "position": [
+          4.839200019836426,
+          2.236799955368042,
+          -18.747499465942383
+        ],
+        "rotationEulerDeg": [
+          -48.40420150756836,
+          0.0,
+          50.56850051879883
+        ],
+        "scale": [
+          1.0,
+          0.25540000200271606,
+          1.0
+        ]
+      }
+    },
+    {
+      "components": [
+        {
+          "id": 1,
+          "properties": {
+            "assetId": "b5127693bbee0a3df6b4023b9fb801c4",
+            "castShadow": true,
+            "receiveShadow": true,
+            "visible": true
+          },
+          "type": "ModelComponent"
+        }
+      ],
+      "editorFolder": "2 工厂布景/地图5布景",
+      "editorLocked": false,
+      "editorVisible": true,
+      "enabled": true,
+      "id": 6130,
+      "name": "背面 · 工作灯",
+      "parent": null,
+      "sourcePrefabId": "",
+      "transform": {
+        "position": [
+          3.9000000953674316,
+          0.0,
+          -20.299999237060547
+        ],
+        "rotationEulerDeg": [
+          0.0,
+          150.0,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "components": [
+        {
+          "id": 1,
+          "properties": {
+            "aimSeconds": 1.1,
+            "cameraLift": 0.25,
+            "followX": 0.38,
+            "followY": 0.25,
+            "frameFill": 0.36,
+            "lookAhead": 0.45,
+            "orbitDegrees": 12.0,
+            "positionSeconds": 0.8,
+            "rangeX": 0.9,
+            "rangeY": 0.45,
+            "regionSeconds": 1.6,
+            "regions": "map5.c2_r3,map5.c3_r3,map5.c4_r3,map5.c5_r3,map5.c2_r2,map5.c3_r2,map5.c4_r2,map5.c5_r2"
+          },
+          "type": "TD2.CameraArea"
+        }
+      ],
+      "editorFolder": "1 玩法/镜头与演出/镜头大区域",
+      "editorLocked": false,
+      "editorVisible": true,
+      "enabled": true,
+      "id": 6131,
+      "name": "镜头大区域 A 入口走廊",
+      "parent": null,
+      "sourcePrefabId": "",
+      "transform": {
+        "position": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "rotationEulerDeg": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "components": [
+        {
+          "id": 1,
+          "properties": {
+            "aimSeconds": 1.0,
+            "cameraLift": 0.32,
+            "followX": 0.28,
+            "followY": 0.55,
+            "frameFill": 0.35,
+            "orbitDegrees": 17.0,
+            "positionSeconds": 0.6,
+            "rangeX": 0.55,
+            "rangeY": 1.2,
+            "regionSeconds": 1.2,
+            "regions": "map5.c6_r2,map5.c7_r2,map5.c6_r3,map5.c6_r4,map5.c6_r5,map5.c6_r6"
+          },
+          "type": "TD2.CameraArea"
+        }
+      ],
+      "editorFolder": "1 玩法/镜头与演出/镜头大区域",
+      "editorLocked": false,
+      "editorVisible": true,
+      "enabled": true,
+      "id": 6132,
+      "name": "镜头大区域 B 柱正面",
+      "parent": null,
+      "sourcePrefabId": "",
+      "transform": {
+        "position": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "rotationEulerDeg": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "components": [
+        {
+          "id": 1,
+          "properties": {
+            "aimSeconds": 1.0,
+            "cameraLift": 0.32,
+            "followX": 0.28,
+            "followY": 0.5,
+            "frameFill": 0.35,
+            "orbitDegrees": 17.0,
+            "positionSeconds": 0.6,
+            "rangeX": 0.55,
+            "rangeY": 1.0,
+            "regionSeconds": 1.2,
+            "regions": "map5.c7_r3,map5.c7_r4,map5.c7_r5,map5.c7_r6"
+          },
+          "type": "TD2.CameraArea"
+        }
+      ],
+      "editorFolder": "1 玩法/镜头与演出/镜头大区域",
+      "editorLocked": false,
+      "editorVisible": true,
+      "enabled": true,
+      "id": 6133,
+      "name": "镜头大区域 C 柱侧面",
+      "parent": null,
+      "sourcePrefabId": "",
+      "transform": {
+        "position": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "rotationEulerDeg": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "components": [
+        {
+          "id": 1,
+          "properties": {
+            "aimSeconds": 1.0,
+            "cameraLift": 0.32,
+            "followX": 0.28,
+            "followY": 0.55,
+            "frameFill": 0.35,
+            "orbitDegrees": 17.0,
+            "positionSeconds": 0.6,
+            "rangeX": 0.55,
+            "rangeY": 1.1,
+            "regionSeconds": 1.2,
+            "regions": "map5.c8_r3,map5.c8_r4,map5.c8_r5"
+          },
+          "type": "TD2.CameraArea"
+        }
+      ],
+      "editorFolder": "1 玩法/镜头与演出/镜头大区域",
+      "editorLocked": false,
+      "editorVisible": true,
+      "enabled": true,
+      "id": 6134,
+      "name": "镜头大区域 D 柱背面",
+      "parent": null,
+      "sourcePrefabId": "",
+      "transform": {
+        "position": [
+          0.0,
+          0.0,
+          0.0
         ],
         "rotationEulerDeg": [
           0.0,

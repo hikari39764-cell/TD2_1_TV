@@ -1,6 +1,7 @@
 #include "HIKARI/Project/GameFlowViews.h"
 #include "HIKARI/Project/GameProjectModule.h"
 #include "TD2RegionComponent.h"
+#include "TD2CameraRig.h"
 #include "TD2GameSession.h"
 #include "TD2LightBudget.h"
 #include "TD2ScreenPresenter.h"
@@ -49,6 +50,10 @@ public:
             context.RegisterComponent<TD2::RegionSequenceComponent>({
                 .typeName = TD2::kRegionSequenceComponentType, .displayName = "TD2 区域演出", .category = "TD2",
                 .description = "相邻电视的可选引擎 Sequence 绑定",
+            }) &&
+            context.RegisterComponent<TD2::CameraAreaComponent>({
+                .typeName = TD2::kCameraAreaComponentType, .displayName = "TD2 镜头大区域", .category = "TD2",
+                .description = "多个区域组成一个大区域：区域内镜头以区域机位为基准动态跟随，跨大区域才播放演出",
             }) &&
             context.RegisterComponent<TD2::ScreenStyleComponent>({
                 .typeName = TD2::kScreenStyleComponentType, .displayName = "TD2 屏幕3D风格", .category = "TD2",

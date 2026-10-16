@@ -44,6 +44,7 @@ PALETTES = {
         "red_shadow": "7F2A22", "red": "C34737", "red_light": "EC7A62",
         "hero_shadow": "B9781F", "hero": "F5B83D", "hero_light": "FFE07A",
         "echo_dark": "6E4BB8", "echo": "A879F0", "echo_light": "C9A2FF",
+        "go_shadow": "1F8A4A", "go": "3FD17A", "go_light": "8DF2AE",
         "outline": "0B1218",
     },
     # 青緑：工厂の外が無彩色に近いので、画面の地は明度を保ったまま彩度を少し上げ、躯体はわずかに暗くする。
@@ -55,6 +56,7 @@ PALETTES = {
         "red_shadow": "7F2A22", "red": "C34737", "red_light": "EC7A62",
         "hero_shadow": "B9781F", "hero": "F5B83D", "hero_light": "FFE07A",
         "echo_dark": "6E4BB8", "echo": "A879F0", "echo_light": "C9A2FF",
+        "go_shadow": "1F8A4A", "go": "3FD17A", "go_light": "8DF2AE",
         "outline": "061112",
     },
 }
@@ -68,8 +70,11 @@ FAMILIES = {
     # 主角は琥珀、残影は菫色。背景の墨・青緑と補色に近く、危険の赤・象牙の天板とも色相で分かれる（両配色共通）。
     "hero": ("hero_shadow", "hero", "hero_light", 0.18, 0.62),
     "echo": ("echo_dark", "echo", "echo_light", 0.18, 0.62),
+    # 弾簧の「使える」の緑。素描は鮮やかな色（彩度 0.3 以上）だけを色鉛筆で残すので、状態は色で一目に読める。
+    # 琥珀（主角）・赤（危険）・菫（残影）と色相で分かれ、墨と青緑の地の上でも明るい。
+    "go": ("go_shadow", "go", "go_light", 0.18, 0.62),
 }
-FLAT = {"glow_ivory": "ivory_light", "glow_red": "red_light", "lamp_off": "ink_dark", "void": "void",
+FLAT = {"glow_ivory": "ivory_light", "glow_red": "red_light", "glow_go": "go_light", "dim_go": "go_shadow", "lamp_off": "ink_dark", "void": "void",
         "void_line": "void_line", "pool": "pool", "pool_core": "pool_core"}
 
 
@@ -533,37 +538,73 @@ SPRING_TOP = 10.0 / 32.0
 
 
 def spring(state):
-    """弾簧：墨の台、象牙の折れ線のばね、踏み板。ばねの形で圧力板・一方通行の板と見分ける。
-    state は ready（踏み板の縁が光る：使える）、hot（乗って溜めている：踏み板全体が白く光る）、
-    off（冷却中：踏み板が墨になり灯が消える）。"""
+    """弾簧：台、折れ線のばね、踏み板。ばねの形で圧力板・一方通行の板と見分ける。
+    素描でも状態が一目で分かるよう、使える時は鮮やかな緑（色鉛筆で残る）、冷却中は暗い墨（線だけになる）にする。
+    state は ready（使える：緑）、hot（乗って溜めている：踏み板が明るく光る）、off（冷却中：墨）。"""
     def make():
         s = Shape()
         y0, y1 = 0.2, DEPTH - 0.2
+        coil = "ink" if state == "off" else "go"
         s.box((-0.44, 0.08, 0.0), (0.44, DEPTH - 0.08, 0.07), "ink")
         # ばね：三段の横棒を左右交互の短い柱で継いだ折れ線（横から見た巻きばね）。
         for k, z in enumerate((0.085, 0.15, 0.215)):
-            s.box((-0.28, y0, z), (0.28, y1, z + 0.03), "ivory")
+            s.box((-0.3, y0, z), (0.3, y1, z + 0.035), coil)
             if k < 2:
-                x = 0.22 if k == 0 else -0.28
-                s.box((x, y0, z + 0.03), (x + 0.06, y1, z + 0.065), "ivory")
-        pad = {"ready": "ivory", "hot": "glow_ivory", "off": "ink"}[state]
+                x = 0.22 if k == 0 else -0.3
+                s.box((x, y0, z + 0.035), (x + 0.08, y1, z + 0.065), coil)
+        pad = {"ready": "go", "hot": "glow_go", "off": "ink"}[state]
         s.box((-0.46, 0.04, 0.245), (0.46, DEPTH - 0.04, SPRING_TOP), pad)
-        s.box((-0.38, 0.015, 0.258), (0.38, 0.045, SPRING_TOP - 0.012), "lamp_off" if state == "off" else "glow_ivory")
+        s.box((-0.38, 0.015, 0.258), (0.38, 0.045, SPRING_TOP - 0.012), "lamp_off" if state == "off" else "glow_go")
         return s, 0.015
     return make
 
 
+# 弾簧の矢印の形（格の単位、下辺の中央が原点）。軸は水位の棒が入るよう太め。
+ARROW_HEAD = [(-0.42, 0.28), (0.42, 0.28), (0.0, 0.64)]
+ARROW_SHAFT = [(-0.2, 0.0), (0.2, 0.0), (0.2, 0.28), (-0.2, 0.28)]
+ARROW_FRAME = 0.06            # 冷却中の枠の太さ
+GAUGE_HALF, GAUGE_TOP = 0.12, 0.44   # 水位の棒の半幅と、満ちた時の上端（枠の内側に収まる高さ）
+
+
 def spring_arrow(lit):
-    """弾簧の上の太い上向きの矢印（打ち上げる向き）。弾簧の格の上の空きに一つ、奥の壁際に描く（人物の後ろ）。
-    lit は光る矢印（使える時は全高、冷却中は下から高さが伸びて満ちる）、lit=False は墨の暗い空の枠（満ちる先を見せる）。
-    枠は光る矢印より少し奥に置き、重なっても前後が揺れないようにする。"""
+    """弾簧の格の上の、上向きの矢印（打ち上げる向き）。奥の壁際に描く（人物の後ろ）。
+    lit は鮮やかな緑の塗りの矢印（使える時だけ出す）。
+    lit=False は同じ形の暗い緑の枠だけ（冷却中だけ出す）。緑のままなので冷却中も弾簧だと分かり、明るさで「まだ」と読める。
+    象牙にすると地形の線と同じ色になって弾簧が埋もれるので使わない。枠は塗りより少し奥に置く。"""
+    outline = [ARROW_SHAFT[0], ARROW_SHAFT[1], ARROW_SHAFT[2], ARROW_HEAD[1], ARROW_HEAD[2], ARROW_HEAD[0], ARROW_SHAFT[3]]
+
     def make():
         s = Shape()
         y = DEPTH - (0.07 if lit else 0.04)
-        family = "glow_ivory" if lit else "lamp_off"
-        # 凹んだ多角形は三角形分割が崩れるので、左右の腕を別の四角形にする。
-        s.poly([(-0.32, 0.0), (-0.18, 0.0), (0.0, 0.14), (0.0, 0.27)], family, y=y)
-        s.poly([(0.0, 0.14), (0.18, 0.0), (0.32, 0.0), (0.0, 0.27)], family, y=y)
+        if lit:
+            s.poly(ARROW_HEAD, "glow_go", y=y)
+            s.poly(ARROW_SHAFT, "glow_go", y=y)
+            return s, 0
+        # 枠：外形の各辺を内側へ太さ t の帯にする（素描でもはっきりした線になる太さ）。
+        t = ARROW_FRAME
+        n = len(outline)
+        cx = sum(x for x, _ in outline) / n
+        cz = sum(z for _, z in outline) / n
+        for i in range(n):
+            (ax, az), (bx, bz) = outline[i], outline[(i + 1) % n]
+            dx, dz = bx - ax, bz - az
+            length = math.hypot(dx, dz)
+            nx, nz = -dz / length, dx / length
+            if (cx - ax) * nx + (cz - az) * nz < 0:   # 内側（重心の側）へ向ける
+                nx, nz = -nx, -nz
+            s.poly([(ax, az), (bx, bz), (bx + nx * t, bz + nz * t), (ax + nx * t, az + nz * t)], "dim_go", y=y)
+        return s, 0
+    return make
+
+
+def spring_gauge():
+    """冷却中の水位：枠の中を下から満ちていく明るい緑の棒（温度計）。矢印の形ではないので、満ちる途中でも
+    「使える」の塗りの矢印と見間違えない。C++ が枠の内側の底へ置き、残りの冷却に合わせて縦に伸ばす。
+    満ちきったら棒は消え、塗りの矢印に替わって一度弾む。原点は棒の下端。枠の前に置く。"""
+    def make():
+        s = Shape()
+        s.poly([(-GAUGE_HALF, 0.0), (GAUGE_HALF, 0.0), (GAUGE_HALF, GAUGE_TOP - ARROW_FRAME), (-GAUGE_HALF, GAUGE_TOP - ARROW_FRAME)],
+               "glow_go", y=DEPTH - 0.07)
         return s, 0
     return make
 
@@ -598,7 +639,7 @@ PARTS = {
     "Ghost_DashH": ghost_dash(False), "Ghost_DashV": ghost_dash(True),
     "Echo_Marker": echo_marker(), "Echo_Streak": echo_streak(),
     "Spring": spring("ready"), "Spring_Hot": spring("hot"), "Spring_Off": spring("off"),
-    "Spring_Arrow": spring_arrow(True), "Spring_ArrowDim": spring_arrow(False),
+    "Spring_Arrow": spring_arrow(True), "Spring_ArrowDim": spring_arrow(False), "Spring_Gauge": spring_gauge(),
     "LockWall_Tile": lockwall_tile(), "LockWall_Emblem": lockwall_emblem(),
     "FX_Ring": fx_ring(), "FX_Shard": fx_shard(),
     # 地形と目盛りは数格をまとめた部品だけ（格ごとの部品は描画実体が多すぎるので作らない）。

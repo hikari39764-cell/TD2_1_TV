@@ -26,6 +26,8 @@ std::string_view DirectionName(Rules::Direction direction) {
 }
 // 扉の羽根・橋板が出入りする秒数（当たりは即座に変わるので短く）と、通電灯の光の輪が広がる秒数。
 constexpr double kSwitchSeconds = 0.14, kPulseSeconds = 0.32;
+// 弾簧の冷却が終わった瞬間に矢印が一度弾む秒数（使えるようになった合図）。
+constexpr double kReadyPopSeconds = 0.28;
 // 8・4・2・1 のまとめ部品のうち、残りに収まる一番大きいもの。
 int BundleOf(int left) { return left >= 8 ? 8 : left >= 4 ? 4 : left >= 2 ? 2 : 1; }
 } // namespace
@@ -198,20 +200,29 @@ void StagePartBuilder::Device(const Rules::DeviceSnapshot& d, bool checkpoint, d
         Add("Checkpoint_Idle", x, bottom, r.w, 1, 0, {}, -1, !checkpoint);
         Add("Checkpoint_Active", x, bottom, r.w, 1, 0, {}, -1, checkpoint);
         break;
-    // 弾簧：格ごとに台・ばね・踏み板と、その上の太い上向きの矢印（打ち上げる向き）。
-    // 使える間は踏み板の縁と矢印が光る。乗って溜めている間は踏み板全体が白く光る。
-    // 冷却中は踏み板の灯が消え、矢印は空の枠に戻ってから下から満ちていく（満ちたら使える）。
+    // 弾簧：格ごとに台・ばね・踏み板と、その上の上向きの矢印（打ち上げる向き）。
+    // 素描は鮮やかな色だけを色鉛筆で残すので、弾簧は常に緑の系統で描き、状態は明るさと形で分ける：
+    //   使える：明るい緑の塗りの矢印。乗って溜めている間は踏み板が光り、矢印が溜めに合わせて上へ伸びる（もうすぐ跳ぶ）。
+    //   冷却中：踏み板が墨、矢印は暗い緑の枠だけ。枠の中を明るい緑の棒（水位）が下から満ちていく。棒は矢印の形を
+    //           していないので、途中まで満ちても「使える」と見間違えない。
+    //   満ちた瞬間：棒が塗りの矢印に替わり、一度弾む（since は使えるようになってからの秒数）。
     case Rules::DeviceKind::Spring: {
         const bool cooling = d.cooldown > 0, hot = !cooling && d.charge > 0;
         const double fill = cooling ? std::clamp(1.0 - d.cooldown, .04, 1.0) : 1.0;
-        const double arrowBottom = bottom - .43;
+        const double pop = !cooling && since >= 0 && since < kReadyPopSeconds ? 1 + .3 * (1 - since / kReadyPopSeconds) : 1.0;
+        const double size = pop * (hot ? 1 + .3 * std::clamp(d.charge, 0.0, 1.0) : 1.0);
+        // 膨らみは主に上へ伸ばし、横は少しだけ。並んだ弾簧の矢印の頭が触れ合うと、軸の間の背景が閉じた黒い穴に見える。
+        const double sizeX = 1 + (size - 1) * .25;
+        const double arrowBottom = bottom - .4;
+        constexpr double kGaugeInset = .06;   // 枠の太さ。水位の棒は枠の内側の底から伸ばす（素材の ARROW_FRAME と同じ）
         for (double cx = 0; cx < r.w; cx += 1) {
             const double px = r.x + cx + .5;
             Add("Spring", px, bottom, 1, 1, 0, {}, -1, !cooling && !hot);
             Add("Spring_Hot", px, bottom, 1, 1, 0, {}, -1, hot);
             Add("Spring_Off", px, bottom, 1, 1, 0, {}, -1, cooling);
-            Add("Spring_ArrowDim", px, arrowBottom, 1, 1, 0, {}, 0);
-            Add("Spring_Arrow", px, arrowBottom, 1, fill, 0, {}, 0);
+            Add("Spring_ArrowDim", px, arrowBottom, 1, 1, 0, {}, 0, cooling);
+            Add("Spring_Gauge", px, arrowBottom - kGaugeInset, 1, fill, 0, {}, 0, cooling);
+            Add("Spring_Arrow", px, arrowBottom, sizeX, size, 0, {}, 0, !cooling);
         }
         break;
     }

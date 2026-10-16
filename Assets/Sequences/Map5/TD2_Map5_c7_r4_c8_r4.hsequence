@@ -16,15 +16,15 @@
         "id": 2,
         "name": "区域机位 c7_r4",
         "required": true,
-        "targetKind": "sceneObject",
-        "sceneObjectId": 6096
+        "sceneObjectId": 6096,
+        "targetKind": "sceneObject"
       },
       {
         "id": 3,
         "name": "区域机位 c8_r4",
         "required": true,
-        "targetKind": "sceneObject",
-        "sceneObjectId": 6097
+        "sceneObjectId": 6097,
+        "targetKind": "sceneObject"
       }
     ],
     "durationSeconds": 1.0,
@@ -42,132 +42,196 @@
               },
               "anchor": 0,
               "base": {
-                "position": [
-                  10.140299797058105,
-                  4.190499782562256,
-                  -16.020000457763672
-                ],
-                "rotation": [
-                  0.0054918416635430945,
-                  0.7070854542947003,
-                  0.005491841663543095,
-                  -0.7070854542947002
-                ],
-                "fov": 26.0,
-                "near": 0.05000000074505806,
+                "customTangents": 0,
                 "far": 500.0,
-                "interpolation": "smooth"
+                "fov": 26.0,
+                "inFovTangent": 0.0,
+                "inTangent": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "interpolation": "spline",
+                "near": 0.05,
+                "outFovTangent": 0.0,
+                "outTangent": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "position": [
+                  10.5802,
+                  3.0271,
+                  -18.8746
+                ],
+                "reference": 0,
+                "rotation": [
+                  0.060811,
+                  -0.535901,
+                  0.038741,
+                  0.841196
+                ]
               },
               "keys": [
                 {
-                  "time": 0.0,
-                  "position": [
-                    -2.0294189440051014e-07,
-                    -2.1743774425431184e-07,
-                    -4.5776367230132564e-07
-                  ],
-                  "rotation": [
-                    0.0,
-                    -4.6447898695636813e-17,
-                    1.2483567651822014e-10,
-                    1.0
-                  ],
+                  "customTangents": 0,
+                  "far": 500.0,
                   "fov": 0.0,
-                  "near": 0.05000000074505806,
-                  "far": 500.0,
-                  "interpolation": "smooth",
-                  "reference": 2
-                },
-                {
-                  "time": 0.25,
-                  "position": [
-                    9.922499656677246,
-                    4.194900035858154,
-                    -17.550600051879883
+                  "inFovTangent": 0.0,
+                  "inTangent": [
+                    0.0,
+                    0.0,
+                    0.0
                   ],
-                  "rotation": [
-                    0.005742882320030349,
-                    0.5843979837558455,
-                    0.00413603476509934,
-                    -0.8114363247360711
+                  "interpolation": "spline",
+                  "near": 0.05,
+                  "outFovTangent": 0.0,
+                  "outTangent": [
+                    0.0,
+                    0.0,
+                    0.0
                   ],
-                  "fov": 26.0,
-                  "near": 0.05000000074505806,
-                  "far": 500.0,
-                  "interpolation": "smooth"
-                },
-                {
-                  "time": 0.4833333194255829,
-                  "position": [
-                    9.269011497497559,
-                    4.155749797821045,
-                    -19.618297576904297
-                  ],
-                  "rotation": [
-                    0.006457905665878731,
-                    0.3826740833110186,
-                    0.002674952111333025,
-                    -0.9238569618981525
-                  ],
-                  "fov": 26.0,
-                  "near": 0.05000000074505806,
-                  "far": 500.0,
-                  "interpolation": "smooth"
-                },
-                {
-                  "time": 0.5166666507720947,
-                  "position": [
-                    8.566556930541992,
-                    4.222494602203369,
-                    -20.221946716308594
-                  ],
-                  "rotation": [
-                    -0.00646399576991425,
-                    -0.3799481698743668,
-                    -0.0026556095867892194,
-                    0.9249813796534113
-                  ],
-                  "fov": 26.0,
-                  "near": 0.05000000074505806,
-                  "far": 500.0,
-                  "interpolation": "smooth"
-                },
-                {
-                  "time": 0.75,
-                  "position": [
-                    6.099800109863281,
-                    4.2144999504089355,
-                    -21.420799255371094
-                  ],
-                  "rotation": [
-                    0.006761505317709736,
-                    0.16054060416227744,
-                    0.0010997873748499283,
-                    -0.9870054644878009
-                  ],
-                  "fov": 26.0,
-                  "near": 0.05000000074505806,
-                  "far": 500.0,
-                  "interpolation": "smooth"
-                },
-                {
-                  "time": 1.0,
                   "position": [
                     0.0,
                     0.0,
                     0.0
                   ],
+                  "reference": 2,
                   "rotation": [
                     0.0,
-                    -2.5849394142282115e-26,
                     0.0,
-                    0.9999999999999999
+                    0.0,
+                    1.0
                   ],
-                  "fov": 0.0,
-                  "near": 0.05000000074505806,
+                  "time": 0.0
+                },
+                {
+                  "customTangents": 0,
                   "far": 500.0,
-                  "interpolation": "smooth",
-                  "reference": 3
+                  "fov": 25.0,
+                  "inFovTangent": 0.0,
+                  "inTangent": [
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  "interpolation": "spline",
+                  "near": 0.05,
+                  "outFovTangent": 0.0,
+                  "outTangent": [
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  "position": [
+                    11.5802,
+                    3.9271,
+                    -19.6746
+                  ],
+                  "reference": 0,
+                  "rotation": [
+                    0.123912,
+                    -0.506162,
+                    0.073762,
+                    0.850297
+                  ],
+                  "time": 0.28
+                },
+                {
+                  "customTangents": 0,
+                  "far": 500.0,
+                  "fov": 23.0,
+                  "inFovTangent": 0.0,
+                  "inTangent": [
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  "interpolation": "spline",
+                  "near": 0.05,
+                  "outFovTangent": 0.0,
+                  "outTangent": [
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  "position": [
+                    12.2191,
+                    3.8,
+                    -20.9202
+                  ],
+                  "reference": 0,
+                  "rotation": [
+                    0.087002,
+                    -0.534433,
+                    0.055427,
+                    0.838892
+                  ],
+                  "time": 0.56
+                },
+                {
+                  "customTangents": 0,
+                  "far": 500.0,
+                  "fov": 25.0,
+                  "inFovTangent": 0.0,
+                  "inTangent": [
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  "interpolation": "spline",
+                  "near": 0.05,
+                  "outFovTangent": 0.0,
+                  "outTangent": [
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  "position": [
+                    8.5813,
+                    3.5791,
+                    -22.0862
+                  ],
+                  "reference": 0,
+                  "rotation": [
+                    0.097765,
+                    -0.375928,
+                    0.039922,
+                    0.920612
+                  ],
+                  "time": 0.82
+                },
+                {
+                  "customTangents": 0,
+                  "far": 500.0,
+                  "fov": 0.0,
+                  "inFovTangent": 0.0,
+                  "inTangent": [
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  "interpolation": "spline",
+                  "near": 0.05,
+                  "outFovTangent": 0.0,
+                  "outTangent": [
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  "position": [
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  "reference": 3,
+                  "rotation": [
+                    0.0,
+                    0.0,
+                    0.0,
+                    1.0
+                  ],
+                  "time": 1.0
                 }
               ],
               "lookAt": 0,
@@ -187,12 +251,17 @@
                 0.0,
                 0.0
               ],
+              "timing": {
+                "keys": [],
+                "value": 0.0
+              },
               "useScenePose": false
             },
             "cameraBindingId": 1,
             "durationSeconds": 1.0,
             "effects": [],
             "id": 1,
+            "sourceOffsetSeconds": 0.0,
             "startTimeSeconds": 0.0,
             "transition": {
               "durationSeconds": 0.0,

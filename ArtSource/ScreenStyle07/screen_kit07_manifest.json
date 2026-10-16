@@ -101,7 +101,8 @@
    "Ghost_DashH": "f4e097683e0a468a0205c24664a33a6f",
    "Ghost_DashV": "c1f94a8ed9a58ed53cb47c9ccba6ad65",
    "Echo_Marker": "df2e299eed21e7cc9550ce69f687b774",
-   "Echo_Streak": "6375ebdf4c76a409bfe49d715119ecb5"
+   "Echo_Streak": "6375ebdf4c76a409bfe49d715119ecb5",
+   "Spring_Gauge": "7a02a8f8c84685c53252cd167e5196f6"
   },
   "teal": {
    "Backdrop": "a822f068678fb232a68acf6c643ef35d",
@@ -195,7 +196,8 @@
    "Ghost_DashH": "5c43577b961e0ccde4bd495d3b1deed5",
    "Ghost_DashV": "748104e8fed3cf9e529000524379b256",
    "Echo_Marker": "f8fd1d25617fe4985fdfcf58004f6ce4",
-   "Echo_Streak": "fd2454373db1abd1375266ff3a11e795"
+   "Echo_Streak": "fd2454373db1abd1375266ff3a11e795",
+   "Spring_Gauge": "334b3aa52da65ec7cf6d56492cf986bc"
   }
  },
  "parts": {
@@ -437,19 +439,19 @@
    "triangles": 4505
   },
   "Spring": {
-   "triangles": 352
+   "triangles": 304
   },
   "Spring_Hot": {
-   "triangles": 352
+   "triangles": 304
   },
   "Spring_Off": {
-   "triangles": 352
+   "triangles": 304
   },
   "Spring_Arrow": {
-   "triangles": 4
+   "triangles": 3
   },
   "Spring_ArrowDim": {
-   "triangles": 4
+   "triangles": 14
   },
   "Bridge_Deck": {
    "triangles": 184
@@ -474,6 +476,9 @@
   },
   "Echo_Streak": {
    "triangles": 12
+  },
+  "Spring_Gauge": {
+   "triangles": 2
   }
  }
 }

@@ -1,7 +1,7 @@
 {
   "renderQuality": {
     "antiAliasingMode": "DLSS",
-    "depthOfFieldQuality": "Off",
+    "depthOfFieldQuality": "High",
     "directionalShadow": {
       "cascadeBlend": 0.10000000149011612,
       "cascadeCount": 3,
