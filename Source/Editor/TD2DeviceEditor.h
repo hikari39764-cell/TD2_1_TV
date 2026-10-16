@@ -3,7 +3,7 @@
 
 namespace TD2::Editor {
 
-// 編集表現だけを持ち、Runtime の衝突・時間・装置状態をコピーしない。
+// 編集用の表現だけを持つ。実行時の状態は持たない。
 struct DeviceDraft {
     std::string id, kind = "Solid", direction = "Up";
     double x = 0, y = 0, w = 1, h = 1, range = 20;
@@ -17,7 +17,7 @@ public:
     std::string Serialize() const;
     std::string Validate(int cols, int rows) const;
     bool HasSelection() const { return selected_ >= 0 && selected_ < static_cast<int>(devices_.size()); }
-    // Canvas の選択・移動・接続は同じ草稿を使い、一覧と別の装置モデルを作らない。
+    // キャンバスの選択・移動・接続は一覧と同じ草稿を使う。
     const std::vector<DeviceDraft>& Items() const { return devices_; }
     DeviceDraft* Selected() { return HasSelection() ? &devices_[selected_] : nullptr; }
     const DeviceDraft* Selected() const { return HasSelection() ? &devices_[selected_] : nullptr; }
@@ -38,4 +38,4 @@ private:
     std::string error_;
 };
 
-} // namespace TD2::Editor
+}

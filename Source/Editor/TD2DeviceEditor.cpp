@@ -70,7 +70,7 @@ int DeviceEditor::Hit(double x, double y) const {
     for (size_t i = devices_.size(); i > 0; --i) {
         const auto& d = devices_[i - 1];
         if (x >= d.x && x < d.x + d.w && y >= d.y && y < d.y + d.h) { return static_cast<int>(i - 1); }
-        // 薄い装置は表示用の一格高の編集記号も選択できる。物理矩形そのものは変更しない。
+        // 薄い装置は 1 マスの高さの記号でも選べる。物理矩形は変えない。
         if ((d.kind == "Plate" || d.kind == "Checkpoint") && x >= d.x && x < d.x + d.w && y >= d.y + d.h - 1 && y < d.y + d.h) { return static_cast<int>(i - 1); }
         if (d.kind == "OneWay" && x >= d.x && x < d.x + d.w && y >= d.y && y < d.y + 1) { return static_cast<int>(i - 1); }
     }
@@ -119,7 +119,7 @@ bool DeviceEditor::Paste(const std::vector<DeviceDraft>& copied, double x, doubl
     }
     if (right - left > cols || bottom - top > rows) { return false; }
     x = std::clamp(x, 0.0, cols - (right - left)); y = std::clamp(y, 0.0, rows - (bottom - top));
-    // 新 ID は配置先で採番する。外部 targets は切り、コピー内の対応だけを復元する。
+    // ID は貼り付け先で振り直す。外への接続は切り、コピー内の接続だけ残す。
     const size_t first = devices_.size();
     pastedIds.clear();
     for (const auto& d : copied) {
@@ -156,7 +156,7 @@ std::string DeviceEditor::Serialize() const {
             text << " targets=";
             for (size_t i = 0; i < device.targets.size(); ++i) { if (i) { text << ','; } text << device.targets[i]; }
         }
-        // SDK std::string Inspector の追加容量は 256 bytes。既定値を冗長に出力して編集を拒否させない。
+        // Inspector の文字列の追加容量は 256 バイトなので、既定値は書き出さない。
         if (device.direction != "Up") { text << " dir=" << device.direction; }
         if (device.range != 20) { text << " range=" << device.range; }
         if (device.inverted) { text << " invert=1"; }
@@ -185,4 +185,4 @@ std::string DeviceEditor::Validate(int cols, int rows) const {
     return {};
 }
 
-} // namespace TD2::Editor
+}

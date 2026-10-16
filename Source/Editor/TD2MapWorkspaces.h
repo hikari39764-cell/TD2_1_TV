@@ -4,6 +4,6 @@
 #include <vector>
 
 namespace TD2::Editor {
-// 二つの入口は同じ Scene 作者モデルを共有し、往復で未適用データを複製しない。
+// 二つの入口は同じ作者データを共有する。
 std::vector<std::unique_ptr<HIKARI::EDITOR_PROJECT::IEditorWorkspace>> MakeMapWorkspaces();
 }

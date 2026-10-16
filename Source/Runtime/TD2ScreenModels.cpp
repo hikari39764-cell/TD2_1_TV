@@ -9,11 +9,11 @@
 
 namespace TD2 {
 namespace {
-// 背景の壁は遊びの平面より 0.85 格奥。目盛りは壁のすぐ手前。
+// 背景の壁はプレイ面より 0.85 マス奥。目盛りは壁のすぐ手前。
 constexpr double kBackdropDepth = -0.85, kGridDepth = -0.845;
-// 傾きの隙間を塞ぐ下敷きは背景板より奥。Backdrop 部品の下から 15% までは光の輪の外（闇一色）。
+// 傾きの隙間を塞ぐ下敷きは背景板より奥。Backdrop の下 15% は光の輪の外（真っ暗）。
 constexpr double kUnderlayDepth = -1.2, kBackdropVoidBand = 0.15;
-// 隠す部品を退避位置からさらに下へ退ける距離（舞台カメラの写す範囲より十分遠い）。
+// 隠す部品を退避位置からさらに下げる距離（舞台カメラに写らない所まで）。
 constexpr float kHiddenDrop = 2000.0f;
 
 std::string_view DirectionName(Rules::Direction direction) {
@@ -26,11 +26,11 @@ std::string_view DirectionName(Rules::Direction direction) {
 }
 // 扉の羽根・橋板が出入りする秒数（当たりは即座に変わるので短く）と、通電灯の光の輪が広がる秒数。
 constexpr double kSwitchSeconds = 0.14, kPulseSeconds = 0.32;
-// 弾簧の冷却が終わった瞬間に矢印が一度弾む秒数（使えるようになった合図）。
+// バネの冷却が終わった時に矢印が一度弾む秒数。
 constexpr double kReadyPopSeconds = 0.28;
 // 8・4・2・1 のまとめ部品のうち、残りに収まる一番大きいもの。
 int BundleOf(int left) { return left >= 8 ? 8 : left >= 4 ? 4 : left >= 2 ? 2 : 1; }
-} // namespace
+}
 
 void StagePartBuilder::Begin(std::string_view key) {
     semantic_ = 1469598103934665603ull;
@@ -46,18 +46,18 @@ bool StagePartBuilder::Add(std::string_view part, double x, double bottomY, doub
     if (!request.instanceId) { request.instanceId = 1; }
     if (guid.empty() || guid.size() >= sizeof(request.model.assetGuid)) { ++failed_; return false; }
     std::memcpy(request.model.assetGuid, guid.data(), guid.size());
-    // 俯角と側角を両方付けた時の傾きは部品の中ほどで釣り合わせ、格の中心からのずれを上下に半分ずつにする。
+    // 俯角と側角を両方付けた時の傾きは部品の中ほどで釣り合わせ、マスの中心からのずれを上下に半分ずつにする。
     // 光線は中心が原点なのでずらさない。
     const double pivot = leanPivot >= 0 ? leanPivot : (part == "LaserBeam" ? 0.0 : height * .5);
     request.worldTransform.position = projection_.Point(x + projection_.Lean() * pivot, bottomY, depth);
     request.worldTransform.rotation = rotation;
     const bool quarterTurn = std::abs(std::abs(rotation.z) - .70710678f) < .0001f && rotation.x == 0 && rotation.y == 0;
-    // 正面の 1 格が像でもちょうど 1 格になるよう、俯角で縦、側角で横の縮みを補う。90°回した部品は軸を入れ替える。
+    // 正面の 1 マスが像でもちょうど 1 マスになるよう、俯角で縦、側角で横の縮みを補う。90°回した部品は軸を入れ替える。
     const double pitchCos = std::cos(projection_.pitch), yawCos = std::cos(projection_.yaw);
     request.worldTransform.scale = {static_cast<float>(width * projection_.scale / (quarterTurn ? pitchCos : yawCos)),
         static_cast<float>(height * projection_.scale / (quarterTurn ? yawCos : pitchCos)), static_cast<float>(projection_.scale)};
-    // 陰影は部品に焼いてあり、捕捉は灯も影も使わない。visible=0 は引擎の表面一覧から外れて組の変化（場景の作り直し）に
-    // なるので、表示のまま舞台カメラの写らない所へ退ける。
+    // 陰影は部品に焼いてあり、キャプチャは灯も影も使わない。visible=0 にするとシーンの作り直しになるので、
+    // 表示したまま舞台カメラに写らない所へ退ける。
     request.castShadow = 0; request.receiveShadow = 0; request.visible = 1;
     if (!visible) { request.worldTransform.position.y -= kHiddenDrop; }
     out_.push_back(request);
@@ -80,18 +80,18 @@ void StagePartBuilder::Backdrop(int x, int y, int cols, int rows) {
         Add(kGridV[static_cast<size_t>(n)], x + col, y + rows, 1, rows, kGridDepth);
         col += n; left -= n;
     }
-    // 俯角と側角を両方付けると背景板の上下の角が斜めにずれ、部屋の角に隙間ができる。Backdrop 部品の下の
-    // 闇一色の帯が部屋を余白ごと覆うよう縦に引き伸ばした板を奥に敷き、隙間を同じ闇で塞ぐ。
+    // 俯角と側角を両方付けると背景板の角がずれて隙間ができるので、Backdrop の下の真っ暗な帯を縦に伸ばした板を
+    // 奥に敷いて隙間を塞ぐ。
     if (const double lean = std::abs(projection_.Lean()); lean > 1e-4) {
         const double margin = lean * rows + 1, tall = (rows + 2 * margin) / kBackdropVoidBand;
         Add("Backdrop", x + cols * .5, y + rows + margin, cols + 2 * margin, tall, kUnderlayDepth, {}, rows * .5 + margin);
     }
 }
 
-// 上が空いた格は象牙の天板付き（横の端が空いていれば天板を少し張り出す）、それ以外は墨の躯体。
-// 隣の部屋の格も見るので、部屋の境を跨いで続く床は一続きに見える。部屋の無い所は埋まり扱い（天板を張り出さない）。
-// 格ごとに出すと数千の描画実体になり引擎の上限を超えるので、天板は横の連なり（8・4・2・1 格）、
-// 躯体は大きい塊（8×4 から 1×1）から順に当てはめる。どの電視も同じ部品なので見た目はそろう。
+// 上が空いたマスは象牙の天板付き（横の端が空いていれば少し張り出す）、それ以外は墨の躯体。
+// 隣の部屋のマスも見るので、部屋をまたぐ床は一続きに見える。部屋の無い所は埋まり扱い。
+// マスごとに出すとエンジンの上限を超えるので、天板は横の連なり（8・4・2・1 マス）、
+// 躯体は大きい塊（8×4 から 1×1）から順に当てはめる。
 void StagePartBuilder::Terrain(int x, int y, int cols, int rows, const std::vector<char>& occupancy) {
     const auto at = [&](int col, int row) {
         return occupancy[static_cast<size_t>((row + 1) * (cols + 2) + col + 1)] != 0;
@@ -136,13 +136,13 @@ void StagePartBuilder::Terrain(int x, int y, int cols, int rows, const std::vect
 void StagePartBuilder::Lamp(double x, double bottomY, bool lit, double since) {
     Add("Signal_Lamp", x, bottomY, 1, 1, 0, {}, 0, lit);
     Add("Signal_LampOff", x, bottomY, 1, 1, 0, {}, 0, !lit);
-    // 光の輪は灯の中心（灯は高さ 0.28）から広がる。圧力板と繋がった機関で同時に鳴るので、繋がりが一目で分かる。
+    // 光の輪は灯の中心（高さ 0.28）から広がる。つながった仕掛けで同時に出るので、つながりが一目で分かる。
     const double t = since / kPulseSeconds, size = .4 + .9 * std::clamp(t, 0.0, 1.0);
     Add("FX_Ring", x, bottomY - .14 + size * .5, size, size, .12, {}, -1, t >= 0 && t < 1);
 }
 
 void StagePartBuilder::Outline(double left, double top, double right, double bottom, bool visible) {
-    // 1 格の破線部品を辺に沿って並べ、端の半端は縮める。
+    // 1 マスの破線部品を辺に沿って並べ、端の半端は縮める。
     const auto along = [&](std::string_view part, double from, double to, bool horizontal, double at) {
         for (double a = from; a < to - 1e-6; a += 1) {
             const double length = (std::min)(1.0, to - a);
@@ -168,7 +168,7 @@ void StagePartBuilder::Device(const Rules::DeviceSnapshot& d, bool checkpoint, d
     switch (d.kind) {
     case Rules::DeviceKind::Solid: break;   // 地形の占有へ合流させて天板の判定と一緒に描く
     case Rules::DeviceKind::OneWay: row("OneWay", true); break;
-    // 圧力板：踏まれると沈み、正面の通電灯が点く（繋がった扉・橋の灯も同時に点く）。
+    // 圧力板：踏まれると沈み、正面の通電灯が点く（つながった扉・橋の灯も同時に点く）。
     case Rules::DeviceKind::Plate: {
         const bool down = d.pressed || d.active;
         Add("Plate", x, bottom, r.w, 1, 0, {}, -1, !down);
@@ -177,9 +177,8 @@ void StagePartBuilder::Device(const Rules::DeviceSnapshot& d, bool checkpoint, d
         break;
     }
     case Rules::DeviceKind::Door: {
-        // 扉：柱は矩形の高さ、鴨居は上端（正面に通電灯）、閉じた扉は 1 格ずつの象牙の羽根板。開く時は羽根が下から
-        // 鴨居へ巻き上がって畳まれ、閉じる時は上から下りる（kSwitchSeconds）。開いている間は戸口を菫の破線で囲む
-        // （「ここに扉が戻る」）。
+        // 扉：柱は矩形の高さ、鴨居は上端（正面に通電灯）、閉じた扉は 1 マスずつの象牙の羽根板。開く時は羽根が下から
+        // 鴨居へ巻き上がり、閉じる時は上から下りる。開いている間は戸口を菫の破線で囲む。
         const bool open = d.active || !d.solid;
         const double p = std::clamp(since / kSwitchSeconds, 0.0, 1.0);
         const double leaves = r.h * (open ? 1 - p : p);   // 上から下りている羽根の高さ
@@ -200,21 +199,20 @@ void StagePartBuilder::Device(const Rules::DeviceSnapshot& d, bool checkpoint, d
         Add("Checkpoint_Idle", x, bottom, r.w, 1, 0, {}, -1, !checkpoint);
         Add("Checkpoint_Active", x, bottom, r.w, 1, 0, {}, -1, checkpoint);
         break;
-    // 弾簧：格ごとに台・ばね・踏み板と、その上の上向きの矢印（打ち上げる向き）。
-    // 素描は鮮やかな色だけを色鉛筆で残すので、弾簧は常に緑の系統で描き、状態は明るさと形で分ける：
-    //   使える：明るい緑の塗りの矢印。乗って溜めている間は踏み板が光り、矢印が溜めに合わせて上へ伸びる（もうすぐ跳ぶ）。
-    //   冷却中：踏み板が墨、矢印は暗い緑の枠だけ。枠の中を明るい緑の棒（水位）が下から満ちていく。棒は矢印の形を
-    //           していないので、途中まで満ちても「使える」と見間違えない。
-    //   満ちた瞬間：棒が塗りの矢印に替わり、一度弾む（since は使えるようになってからの秒数）。
+    // バネ：マスごとに台・ばね・踏み板と、その上の上向きの矢印。
+    // 素描では鮮やかな色だけが残るので、バネは常に緑系で描き、状態は明るさと形で分ける：
+    // 使える：明るい緑の矢印。乗って溜めている間は踏み板が光り、矢印が溜めに合わせて伸びる。
+    // 冷却中：踏み板は墨、矢印は暗い緑の枠だけで、中を明るい緑の棒が下から満ちる（矢印の形ではないので見間違えない）。
+    // 満ちた時：棒が矢印に替わって一度弾む（since は使えるようになってからの秒数）。
     case Rules::DeviceKind::Spring: {
         const bool cooling = d.cooldown > 0, hot = !cooling && d.charge > 0;
         const double fill = cooling ? std::clamp(1.0 - d.cooldown, .04, 1.0) : 1.0;
         const double pop = !cooling && since >= 0 && since < kReadyPopSeconds ? 1 + .3 * (1 - since / kReadyPopSeconds) : 1.0;
         const double size = pop * (hot ? 1 + .3 * std::clamp(d.charge, 0.0, 1.0) : 1.0);
-        // 膨らみは主に上へ伸ばし、横は少しだけ。並んだ弾簧の矢印の頭が触れ合うと、軸の間の背景が閉じた黒い穴に見える。
+        // 膨らみは主に上へ伸ばす（横に広げると、並んだ矢印の間が黒い穴に見える）。
         const double sizeX = 1 + (size - 1) * .25;
         const double arrowBottom = bottom - .4;
-        constexpr double kGaugeInset = .06;   // 枠の太さ。水位の棒は枠の内側の底から伸ばす（素材の ARROW_FRAME と同じ）
+        constexpr double kGaugeInset = .06;   // 枠の太さ（素材の ARROW_FRAME と同じ）。棒は枠の内側の底から伸ばす。
         for (double cx = 0; cx < r.w; cx += 1) {
             const double px = r.x + cx + .5;
             Add("Spring", px, bottom, 1, 1, 0, {}, -1, !cooling && !hot);
@@ -226,9 +224,9 @@ void StagePartBuilder::Device(const Rules::DeviceSnapshot& d, bool checkpoint, d
         }
         break;
     }
-    // 伸縮橋：当たりは格いっぱいなので、出ている間は格いっぱいの象牙の羽目板（扉の羽根と同じ「動く機関」の材質）。
-    // 引っ込む時は板が中央から両端の受け金具へ縮み、出る時は両端から伸びる（kSwitchSeconds）。引っ込んでいる間は
-    // 同じ所を菫の破線で囲む。両端の受け金具は残り、通電灯を載せる。
+    // 伸縮橋：出ている間はマスいっぱいの象牙の羽目板（扉の羽根と同じ材質）。
+    // 引っ込む時は板が中央から両端の受け金具へ縮み、出る時は両端から伸びる。引っ込んでいる間は
+    // 菫の破線で囲む。両端の受け金具は残し、通電灯を載せる。
     case Rules::DeviceKind::Bridge: {
         const bool out = d.solid;
         const double p = std::clamp(since / kSwitchSeconds, 0.0, 1.0);
@@ -263,12 +261,12 @@ void StagePartBuilder::Beam(const Rules::DeviceSnapshot& laser, const Rules::Bea
     const Rules::Rect r = shown ? beam->rect : Rules::Rect{laser.rect.x, laser.rect.y, 1, 1};
     if (horizontal) { Add("LaserBeam", r.x + r.w * .5, r.y + r.h * .5, r.w, 1, 0, {}, -1, shown); }
     else { Add("LaserBeam", r.x + r.w * .5, r.y + r.h * .5, r.h, 1, 0, RotateZ(kPi * .5), -1, shown); }
-    // 当たりの火花は光線の先端（世界は一続きなので、途中で切った端ではない）。
+    // 当たりの火花は光線の先端に置く。
     Add("FX_Shard", horizontal ? (direction == Rules::Direction::Left ? r.x : r.x + r.w) : r.x + r.w * .5,
         (horizontal ? r.y + r.h * .5 : (direction == Rules::Direction::Up ? r.y : r.y + r.h)) + .06, .12, .12, .3, {}, -1, shown);
 }
 
-// 姿勢（待機・走り・空中）と左右の向きごとに焼いた模型。高さ 1 を Rules の身長へ合わせる。
+// 姿勢（待機・走り・空中）と左右の向きごとに焼いたモデル。高さ 1 をルールの身長へ合わせる。
 void StagePartBuilder::Actor(const Rules::BodyState& body, const Rules::Rect& r, bool echo, double time, bool shown, double grow) {
     static constexpr std::array<std::string_view, 18> kPlayerPoses{
         "Ninja_Idle0_R", "Ninja_Idle1_R", "Ninja_Jog0_R", "Ninja_Jog1_R", "Ninja_Jog2_R", "Ninja_Jog3_R", "Ninja_Jog4_R", "Ninja_Jog5_R", "Ninja_Air0_R",
@@ -293,4 +291,4 @@ void StagePartBuilder::Actor(const Rules::BodyState& body, const Rules::Rect& r,
         else { Add(poses[i], kParkX, kParkY, 1, 1, depth, {}, -1, false); }
     }
 }
-} // namespace TD2
+}

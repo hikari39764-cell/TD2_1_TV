@@ -11,16 +11,16 @@
 
 namespace TD2 {
 namespace {
-// 編集中に部屋ごとの作者の装置と出生点を、未配置の部屋の置き場所が決まるまで持っておく。
+// 編集中、未配置の部屋の置き場所が決まるまで装置とスポーン位置を持っておく。
 struct AuthoredRoom {
     std::vector<Rules::DeviceDefinition> devices;
     Rules::Vec2 spawn;
     bool entry = false;
 };
-} // namespace
+}
 
 void ScreenPresentationSystem::ReportStatus() {
-    // revision や一時的な effect 数ではログを増やさない。準備・失敗・回復の状態辺沿だけ出す。
+    // ログは準備・失敗・回復の変化の時だけ出す。
     auto category = status_;
     if (const auto models = category.find(" models="); models != std::string::npos) {
         category.resize(models);
@@ -46,7 +46,7 @@ void ScreenPresentationSystem::ReportTiming(double frameSeconds, double renderSe
 
 void ScreenPresentationSystem::Update(HIKARI::WorldView& world, const HIKARI::FrameContext& frame) {
     const auto started = std::chrono::steady_clock::now();
-    // 1. 描き方：舞台カメラに付けた共有設定と、区域の物体に付けた局所設定。
+    // 1. 描き方：舞台カメラの共有設定と、区域ごとの設定。
     ScreenStyleSettings globalStyle;
     std::map<uint64_t, ScreenStyleSettings> localStyles;
     const HIKARI::ComponentTypeId styleTypes[]{HIKARI::MakeComponentTypeId(kScreenStyleComponentType)};
@@ -54,7 +54,7 @@ void ScreenPresentationSystem::Update(HIKARI::WorldView& world, const HIKARI::Fr
         HIKARI::GameProjectWorldQueryAnchor::FirstRequiredTerm,
         [&world, &globalStyle, &localStyles](HIKARI::ObjectView object, ScreenStyleComponent& style) {
             const auto settings = style.Settings(); localStyles[object.GetHandle().value] = settings;
-            // Camera に付けた共有設定は self 参照を使える。Region の局所設定は後で上書きする。
+            // 共有設定は self 参照を使える。区域ごとの設定で後から上書きする。
             const auto camera = world.FindSceneObject(settings.captureCameraObject ? settings.captureCameraObject : object.GetSceneObjectId());
             HIKARI::GameProjectCameraLens lens{};
             if (!globalStyle.captureCameraObject && camera.IsValid() && world.GetCamera().GetAuthoredLens(camera.GetHandle().value, lens)) {
@@ -62,7 +62,7 @@ void ScreenPresentationSystem::Update(HIKARI::WorldView& world, const HIKARI::Fr
             }
         });
     if (!styles.Succeeded()) { status_ = "3D风格组件查询失败"; stage_.Release(world); ReportStatus(); return; }
-    // 特効の設定は最初に見つかった一つだけ（舞台カメラに付ける）。無ければ既定の一式。
+    // エフェクト設定は最初の一つだけ使う。無ければ既定値。
     ScreenFxSettings fx; bool foundFx = false;
     const HIKARI::ComponentTypeId fxTypes[]{HIKARI::MakeComponentTypeId(kScreenFxComponentType)};
     (void)world.ForEachComponents<ScreenFxComponent>(fxTypes, HIKARI::GameProjectWorldQueryAnchor::FirstRequiredTerm,
@@ -70,8 +70,8 @@ void ScreenPresentationSystem::Update(HIKARI::WorldView& world, const HIKARI::Fr
             if (!foundFx) { fx = component.Settings(); foundFx = true; }
         });
 
-    // 2. 部屋。Play 中は Session の配置と地図を借りる（開始時の配置で固定し、作者の新配置と混ぜない。世界に置いた部屋だけ）。
-    // 編集中は作者の地図を写し、装置と出生点は未配置の部屋の置き場所が決まってから世界の格へ移す。
+    // 2. 部屋。Play 中は Session の配置と地図を使う（世界に置いた部屋だけ）。
+    // 編集中は作者の地図を写し、装置とスポーン位置は置き場所が決まってから世界のマスへ移す。
     const bool playing = world.GetRuntimeSession().IsPlayActive();
     auto* session = playing ? dynamic_cast<GameSession*>(world.GetGameSession()) : nullptr;
     if (session && session->ActiveRegion().empty()) { session = nullptr; }
@@ -110,7 +110,7 @@ void ScreenPresentationSystem::Update(HIKARI::WorldView& world, const HIKARI::Fr
         stage.snapshot = &session->Snapshot(); stage.activeRegion = session->ActiveRegion(); stage.simulated = true;
         (void)session->TravelRooms(stage.travelFrom, stage.travelTo);
     } else {
-        // 世界に置いていない作者地図（机の画面など）は、世界の下に 1 格ずつ空けて横一列に並べる（隣り合わせない）。
+        // 未配置の地図は世界の下に 1 マスずつ空けて並べる。
         int left = 0, bottom = 0, maxCols = 1, maxRows = 1; bool any = false;
         for (const auto& room : rooms_) if (room.placed) {
             left = any ? (std::min)(left, room.x) : room.x; bottom = any ? (std::max)(bottom, room.y + room.Region().rows) : room.y + room.Region().rows;
@@ -118,7 +118,7 @@ void ScreenPresentationSystem::Update(HIKARI::WorldView& world, const HIKARI::Fr
         }
         int next = 0;
         for (auto& room : rooms_) if (!room.placed) { room.x = left + next++ * (maxCols + 1); room.y = bottom + 2 * maxRows; }
-        // 開始区域（無ければ最初に置いた部屋、それも無ければ最初の部屋）の出生位置に待機姿勢の主角を立たせる。
+        // 開始区域（無ければ最初の部屋）のスポーン位置にプレイヤーを立たせる。
         size_t entry = rooms_.size();
         for (size_t i = 0; i < rooms_.size() && entry == rooms_.size(); ++i) { if (rooms_[i].placed && authored[i].entry) { entry = i; } }
         for (size_t i = 0; i < rooms_.size() && entry == rooms_.size(); ++i) { if (rooms_[i].placed) { entry = i; } }
@@ -143,4 +143,4 @@ void ScreenPresentationSystem::Update(HIKARI::WorldView& world, const HIKARI::Fr
     stage_.Render(world, rooms_, stage, globalStyle, fx); status_ = stage_.Status(); ReportStatus();
     ReportTiming(frame.rawDt, std::chrono::duration<double>(std::chrono::steady_clock::now() - started).count());
 }
-} // namespace TD2
+}

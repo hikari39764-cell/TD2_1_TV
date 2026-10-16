@@ -26,16 +26,16 @@ std::string_view EventName(Rules::EventKind event) {
     }
     return "Unknown";
 }
-// 手動の切り替えの重さ（臨界減衰のばねの時定数、秒）：押して全速へ乗るまで、離して滑り止まるまで、逆へ押して止まるまで。
-// 道筋そのものも両端で緩やかに止まる（演出の spline 補間）ので、端の手前で別に減速はしない。
+// 手動の切り替えの重さ（ばねの時定数、秒）：加速、離した時の減速、逆に押した時の制動。
+// 経路自体が両端で緩やかに止まるので、端の手前で別に減速しない。
 constexpr double kTravelPressSeconds = .7, kTravelCoastSeconds = 1.8, kTravelBrakeSeconds = .55;
-// 歩いたまま越えた時に持ち込む勢い（全速に対する割合）。越えた瞬間に画が止まって見えないようにする。
+// 歩いて越えた時に持ち込む勢い（全速に対する割合）。
 constexpr double kTravelCarry = .55;
-// 演出の序盤のこの割合までに、始まりの機位のずれを 0 へ戻す。
+// 演出の序盤のこの割合までに、開始時のカメラのずれを 0 に戻す。
 constexpr double kTravelBlendIn = .35;
-constexpr uint64_t kFollowSource = 0x5444325F464F4C4Cull;   // "TD2_FOLL"
-constexpr uint64_t kTravelSource = 0x5444325F5452564Cull;   // "TD2_TRVL"
-// スカラーの臨界減衰のばね（SmoothDamp と同じ近似）。値の変化の速さ（rate）まで連続するので、動き出しと止まり際に角が出ない。
+constexpr uint64_t kFollowSource = 0x5444325F464F4C4Cull;   // 識別値 "TD2_FOLL"
+constexpr uint64_t kTravelSource = 0x5444325F5452564Cull;   // 識別値 "TD2_TRVL"
+// スカラーの臨界減衰のばね。変化の速さも連続するので、動き出しと止まり際が滑らか。
 double Damp(double value, double target, double& rate, double seconds, double dt) {
     const double omega = 2.0 / (std::max)(seconds, 1e-3), x = omega * dt;
     const double decay = 1.0 / (1.0 + x + .48 * x * x + .235 * x * x * x);
@@ -48,7 +48,7 @@ HIKARI::GameProjectFloat3 Sub(const HIKARI::GameProjectFloat3& a, const HIKARI::
 HIKARI::GameProjectFloat3 Mad(const HIKARI::GameProjectFloat3& a, const HIKARI::GameProjectFloat3& b, float k) {
     return {a.x + b.x * k, a.y + b.y * k, a.z + b.z * k};
 }
-} // namespace
+}
 
 void GameSession::OnGameStarted(HIKARI::WorldView&) {
     exploration_ = {}; bindings_.clear(); playback_ = {}; playbackBinding_ = {};
@@ -101,7 +101,7 @@ void GameSession::SyncRegions(HIKARI::WorldView& world) {
         return;
     }
     if (!exploration_.Ready()) {
-        // 不正な入口は既定区域へ黙って落とさず診断する。試遊で別の場所を確認したと誤認させない。
+        // 不正な入口は既定の区域へ落とさずエラーにする。
         if (previewEntryObject_ && previewEntry.empty()) {
             std::fprintf(stderr, "[TD2 configuration] test start object missing: %llu\n",
                 static_cast<unsigned long long>(previewEntryObject_)); return;
@@ -128,21 +128,20 @@ void GameSession::SyncRegions(HIKARI::WorldView& world) {
         bindings_.push_back(binding);
     }
     SyncCameraAreas(world);
-    // Play の始まり：演出の Camera 槽の物体をゲーム用カメラにし、入口の区域机位から追従を始める。
+    // Play の開始：演出の Camera スロットの物体をゲームカメラにし、入口の区域カメラから追従を始める。
     if (world.GetRuntimeSession().IsPlayActive() && exploration_.Ready() && !cameraInitialized_) {
         InitializeCamera(world);
     }
     std::fflush(stderr);
 }
 
-// ---------------------------------------------------------------- 镜头
+// ---------------------------------------------------------------- カメラ
 // 二通りで動かす（方針は TD2CameraRig.h）。
-// ・同じ大区域（TD2.CameraArea）の中：CameraRig が区域机位を基準に主角へ向けて毎フレーム解き、ゲーム用カメラへ
-//   機位を提出する。部屋を移ると基準が次の区域机位へ滑るだけで、演出も操作の停止も無い（落下・跳躍もそのまま追う）。
-// ・大区域どうし：結ばれた引擎の演出を流す。地面を歩いて越えた時は世界を止め、A/D で演出を押し進める（押すと速さが
-//   立ち上がり、離すと少し滑って止まり、逆へ押すとまず止まってから戻る）。起点まで戻すと主角も元の区域へ戻る。
-//   空中で越えた時は世界を止めずに自動で流す。演出の間は機位を提出せず、始まりの機位のずれは序盤で 0 へ戻す。
-//   終わったら演出を止め、同じフレームで最後の画から追従へ戻る（区域机位とずれていても跳ばない）。
+// ・同じ大区域（TD2.CameraArea）の中：CameraRig が区域カメラを基準にプレイヤーへ向けて毎フレーム解く。
+// 部屋を移ると基準が次の区域カメラへ滑るだけで、演出も操作の停止も無い。
+// ・大区域どうし：結んだ演出を流す。地面を歩いて越えた時は世界を止め、A/D で演出を進める（慣性あり）。
+// 起点まで戻すとプレイヤーも元の区域へ戻る。空中で越えた時は世界を止めずに自動で流す。
+// 終わったら同じフレームで最後の画から追従へ戻る。
 
 bool GameSession::RegionFrame(HIKARI::WorldView& world, std::string_view region, CameraRegionFrame& out) const {
     const auto camera = regionCameras_.find(region);
@@ -161,7 +160,7 @@ bool GameSession::RegionFrame(HIKARI::WorldView& world, std::string_view region,
     }
     const auto& placement = runtime->placement;
     out.worldX = placement.worldX; out.worldY = placement.worldY; out.cols = placement.cols; out.rows = placement.rows;
-    // 区域机位は局所 +Z を見る。注視点は画面の中心の深さに置く（大区域の中の乗り換えで画面の間を通るように）。
+    // 区域カメラはローカル +Z を見る。注視点は画面の中心の深さに置く。
     const auto forward = CameraRig::Forward(pose);
     const auto center = CameraRig::ScreenPoint(out, out.worldX + out.cols * .5, out.worldY + out.rows * .5);
     const auto toCenter = Sub(center, pose.position);
@@ -211,7 +210,7 @@ void GameSession::SyncCameraAreas(HIKARI::WorldView& world) {
 }
 
 void GameSession::InitializeCamera(HIKARI::WorldView& world) {
-    // 演出の Camera 槽の物体（無ければ入口の区域机位）をゲーム用カメラにし、追従の機位はそこへ提出する。
+    // 演出の Camera スロットの物体（無ければ入口の区域カメラ）をゲームカメラにする。
     uint64_t driver = 0;
     for (const auto& binding : bindings_) if (binding.cameraObject) { driver = binding.cameraObject; break; }
     if (!driver) if (const auto found = regionCameras_.find(exploration_.ActiveRegion()); found != regionCameras_.end()) driver = found->second;
@@ -233,12 +232,12 @@ void GameSession::SnapCamera(HIKARI::WorldView& world, std::string_view region) 
 void GameSession::OnCrossing(HIKARI::WorldView& world, const Rules::RegionTransition& transition) {
     const auto& from = transition.fromRegion;
     const auto& to = transition.toRegion;
-    if (transition.kind == "respawn") {   // 復活は演出を流さず、その区域机位から追従し直す
+    if (transition.kind == "respawn") {   // 復活は演出を流さず、その区域カメラから追従し直す
         StopTravel(world); SnapCamera(world, to);
         return;
     }
     if (travel_) {
-        // 自動の切り替えの途中：来た部屋へ戻ればその場で逆向きにし、先へ進めば終わった後に追従が引き継ぐ。
+        // 自動の切り替え中：来た部屋へ戻れば逆再生にし、先へ進めば終了後に追従が引き継ぐ。
         if (from == travel_->to && to == travel_->from) {
             travel_->reverse = !travel_->reverse; std::swap(travel_->from, travel_->to); travel_->pending.clear();
             const float speed = std::clamp(travel_->binding.speed, .1f, 8.f);
@@ -249,7 +248,7 @@ void GameSession::OnCrossing(HIKARI::WorldView& world, const Rules::RegionTransi
         }
         return;
     }
-    if (SameArea(from, to)) return;   // 大区域の中：追従の基準が次の区域机位へ滑る
+    if (SameArea(from, to)) return;   // 大区域の中：追従の基準が次の区域カメラへ移る
     const auto* a = exploration_.FindRegion(from);
     const auto* b = exploration_.FindRegion(to);
     int direction = 0;
@@ -257,7 +256,7 @@ void GameSession::OnCrossing(HIKARI::WorldView& world, const Rules::RegionTransi
         if (a->placement.worldX + a->placement.cols == b->placement.worldX) direction = 1;
         else if (b->placement.worldX + b->placement.cols == a->placement.worldX) direction = -1;
     }
-    // 地面を歩いて横へ越えた時だけ手動（落下・跳躍の途中は止めない）。
+    // 地面を歩いて横へ越えた時だけ手動（落下中・跳躍中は止めない）。
     const bool manual = direction != 0 && exploration_.State().player.grounded;
     if (!StartTravel(world, from, to, manual, direction)) {
         std::fprintf(stderr, "[TD2 camera] no transition for %s -> %s; follow glides\n", from.c_str(), to.c_str());
@@ -287,11 +286,11 @@ bool GameSession::StartTravel(HIKARI::WorldView& world, const std::string& from,
     travel.binding = binding; travel.from = from; travel.to = to; travel.reverse = reverse; travel.manual = manual;
     travel.direction = direction;
     if (manual) {
-        // 歩いて越えた勢いを持ち込む（歩く速さ 5 格/秒で kTravelCarry）。止まっていた主角なら 0 から押し始める。
+        // 歩いて越えた勢いを持ち込む。止まっていたら 0 から押し始める。
         const double walk = std::clamp(exploration_.State().player.vx * direction / 5.0, 0.0, 1.0);
         travel.velocity = kTravelCarry * walk * speed / snapshot.durationSeconds;
     }
-    // 始まりの機位のずれ（追従の今の画 − 演出の始点 = 区域机位）。序盤で 0 へ戻して繋ぐ。
+    // 開始時のカメラのずれ（今の追従の画 − 演出の始点）。序盤で 0 に戻す。
     CameraRegionFrame frame;
     if (rig_.Ready() && RegionFrame(world, from, frame)) {
         travel.eyeOffset = Sub(rig_.Last().eye, frame.eye); travel.lookOffset = Sub(rig_.Last().look, frame.look);
@@ -310,7 +309,7 @@ void GameSession::UpdateTravel(HIKARI::WorldView& world, float input, double dt)
     const double raw = std::clamp(static_cast<double>(snapshot.timeSeconds) / snapshot.durationSeconds, 0.0, 1.0);
     travel.progress = travel.reverse ? 1 - raw : raw;
     if (travel.manual) {
-        // 押した向き（越えた向きが前）。全速は演出の作者の倍速（binding.speed）と同じ進み。
+        // 押した向き（越えた向きが前）。全速は演出の倍速（binding.speed）と同じ。
         const double along = std::clamp(static_cast<double>(input) * travel.direction, -1.0, 1.0);
         const double full = std::clamp(travel.binding.speed, .1f, 8.f) / snapshot.durationSeconds;
         const double target = std::abs(along) > .1 ? along * full : 0.0;
@@ -321,13 +320,13 @@ void GameSession::UpdateTravel(HIKARI::WorldView& world, float input, double dt)
         if (target == 0 && std::abs(travel.velocity) < full * 2e-3) { travel.velocity = 0; travel.accel = 0; }
         if (travel.progress >= 1 - 1e-3 && travel.velocity >= 0 && target >= 0) { FinishTravel(world, travel.to); return; }
         if (travel.progress <= 1e-3 && travel.velocity <= 0 && target < 0) {
-            // 起点まで戻した：主角を元の区域へ戻して、そこから追従を続ける。
+            // 起点まで戻した：プレイヤーを元の区域へ戻し、そこから追従を続ける。
             const auto from = travel.from; const int direction = travel.direction;
             (void)exploration_.StepBack(from, direction);
             FinishTravel(world, from);
             return;
         }
-        // 速さを演出の再生倍率へ写す。速さ 0 は一時停止（画はその場に留まる）。
+        // 速さを演出の再生倍率にする。0 は一時停止。
         const double rate = travel.velocity * snapshot.durationSeconds * (travel.reverse ? -1 : 1);
         if (std::abs(travel.velocity) < 1e-4) { if (sequence.IsPlaying(playback_)) (void)sequence.Pause(playback_); }
         else {
@@ -338,11 +337,11 @@ void GameSession::UpdateTravel(HIKARI::WorldView& world, float input, double dt)
         FinishTravel(world, travel.to);
         return;
     }
-    // 始まりの機位のずれを序盤で 0 へ戻し、追従の呼吸を演出の間も重ねる（止まった画にしない）。
+    // 開始時のずれを序盤で 0 に戻し、演出中も呼吸を重ねる。
     const float weight = static_cast<float>(1 - SmoothStep(travel.progress / kTravelBlendIn));
     HIKARI::GameProjectFloat3 breathEye{}, breathLook{};
     double handRoll = 0;
-    // 揺れの向きは描いている镜头（前のフレーム）の向き。描いた画に重ねたずれを引いた素の演出の机位で測る。
+    // 揺れの向きは描いているカメラ（前のフレーム）の向きから、足したずれを引いて測る。
     HIKARI::GameProjectCameraPose rendered{};
     if (world.GetCamera().GetRenderedPose(rendered)) {
         CameraRig::BreathAround(AreaOf(travel.to), cameraTime_, Mad(rendered.eye, travel.appliedEye, -1.f),
@@ -372,9 +371,8 @@ void GameSession::FinishTravel(HIKARI::WorldView& world, const std::string& arri
     const auto appliedLook = travel_ ? travel_->appliedLook : HIKARI::GameProjectFloat3{};
     if (playback_.IsValid()) (void)world.GetSequence().Stop(playback_);
     playback_ = {}; playbackBinding_ = {}; travel_.reset();
-    // 演出の終わりの画からそのまま追従を始める（区域机位との差は追従がなだらかに詰める）。描いた画には演出へ重ねた
-    // 呼吸・手持ちのずれが入っていて、追従も自分で同じ揺れを足すので、基準はそのずれを差し引いた所に置く（足し直すと
-    // 最初のフレームに数 cm・0.5° ほど跳ぶ）。
+    // 演出の終わりの画からそのまま追従を始める。描いた画には演出へ足した揺れが入っており、追従も同じ揺れを足すので、
+    // 基準はそのずれを引いた所に置く（引かないと最初のフレームで少し跳ぶ）。
     if (haveRendered) rig_.Snap(Mad(rendered.eye, appliedEye, -1.f), Mad(rendered.target, appliedLook, -1.f), rendered.verticalFovRadians);
     else SnapCamera(world, region);
     std::fprintf(stderr, "[TD2 camera] travel finished at %s\n", region.c_str());
@@ -431,22 +429,19 @@ HIKARI::GameProjectSequencePlaybackHandle GameSession::PlayBoundSequence(HIKARI:
     return started;
 }
 
-// 被写界深度の焦点を今の部屋の電視の画面へ合わせ続ける。機位ごとに画面までの距離が違い（2.1〜3.9 m）、
-// カメラに作者が付けた固定の焦点では遠い電視がぼけるため。焦点は画面の中心の視線方向の深さ（画面の位置は区域の
-// 「屏幕中心」）。部屋が変わった瞬間に跳ばないよう、時定数 0.12 秒で寄せる。
+// 被写界深度の焦点を今の部屋の画面へ合わせ続ける（カメラごとに画面までの距離が違うため）。
+// 焦点は画面の中心の視線方向の深さ。部屋が変わった時に跳ばないよう、時定数 0.12 秒で寄せる。
 void GameSession::FocusActiveScreen(HIKARI::WorldView& world, double seconds) {
-    // 焦点は「画で一番目立っている画面」へ、ゆっくり送る（操作中の区域が越えた瞬間に切り替わると、まだ画の主役の
-    // 前の画面が急にぼける）。目立ち具合は写る面積を、画の中心から離れるほど割り引いた値。
+    // 焦点は画で一番目立つ画面へゆっくり送る。目立ち具合は写る面積を、画の中心から離れるほど割り引いた値。
     constexpr double kFocusSeconds = .35;
-    constexpr uint64_t kFocusSource = 0x5444325F464F4355ull; // "TD2_FOCU"
+    constexpr uint64_t kFocusSource = 0x5444325F464F4355ull; // 識別値 "TD2_FOCU"
     auto camera = world.GetCamera();
     HIKARI::GameProjectCameraPose pose{};
     if (!camera.GetRenderedPose(pose)) { return; }
     double best = 0, depth = 0, travelWeight = 0, travelDepth = 0;
     std::string focusRegion;
     for (const auto& [region, handle] : regionObjects_) {
-        // 切り替えの演出の間は、出る部屋と入る部屋の画面だけを見る。镜头が大きく回る途中で遠くの画面が一時的に一番
-        // 目立っても焦点を飛ばさない（飛ぶと主役の二台がぼけたり戻ったりする）。
+        // 切り替え中は出る部屋と入る部屋の画面だけを見る（途中で遠くの画面に焦点が飛ばないように）。
         const bool travelRoom = travel_ && (region == travel_->from || region == travel_->to);
         if (travel_ && !travelRoom) { continue; }
         const auto geometry = regionGeometry_.find(region);
@@ -459,16 +454,16 @@ void GameSession::FocusActiveScreen(HIKARI::WorldView& world, double seconds) {
         if (score > best) { best = score; depth = seen.depth; focusRegion = region; }
         if (travelRoom) { travelWeight += score; travelDepth += score * seen.depth; }
     }
-    // 二台の奥行きを目立ち具合で混ぜる：どちらか一台へ切り替えず、写り方に合わせて連続に移す。
+    // 二台の奥行きを目立ち具合で混ぜ、連続に移す。
     if (travel_ && travelWeight > 0) { depth = travelDepth / travelWeight; }
-    // 診断用（環境変数 TD2_SCREEN_TRACE）：焦点を合わせる画面が替わったフレームを記録する。
+    // 診断用（環境変数 TD2_SCREEN_TRACE）：焦点の画面が替わったフレームを記録する。
     static const bool trace = std::getenv("TD2_SCREEN_TRACE") != nullptr;
     if (trace && focusRegion != traceFocus_) {
         std::fprintf(stderr, "[TD2 focus-trace] region=%s depth=%.3f travel=%.3f\n", focusRegion.c_str(), depth, travel_ ? travel_->progress : -1.0);
         traceFocus_ = focusRegion;
     }
     if (!(best > 0)) {
-        // 画面が一つも写っていない時（大きく引いた演出の途中など）は、操作中の区域の画面の奥行きを保つ。
+        // 画面が一つも写っていない時は、操作中の区域の画面の奥行きを保つ。
         CameraRegionFrame frame;
         if (!RegionFrame(world, exploration_.ActiveRegion(), frame)) { return; }
         const auto center = CameraRig::ScreenPoint(frame, frame.worldX + frame.cols * .5, frame.worldY + frame.rows * .5);
@@ -497,7 +492,7 @@ void GameSession::TraceEvents(std::string_view region, const Rules::StepOutput& 
 void GameSession::TraceSequence(HIKARI::WorldView& world, uint64_t frame) {
     HIKARI::GameProjectSequencePlaybackSnapshot snapshot;
     const auto sequence = world.GetSequence(); const bool available = sequence.GetSnapshot(playback_, snapshot);
-    // 描いた机位も残す（演出の道筋を作者の鍵と突き合わせるため）。
+    // 描いたカメラの姿勢も記録する。
     HIKARI::GameProjectCameraPose pose{};
     (void)world.GetCamera().GetRenderedPose(pose);
     std::fprintf(stderr, "[TD2 sequence-state] available=%d playing=%d state=%u time=%.4f duration=%.4f asset=%s frame=%llu "
@@ -557,4 +552,4 @@ void GameSession::Update(HIKARI::WorldView& world, const HIKARI::FrameContext& f
     }
 }
 
-} // namespace TD2
+}

@@ -51,7 +51,8 @@ CLAUDE.md
 id_rsa
 id_ed25519
 
-# 正式な .blend と Exports は残し、自動バックアップだけを除外する。
+# Blender の作業ファイルは自動バックアップも含めてローカルに残す。
+*.blend
 *.blend[0-9]*
 *.blend@
 
@@ -83,10 +84,6 @@ __pycache__/
 /ArtSource/LevelSet01/Temp/
 /ArtSource/ScreenStyle07/Temp/
 
-# 画面スタイル試作の .blend は生成スクリプトから再作成できるためローカルに残す。
-/ArtSource/ScreenStyleStudy01/*.blend
-/ArtSource/ScreenStyleStudy02/*.blend
-
 # 外部の表示機モデル：確認画像と説明書きはローカルに残す。
 /ArtSource/ExternalDisplays01/Previews/
 /ArtSource/ExternalDisplays01/*.txt
@@ -97,3 +94,6 @@ __pycache__/
 /ArtSource/ScreenStyle07/*_study.py
 /ArtSource/ScreenStyleStudy01/
 /ArtSource/ScreenStyleStudy02/
+
+# 素材を作る Python スクリプトは実行時に使わないのでローカルに残す。
+/ArtSource/**/*.py

@@ -2,11 +2,3 @@
 
 # 小さなテスト素材を一律に LFS 化しない。
 # 大きなバイナリは容量と用途を確認し、必要なパスだけ LFS に追加する。
-ArtSource/ModularSet01/ModularSet01.blend filter=lfs diff=lfs merge=lfs -text
-ArtSource/ModularSet02/ModularSet02.blend filter=lfs diff=lfs merge=lfs -text
-ArtSource/FactorySet01/FactorySet01.blend filter=lfs diff=lfs merge=lfs -text
-
-# Screen3D06 は大きなキャラクター元データと実行用モデルだけを LFS に置く。
-ArtSource/ScreenGame06/ScreenGame06_Ninja.blend filter=lfs diff=lfs merge=lfs -text
-Assets/TD2/Screen3D/Models/SG06_Ninja.fbx filter=lfs diff=lfs merge=lfs -text
-ArtSource/ScreenGame06/ScreenGame06_Ninja_Display.blend filter=lfs diff=lfs merge=lfs -text

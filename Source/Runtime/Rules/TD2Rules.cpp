@@ -13,11 +13,11 @@ constexpr double kStep = 1.0 / 120.0;
 constexpr double kPlayerWidth = 0.625, kPlayerHeight = 0.875;
 constexpr double kGravity = 43.75, kMaxFall = 28.125;
 constexpr double kGroundTolerance = 0.55 / 32.0;
-// 弾簧：踏み板の厚さ、記録する最小の着地速度、打ち上げ速度の範囲、冷却の範囲（原型と同じ値を格単位へ）。
+// バネ：踏み板の厚さ、記録する最小の着地速度、打ち上げ速度と冷却の範囲（マス単位）。
 constexpr double kSpringCap = 10.0 / 32.0, kSpringStep = 10.1 / 32.0, kSpringImpactMin = 60.0 / 32.0;
 constexpr double kSpringPowerMin = 100.0 / 32.0, kSpringPowerMax = 1400.0 / 32.0;
 Rect SpringCap(const Rect& r) { return {r.x, r.y + r.h - kSpringCap, r.w, kSpringCap}; }
-// 尖刺の当たりは原型と同じく格より小さい：刺の根元側を残し、先端側 8/32、横 3/32 ずつ内側。
+// 棘の当たりはマスより小さい：根元側を残し、先端側 8/32、横 3/32 ずつ内側。
 Rect SpikeHitbox(const Rect& r, Direction direction) {
     constexpr double tip = 8.0 / 32.0, side = 3.0 / 32.0;
     switch (direction) {
@@ -55,7 +55,7 @@ bool WorldTile(const WorldDefinition& d, int64_t x, int64_t y, TileKind& tile) {
     return false;
 }
 bool InWorld(const WorldDefinition& d, const Rect& r) {
-    // 格配置なので占有格すべてが存在すれば、複数のテレビにまたがる身体も世界内にある。
+    // 占有するマスがすべてあれば、テレビをまたぐ体も世界の中にある。
     for (int64_t y = int64_t(std::floor(r.y + kEps)); y <= int64_t(std::floor(r.y + r.h - kEps)); ++y)
         for (int64_t x = int64_t(std::floor(r.x + kEps)); x <= int64_t(std::floor(r.x + r.w - kEps)); ++x) {
             TileKind tile;
@@ -80,7 +80,7 @@ bool Rider(const BodyState* rider, const BodyState& carrier, const std::string& 
            std::abs(rider->rect.y + rider->rect.h - carrier.rect.y) < 0.6 / 32.0 && rider->vy >= -kEps;
 }
 
-// 全判定が同一の WorldState を読む。描画や SDK 側へ物理更新を分散させない。
+// 判定はすべて同じ WorldState を読む。
 class Simulation {
 public:
     const WorldDefinition& d;
@@ -123,7 +123,7 @@ public:
             const bool oneWay = dev.kind == DeviceKind::OneWay;
             if (dev.id == ignore || (oneWay && fullOnly)) continue;
             if (staticOnly && dev.kind != DeviceKind::Solid && !oneWay) continue;
-            // 弾簧は上面の踏み板だけが当たり（光線もここで止まる）。
+            // バネは上面の踏み板だけが当たる（光線もここで止まる）。
             const Rect rect = dev.kind == DeviceKind::Spring ? SpringCap(dev.rect) : spike ? SpikeHitbox(dev.rect, dev.direction) : dev.rect;
             if ((IsSolid(i) || (spike && echoBody)) && Overlap(area, rect))
                 result.push_back({rect, dev.id, oneWay, spike, dev.kind == DeviceKind::Spring, dev.direction});
@@ -169,7 +169,7 @@ public:
         }
     }
 
-    // 上向きの刺だけが残影を刺先へ押し上げる。横向き・下向きの刺は階段にしない。
+    // 上向きの棘だけが残影を先端へ押し上げる。横・下向きの棘は段差にしない。
     std::optional<double> SpikeTop(const BodyState& b, double x, const Collider& spike, const std::string& ignore) {
         double y = spike.rect.y - b.rect.h;
         for (size_t pass = 0; pass <= d.devices.size(); ++pass) {
@@ -214,7 +214,7 @@ public:
                         b.rect.y = *y; b.vy = 0; b.grounded = true; b.supportId = c.id; continue;
                     }
                 }
-                // 低い弾簧の踏み板は壁ではなく段差。立っている身体は踏み板の上へ上がる（原型の 10.1px）。
+                // 低いバネの踏み板は壁ではなく段差。立っている体は踏み板の上へ上がる。
                 if (const double climb = b.rect.y + b.rect.h - r.y; c.spring && b.grounded && climb > 0 && climb <= kSpringStep) {
                     const Rect raised{target, r.y - b.rect.h, b.rect.w, b.rect.h};
                     if (Clear(raised, &b, echoBody, c.id)) { b.rect.y = raised.y; b.supportId = c.id; b.vy = 0; continue; }
@@ -245,7 +245,7 @@ public:
         Move(b, echoBody, b.vy * kStep, false);
         RecordSpringImpact(b, wasGrounded, speed);
     }
-    // 衝突解決後の本当の着地だけを記録する。積み重なった身体は一番下の支えの弾簧へ衝撃を渡す（原型同様 2 段まで）。
+    // 衝突解決後の着地だけを記録する。積み重なった体は一番下の支えのバネへ衝撃を渡す（2 段まで）。
     void RecordSpringImpact(const BodyState& b, bool wasGrounded, double speed) {
         if (wasGrounded || !b.grounded || speed < kSpringImpactMin) return;
         std::string support = b.supportId;
@@ -281,7 +281,7 @@ public:
         const double carrierDelta = carrierProbe.rect.y - carrier.rect.y;
         Move(riderProbe, !carrierEcho, carrierDelta, false, carrierId);
         const double riderDelta = riderProbe.rect.y - rider.rect.y;
-        // 頭上の天井で積み重なり全体を止め、下降時には上の身体が足場に残れる。
+        // 頭上の天井で積み重なり全体を止める。下降時は上の体が足場に残れる。
         const double allowed = carrier.vy < 0 ? std::max(carrierDelta, riderDelta) : carrierDelta;
         Move(carrier, carrierEcho, allowed, false);
         Move(rider, !carrierEcho, carrier.vy < 0 ? allowed : riderDelta, false, carrierId);
@@ -416,7 +416,7 @@ public:
         double x = d.chunks.empty() ? std::clamp(intended, 0.0, double(d.region.cols) - p.rect.w) : intended;
         bool bounced = x != intended;
         const Rect route = Sweep(source, {x, source.y, source.w, source.h});
-        // 普通の壁は経路検査しない。鍵壁だけが瞬移の途中を遮断する。
+        // 普通の壁は経路を調べない。鍵の壁だけが瞬間移動を止める。
         const DeviceDefinition* lock = nullptr;
         for (size_t i = 0; i < d.devices.size(); ++i) {
             const auto& dev = d.devices[i];
@@ -424,7 +424,7 @@ public:
                 (!lock || facing * (dev.rect.x - lock->rect.x) < 0)) lock = &dev;
         }
         if (lock) { x = facing > 0 ? std::max(source.x, lock->rect.x - source.w) : std::min(source.x, lock->rect.x + lock->rect.w); bounced = true; }
-        // 未配置領域や角接触を普通の壁越し瞬移で飛び越えない。共有辺にはこの壁が存在しない。
+        // 未配置の領域や角の接触は瞬間移動でも越えない（共有辺にはこの壁は無い）。
         for (const auto& edge : d.boundaries) if (Overlap(route, edge)) {
             const double limit = facing > 0 ? std::max(source.x, edge.x - source.w) : std::min(source.x, edge.x + edge.w);
             if (facing > 0 ? limit < x : limit > x) { x = limit; bounced = true; }
@@ -435,7 +435,7 @@ public:
             std::vector<Collider> blockers;
             for (const auto& c : Colliders(endpoint, nullptr, false, {}, true, true)) if (Overlap(endpoint, c.rect)) blockers.push_back(c);
             if (blockers.empty()) break;
-            // 落点が弾簧の踏み板だけに掛かるなら、横の瞬移を保ったまま踏み板の上へ足を置く（原型と同じ）。
+            // 着地点がバネの踏み板だけに掛かるなら、横の位置のまま踏み板の上に乗せる。
             if (std::all_of(blockers.begin(), blockers.end(), [](const Collider& c) { return c.spring; })) {
                 double top = blockers.front().rect.y;
                 for (const auto& c : blockers) top = std::min(top, c.rect.y);
@@ -455,7 +455,7 @@ public:
             x = nextX;
         }
         const Rect contact{x, y, source.w, source.h};
-        // 編集などで出発地点まで閉塞した場合も、埋まる瞬移は確定しない。
+        // 出発地点まで埋まっている時は瞬間移動しない。
         if (!Clear(contact, nullptr, false, {}, true)) {
             Event(EventKind::BlinkRejected, "player", "destination-occupied", p.rect); return false;
         }
@@ -499,7 +499,7 @@ public:
             const auto& dev = d.devices[i]; auto& state = s.devices[i];
             if (dev.kind != DeviceKind::Door && dev.kind != DeviceKind::Laser && dev.kind != DeviceKind::Bridge) continue;
             const bool active = linked.contains(dev.id) ? (dev.inverted ? !powered.contains(dev.id) : powered.contains(dev.id)) : dev.kind == DeviceKind::Laser;
-            // 門と伸縮橋は実体に戻る瞬間に重なる身体を挟む。
+            // 門と伸縮橋は実体に戻る瞬間に重なる体を挟む。
             const bool closing = state.active && !active && (dev.kind == DeviceKind::Door || dev.kind == DeviceKind::Bridge);
             if (state.active != active) Event(EventKind::DeviceChanged, dev.id, active ? "active" : "inactive", dev.rect);
             state.active = active;
@@ -582,7 +582,7 @@ public:
         }
         return best;
     }
-    // 弾簧：冷却中は衝撃も溜めも捨てる。用意ができていれば、落ちてきた衝撃で即座に、立っていれば溜め切って打ち上げる。
+    // バネ：冷却中は衝撃も溜めも捨てる。準備ができていれば、落下の衝撃ですぐに、立っていれば溜め切って打ち上げる。
     void Springs() {
         for (size_t i = 0; i < d.devices.size(); ++i) {
             const auto& dev = d.devices[i]; auto& state = s.devices[i];
@@ -601,7 +601,7 @@ public:
             if (state.charge >= std::max(0.05, dev.delay)) Launch(i, occupants, 0);
         }
     }
-    // 打ち上げ速度は基礎の弾力と着地の衝撃の合成。上に乗っている身体は一緒に運ばれる。
+    // 打ち上げ速度は基礎の強さと着地の衝撃の合成。上に乗っている体も一緒に運ぶ。
     void Launch(size_t i, const std::vector<BodyState*>& occupants, double impact) {
         const auto& dev = d.devices[i]; auto& state = s.devices[i];
         const double power = std::hypot(std::clamp(dev.power, kSpringPowerMin, kSpringPowerMax), impact);
@@ -616,7 +616,7 @@ public:
     void Sensors() {
         for (size_t i = 0; i < d.devices.size(); ++i) {
             const auto& dev = d.devices[i]; auto& state = s.devices[i];
-            // 収集物は本体が触れた時だけ拾う。死亡・存档復帰では戻さない（探索の再開だけが初期化する）。
+            // 収集物は本体が触れた時だけ拾う。死亡やチェックポイントからの復帰では戻さない。
             if (dev.kind == DeviceKind::Collectible) {
                 if (!state.active && s.playerPresent && !s.player.dead && Overlap(s.player.rect, dev.rect)) {
                     state.active = true; Event(EventKind::CollectibleTaken, dev.id, {}, dev.rect);
@@ -629,7 +629,7 @@ public:
             const bool playerEdge = playerContact && !state.playerContact;
             const bool echoEdge = echoContact && !state.echoContact;
             state.playerContact = playerContact; state.echoContact = echoContact;
-            // 同じ局所 ID でも再接触は通知する。世界全体の最新セーブが別領域へ移っている場合がある。
+            // 同じ ID でも再接触は通知する（最新のセーブが別の領域へ移っていることがある）。
             if (!playerEdge && !echoEdge) continue;
             if (const auto anchor = CheckpointAnchor(dev)) {
                 s.checkpointId = dev.id; s.checkpointPosition = *anchor;
@@ -652,7 +652,7 @@ public:
         Switches(); Beams();
     }
     void Respawn() {
-        // 保留中の残影も世界の一部。死亡復帰では pendingEcho と装置配列を初期化しない。
+        // 保留中の残影も世界の一部。死亡からの復帰では残影と装置を初期化しない。
         s.dash.reset(); s.bounce.reset(); s.deathRemaining = 0; s.blinkBuffer = 0;
         s.pendingActionPressed = s.pendingActionReleased = false;
         DetachHead(); s.playerPresent = true; s.player = MakeBody(s.checkpointId.empty() ? d.spawn : s.checkpointPosition);
@@ -721,7 +721,7 @@ public:
 void FinishOutput(const WorldState& s, StepOutput& out) {
     out.tick = s.tick; out.simulationTime = s.simulationTime; out.realTime = s.realTime;
 }
-} // namespace
+}
 
 std::string ValidateWorld(const WorldDefinition& d) {
     if (d.chunks.empty()) {
@@ -743,7 +743,7 @@ std::string ValidateWorld(const WorldDefinition& d) {
     for (const auto& dev : d.devices) for (const auto& target : dev.targets) {
         if (dev.kind != DeviceKind::Plate) return "only plates may have targets";
         const auto it = std::find_if(d.devices.begin(), d.devices.end(), [&](const DeviceDefinition& other) { return other.id == target; });
-        // 「区域ID/装置ID」は別の TV の装置。単独の区域では確かめられないので、世界を組んだ後に検査する。
+        // 「区域ID/装置ID」は別のテレビの装置。世界を組んだ後に検査する。
         if (it == d.devices.end() && d.chunks.empty() && target.find('/') != std::string::npos) continue;
         if (it == d.devices.end() || (it->kind != DeviceKind::Door && it->kind != DeviceKind::Laser && it->kind != DeviceKind::Bridge))
             return "plate targets must reference an existing door, bridge or laser";
@@ -762,7 +762,7 @@ StepOutput StepRules(const WorldDefinition& d, WorldState& s, const InputState& 
     s.pendingActionPressed = s.pendingActionPressed || input.action.pressed;
     s.pendingActionReleased = s.pendingActionReleased || input.action.released;
     double remaining = std::isfinite(realDeltaSeconds) ? std::clamp(realDeltaSeconds, 0.0, .25) : 0.0;
-    // 演出境界と次の物理 tick で実時間を分割する。60/120 Hz の違いで停頓を二重消費しない。
+    // 演出の境界と物理 tick で実時間を分ける。60/120 Hz の違いで停止時間を二重に使わない。
     while (remaining > 1e-12) {
         double rate = 1.0, boundary = remaining;
         if (s.dash) { rate = 0; boundary = std::min(boundary, s.dash->duration - s.dash->age); }
@@ -812,7 +812,7 @@ WorldSnapshot BuildSnapshot(const WorldDefinition& d, const WorldState& s) {
         result.presentationPlayer.x = s.bounce->contact.x + (s.player.rect.x - s.bounce->contact.x) * ease;
         result.presentationPlayer.y = s.bounce->contact.y + (s.player.rect.y - s.bounce->contact.y) * ease;
     }
-    // 圧力板から繋がっている機関（繋がっていない扉・橋は通電しない）。
+    // 圧力板につながっている仕掛け（つながっていない扉・橋は通電しない）。
     std::unordered_set<std::string> linked;
     for (const auto& dev : d.devices) if (dev.kind == DeviceKind::Plate) linked.insert(dev.targets.begin(), dev.targets.end());
     for (size_t i = 0; i < d.devices.size() && i < s.devices.size(); ++i) {
@@ -847,7 +847,7 @@ StepOutput StepBackgroundRules(const WorldDefinition& d, WorldState& s, uint32_t
     FinishOutput(s, out); return out;
 }
 bool IsSafeArrival(const WorldDefinition& d, const WorldState& state, Vec2 position, const std::optional<Rect>& carriedEcho) {
-    // コピー上で到着まで仮実行し、圧板による扉・光線の変更後まで安全を確かめる。
+    // コピー上で到着まで試し、扉や光線の変化の後も安全かを確かめる。
     WorldState probe = state; StepOutput out; Simulation sim(d, probe, out);
     probe.playerPresent = true; probe.player = MakeBody(position); probe.echoOverlapGrace = false;
     const auto& r = probe.player.rect;
@@ -892,4 +892,4 @@ StepOutput RecallWorldEcho(const WorldDefinition& d, WorldState& s) {
     if (!crush.empty()) sim.Die(crush);
     FinishOutput(s, out); return out;
 }
-} // namespace TD2::Rules
+}

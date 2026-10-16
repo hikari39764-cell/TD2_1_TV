@@ -7,7 +7,7 @@
 #include <string_view>
 
 namespace TD2 {
-// Scene entry の名前は項目が解釈する論理入口。位置は区域内の左上座標で、保存資産には残さない。
+// 入口の名前と区域内の位置（左上基準）。保存データには残さない。
 inline constexpr std::string_view kPreviewEntryPrefix = "td2.preview:";
 struct PreviewSpawn { double x = 0, y = 0; };
 
@@ -32,4 +32,4 @@ inline std::optional<PreviewSpawn> DecodePreviewSpawn(std::string_view entry) {
         y.ptr != entry.data() + entry.size() || !std::isfinite(spawn.x) || !std::isfinite(spawn.y)) { return {}; }
     return spawn;
 }
-} // namespace TD2
+}

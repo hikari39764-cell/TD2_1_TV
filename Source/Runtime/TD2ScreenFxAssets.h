@@ -1,6 +1,6 @@
 #pragma once
-// build_screen_fx.py が生成する。電視の中の特効（HVFX）の既定資産と演出（画面の揺れ・閃光）の既定値。
-// TD2.ScreenFx が無い時もこれを使う。shake は揺れの振幅（格）、flash は画面の明るさの一時的な上乗せ。
+// build_screen_fx.py で生成。画面内エフェクトの既定の資産と、揺れ・閃光の既定値。
+// TD2.ScreenFx が無い時もこれを使う。shake は振幅（マス）、flash は明るさの上乗せ。
 #include <array>
 #include <string_view>
 
@@ -20,4 +20,4 @@ inline constexpr std::array<ScreenFxDefault, 12> kScreenFxDefaults{{
     {"Checkpoint", "存档点", "8517caa11e8e3aa7997ebd46314a4dc9", "Assets/TD2/Screen3D/Fx/TD2_Fx_Checkpoint.hvfx", 0.00f, 0.45f},
     {"EchoAbsorb", "残影吸收", "a6921ba95e3c069f4f5bcbd0c53c9329", "Assets/TD2/Screen3D/Fx/TD2_Fx_EchoAbsorb.hvfx", 0.00f, 0.00f},
 }};
-} // namespace TD2
+}

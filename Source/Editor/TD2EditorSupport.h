@@ -11,7 +11,7 @@ namespace TD2::Editor {
 using Json = nlohmann::json;
 using namespace HIKARI::EDITOR_PROJECT;
 
-// Host の借用文字列は callback 内でコピーし、公開領域操作の診断をそのまま保持する。
+// Host の文字列は callback の中でコピーする。
 struct OperationResult final : IEditorOperationResultSink {
     bool ok = false;
     std::string error;
@@ -31,20 +31,20 @@ struct RegionTarget {
     bool operator==(const RegionTarget&) const = default;
 };
 
-// 一つの Component の作者データを丸ごと比較し、他の UI の編集を古い草稿で上書きしない。
+// 作者データを丸ごと比べ、他での編集を古い草稿で上書きしない。
 struct RegionSettings {
     RegionDefinition region;
     uint64_t screenObject = 0;
-    // 画面は三次元キャプチャの材質槽へ接続し、旧二次元素材のパスを作者草稿に持たせない。
+    // 画面は 3D キャプチャの材質スロットへつなぐ。
     std::string screenSlot = "TD2_Screen";
-    // 増幅はテレビの専用材質だけに適用する。index とモデル GUID は作者 UI に露出しない。
+    // 明るさはテレビの画面材質だけに掛ける。
     float screenBrightness = 2.2f;
     int screenMaterialIndex = -1;
     std::string screenModelAssetGuid;
     int outputWidth = 256, outputHeight = 192;
     float spawnX = 0.5f, spawnY = 0.5f;
     bool entryRegion = true;
-    // 配置は整数格の世界原点であり、Scene の三次元 Transform とは無関係。
+    // 配置は整数のマスで表した世界原点。Scene の 3D Transform とは関係ない。
     bool worldPlaced = false;
     int worldX = 0, worldY = 0;
     std::string devices;
@@ -69,4 +69,4 @@ bool EditFloat(IEditorWorkspaceUi&, std::string_view id, std::string_view label,
 bool ResizeCells(const RegionDefinition& before, RegionDefinition& after);
 bool StableAuthoringId(std::string_view id);
 
-} // namespace TD2::Editor
+}

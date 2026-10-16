@@ -5,11 +5,11 @@
 #include <vector>
 
 namespace TD2 {
-// 性能の記録用：規則の更新（Game system）にかかった CPU 時間を同じフレームの要約へ載せる。
+// 性能記録用：ルール更新の CPU 時間を同じフレームの集計に載せる。
 inline double& GameUpdateMilliseconds() { static double value = 0; return value; }
 
-// 電視の中の画面を毎フレーム描く system。編集態と Play の両方で同じ舞台を使い、入力・シミュレーションは進めない。
-// Play 中は Session の地図と世界の snapshot を借り、編集中は作者の地図と装置から同じ形の状態を作る。
+// テレビの画面を毎フレーム描く。編集中と Play で同じ舞台を使い、シミュレーションは進めない。
+// Play 中は Session の状態を、編集中は作者の地図から作った状態を描く。
 class ScreenPresentationSystem final : public HIKARI::IGameSystem {
 public:
     void Update(HIKARI::WorldView& world, const HIKARI::FrameContext& frame) override;
@@ -20,11 +20,11 @@ private:
     void ReportTiming(double frameSeconds, double renderSeconds);
     Screen3DStage stage_;
     std::vector<StageRoom> rooms_;
-    // 編集中の舞台の状態（作者の装置と、開始区域の出生位置に立つ待機姿勢の主角）。
+    // 編集中の舞台の状態（装置と、スポーン位置に立つプレイヤー）。
     Rules::WorldSnapshot authored_;
     std::string status_ = "等待区域3D呈现";
     std::string loggedStatus_;
-    // 性能の記録：直近 240 フレームの間隔と電視描画の CPU 時間（ログへ 4 秒ごとに要約だけ出す）。
+    // 性能記録：直近 240 フレームの間隔と描画の CPU 時間（4 秒ごとにログへ出す）。
     std::vector<float> frameMs_, renderMs_, gameMs_;
 };
-} // namespace TD2
+}

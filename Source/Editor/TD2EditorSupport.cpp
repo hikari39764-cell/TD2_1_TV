@@ -34,7 +34,7 @@ uint64_t ObjectId(const Json& value) {
     return 0;
 }
 
-// 固定の Human 領域操作だけを使う。AI discovery やブリッジを実行時の前提にしない。
+// 決まった領域操作だけを使い、ブリッジには依存しない。
 bool QueryObjects(EditorWorkspaceHostContext& context, std::string_view componentType,
                   std::vector<SceneItem>& objects, std::string& error) {
     objects.clear();
@@ -88,7 +88,7 @@ bool ResolveRegion(EditorWorkspaceHostContext& context, uint64_t objectId, Regio
     return true;
 }
 
-// component.describe の fields[] を id で直接読む。別形式の再帰検索や表示名での推測はしない。
+// component.describe の fields[] を id で読む。
 const Json* FieldValue(const Json& fields, std::string_view id) {
     for (const auto& field : fields) {
         if (field.is_object() && field.contains("id") && field["id"].is_string() &&
@@ -152,7 +152,7 @@ bool ReadRegion(EditorWorkspaceHostContext& context, uint64_t objectId, RegionTa
         error = "component.describe: INVALID_RESULT: Stage04 世界布局字段缺失或无效"; return false;
     }
     settings.worldPlaced = placed->get<bool>(); settings.worldX = worldX->get<int>(); settings.worldY = worldY->get<int>();
-    // 旧 Scene に存在しない追加フィールドは既定値で読む。不正な型を既定値に偽装しない。
+    // 古い Scene に無い項目は既定値で読む。型が違う時はエラーにする。
     settings.screenBrightness = 2.2f; settings.screenMaterialIndex = -1; settings.screenModelAssetGuid.clear();
     if (const auto* brightness = FieldValue(*fields, "screenBrightness")) {
         if (!brightness->is_number() || !std::isfinite(brightness->get<float>())) { error = "component.describe: INVALID_RESULT: 屏幕亮度无效"; return false; }
@@ -206,14 +206,14 @@ bool CommitProperties(EditorWorkspaceHostContext& context, const RegionTarget& t
     Json commands = Json::array();
     AppendRegionChanges(commands, target, before, after);
     if (commands.empty()) { return true; }
-    // サイズと配列の変更を途中状態にせず、一つの Scene 撤回で戻せるようにする。
+    // 寸法と配列をまとめて変え、一回の取り消しで戻せるようにする。
     const auto result = Execute(context, "authoring.transaction", {{"commands", commands}});
     if (!result.ok) { error = result.error; return false; }
     return true;
 }
 
 bool ResolveScreenMaterial(EditorWorkspaceHostContext& context, RegionSettings& settings, std::string& diagnostic) {
-    // 新しいモデルへの古い index の流用を防ぐ。slotId は材質配列 index ではない。
+    // 古い index を新しいモデルに使わない。slotId は材質配列の index ではない。
     settings.screenMaterialIndex = -1; settings.screenModelAssetGuid.clear(); diagnostic.clear();
     if (!settings.screenObject) { return true; }
     if (settings.screenSlot.empty()) { diagnostic = "请指定屏幕材质槽名称；亮度增益未启用"; return false; }
@@ -239,7 +239,7 @@ bool ResolveScreenMaterial(EditorWorkspaceHostContext& context, RegionSettings& 
         const auto& slot = (*slots)[i];
         if (!slot.is_object() || !slot.contains("name") || !slot["name"].is_string()) { diagnostic = "屏幕材质槽名称无效"; return false; }
         if (slot["name"].get<std::string>() == settings.screenSlot) {
-            // BindSurface と同じ最初の完全一致を採用する。公開 DTO の配列順が materialIndex に対応する。
+            // BindSurface と同じく最初の完全一致を使う。配列の順が materialIndex に対応する。
             settings.screenMaterialIndex = static_cast<int>(i); return true;
         }
     }
@@ -271,10 +271,10 @@ bool AddRegion(EditorWorkspaceHostContext& context, uint64_t objectId, bool bind
     const auto added = result.data.find("addedComponents");
     const uint64_t componentId = added == result.data.end() ? 0 : RegionComponentId(*added);
     if (componentId == 0) { status = "component.add: INVALID_RESULT: 新区块组件身份缺失"; return false; }
-    // 新規作者 ID は Scene の安定 Object ID から作る。既存 Component の ID は変更しない。
+    // 新しい ID は Scene の Object ID から作る。既存の ID は変えない。
     Json commands = {{{"objectId", objectId}, {"componentId", componentId}, {"propertyId", "regionId"},
                       {"value", "td2.region." + std::to_string(objectId)}}};
-    // 最初の地図だけを開始候補にする。追加地図は既存の開始点を奪わない。
+    // 最初の地図だけを開始区域にする。
     std::vector<SceneItem> regions;
     if (!QueryObjects(context, kRegionComponentType, regions, status)) { return false; }
     bool firstEntry = true;
@@ -325,7 +325,7 @@ void EditInt(IEditorWorkspaceUi& ui, std::string_view id, std::string_view label
     if (ui.InputInt(id, label, &number, options)) { value = number; }
 }
 
-// 左上の重なりを保持し、新しい格だけ空にする。縮小して失う範囲は適用前に UI で伝える。
+// 左上の重なる部分を残し、増えたマスは空にする。縮小で消える範囲は適用前に表示する。
 bool ResizeCells(const RegionDefinition& before, RegionDefinition& after) {
     if (after.cols < 1 || after.cols > 64 || after.rows < 1 || after.rows > 64 ||
         static_cast<uint64_t>(after.cols) * static_cast<uint64_t>(after.rows) > 4096) { return false; }
@@ -342,4 +342,4 @@ bool ResizeCells(const RegionDefinition& before, RegionDefinition& after) {
 }
 
 
-} // namespace TD2::Editor
+}

@@ -30,7 +30,7 @@ bool Direction(std::string_view name, Rules::Direction& direction) {
     return false;
 }
 
-} // namespace
+}
 
 bool ParseDevices(std::string_view text, std::vector<Rules::DeviceDefinition>& devices, std::string& error) {
     devices.clear();
@@ -75,7 +75,7 @@ bool ParseDevices(std::string_view text, std::vector<Rules::DeviceDefinition>& d
                 if (value != "0" && value != "1") { return fail("invert 使用 0 或 1"); }
                 device.inverted = value == "1";
             } else if (key == "power" || key == "delay" || key == "cooldown" || key == "opacity") {
-                // 弾簧の弾力（格/秒）・溜め秒・冷却秒、貼り絵の不透明度。
+                // バネの強さ（マス/秒）・溜めと冷却の秒数、貼り絵の不透明度。
                 double number = 0;
                 const auto parsed = std::from_chars(value.data(), value.data() + value.size(), number);
                 if (parsed.ec != std::errc{} || parsed.ptr != value.data() + value.size() || !std::isfinite(number)) {
@@ -92,4 +92,4 @@ bool ParseDevices(std::string_view text, std::vector<Rules::DeviceDefinition>& d
     return true;
 }
 
-} // namespace TD2
+}

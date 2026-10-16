@@ -1,6 +1,6 @@
 #pragma once
-// build_screen_kit.py が生成する表。手で直さない（部品を変えたら Blender のスクリプトを再実行する）。
-// 電視の中の部品（ScreenKit07）の配色ごとの模型 GUID。配色 0 = ink（墨と象牙）、1 = teal（青緑の蛍光）。
+// build_screen_kit.py で生成。手で直さない。
+// 画面内の部品（ScreenKit07）の配色ごとのモデル GUID。0 = ink、1 = teal。
 #include <algorithm>
 #include <array>
 #include <string_view>
@@ -293,10 +293,10 @@ inline constexpr std::array<std::array<std::string_view, 93>, 2> kScreenKitGuids
         "8c59cf4c34f21fba6f2b4ed04eafdb7f",
     }},
 }};
-// 部品名の表は整列済みなので二分探索で引く（毎フレーム数百回呼ばれる）。
+// 名前順に並んでいるので二分探索で引く。
 inline std::string_view ScreenKitGuid(std::string_view part, int palette) {
     const auto it = std::lower_bound(kScreenKitParts.begin(), kScreenKitParts.end(), part);
     if (it == kScreenKitParts.end() || *it != part) { return {}; }
     return kScreenKitGuids[palette == 1 ? 1 : 0][static_cast<size_t>(it - kScreenKitParts.begin())];
 }
-} // namespace TD2
+}

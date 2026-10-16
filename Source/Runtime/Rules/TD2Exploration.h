@@ -6,7 +6,7 @@
 
 namespace TD2::Rules {
 struct RegionSource { WorldDefinition definition; RegionPlacement placement; bool entry = false; };
-// 各画面は作者定義と配置だけを持つ。表示は世界に一つの snapshot を使い、部屋ごとの写しや第二の物理状態を作らない。
+// 各画面は作者の定義と配置だけを持つ。物理状態は世界に一つ。
 struct RegionRuntime {
     WorldDefinition definition;
     RegionPlacement placement;
@@ -18,10 +18,10 @@ struct ExplorationOutput {
     std::vector<RegionTransition> transitions;
 };
 
-// 一つの連続世界だけを進める。表示は世界座標の snapshot 一つ（装置 ID は「区域ID/装置ID」）。
+// 一つの連続した世界を進める。装置 ID は「区域ID/装置ID」。
 class Exploration {
 public:
-    // 一回の試遊だけ開始区域を置き換える。作者の entryRegion と各区域の出生点は変更しない。
+    // この試遊だけ開始区域を差し替える。作者の設定は変えない。
     std::string Initialize(std::vector<RegionSource> sources, std::string_view entryOverride = {},
                            std::optional<Vec2> spawnOverride = {});
     ExplorationOutput Step(const InputState& input, double seconds);
@@ -31,11 +31,11 @@ public:
     const WorldDefinition& Definition() const noexcept { return world_; }
     const WorldState& State() const noexcept { return state_; }
     const std::string& ActiveRegion() const noexcept { return activeRegion_; }
-    // 世界座標の表示状態。進めた後に初めて読まれた時だけ作る（刻みごとには作らない）。
+    // 世界座標の表示状態。進めた後、最初に読まれた時に作る。
     const WorldSnapshot& Snapshot();
     bool Ready() const noexcept { return !activeRegion_.empty(); }
-    // 手動で押していた大区域の切り替えを起点まで戻した時：主角を元の区域の境の内側（半格余り）へ戻し、
-    // 元の区域を操作中に戻す。direction は越えた向き（+1 右、-1 左）。世界の時間や装置は巻き戻さない。
+    // 手動の切り替えを起点まで戻した時、プレイヤーを元の区域の境の内側へ戻す。
+    // direction は越えた向き（+1 右、-1 左）。時間や装置は戻さない。
     bool StepBack(std::string_view region, int direction);
 private:
     void BuildBoundaries();
@@ -51,4 +51,4 @@ private:
     bool snapshotDirty_ = true;
     std::string activeRegion_;
 };
-} // namespace TD2::Rules
+}

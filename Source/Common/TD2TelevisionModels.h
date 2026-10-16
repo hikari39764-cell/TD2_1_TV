@@ -3,11 +3,11 @@
 #include <string_view>
 
 namespace TD2 {
-// 電視の模型ごとの筐体の寸法と、局所空間での画面（ArtSource/LevelSet01 の目録と同じ値、m・縮尺前）。
-// 区域の画面の寸法を模型から自動で決め、机位・演出を生成する時に筐体の箱と画面の位置を求めるのに使う。
-// 表に無い模型は、作者が区域の属性に入れた画面の値をそのまま使う。
+// テレビのモデルごとの筐体寸法と、ローカル空間での画面（単位 m、縮尺前）。
+// 区域の画面寸法の自動設定と、カメラ位置・演出の生成に使う。
+// 表に無いモデルは区域に入力された値を使う。
 struct TelevisionModel {
-    std::string_view stem;                       // 模型の元ファイル名（拡張子なし）
+    std::string_view stem;                       // モデルの元ファイル名（拡張子なし）
     float width, height, depth;                  // 筐体（底面中心が原点）
     float screenCenterX, screenCenterY, screenCenterZ, screenWidth, screenHeight;
 };
@@ -19,7 +19,7 @@ inline constexpr TelevisionModel kTelevisionModels[]{
     {"SM_L_TV_Console", 1.16f, 1.f, .55f, 0.f, .64f, .276f, .84f, .49f},
 };
 
-// 資産の元パス（"Assets/Models/.../SM_L_TV_Wide.fbx" など）から模型を探す。
+// 資産の元パスからモデルを探す。
 inline const TelevisionModel* FindTelevisionModel(std::string_view sourcePath) {
     const auto slash = sourcePath.find_last_of("/\\");
     auto name = slash == std::string_view::npos ? sourcePath : sourcePath.substr(slash + 1);
@@ -27,4 +27,4 @@ inline const TelevisionModel* FindTelevisionModel(std::string_view sourcePath) {
     for (const auto& model : kTelevisionModels) { if (model.stem == name) { return &model; } }
     return nullptr;
 }
-} // namespace TD2
+}

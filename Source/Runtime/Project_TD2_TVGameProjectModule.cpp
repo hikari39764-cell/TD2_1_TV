@@ -39,7 +39,7 @@ public:
         return systems;
     }
     bool Register(HIKARI::RuntimeFeatureContext& context) override {
-        // 既存シーンでも Region の存在に応じて表示システムを導入する。ゲーム進行とは分離する。
+        // Region があるシーンには表示システムを自動で入れる。
         return context.RegisterSystem<Game>({.systemId = "Project_TD2_TV.Game", .displayName = "Game"}) &&
             context.RegisterComponent<TD2::RegionComponent>({
                 .typeName = TD2::kRegionComponentType,
@@ -93,10 +93,10 @@ public:
         return std::make_unique<TD2::GameSession>();
     }
 };
-} // namespace
+}
 
 namespace HIKARI::RUNTIME {
 std::unique_ptr<IGameProjectModule> CreateGameProjectModule() {
     return std::make_unique<::Project_TD2_TV::GameProjectModule>();
 }
-} // namespace HIKARI::RUNTIME
+}

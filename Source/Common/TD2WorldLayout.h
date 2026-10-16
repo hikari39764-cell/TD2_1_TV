@@ -13,8 +13,8 @@ namespace TD2 {
 
 inline constexpr std::string_view kRegionSequenceComponentType = "TD2.RegionSequence";
 
-// Scene の TD2.Region から作る値の写し。別の保存先や配置インスタンスを増やさない。
-// 未配置の部屋も編集可能だが、実行世界の地形・隣接・開始領域には含めない。
+// Scene の TD2.Region から作る写し。保存先は増やさない。
+// 未配置の部屋は編集できるが、実行時の世界には含めない。
 struct RegionPlacement {
     std::string regionId;
     int cols = 4;
@@ -26,13 +26,13 @@ struct RegionPlacement {
     bool operator==(const RegionPlacement&) const = default;
 };
 
-// 右端と下端を含まない格矩形。作者の int 原点と寸法の加算は必ず int64_t で行う。
+// 右端・下端を含まないマスの矩形。原点と寸法の加算は int64_t で行う。
 struct WorldGridRect {
     int64_t left = 0, top = 0, right = 0, bottom = 0;
     bool operator==(const WorldGridRect&) const = default;
 };
 
-// 物理位置は連続値。整数に丸めるのは Editor の部屋配置だけである。
+// 物理位置は連続値。整数に丸めるのはエディタの部屋配置だけ。
 struct WorldPoint {
     double x = 0, y = 0;
     bool operator==(const WorldPoint&) const = default;
@@ -57,15 +57,15 @@ struct WorldLayoutValidation {
     std::string regionB;
 };
 
-// 任意の演出だけを表す。通路の許可や着地点を持たず、隣接判定にも渡さない。
-// A→B は正再生、B→A は逆再生。空 GUID は現カメラを保持する。
+// 演出だけを表す。通行や隣接の判定には使わない。
+// A→B は正再生、B→A は逆再生。GUID が空なら今のカメラのまま。
 struct RegionSequenceBinding {
     std::string regionA;
     std::string regionB;
     std::string sequenceAssetGuid;
     std::string sequenceSlotName;
     uint64_t cameraObject = 0;
-    // 再生の倍速。引擎の演出は最短 1 秒なので、0.4 秒の切り替えは 1 秒の演出を 2.5 倍で流す。
+    // 再生の倍速（エンジンの演出は最短 1 秒なので、短い切り替えは倍速で流す）。
     float speed = 1.0f;
 
     bool operator==(const RegionSequenceBinding&) const = default;
@@ -83,7 +83,7 @@ inline bool ValidRegionId(std::string_view id) noexcept {
 inline bool HexDigit(char c) noexcept {
     return (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F');
 }
-} // namespace WorldLayoutDetail
+}
 
 inline WorldGridRect WorldBounds(const RegionPlacement& region) noexcept {
     return {region.worldX, region.worldY,
@@ -99,7 +99,7 @@ inline WorldLayoutValidation ValidateRegionPlacement(const RegionPlacement& regi
     return {true, {}, {}, {}};
 }
 
-// 正の面積だけを重複とする。共有辺や角の接触は面積重複ではない。
+// 正の面積だけを重なりとする。辺や角の接触は重なりではない。
 inline bool WorldRectsOverlap(const WorldGridRect& a, const WorldGridRect& b) noexcept {
     return (std::max)(a.left, b.left) < (std::min)(a.right, b.right) &&
            (std::max)(a.top, b.top) < (std::min)(a.bottom, b.bottom);
@@ -119,8 +119,8 @@ inline WorldLayoutValidation ValidateWorldLayout(std::span<const RegionPlacement
     return {true, {}, {}, {}};
 }
 
-// 整数境界を厳密に比較する。部分辺は接続できるが、角接触・隙間は接続しない。
-// 得られるのは地形的な隣接だけであり、身体の幅・高さや装置の通行可否は物理側で調べる。
+// 整数の境界で比べる。辺の一部が接していれば接続し、角の接触や隙間は接続しない。
+// 地形の隣接だけを返す。実際に通れるかは物理側で調べる。
 inline std::optional<SharedWorldEdge> FindSharedWorldEdge(const RegionPlacement& a,
                                                          const RegionPlacement& b) noexcept {
     if (!a.worldPlaced || !b.worldPlaced || a.regionId == b.regionId ||
@@ -152,8 +152,8 @@ inline bool ContainsWorldPoint(const RegionPlacement& region, WorldPoint point) 
     return point.x >= rect.left && point.x < rect.right && point.y >= rect.top && point.y < rect.bottom;
 }
 
-// 画面の所属判定には身体中心を渡す。衝突用の全身矩形の判定には流用しない。
-// 配置全体は事前検証する。重複する点を見つけても勝手に最初の部屋を選ばない。
+// 所属の判定には体の中心を渡す。衝突判定には使わない。
+// 重なっている点では部屋を選ばない（配置は事前に検証する）。
 inline const RegionPlacement* FindRegionAtWorldPoint(std::span<const RegionPlacement> regions,
                                                       WorldPoint point) noexcept {
     const RegionPlacement* found = nullptr;
@@ -170,8 +170,8 @@ inline bool SameRegionPair(const RegionSequenceBinding& a, const RegionSequenceB
            (a.regionA == b.regionB && a.regionB == b.regionA);
 }
 
-// アセットの存在・スロット名の一致・SceneObject の解決は SDK adapter の責務。
-// この検証は演出の値だけを検査し、部屋が現在隣接していることを通行条件に追加しない。
+// 資産の存在やスロット名、SceneObject の解決は SDK 側で確かめる。
+// ここでは演出の値だけを調べ、隣接を通行の条件にはしない。
 inline WorldLayoutValidation ValidateRegionSequenceBinding(const RegionSequenceBinding& binding) {
     if (!WorldLayoutDetail::ValidRegionId(binding.regionA) || !WorldLayoutDetail::ValidRegionId(binding.regionB) ||
         binding.regionA == binding.regionB)
@@ -187,4 +187,4 @@ inline WorldLayoutValidation ValidateRegionSequenceBinding(const RegionSequenceB
     return {true, {}, {}, {}};
 }
 
-} // namespace TD2
+}

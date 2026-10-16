@@ -1,9 +1,9 @@
 #pragma once
-// 大区域の镜头。作者が置いた区域机位（その部屋の最良の構図）を基準に、主角へ向けて毎フレーム解く。
-// ・同じ大区域の中で部屋を移ると、基準を次の区域机位へなだらかに滑らせる（演出も入力も使わない）。
-// ・基準の上に、主角の方への平行移動（前後の物がずれて奥行きが見える）、注視の振り、進む向きへの先読み、
-//   横に動く時のわずかな傾き、止まっていても続くごく小さな呼吸を重ね、作者が決めた範囲に収める。
-// ・大区域どうしの切り替えは引擎の演出（Sequence）が受け持ち、その間ここは機位を提出しない。
+// 大区域のカメラ。作者が置いた区域カメラ（その部屋の最良の構図）を基準に、毎フレームプレイヤーへ向けて解く。
+// ・同じ大区域の中で部屋を移ると、基準を次の区域カメラへ滑らかに移す。
+// ・基準の上に、プレイヤーへの平行移動（視差）、注視の振り、進む向きへの先読み、
+// 横移動時のわずかな傾き、止まっても続く呼吸を重ね、作者が決めた範囲に収める。
+// ・大区域どうしの切り替えはエンジンの演出（Sequence）が受け持ち、その間はカメラを出さない。
 #include "HIKARI/Project/GameComponent.h"
 #include "HIKARI/Project/ValueTypes.h"
 #include <string>
@@ -12,19 +12,19 @@
 namespace TD2 {
 inline constexpr std::string_view kCameraAreaComponentType = "TD2.CameraArea";
 
-// 大区域ひとつ分の镜头の動き方。値は《行人》の跟随の尺度（注視の振り 10° 前後、平滑 0.8 秒程度）を目安にした初期値。
+// 大区域ひとつ分のカメラの動き方（初期値は注視の振り 10° 前後、平滑 0.8 秒程度）。
 struct CameraAreaSettings {
     std::string regions;                                       // この大区域の区域 ID（カンマ区切り）
-    float followX = .32f, followY = .45f;                      // 主角の方へ機位を平行移動する割合（横・縦）
-    float rangeX = .7f, rangeY = .9f;                          // 機位が基準から動ける範囲（m）
-    float aimFollow = .3f, maxYaw = 8.f, maxPitch = 6.f;       // 注視を主角へ振る割合と上限（度）
-    float lookCarry = .55f;                                    // 機位の平行移動に注視が付いて行く割合（残りは基準の方へ振り返る）
+    float followX = .32f, followY = .45f;                      // プレイヤーの方へカメラを平行移動する割合（横・縦）
+    float rangeX = .7f, rangeY = .9f;                          // カメラが基準から動ける範囲（m）
+    float aimFollow = .3f, maxYaw = 8.f, maxPitch = 6.f;       // 注視をプレイヤーへ振る割合と上限（度）
+    float lookCarry = .55f;                                    // 平行移動に注視が付いて行く割合（残りは基準の方を向く）
     float lookAhead = .35f;                                    // 進む向きへの先読み（秒）
-    float regionSeconds = .85f, positionSeconds = .5f, aimSeconds = .8f;  // 平滑（区域机位の乗り換え・機位・注視）
+    float regionSeconds = .85f, positionSeconds = .5f, aimSeconds = .8f;  // 平滑（区域カメラの乗り換え・位置・注視）
     float breathe = .03f, breatheAngle = .45f;                 // 止まっていても続く呼吸（m・度）
     float handheld = 1.f;                                      // 手持ちの細かい揺れの強さ（0 で無し、1 で標準）
     float bank = 2.2f;                                         // 横に動く時の傾き（度 / (m/s)）
-    // 区域机位の自動生成（編集器だけが使う）：画面の高さが画に占める割合・出口の側へ斜めに回す角度・画面より上げる高さ。
+    // 区域カメラの自動生成用（エディタだけが使う）：画面の高さが画に占める割合・出口側へ回す角度・画面より上げる高さ。
     float frameFill = .35f, orbitDegrees = 15.f, cameraLift = .3f;
 };
 
@@ -61,14 +61,14 @@ private:
     CameraAreaSettings settings_;
 };
 
-// 区域ひとつの基準と画面の位置（主角の 2D 位置を 3D の画面上の点へ移すのに使う）。
+// 区域ひとつの基準と画面の位置（プレイヤーの 2D 位置を 3D の画面上の点へ移す）。
 struct CameraRegionFrame {
-    HIKARI::GameProjectFloat3 eye{}, look{};                    // 区域机位の目と注視点（注視点は画面の中心の深さ）
+    HIKARI::GameProjectFloat3 eye{}, look{};                    // 区域カメラの目と注視点（注視点は画面の中心の深さ）
     float verticalFovRadians = .4538f;
-    HIKARI::GameProjectTransform screen{};                      // 電視の世界変換
-    HIKARI::GameProjectFloat3 screenCenter{0, .4f, .28f};       // 電視の局所での画面の中心
-    float screenWidth = .84f, screenHeight = .49f;              // 電視の局所での画面の大きさ
-    double worldX = 0, worldY = 0, cols = 1, rows = 1;          // 区域の世界の格
+    HIKARI::GameProjectTransform screen{};                      // テレビのワールド変換
+    HIKARI::GameProjectFloat3 screenCenter{0, .4f, .28f};       // テレビのローカルでの画面の中心
+    float screenWidth = .84f, screenHeight = .49f;              // テレビのローカルでの画面の大きさ
+    double worldX = 0, worldY = 0, cols = 1, rows = 1;          // 区域の世界のマス
     bool valid = false;
 };
 
@@ -79,23 +79,22 @@ struct CameraRigPose {
 
 class CameraRig {
 public:
-    // 世界の格の点（主角の中心）と速度を、区域の電視の画面上の 3D の点と速度へ移す。
+    // 世界のマスの点（プレイヤーの中心）と速度を、テレビの画面上の 3D の点と速度へ移す。
     static HIKARI::GameProjectFloat3 ScreenPoint(const CameraRegionFrame& frame, double x, double y);
     static HIKARI::GameProjectFloat3 ScreenVelocity(const CameraRegionFrame& frame, double vx, double vy);
-    // 区域机位の物体が見る向き（局所 +Z を世界へ回した単位ベクトル）。
+    // 区域カメラの向き（ローカル +Z をワールドへ回した単位ベクトル）。
     static HIKARI::GameProjectFloat3 Forward(const HIKARI::GameProjectTransform& transform);
 
-    // 基準をこの姿勢へ置き直す（平行移動・振り・傾きは 0 から主角へ寄せ直す）。復活・演出の終わりに使う。
+    // 基準をこの姿勢へ置き直す（ずれは 0 から寄せ直す）。復活と演出の終わりに使う。
     void Snap(const HIKARI::GameProjectFloat3& eye, const HIKARI::GameProjectFloat3& look, float verticalFovRadians);
     bool Ready() const noexcept { return ready_; }
-    // 1 フレーム進める。target は主角の画面上の点、velocity はその速さ（m/s）。present=false なら主角を追わない。
+    // 1 フレーム進める。target はプレイヤーの画面上の点、velocity はその速さ（m/s）。present=false なら追わない。
     CameraRigPose Update(const CameraRegionFrame& frame, const CameraAreaSettings& area, const HIKARI::GameProjectFloat3& target,
                          const HIKARI::GameProjectFloat3& velocity, bool present, double dt, double time);
     // 今の呼吸と手持ちの揺れ。roll は前の軸まわりの傾き（ラジアン）。揺らす向きは追従の基準の向き。
     void Breath(const CameraAreaSettings& area, double time, HIKARI::GameProjectFloat3& eyeOffset,
                 HIKARI::GameProjectFloat3& lookOffset, double& roll) const;
-    // 与えた镜头（目と注視点）の右・上の向きで揺らす版。切り替えの演出の間は描いている镜头の向きで揺らす（演出の前の
-    // 向きのままだと、角を回った後は揺れが前後へ向き、終わりに追従の向きへ戻る時に揺れの向きが跳ぶ）。
+    // 与えたカメラ（目と注視点）の向きで揺らす版。切り替え中は描いているカメラの向きで揺らし、終了時に揺れの向きが跳ばないようにする。
     static void BreathAround(const CameraAreaSettings& area, double time, const HIKARI::GameProjectFloat3& eye,
                              const HIKARI::GameProjectFloat3& look, HIKARI::GameProjectFloat3& eyeOffset,
                              HIKARI::GameProjectFloat3& lookOffset, double& roll);
@@ -113,4 +112,4 @@ private:
     float fov_ = .4538f;
     bool ready_ = false;
 };
-} // namespace TD2
+}

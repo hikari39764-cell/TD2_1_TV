@@ -1,7 +1,7 @@
 #pragma once
-// 電視の中の舞台の座標変換。舞台は世界地図の並びそのままの小さな 3D 世界で、本来の世界から遠く離れた場所に置く。
-// 世界の格（左上原点、+Y 下）を舞台の世界座標へ写し、舞台を撮る正交カメラの姿勢を決める。計算だけで状態は持たない。
-// 各電視の画面は、舞台を撮った像のうち自分の部屋の範囲の切り出し（主角・光線・特効は世界に一つずつ）。
+// 画面内の舞台の座標変換。舞台は世界地図どおりに並べた小さな 3D 世界で、本来の世界から離れた所に置く。
+// 世界のマス（左上原点、+Y 下）を舞台の座標へ写し、正投影カメラの姿勢を決める。
+// 各テレビの画面は、撮った像から自分の部屋の範囲を切り出したもの。
 #include "HIKARI/Project/ValueTypes.h"
 #include <array>
 #include <cmath>
@@ -9,7 +9,7 @@
 namespace TD2 {
 inline constexpr double kPi = 3.14159265358979323846;
 inline constexpr float kStageCoordinate = 10000.0f;
-// 舞台カメラは注視点から 30 離れた正交カメラ。角度の上限は部品の剛体の傾き（Lean）が目立ちすぎない範囲。
+// 舞台カメラは注視点から 30 離れた正投影カメラ。角度は部品の傾きが目立たない範囲に抑える。
 inline constexpr double kStageCameraDistance = 30.0, kMaxStagePitchDegrees = 30.0, kMaxStageYawDegrees = 30.0;
 
 using Vector3 = std::array<double, 3>;
@@ -40,15 +40,14 @@ inline HIKARI::GameProjectQuaternion RotateZ(double radians) {
 }
 
 struct StageProjection {
-    double scale = 1;             // 1 格の舞台上の長さ（どの舞台カメラにも共通）
+    double scale = 1;             // 1 マスの舞台上の長さ（どの舞台カメラにも共通）
     double pitch = 0, yaw = 0;    // 舞台カメラの俯角と側角（ラジアン、正の側角は右から見る）
-    // カメラは先に側角で世界 Y 軸回り、次に俯角で世界 X 軸回りに回す。こうすると世界の X 軸（Rules の行）が
-    // 画面でも水平に写り、床が傾かない。以下は画面の右・上・視線の向き。
+    // 先に側角で Y 軸回り、次に俯角で X 軸回りに回す（ルールの行が水平に写り、床が傾かない）。
+    // 以下は画面の右・上・視線の向き。
     Vector3 Right() const { return {std::cos(yaw), -std::sin(yaw) * std::sin(pitch), -std::sin(yaw) * std::cos(pitch)}; }
     Vector3 Up() const { return {0, std::cos(pitch), -std::sin(pitch)}; }
     Vector3 Forward() const { return {-std::sin(yaw), -std::cos(yaw) * std::sin(pitch), -std::cos(yaw) * std::cos(pitch)}; }
-    // 世界の格と奥行き depth（格、手前が正）を舞台の世界座標へ。どの奥行きの部品も基準点が正面の格と同じ
-    // 画面位置に落ちるよう、画面の右・上への射影から世界の X・Y を逆算する。
+    // マスと奥行き（マス、手前が正）を舞台の座標へ。どの奥行きでも正面のマスと同じ画面位置になるよう逆算する。
     HIKARI::GameProjectFloat3 Point(double x, double y, double depth = 0) const {
         const double screenX = x * scale, screenY = -y * scale, z = depth * scale;
         const double worldY = (screenY + z * std::sin(pitch)) / std::cos(pitch);
@@ -56,9 +55,9 @@ struct StageProjection {
         return {kStageCoordinate + static_cast<float>(worldX), kStageCoordinate + static_cast<float>(worldY),
                 kStageCoordinate + static_cast<float>(z)};
     }
-    // 俯角と側角を両方付けると、剛体の部品の縦の辺は 1 格下がるごとに画面で右へこの格数だけ傾く（片方だけなら 0）。
+    // 俯角と側角を両方付けた時、縦の辺が 1 マスごとに右へずれる量（片方だけなら 0）。
     double Lean() const { return std::sin(yaw) * std::tan(pitch); }
-    // 世界の格 (x, y) を像の中心に撮る舞台カメラの姿勢。カメラの local +Z が視線、+Y が上、+X は Y×Z（画面の左）。
+    // マス (x, y) を像の中心に撮るカメラの姿勢。ローカル +Z が視線、+Y が上、+X は画面の左。
     HIKARI::GameProjectTransform CameraPose(double x, double y) const {
         const auto target = Point(x, y);
         const auto forward = Forward(), up = Up();
@@ -70,4 +69,4 @@ struct StageProjection {
         return pose;
     }
 };
-} // namespace TD2
+}

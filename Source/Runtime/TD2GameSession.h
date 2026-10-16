@@ -23,12 +23,12 @@ public:
     const RegionRuntime* FindRegion(std::string_view id) const { return exploration_.FindRegion(id); }
     bool IsControlled(std::string_view id) const noexcept { return id == exploration_.ActiveRegion(); }
     const std::string& ActiveRegion() const noexcept { return exploration_.ActiveRegion(); }
-    // 大区域どうしの切り替えの演出の途中なら、出る部屋と入る部屋（電視の舞台が清晰の窓・保護をこの二台に絞るのに使う）。
+    // 大区域の切り替え中なら、出る部屋と入る部屋（画面の鮮明な窓と保護を優先する）。
     bool TravelRooms(std::string& from, std::string& to) const {
         if (!travel_) { return false; }
         from = travel_->from; to = travel_->to; return true;
     }
-    // 世界座標の表示状態（電視の舞台が読む）。
+    // 世界座標の表示状態（画面の舞台が読む）。
     const Rules::WorldSnapshot& Snapshot() { return exploration_.Snapshot(); }
 private:
     void SyncRegions(HIKARI::WorldView& world);
@@ -37,7 +37,7 @@ private:
     void TraceSequence(HIKARI::WorldView& world, uint64_t frame);
     void FocusActiveScreen(HIKARI::WorldView& world, double seconds);
 
-    // ---- 镜头（TD2CameraRig.h の方針：大区域の中は追従、大区域どうしは演出） ----
+    // ---- カメラ（大区域の中は追従、大区域どうしは演出） ----
     bool RegionFrame(HIKARI::WorldView& world, std::string_view region, CameraRegionFrame& out) const;
     const CameraAreaSettings& AreaOf(std::string_view region) const;
     bool SameArea(std::string_view a, std::string_view b) const;
@@ -52,28 +52,28 @@ private:
     HIKARI::GameProjectSequencePlaybackHandle PlayBoundSequence(HIKARI::WorldView& world,
                                                                const RegionSequenceBinding& binding, float rate);
 
-    // 大区域どうしの切り替え（演出）。手動は世界を止めて A/D で押し進める。
+    // 大区域の切り替え（演出）。手動の時は世界を止めて A/D で進める。
     struct Travel {
         RegionSequenceBinding binding;
-        std::string from, to, pending;      // pending：自動の切り替え中に先へ進んだ部屋（終わった後に追従が引き継ぐ）
+        std::string from, to, pending;      // 自動の切り替え中に先へ進んだ部屋（終わったら追従が引き継ぐ）
         bool reverse = false, manual = false;
         int direction = 0;                   // 手動で越えた向き（+1 右、-1 左）
         double velocity = 0, progress = 0;   // 手動の進む速さ（演出の長さに対する割合／秒）と進み（0→1）
-        double accel = 0;                    // 手動の速さの変化の速さ（ばねの状態。押し始め・離し際を滑らかにする）
-        HIKARI::GameProjectFloat3 eyeOffset{}, lookOffset{};  // 始まりの機位のずれ（序盤で 0 へ戻す）
-        // 最後のフレームに演出へ重ねたずれ（呼吸・手持ちと始まりのずれ）。終わりに追従の基準から差し引き、二重に足さない。
+        double accel = 0;                    // 手動の速さのばねの状態（押し始めと離し際を滑らかにする）
+        HIKARI::GameProjectFloat3 eyeOffset{}, lookOffset{};  // 開始時のカメラのずれ（序盤で 0 に戻す）
+        // 最後に演出へ足したずれ。終了時に差し引き、二重に足さない。
         HIKARI::GameProjectFloat3 appliedEye{}, appliedLook{};
     };
     std::optional<Travel> travel_;
     CameraRig rig_;
-    // 区域 ID → 大区域の设定・大区域の名（同じ名なら同じ大区域）。登録の無い区域はそれぞれ一部屋の大区域。
+    // 区域 ID → 大区域の設定と名前（同じ名前なら同じ大区域）。未登録の区域は一部屋で一つの大区域。
     std::map<std::string, CameraAreaSettings, std::less<>> areaSettings_;
     std::map<std::string, std::string, std::less<>> areaKey_;
-    // 区域ごとの区域机位（Scene の Camera 物体）・電視の物体・電視の局所の画面。
+    // 区域ごとのカメラ（Scene の Camera）、テレビの物体、ローカルの画面。
     std::map<std::string, uint64_t, std::less<>> regionCameras_;
     std::map<std::string, HIKARI::GameProjectObjectHandle, std::less<>> regionObjects_;
     std::map<std::string, RegionComponent::ScreenGeometry, std::less<>> regionGeometry_;
-    HIKARI::GameProjectObjectHandle driverCamera_{};   // 機位を提出するゲーム用カメラ（演出の Camera 槽と同じ物体）
+    HIKARI::GameProjectObjectHandle driverCamera_{};   // ゲームカメラ（演出の Camera スロットと同じ物体）
     bool cameraInitialized_ = false;
     double cameraTime_ = 0, focusDistance_ = 0;
 
@@ -81,12 +81,12 @@ private:
     std::vector<RegionSequenceBinding> bindings_;
     RegionSequenceBinding playbackBinding_;
     HIKARI::GameProjectSequencePlaybackHandle playback_{};
-    // Editor の一回限りの入口。Scene entry を消費した時だけ設定し、保存データへ戻さない。
+    // エディタからの一回限りの入口。保存データには戻さない。
     uint64_t previewEntryObject_ = 0;
     std::optional<Rules::Vec2> previewSpawn_;
     bool sceneActive_ = false, leftHeld_ = false, rightHeld_ = false;
     double traceSeconds_ = 0;
-    std::string traceFocus_;   // 診断用：最後に焦点を合わせた画面
+    std::string traceFocus_;   // 最後に焦点を合わせた画面
     uint64_t lastFrame_ = (std::numeric_limits<uint64_t>::max)();
 };
-} // namespace TD2
+}

@@ -19,7 +19,7 @@ bool Normalize(double v[3]) {
     for (int i = 0; i < 3; ++i) { v[i] /= length; }
     return true;
 }
-// 局所の点を電視の世界変換で移す（縮尺 → 四元数の回転 → 平行移動。v' = v + 2w(q×v) + 2q×(q×v)）。
+// ローカルの点をテレビのワールド変換で移す（縮尺→回転→平行移動）。
 F3 Transform(const HIKARI::GameProjectTransform& t, double x, double y, double z, bool translate) {
     const double v[3]{x * t.scale.x, y * t.scale.y, z * t.scale.z};
     const double q[3]{t.rotation.x, t.rotation.y, t.rotation.z};
@@ -32,9 +32,9 @@ F3 Transform(const HIKARI::GameProjectTransform& t, double x, double y, double z
     if (translate) { out[0] += t.position.x; out[1] += t.position.y; out[2] += t.position.z; }
     return Store(out);
 }
-} // namespace
+}
 
-// 臨界減衰のばね（Unity の SmoothDamp と同じ近似）。止まり際に行き過ぎず、目標が跳んでも速度が連続する。
+// 臨界減衰のばね（SmoothDamp と同じ近似）。行き過ぎず、目標が跳んでも速度は連続する。
 void CameraRig::Spring::Step(const double target[3], double seconds, double dt) {
     const double omega = 2.0 / (std::max)(seconds, 1e-3), x = omega * dt;
     const double decay = 1.0 / (1.0 + x + .48 * x * x + .235 * x * x * x);
@@ -46,7 +46,7 @@ void CameraRig::Spring::Step(const double target[3], double seconds, double dt) 
 }
 
 F3 CameraRig::ScreenPoint(const CameraRegionFrame& frame, double x, double y) {
-    // 画面の左上が区域の格 (0,0)。格の右は電視の局所 +X、下は局所 -Y（画面は局所 +Z を向く）。
+    // 画面の左上がマス (0,0)。右がローカル +X、下がローカル -Y（画面は +Z 向き）。
     const double u = std::clamp((x - frame.worldX) / (std::max)(frame.cols, 1.0), -.25, 1.25);
     const double v = std::clamp((y - frame.worldY) / (std::max)(frame.rows, 1.0), -.25, 1.25);
     return Transform(frame.screen, frame.screenCenter.x + (u - .5) * frame.screenWidth,
@@ -79,16 +79,16 @@ void CameraRig::Snap(const F3& eye, const F3& look, float verticalFovRadians) {
 }
 
 namespace {
-// 揺れの本体：右・上の単位ベクトルと注視点までの距離から、目と注視点のずれと傾きを出す。
+// 右・上の向きと注視点までの距離から、揺れのずれと傾きを出す。
 void BreathAlong(const CameraAreaSettings& area, double time, const double right[3], const double up[3], double distance,
                  F3& eyeOffset, F3& lookOffset, double& roll) {
     const auto wave = [time](double period, double phase) { return std::sin(time * 2 * kPi / period + phase); };
-    // 1. 呼吸：周期をずらした正弦の和（7〜11 秒）。止まっていても画がわずかに息づく。
+    // 呼吸：周期の違う正弦の和（7〜11 秒）。
     double bx = area.breathe * wave(7.3, 0), by = area.breathe * .7 * wave(9.1, 1.3);
     const double angle = std::tan(area.breatheAngle * kPi / 180) * distance;
     double lx = angle * wave(8.2, .7), ly = angle * .6 * wave(10.7, 2.1);
-    // 2. 手持ち：1.6〜4 秒の細かい揺れ（人が構えたカメラの止めきれない揺れ）。位置より向きの揺れを主にし、傾きも少し。
-    //    周期は互いに割り切れない値にして、繰り返しが目に付かないようにする。読みやすさのため角度は 0.3° 程度まで。
+    // 手持ち：1.6〜4 秒の細かい揺れ。主に向きを揺らし、傾きも少し足す。
+    // 周期は割り切れない値にして繰り返しを目立たせない。角度は 0.3° 程度まで。
     const double hand = (std::max)(0.0, static_cast<double>(area.handheld));
     bx += hand * .008 * (wave(2.7, .4) + .6 * wave(1.9, 2.2));
     by += hand * .006 * (wave(3.3, 1.1) + .5 * wave(2.1, .3));
@@ -100,7 +100,7 @@ void BreathAlong(const CameraAreaSettings& area, double time, const double right
     for (int i = 0; i < 3; ++i) { e[i] = right[i] * bx + up[i] * by; l[i] = right[i] * lx + up[i] * ly; }
     eyeOffset = Store(e); lookOffset = Store(l);
 }
-} // namespace
+}
 
 void CameraRig::Breath(const CameraAreaSettings& area, double time, F3& eyeOffset, F3& lookOffset, double& roll) const {
     double d[3];
@@ -128,7 +128,7 @@ void CameraRig::BreathAround(const CameraAreaSettings& area, double time, const 
 CameraRigPose CameraRig::Update(const CameraRegionFrame& frame, const CameraAreaSettings& area, const F3& target, const F3& velocity,
                                 bool present, double dt, double time) {
     dt = std::clamp(dt, 0.0, .1);
-    // 1. 基準：今の区域机位へ滑らせる（同じ大区域の部屋の乗り換えはこれだけで繋がる）。
+    // 1. 今の区域のカメラ位置へ滑らかに寄せる。
     double frameEye[3], frameLook[3];
     Load(frame.eye, frameEye); Load(frame.look, frameLook);
     if (!ready_) { Snap(frame.eye, frame.look, frame.verticalFovRadians); }
@@ -147,8 +147,8 @@ CameraRigPose CameraRig::Update(const CameraRegionFrame& frame, const CameraArea
             Cross(right_, forward, up_);
         }
     }
-    // 2. 主角の方へ：機位は横・縦へ平行移動（範囲内）、残りの差の一部だけ注視を振る（角度の上限内）。
-    //    主角が見えない時（死亡中など）は今の位置を保つ。
+    // 2. プレイヤーの方へ平行移動し、残りの差の一部だけ注視を振る（どちらも上限内）。
+    // プレイヤーがいない時（死亡中など）は今の位置を保つ。
     if (present) {
         double point[3], speed[3], offsetTarget[3]{}, aimTarget[3]{};
         Load(target, point); Load(velocity, speed);
@@ -169,11 +169,11 @@ CameraRigPose CameraRig::Update(const CameraRegionFrame& frame, const CameraArea
         offset_.Step(offset_.value, area.positionSeconds, dt);
         aim_.Step(aim_.value, area.aimSeconds, dt);
     }
-    // 3. 横へ動く速さに応じたごくわずかな傾き（±3° まで）。手で振ったような柔らかさを足す。
+    // 3. 横の速さに応じたわずかな傾き（±3° まで）。
     const double lateral = offset_.velocity[0] + Dot(baseEye_.velocity, right_);
     const double rollTarget[3]{std::clamp(-lateral * area.bank, -3.0, 3.0) * kPi / 180, 0, 0};
     roll_.Step(rollTarget, .35, dt);
-    // 4. 呼吸と合成。注視は機位の平行移動に lookCarry だけ付いて行き、残りは基準の方へ振り返る（回り込む視差）。
+    // 4. 呼吸を足す。注視は平行移動に lookCarry の分だけ付いて行く（視差が出る）。
     F3 breathEye, breathLook;
     double handRoll = 0;
     Breath(area, time, breathEye, breathLook, handRoll);
@@ -188,4 +188,4 @@ CameraRigPose CameraRig::Update(const CameraRegionFrame& frame, const CameraArea
     last_ = {Store(eye), Store(look), Store(up), fov_};
     return last_;
 }
-} // namespace TD2
+}

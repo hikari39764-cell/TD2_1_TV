@@ -19,7 +19,7 @@ const Rules::WorldDefinition& RegionComponent::AuthoredDefinition() {
     cache.region = region_; cache.devices = devices_; cache.spawnX = spawnX_; cache.spawnY = spawnY_; cache.valid = true;
     std::string error;
     if (!BuildDefinition(cache.definition, error)) {
-        // 作者の無効な装置行を画面の消失に変えず、基本地形を見ながら修正できるようにする。
+        // 装置の行が不正でも画面は消さず、地形を見ながら直せるようにする。
         cache.definition.region = region_;
         cache.definition.spawn = {spawnX_, spawnY_};
         cache.definition.devices.clear();
@@ -27,4 +27,4 @@ const Rules::WorldDefinition& RegionComponent::AuthoredDefinition() {
     return cache.definition;
 }
 
-} // namespace TD2
+}

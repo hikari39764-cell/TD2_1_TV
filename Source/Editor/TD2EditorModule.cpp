@@ -3,7 +3,7 @@
 
 namespace TD2 {
 namespace {
-// 通路・自作カメラ頁は登録しない。地図編集と世界配置だけを専用入口にする。
+// 専用の入口は地図編集と世界配置だけ。
 class EditorModule final : public HIKARI::EDITOR_PROJECT::IGameProjectEditorModule {
 public:
     std::string_view GetModuleId() const override { return "Project_TD2_TV"; }

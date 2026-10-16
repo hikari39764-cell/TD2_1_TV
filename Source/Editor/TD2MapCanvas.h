@@ -5,7 +5,7 @@
 
 namespace TD2::Editor {
 
-// 表示座標だけを変換する。ズームと pan は配置・ルール座標を書き換えない。
+// 表示座標だけを変換する。ズームとパンは配置を変えない。
 struct MapCanvasView {
     EditorWorkspacePoint origin{24, 36};
     float tile = 28;
@@ -14,7 +14,7 @@ struct MapCanvasView {
     EditorWorkspacePoint panPointer{}, panOrigin{};
     EditorWorkspacePoint Screen(float x, float y) const { return {origin.x + x * tile, origin.y + y * tile}; }
     EditorWorkspacePoint World(EditorWorkspacePoint p) const { return {(p.x - origin.x) / tile, (p.y - origin.y) / tile}; }
-    // 初回 dock の確定前後で Canvas 幅が変わる。新しい実寸で再 fit し、部屋の見切れを防ぐ。
+    // ドッキング直後は幅が変わるので、新しい幅で合わせ直す。
     void ObserveSize(EditorWorkspacePoint size) {
         if (size.x <= 0 || size.y <= 0) { return; }
         if (lastSize.x <= 0 || lastSize.y <= 0 || std::abs(size.x - lastSize.x) > .5f || std::abs(size.y - lastSize.y) > .5f) { fit = true; }
@@ -47,7 +47,7 @@ inline bool PointIn(EditorWorkspacePoint p, EditorWorkspacePoint a, EditorWorksp
     return p.x >= a.x && p.x < b.x && p.y >= a.y && p.y < b.y;
 }
 
-// 背景格は Canvas の範囲だけ描く。極端に離れた世界原点でも反復数を増やさない。
+// 背景のマスはキャンバスの範囲だけ描く。
 inline void DrawCanvasGrid(IEditorWorkspaceUi& ui, const MapCanvasView& v, EditorWorkspacePoint size) {
     ui.CanvasFill({0, 0}, size, {.045f, .07f, .095f, 1});
     const float spacing = v.tile * (v.tile < 8 ? 4.0f : 1.0f);
@@ -65,8 +65,8 @@ inline EditorWorkspaceColor DeviceColor(std::string_view kind) {
     return {.48f, .65f, .71f, 1};
 }
 
-// 作者 Canvas の記号は公開描画 API だけで構成する。ゲームの三次元表示や素材に依存しない。
-// 薄い圧板・足場の一格表示は従来の選択領域に合わせ、物理矩形を変更しない。
+// 記号は公開の描画 API だけで描く。ゲームの 3D 表示には依存しない。
+// 薄い圧力板や足場は選択範囲に合わせて 1 マスで描く。物理矩形は変えない。
 inline void DrawDeviceGlyph(IEditorWorkspaceUi& ui, const DeviceDraft& d, const MapCanvasView& v) {
     auto a = v.Screen(static_cast<float>(d.x), static_cast<float>(d.y));
     auto b = v.Screen(static_cast<float>(d.x + d.w), static_cast<float>(d.y + d.h));
@@ -88,7 +88,7 @@ inline void DrawDeviceGlyph(IEditorWorkspaceUi& ui, const DeviceDraft& d, const 
         line(.15f, .93f, .85f, .93f); line(.3f, .93f, .3f, .08f);
         ui.CanvasFill(p(.3f, .08f), p(.82f, .37f), c);
     } else if (d.kind == "Spikes") {
-        // 尖端方向は作者の dir と一致させる。縦横どちらも端の半格を切り捨てない。
+        // 棘の向きは dir に合わせる。端の半マスも切り捨てない。
         const bool vertical = d.direction == "Left" || d.direction == "Right";
         const int teeth = std::clamp(static_cast<int>(std::ceil((vertical ? d.h : d.w) * 2)), 1, 128);
         const auto oriented = [&](float along, float depth) {
@@ -151,7 +151,7 @@ inline void DrawRoomMap(IEditorWorkspaceUi& ui, const RegionSettings& s, const M
         }
     }
     for (const auto& d : devices.Items()) { DrawDeviceGlyph(ui, d, v); }
-    // 出生点は人物記号とし、選択・移動用の既存 .625 × .875 格の矩形内に収める。
+    // スポーン位置は人の記号で、.625 × .875 マスの矩形に収める。
     const auto spawn = [&](float x, float y) { return v.Screen(s.spawnX + x, s.spawnY + y); };
     constexpr EditorWorkspaceColor player{.88f, .94f, .98f, 1};
     const float stroke = std::clamp(v.tile * .07f, 1.0f, 3.0f);
@@ -163,4 +163,4 @@ inline void DrawRoomMap(IEditorWorkspaceUi& ui, const RegionSettings& s, const M
     ui.CanvasLine(spawn(.375f, .61f), spawn(.455f, .84f), player, stroke);
 }
 
-} // namespace TD2::Editor
+}

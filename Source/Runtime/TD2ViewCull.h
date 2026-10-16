@@ -1,11 +1,11 @@
 #pragma once
-// 游戏カメラの視野（視錐台）に球が掛かるかの判定。灯光の予算と、周りの電視を描くかの判断で共有する。
+// ゲームカメラの視錐台に球が入るかの判定。光の間引きと周りのテレビの描画で使う。
 #include "HIKARI/Project/ActionTypes.h"
 #include <algorithm>
 #include <cmath>
 
 namespace TD2 {
-// marginDegrees は視野の四辺を外へ広げる角度。カメラが動く間も、画に入る前に用意できるように。
+// marginDegrees は視野を外へ広げる角度。
 inline bool SphereInView(const HIKARI::GameProjectCameraPose& pose, const HIKARI::GameProjectFloat3& center, double radius,
                          double marginDegrees) {
     struct Vec { double x, y, z; };
@@ -25,4 +25,4 @@ inline bool SphereInView(const HIKARI::GameProjectCameraPose& pose, const HIKARI
     // 側面の法線方向の距離（x·cos − z·sin）が半径より大きければ外。
     return std::abs(x) * std::cos(halfH) - z * std::sin(halfH) <= radius && std::abs(y) * std::cos(halfV) - z * std::sin(halfV) <= radius;
 }
-} // namespace TD2
+}

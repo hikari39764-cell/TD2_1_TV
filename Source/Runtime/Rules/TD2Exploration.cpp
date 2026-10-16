@@ -6,10 +6,10 @@
 namespace TD2::Rules {
 namespace {
 std::string DeviceId(std::string_view region, std::string_view local) {
-    // region ID は '/' を含まない契約なので、同名の局所装置が別 TV と混ざらない。
+    // region ID は '/' を含まないので、別のテレビの同名の装置と混ざらない。
     return std::string(region) + "/" + std::string(local);
 }
-} // namespace
+}
 
 std::string Exploration::Initialize(std::vector<RegionSource> sources, std::string_view entryOverride,
                                     std::optional<Vec2> spawnOverride) {
@@ -29,7 +29,7 @@ std::string Exploration::Initialize(std::vector<RegionSource> sources, std::stri
         if (entryOverride.empty() ? source.entry : p.regionId == entryOverride) {
             ++entries;
             const auto spawn = spawnOverride.value_or(authored.spawn);
-            // 任意の空中位置も許すが、指定区域の外へ黙って丸めたり別区域へ落としたりしない。
+            // 空中の位置も受け付ける。区域の外へは丸めない。
             if (!std::isfinite(spawn.x) || !std::isfinite(spawn.y) || spawn.x < 0 || spawn.y < 0 ||
                 spawn.x + .625 > p.cols || spawn.y + .875 > p.rows) { return "test spawn outside region: " + p.regionId; }
             next.world_.spawn = {spawn.x + p.worldX, spawn.y + p.worldY};
@@ -40,7 +40,7 @@ std::string Exploration::Initialize(std::vector<RegionSource> sources, std::stri
         for (auto device : runtime.definition.devices) {
             device.id = DeviceId(p.regionId, device.id);
             device.rect.x += p.worldX; device.rect.y += p.worldY;
-            // 「区域ID/装置ID」と書いた接続は別の TV の装置をそのまま指す（地図块を跨ぐ圧板）。
+            // 「区域ID/装置ID」は別のテレビの装置を指す（テレビをまたぐ圧力板）。
             for (auto& target : device.targets)
                 if (target.find('/') == std::string::npos) target = DeviceId(p.regionId, target);
             next.deviceOwners_[device.id] = p.regionId;
@@ -136,7 +136,7 @@ const WorldSnapshot& Exploration::Snapshot() {
 ExplorationOutput Exploration::Step(const InputState& input, double seconds) {
     ExplorationOutput out;
     if (!Ready()) return out;
-    // 部屋の切り替え（镜头の演出）の間も操作はそのまま効く。領域切替は結果の観測だけ。
+    // 部屋の切り替え（カメラの演出）中も操作は効く。
     auto result = StepRules(world_, state_, input, seconds);
     const bool respawn = std::any_of(result.events.begin(), result.events.end(), [](const RuleEvent& e) { return e.kind == EventKind::PlayerRespawned; });
     const auto current = RegionAt(state_.player.rect);
@@ -147,4 +147,4 @@ ExplorationOutput Exploration::Step(const InputState& input, double seconds) {
     Record(std::move(result), out); snapshotDirty_ = true;
     return out;
 }
-} // namespace TD2::Rules
+}

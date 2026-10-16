@@ -16,7 +16,7 @@ bool OpenTransitionCamera(EditorWorkspaceHostContext& ctx, const RegionSequenceB
 bool OpenRegionCamera(EditorWorkspaceHostContext& ctx, const std::string& region, const std::string& name,
                       std::string& error) {
     (void)name;
-    // 区域選択は Scene の共有機位へ案内する。隣接演出を列挙して端点を複写しない。
+    // 区域を選ぶと Scene の共有カメラへ移る。演出の端点は複製しない。
     std::vector<SceneItem> items;
     if (!QueryObjects(ctx, kRegionComponentType, items, error)) return false;
     for (const auto& item : items) {
@@ -42,4 +42,4 @@ bool OpenRegionCamera(EditorWorkspaceHostContext& ctx, const std::string& region
     error = "未找到区域。";
     return false;
 }
-} // namespace TD2::Editor
+}

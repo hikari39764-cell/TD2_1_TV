@@ -10,25 +10,24 @@
 namespace TD2 {
 inline constexpr std::string_view kScreenFxComponentType = "TD2.ScreenFx";
 
-// 電視の中の事件ごとの特効の槽。順番は kScreenFxDefaults（build_screen_fx.py の生成表）と同じ。
+// 画面内のイベントごとのエフェクトスロット。順番は kScreenFxDefaults と同じ。
 enum class ScreenFxSlot : int { Dash, Impact, Land, Bounce, EchoForm, EchoRecall, EchoBlocked, Death, Respawn, Device, Checkpoint, EchoAbsorb };
 inline constexpr size_t kScreenFxSlotCount = kScreenFxDefaults.size();
 static_assert(static_cast<size_t>(ScreenFxSlot::EchoAbsorb) + 1 == kScreenFxSlotCount);
 
 struct ScreenFxEntry {
     HIKARI::GameProjectVfxAssetReference asset{};
-    float scale = 1.0f;   // この特効だけの大きさ
-    float shake = 0.0f;   // 電視の中の画面の揺れ（振幅、格）
+    float scale = 1.0f;   // このエフェクトの大きさ
+    float shake = 0.0f;   // 画面の揺れ（振幅、マス）
     float flash = 0.0f;   // 画面の一時的な明るさの上乗せ（1 で倍）
 };
 
-// 表示だけの設定。Rules の判定や工厂の後処理は変えない。資産を空にした槽は鳴らさない。
+// 表示だけの設定。ルールや工場の後処理は変えない。資産が空のスロットは出さない。
 struct ScreenFxSettings {
     bool enabled = true;
-    bool smear = true;        // 瞬移の時に主角の残像（潰れて消える二体）を置く
-    float scale = 1.0f;       // 全体の大きさ（1 格基準）
-    // 揺れ全体の倍率。既定は 0（揺れなし）：揺れは舞台カメラをずらすので、部屋の外の隣の地形が捕捉の端に入った
-    // 瞬間だけその落ち影が画面の縁に現れ、黒い帯がちらつく。
+    bool smear = true;        // 瞬間移動の時にプレイヤーの残像を置く
+    float scale = 1.0f;       // 全体の大きさ（1 マス基準）
+    // 揺れ全体の倍率。既定は 0（舞台カメラがずれて画面の縁がちらつくため）。
     float shake = 0.0f;
     float flash = 0.0f;       // 閃光全体の倍率
     std::array<ScreenFxEntry, kScreenFxSlotCount> entries{};
@@ -49,7 +48,7 @@ private:
     }
 };
 
-// 舞台カメラ（屏幕风格と同じ物体）に一つ付ける。無ければ既定の一式を使う。
+// 舞台カメラ（画面スタイルと同じ物体）に一つ付ける。無ければ既定値を使う。
 class ScreenFxComponent final : public HIKARI::IGameComponent {
 public:
     const ScreenFxSettings& Settings() const noexcept { return settings_; }
@@ -62,7 +61,7 @@ public:
         if (fields.IsInspecting()) {
             fields.Note("每个游戏事件一个 VFX 资产（可换，也可在 VFX 工作区直接修改），并可单独调大小、震动、闪光。");
         }
-        // 槽ごとに折り畳み。Load/Save では Section は常に true なので中身は必ず読み書きされる。
+        // スロットごとに折り畳む（Load/Save では常に中身を読み書きする）。
         for (size_t i = 0; i < kScreenFxSlotCount; ++i) {
             const auto& item = kScreenFxDefaults[i];
             const std::string name(item.name), label(item.label);
@@ -80,4 +79,4 @@ public:
 private:
     ScreenFxSettings settings_;
 };
-} // namespace TD2
+}

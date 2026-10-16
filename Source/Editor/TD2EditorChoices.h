@@ -14,7 +14,7 @@ inline std::string DeviceLabel(std::string_view kind) {
     return it == kEditorDeviceKinds.end() ? std::string(kind) : std::string(kEditorDeviceLabels[static_cast<size_t>(it - kEditorDeviceKinds.begin())]);
 }
 
-// 狭い欄でも UTF-8 の途中を切らず、可視ラベルを短く保つ。識別には別の stable ID を使う。
+// 狭い欄でも UTF-8 の途中で切らずに短くする。識別は別の ID で行う。
 inline std::string ShortChoiceLabel(std::string_view value, size_t maximum = 18) {
     size_t end = 0, count = 0;
     while (end < value.size() && count < maximum) {
@@ -26,7 +26,7 @@ inline std::string ShortChoiceLabel(std::string_view value, size_t maximum = 18)
 
 struct EditorChoice { std::string id, label; bool selected = false; };
 
-// 候補を全部並べる（頁送りなし。面板自体が縦に流れる）。長い一覧は呼び手が検索欄で絞る。
+// 候補を全部並べる（ページ送りなし）。長い一覧は検索欄で絞る。
 inline int DrawChoices(IEditorWorkspaceUi& ui, const std::vector<EditorChoice>& choices) {
     if (choices.empty()) { ui.Text("没有可选项"); return -1; }
     int chosen = -1;
@@ -36,7 +36,7 @@ inline int DrawChoices(IEditorWorkspaceUi& ui, const std::vector<EditorChoice>& 
     return chosen;
 }
 
-// 一度に表示する候補数を固定し、資産・相機・装置の長い一覧で下の保存操作を隠さない。
+// 表示数を固定し、長い一覧で下の操作が隠れないようにする。
 inline int DrawPagedChoices(IEditorWorkspaceUi& ui, const std::vector<EditorChoice>& choices, int& page,
                             std::string_view group, int pageSize = 5) {
     if (choices.empty()) { ui.Text("没有可选项"); return -1; }

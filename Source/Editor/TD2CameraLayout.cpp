@@ -11,9 +11,9 @@
 namespace TD2::Editor {
 namespace {
 constexpr double kPi = 3.14159265358979323846;
-constexpr double kFov = 26.0;              // 区域机位と演出の基準の画角（度）
-constexpr double kNarrowAspect = 4.0 / 3;  // 画面の検査は一番狭い窓で行う（無窓の撮影は 4:3 前後）
-constexpr double kMinShare = .6;           // 切り替えの間、どの瞬間も少なくとも一台の画面の半分以上が画に入る（作者の約束）
+constexpr double kFov = 26.0;              // 区域カメラと演出の基準の画角（度）
+constexpr double kNarrowAspect = 4.0 / 3;  // 画面の検査は一番狭い縦横比（4:3 前後）で行う
+constexpr double kMinShare = .6;           // 切り替え中はどの瞬間も、少なくとも一台の画面の半分以上を画に入れる
 constexpr std::string_view kAreaComponent = "TD2.CameraArea";
 
 using M3 = std::array<std::array<double, 3>, 3>;
@@ -26,7 +26,7 @@ Vec3 Lerp(const Vec3& a, const Vec3& b, double t) { return {a[0] + (b[0] - a[0])
 Vec3 Flat(const Vec3& a) { return Norm({a[0], 0, a[2]}); }
 constexpr Vec3 kUp{0, 1, 0};
 
-// 引擎の向き：M = Rz·Ry·Rx（X → Y → Z の順に回す）。カメラも電視も局所 +Z を向く。
+// エンジンの回転順：M = Rz·Ry·Rx（X → Y → Z）。カメラもテレビもローカル +Z を向く。
 M3 Rotation(const Vec3& euler) {
     const auto r = [](int axis, double deg) {
         const double a = deg * kPi / 180, c = std::cos(a), s = std::sin(a);
@@ -49,7 +49,7 @@ Vec3 RotateY(const Vec3& v, double deg) {
     const double c = std::cos(deg * kPi / 180), s = std::sin(deg * kPi / 180);
     return {v[0] * c + v[2] * s, v[1], -v[0] * s + v[2] * c};
 }
-// カメラの回転行列（列 = 局所 X（画の左）・Y（上）・Z（前））。roll は前の軸まわりの傾き（度）。
+// カメラの回転行列（列 = ローカル X（画の左）・Y（上）・Z（前））。roll は前の軸まわりの傾き（度）。
 M3 LookMatrix(const Vec3& eye, const Vec3& look, double roll = 0) {
     const auto f = Norm(Sub(look, eye));
     auto left = Norm(Cross(kUp, f));
@@ -84,7 +84,7 @@ std::array<double, 4> QuatFrom(const M3& m) {
 }
 double Round(double v, double step = 1e-4) { return std::round(v / step) * step; }
 
-// ---- 電視の形 ----
+// ---- テレビの形 ----
 M3 TvMatrix(const LayoutRoom& r) { return Rotation(r.tv.rotation); }
 Vec3 TvLocal(const LayoutRoom& r, const Vec3& local) {
     return Add(r.tv.position, Apply(TvMatrix(r), {local[0] * r.tv.scale[0], local[1] * r.tv.scale[1], local[2] * r.tv.scale[2]}));
@@ -107,7 +107,7 @@ bool Inside(const Vec3& p, const LayoutBox& box, double margin) {
     return true;
 }
 
-// ---- 場景の読み取り ----
+// ---- シーンの読み取り ----
 Vec3 ReadVec3(const Json& value, Vec3 fallback) {
     if (!value.is_array() || value.size() != 3) { return fallback; }
     for (int i = 0; i < 3; ++i) { if (value[i].is_number()) { fallback[i] = value[i].get<double>(); } }
@@ -153,10 +153,10 @@ std::string Join(const std::vector<std::string>& items) {
     return out;
 }
 
-// ---- 道筋 ----
+// ---- 経路 ----
 struct Pivot { Vec3 corner{}, out{}; bool valid = false; };
-// 二台の電視の背面の線（水平）の交わる所を角とし、二つの法線の和を角から外への向きとする（柱の角を回る演出の中心）。
-// 背面を使うのは、電視が柱の面に付いている時に背面の交点が柱の角そのものになるから（正面の交点は角より外に出る）。
+// 二台のテレビの背面の線の交点を角とし、二つの法線の和を角から外への向きとする（柱の角を回る演出の中心）。
+// 背面を使うのは、柱に付いたテレビでは背面の交点が柱の角に一致するため。
 Pivot CornerOf(const LayoutRoom& a, const LayoutRoom& b, double y) {
     Pivot p;
     const auto back = [](const LayoutRoom& r) { return TvLocal(r, {0, r.screenCenter[1], -r.body[2] / 2}); };
@@ -184,7 +184,7 @@ double ScreenShare(const LayoutRoom& r, const TravelKey& key) {
     }
     return seen / 25.0;
 }
-} // namespace
+}
 
 TravelKey SampleTravel(const std::vector<TravelKey>& keys, double t) {
     if (keys.empty()) { return {}; }
@@ -195,7 +195,7 @@ TravelKey SampleTravel(const std::vector<TravelKey>& keys, double t) {
     const auto& a = keys[i]; const auto& b = keys[i + 1];
     const double span = (std::max)(b.t - a.t, 1e-6), u = (t - a.t) / span, u2 = u * u, u3 = u2 * u;
     const double h00 = 2 * u3 - 3 * u2 + 1, h10 = u3 - 2 * u2 + u, h01 = -2 * u3 + 3 * u2, h11 = u3 - u2;
-    // 途中の鍵の速さは前後の鍵の差を時刻差で割る。最初と最後の鍵は 0（引擎の spline と同じ）。
+    // 途中のキーの速さは前後のキーの差を時刻差で割る。最初と最後は 0（エンジンの spline と同じ）。
     const auto velocity = [&](size_t k, auto get) {
         if (k == 0 || k + 1 >= keys.size()) { return 0.0; }
         return (get(keys[k + 1]) - get(keys[k - 1])) / (keys[k + 1].t - keys[k - 1].t);
@@ -224,7 +224,7 @@ const LayoutArea* LayoutSnapshot::AreaOf(std::string_view regionId) const {
 
 bool LoadLayout(EditorWorkspaceHostContext& ctx, LayoutSnapshot& snap, std::string& error) {
     snap = {};
-    // 1. 全物体の変換（scene.layout.apply の expected にもなる）と鎖定。
+    // 1. 全物体の変換（scene.layout.apply の expected にもなる）とロック状態。
     const auto layout = Execute(ctx, "scene.layout.query", Json::object());
     if (!layout.ok) { error = layout.error; return false; }
     snap.sceneId = layout.data.value("sceneId", "");
@@ -237,7 +237,7 @@ bool LoadLayout(EditorWorkspaceHostContext& ctx, LayoutSnapshot& snap, std::stri
         snap.transformJson[id] = object.value("transform", Json::object());
         locked[id] = object.value("locked", false);
     }
-    // 2. 全物体の要約（部品の種類と世界の箱）。区域・大区域・交界の部品をここで見つけ、障碍物も集める。
+    // 2. 全物体の要約（部品の種類と世界の箱）。区域・大区域・境界の部品を見つけ、障害物も集める。
     struct Summary { uint64_t id; std::string name; std::vector<std::pair<std::string, uint64_t>> components; bool bounds = false; Vec3 lo{}, hi{}; };
     std::vector<Summary> summaries;
     for (uint64_t offset = 0;;) {
@@ -261,7 +261,7 @@ bool LoadLayout(EditorWorkspaceHostContext& ctx, LayoutSnapshot& snap, std::stri
         for (const auto& [t, id] : s.components) { if (t == type) { return id; } }
         return 0;
     };
-    // 3. 区域（電視）。模型の元パスから電視の型を引き、画面の寸法と筐体を決める。
+    // 3. 区域（テレビ）。モデルの元パスから型を引き、画面の寸法と筐体を決める。
     std::vector<uint64_t> tvIds;
     for (const auto& s : summaries) {
         const auto componentId = componentOf(s, kRegionComponentType);
@@ -320,7 +320,7 @@ bool LoadLayout(EditorWorkspaceHostContext& ctx, LayoutSnapshot& snap, std::stri
         area.cameraLift = NumberField(fields, "cameraLift", .3);
         snap.areas.push_back(std::move(area));
     }
-    // 5. 交界（世界地図で共有する辺）と、そこに結んだ演出。
+    // 5. 境界（世界地図で共有する辺）と、そこに結んだ演出。
     for (size_t i = 0; i < snap.rooms.size(); ++i) for (size_t j = i + 1; j < snap.rooms.size(); ++j) {
         const auto& a = snap.rooms[i]; const auto& b = snap.rooms[j];
         const auto edge = FindSharedWorldEdge({a.regionId, a.cols, a.rows, a.placed, a.worldX, a.worldY}, {b.regionId, b.cols, b.rows, b.placed, b.worldX, b.worldY});
@@ -328,7 +328,7 @@ bool LoadLayout(EditorWorkspaceHostContext& ctx, LayoutSnapshot& snap, std::stri
         LayoutEdge e; e.a = a.regionId; e.b = b.regionId; e.edge = *edge;
         const auto* areaA = snap.AreaOf(a.regionId); const auto* areaB = snap.AreaOf(b.regionId);
         e.between = !areaA || !areaB || areaA != areaB;
-        // 共有する辺の上で、両側の境の格がどちらも空いている所が一つでもあれば越えられる（壁で隔てた辺は演出を作らない）。
+        // 共有する辺の上で、両側のマスがどちらも空いている所があれば越えられる（壁で隔てた辺には演出を作らない）。
         const auto open = [](const LayoutRoom& r, int x, int y) {
             return x >= 0 && y >= 0 && x < r.cols && y < r.rows && r.cells.size() == static_cast<size_t>(r.cols * r.rows) &&
                    r.cells[static_cast<size_t>(y * r.cols + x)] != '1';
@@ -353,7 +353,7 @@ bool LoadLayout(EditorWorkspaceHostContext& ctx, LayoutSnapshot& snap, std::stri
         const auto ra = TextField(fields, "regionA"), rb = TextField(fields, "regionB");
         for (auto& e : snap.edges) {
             if (!((e.a == ra && e.b == rb) || (e.a == rb && e.b == ra))) { continue; }
-            // 演出は regionA → regionB の向きに作る（逆へ越える時は倒して流す）。
+            // 演出は regionA → regionB の向きに作る（逆へ越える時は逆再生する）。
             if (e.a != ra) { std::swap(e.a, e.b); std::swap(e.edge.sideA, e.edge.sideB); }
             e.bindingObject = s.id; e.bindingComponent = componentId;
             e.sequenceGuid = TextField(fields, "sequenceAssetGuid");
@@ -364,8 +364,8 @@ bool LoadLayout(EditorWorkspaceHostContext& ctx, LayoutSnapshot& snap, std::stri
             e.autoHash = TextField(fields, "autoHash");
         }
     }
-    // 6. 障碍物と大厅。電視は別に扱う（自分の画面の検査で自分の箱を除くため）。床のような広く薄い物は大厅の範囲に、
-    //    鎖・配線のような細い物と、天井・屋根は数えない。
+    // 6. 障害物とホール。テレビは別に扱う（自分の画面の検査で自分の箱を除くため）。床のような広く薄い物はホールの範囲に、
+    // 鎖や配線のような細い物と、天井・屋根は数えない。
     std::set<uint64_t> tvSet(tvIds.begin(), tvIds.end());
     bool floor = false; Vec3 floorLo{1e9, 0, 1e9}, floorHi{-1e9, 0, -1e9}; double ceiling = 10;
     for (const auto& s : summaries) {
@@ -385,9 +385,9 @@ bool LoadLayout(EditorWorkspaceHostContext& ctx, LayoutSnapshot& snap, std::stri
     return true;
 }
 
-// ---- 区域机位 ----
+// ---- 区域カメラ ----
 namespace {
-// 出口の側（画面の右 = +1）。自分の大区域の外へ横に歩いて出る辺の向き。無ければ大区域全体の出口の向き。
+// 出口の側（画面の右 = +1）。大区域の外へ横に歩いて出る辺の向き。無ければ大区域全体の出口の向き。
 double ExitSide(const LayoutSnapshot& snap, const LayoutRoom& room) {
     const auto sideOf = [&](const LayoutRoom& r) {
         double side = 0;
@@ -407,7 +407,7 @@ double ExitSide(const LayoutSnapshot& snap, const LayoutRoom& room) {
     }
     return flow > 0 ? 1 : flow < 0 ? -1 : 0;
 }
-} // namespace
+}
 
 CameraPose RegionCamera(const LayoutSnapshot& snap, const LayoutRoom& room) {
     const auto* area = snap.AreaOf(room.regionId);
@@ -416,7 +416,7 @@ CameraPose RegionCamera(const LayoutSnapshot& snap, const LayoutRoom& room) {
     const auto center = ScreenPoint(room);
     const auto normal = TvAxis(room, 2), right = TvAxis(room, 0), up = TvAxis(room, 1);
     const double dist = room.screenHeight * room.tv.scale[1] / ((std::max)(fill, .05) * 2 * std::tan(kFov * kPi / 360));
-    // 床に立つ電視は目の高さを下げて正面から。それ以外は少し上から見下ろす（落ちる先の電視が画の下に覗く）。
+    // 床に立つテレビは目の高さを下げて正面から。それ以外は少し上から見下ろす（落ちる先のテレビが画の下に覗く）。
     const bool floorStanding = room.tv.position[1] < .3;
     const double sy = floorStanding ? .12 : lift, ly = floorStanding ? .05 : -.6 * lift;
     const double a = orbit * side * kPi / 180;
@@ -440,11 +440,11 @@ std::string CameraMemo(const LayoutTransform& t) {
     return buffer;
 }
 bool CameraEdited(const LayoutRoom& room) {
-    // 記録が空 = 作者が自分で置いた机位。記録と今の姿勢が違う = 自動で置いた後に作者が動かした。
+    // 記録が空なら作者が置いたカメラ。記録と今の姿勢が違えば、自動で置いた後に作者が動かした。
     return room.cameraAuto.empty() || room.cameraAuto != CameraMemo(room.camera);
 }
 
-// ---- 切り替えの道筋 ----
+// ---- 切り替えの経路 ----
 const std::vector<TravelStyle>& TravelStyles() {
     static const std::vector<TravelStyle> styles{
         {"auto", "自动", "按两台电视的朝向与高度自动选择"},
@@ -480,7 +480,7 @@ std::vector<TravelKey> StyleKeys(const LayoutSnapshot& snap, const std::string& 
     const TravelKey start{0, ea, la, kFov, 0}, end{1, eb, lb, kFov, 0};
     (void)snap;
     if (style == "reveal") {
-        // 出口の電視の脇をかすめて前へ出て、高所から目標の側の電視の並びを見渡し、目標へ降りる。
+        // 出口のテレビの脇をかすめて前へ出て、高所から目標側のテレビの並びを見渡し、目標へ降りる。
         const auto k1 = Add(Add(Add(ea, toward, 1.5 * spread), kUp, .35), Flat(Sub(sb, ea)), .8);
         const auto overlook = Add(sb, kUp, -1.0);
         const auto k2 = Add(Add(Add(sb, nb, 6.4 * spread), kUp, 1.6 + .3 * (spread - 1)), TvAxis(b, 0), .3);
@@ -496,7 +496,7 @@ std::vector<TravelKey> StyleKeys(const LayoutSnapshot& snap, const std::string& 
     }
     const auto& c = pivot.corner; const auto& out = pivot.out;
     if (style == "arc") {
-        // 右上へ昇りながら角の外へ回り、角と両面の電視を上から見せてから降りる。
+        // 右上へ昇りながら角の外へ回り、角と両面のテレビを上から見せてから降りる。
         const auto k1 = Add(Add(Add(ea, toward, 1.1), kUp, .55), na, .4);
         const auto k2 = Add(Add(c, out, 5.4 * spread), kUp, 1.5);
         const auto k3 = Add(Lerp(k2, eb, .65), kUp, .3);
@@ -519,7 +519,7 @@ std::vector<TravelKey> StyleKeys(const LayoutSnapshot& snap, const std::string& 
         return {start, {.28, k1, Lerp(la, Add(sa, kUp, -.3), .3), 25, 0}, {.56, k2, Add(c, kUp, -.3), 23, 0},
                 {.82, k3, Lerp(c, lb, .8), 25, 0}, end};
     }
-    // hug：角に寄り添って回り、曲がる向きへ画を傾ける。角の真横では画角を広げて両面の電視を一度に収める。
+    // hug：角に寄り添って回り、曲がる向きへ画を傾ける。角の真横では画角を広げて両面のテレビを一度に収める。
     const double r = 3.0 * spread;
     // 出発の面の側へ回した向き（法線 a に近い方）を見つける。
     const double toA = Dot(RotateY(out, -28), Flat(na)) >= Dot(RotateY(out, 28), Flat(na)) ? -1 : 1;
@@ -530,7 +530,7 @@ std::vector<TravelKey> StyleKeys(const LayoutSnapshot& snap, const std::string& 
     return {start, {.3, k1, Lerp(ScreenPoint(a, .8, .5), c, .3), 29, -3.5 * lean}, {.5, km, Add(c, kUp, .05), 35, -1.5 * lean},
             {.7, k2, Lerp(c, ScreenPoint(b, .2, .5), .7), 29, 2.5 * lean}, end};
 }
-} // namespace
+}
 
 TravelPlan PlanTravel(const LayoutSnapshot& snap, const LayoutEdge& edge, const std::map<std::string, CameraPose, std::less<>>& cameras) {
     TravelPlan plan;
@@ -556,7 +556,7 @@ TravelPlan PlanTravel(const LayoutSnapshot& snap, const LayoutEdge& edge, const 
         if (problem.empty() && worst < kMinShare) { problem = "途中两台屏幕都离开画面"; }
         return worst;
     };
-    // 何かを通り抜けるか画面が外れるなら、少しずつ外へ広げる（後拉は横へ振る向きも試す）。
+    // 何かを通り抜けるか画面が外れるなら、少しずつ外へ広げる（引きの時は横へ振る向きも試す）。
     std::string lastProblem;
     for (const double spread : {1.0, 1.1, 1.2, 1.32, 1.45, 1.6}) {
         for (const double swing : plan.style == "pull" ? std::vector<double>{-20, 20, 0} : std::vector<double>{0}) {
@@ -573,10 +573,9 @@ TravelPlan PlanTravel(const LayoutSnapshot& snap, const LayoutEdge& edge, const 
 
 // ---- 書き込み ----
 namespace {
-// 演出の鍵の記録（鍵ごとに時刻・画角・参照・位置 3・回転 4 を小数 4 桁で並べた文字列）。自動で書いた直後の鍵を
-// 交界の autoHash 欄に残し、次の生成の前に今の鍵と比べて、作者が演出工作区で手を入れたかを見分ける。
-// 丸めた値の hash にしないのは、編集器が値を float で持つと丸めの境目で同じ鍵が別の hash になるため。比べる時は
-// 誤差を許す（KeysMatch）。
+// 演出のキーの記録（キーごとに時刻・画角・参照・位置 3・回転 4 を小数 4 桁で並べた文字列）。自動で書いた直後のキーを
+// 境界の autoHash 欄に残し、次の生成の前に今のキーと比べて、作者が手を入れたかを見分ける。
+// 丸めの境目で一致しなくならないよう、hash ではなく値を残して誤差を許して比べる（KeysMatch）。
 std::vector<double> KeyNumbers(const Json& keys) {
     std::vector<double> numbers;
     const auto number = [](const Json& value) { return value.is_number() ? value.get<double>() : 0.0; };
@@ -590,7 +589,7 @@ std::vector<double> KeyNumbers(const Json& keys) {
     }
     return numbers;
 }
-constexpr size_t kKeyNumbers = 10;   // 鍵一つの数（時刻・画角・参照・位置 3・回転 4）
+constexpr size_t kKeyNumbers = 10;   // キー一つの数（時刻・画角・参照・位置 3・回転 4）
 std::string KeySignature(const Json& keys) {
     std::string out;
     const auto numbers = KeyNumbers(keys);
@@ -601,8 +600,8 @@ std::string KeySignature(const Json& keys) {
     }
     return out;
 }
-// 記録と今の鍵が同じか（数の個数が同じで、どの値も 0.002 以内。回転は四元数の符号の反転も同じ回転とみなす）。
-// 記録が空・旧形式（読めない）なら「分からない」= false を返し、呼び出し側は作者の演出として残す。
+// 記録と今のキーが同じか（個数が同じで、どの値も 0.002 以内。四元数の符号の反転は同じ回転とみなす）。
+// 記録が空か読めない時は false を返し、呼び出し側は作者の演出として残す。
 bool KeysMatch(const std::string& recorded, const Json& keys) {
     std::vector<double> stored;
     for (size_t begin = 0; begin < recorded.size();) {
@@ -663,7 +662,7 @@ Json BuildSequence(const LayoutEdge& edge, const TravelPlan& plan, uint64_t came
                                 {"startTimeSeconds", 0.0}, {"transition", {{"durationSeconds", 0.0}, {"mode", "cut"}}}}}},
                      {"enabled", true}, {"id", 1}, {"type", "cameraCut"}}}}};
 }
-// 開いた演出の今の鍵（作者が演出工作区で直したかどうかを見るため）。
+// 開いた演出の今のキー（作者が直したかを見るため）。
 bool ReadSequenceKeys(EditorWorkspaceHostContext& ctx, const std::string& guid, Json& keys, std::string& error) {
     const auto opened = Execute(ctx, "authoring.session.open", {{"workspace", "cinematics"}, {"assetGuid", guid}});
     if (!opened.ok) { error = opened.error; return false; }
@@ -688,11 +687,11 @@ bool InScope(const LayoutSnapshot& snap, std::string_view regionId, std::string_
     const auto* area = snap.AreaOf(regionId);
     return area && area->name == areaName;
 }
-} // namespace
+}
 
 bool GenerateCameras(EditorWorkspaceHostContext& ctx, LayoutSnapshot& snap, std::string_view areaName, std::string_view onlyRegion,
                      bool force, GenerateReport& report, std::string& error) {
-    // 1. 机位の無い区域には机位を作る（自動の机位として以後は作り直せる）。
+    // 1. カメラの無い区域にはカメラを作る（自動のカメラとして以後は作り直せる）。
     bool created = false;
     for (auto& room : snap.rooms) {
         if (!room.placed || room.cameraId || !InScope(snap, room.regionId, areaName) || (!onlyRegion.empty() && room.regionId != onlyRegion)) { continue; }
@@ -708,7 +707,7 @@ bool GenerateCameras(EditorWorkspaceHostContext& ctx, LayoutSnapshot& snap, std:
         created = true;
     }
     if (created && !LoadLayout(ctx, snap, error)) { return false; }
-    // 2. 自動の机位だけを今の電視の配置から置き直す。作者が鎖定・調整した机位は残す（force の時だけ上書き）。
+    // 2. 自動のカメラだけを今のテレビの配置から置き直す。作者がロック・調整したカメラは残す（force の時だけ上書き）。
     Json commands = Json::array(), memos = Json::array();
     for (auto& room : snap.rooms) {
         if (!room.placed || !room.cameraId || !InScope(snap, room.regionId, areaName) || (!onlyRegion.empty() && room.regionId != onlyRegion)) { continue; }
@@ -748,8 +747,8 @@ bool GenerateTravels(EditorWorkspaceHostContext& ctx, LayoutSnapshot& snap, std:
         // 縦の辺（落下・跳躍）は大区域の外でも自動で流れるので、手動の演出は横の辺だけに作る。
         const auto* a = snap.Room(edge.a); const auto* b = snap.Room(edge.b);
         if (!a || !b || !a->cameraId || !b->cameraId) { report.notes.push_back(edge.a + " ↔ " + edge.b + "：缺少机位"); ++report.failed; continue; }
-        // 作者が演出工作区で直した演出は残す（保留、または自動の記録と今の鍵が違う）。記録が無い・読めない演出は、
-        // 誰が作ったか分からないので作者の物として残す（上書きは「恢复自动」だけ）。
+        // 作者が直した演出は残す（保留、または自動の記録と今のキーが違う）。記録が無い・読めない演出も、
+        // 作者の物として残す（上書きは自動に戻す時だけ）。
         if (!force && !edge.sequenceGuid.empty()) {
             if (edge.keepAuthored) { ++report.kept; continue; }
             Json keys; std::string readError;
@@ -767,7 +766,7 @@ bool GenerateTravels(EditorWorkspaceHostContext& ctx, LayoutSnapshot& snap, std:
         if (!plan.problem.empty()) { report.notes.push_back(edge.a + " ↔ " + edge.b + "：" + plan.problem); ++report.failed; continue; }
         const auto name = edge.a + " ↔ " + edge.b;
         const auto sequence = BuildSequence(edge, plan, a->cameraId, b->cameraId, name);
-        // 演出資産：既存なら開いて中身を差し替え、無ければ新しく作る（どちらも引擎の演出工作区の保存を通す）。
+        // 演出資産：既存なら開いて中身を差し替え、無ければ新しく作る（どちらもエンジンの演出ワークスペースで保存する）。
         std::string guid = edge.sequenceGuid;
         const auto opened = guid.empty() ? Execute(ctx, "cinematics.new_asset", Json::object()) : Execute(ctx, "cinematics.open_asset", {{"assetGuid", guid}});
         if (!opened.ok) {
@@ -785,7 +784,7 @@ bool GenerateTravels(EditorWorkspaceHostContext& ctx, LayoutSnapshot& snap, std:
         }
         Json keys; std::string readError;
         const auto hash = ReadSequenceKeys(ctx, guid, keys, readError) ? KeySignature(keys) : KeySignature(SequenceKeys(sequence));
-        // 交界の記録：無ければ作り、演出・速さ・自動の記録を書く。
+        // 境界の記録：無ければ作り、演出・速さ・自動の記録を書く。
         uint64_t object = edge.bindingObject, component = edge.bindingComponent;
         if (!object) {
             const auto created = Execute(ctx, "scene.create_empty_object", {{"name", "切换 " + name}});
@@ -803,7 +802,7 @@ bool GenerateTravels(EditorWorkspaceHostContext& ctx, LayoutSnapshot& snap, std:
                                      set("speed", Round(1 / seconds, 1e-4)), set("seconds", seconds), set("autoHash", hash)});
         commands.push_back(set("style", edge.style.empty() ? std::string("auto") : edge.style));
         commands.push_back(set("keepAuthored", edge.keepAuthored));
-        // 実行用カメラ（演出の Camera 槽）は既存の交界と同じ游戏カメラを使う。
+        // 実行用カメラ（演出の Camera スロット）は既存の境界と同じゲームカメラを使う。
         for (const auto& other : snap.edges) {
             if (other.bindingObject && other.bindingObject != object) {
                 std::string ignored;
@@ -858,7 +857,7 @@ bool CreateArea(EditorWorkspaceHostContext& ctx, const std::string& name, const 
 bool PruneInAreaBindings(EditorWorkspaceHostContext& ctx, const LayoutSnapshot& snap, int& removed, std::string& error) {
     removed = 0;
     for (const auto& edge : snap.edges) {
-        if ((edge.between && edge.passable) || !edge.bindingObject) { continue; }   // 大区域の中・壁で隔てた辺の結びは使われない
+        if ((edge.between && edge.passable) || !edge.bindingObject) { continue; }   // 大区域の中や壁で隔てた辺の結びは使われない
         const auto deleted = Execute(ctx, "scene.delete_object", {{"objectId", edge.bindingObject}});
         if (!deleted.ok) { error = deleted.error; return false; }
         ++removed;
@@ -883,7 +882,7 @@ bool EdgeTrialSpawn(const LayoutSnapshot& snap, const LayoutEdge& edge, bool fro
     const auto solid = [&](int cx, int cy) { return cx < 0 || cy < 0 || cx >= room->cols || cy >= room->rows || room->cells[static_cast<size_t>(cy * room->cols + cx)] == '1'; };
     roomObject = room->objectId;
     if (side == WorldSide::Left || side == WorldSide::Right) {
-        // 共有する行のうち、境界から 3〜6 格内側で、足元が埋まった空き格（歩いて境界を越えられる所）。
+        // 共有する行のうち、境界から 3〜6 マス内側で、足元が埋まった空きマス（歩いて境界を越えられる所）。
         for (int inset = 3; inset <= 6; ++inset) {
             const int cx = side == WorldSide::Right ? room->cols - 1 - inset : inset;
             for (int wy = static_cast<int>(edge.edge.overlapBegin); wy < static_cast<int>(edge.edge.overlapEnd); ++wy) {
@@ -893,7 +892,7 @@ bool EdgeTrialSpawn(const LayoutSnapshot& snap, const LayoutEdge& edge, bool fro
         }
         return false;
     }
-    // 上下の辺：共有する列のうち、境界の 2 格手前の空き格（空中から落ちる・跳び上がる）。
+    // 上下の辺：共有する列のうち、境界の 2 マス手前の空きマス（空中から落ちる・跳び上がる）。
     for (int wx = static_cast<int>(edge.edge.overlapBegin); wx < static_cast<int>(edge.edge.overlapEnd); ++wx) {
         const int cx = wx - room->worldX;
         const int cy = side == WorldSide::Bottom ? room->rows - 3 : 2;
@@ -901,4 +900,4 @@ bool EdgeTrialSpawn(const LayoutSnapshot& snap, const LayoutEdge& edge, bool fro
     }
     return false;
 }
-} // namespace TD2::Editor
+}

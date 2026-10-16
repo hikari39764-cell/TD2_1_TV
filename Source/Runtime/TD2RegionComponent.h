@@ -7,12 +7,12 @@
 
 namespace TD2 {
 
-// 唯一のシーン作者データ。Editor は公開 operation を通してこのプロパティを変更する。
+// シーン上の作者データ。エディタは公開の操作でこれを変える。
 class RegionComponent final : public HIKARI::IGameComponent {
 public:
     void DescribeProperties(HIKARI::PropertyFields& fields) override {
         fields.Text("regionId", "稳定区域 ID", region_.regionId);
-        // 縦長の大画面（竖井）などに合わせ、一台の TV は 128 格まで受け付ける。
+        // 縦穴などの縦長の画面に合わせ、一台 128 マスまで受け付ける。
         fields.Int("cols", "整数列数", region_.cols, 1, 128);
         fields.Int("rows", "整数行数", region_.rows, 1, 128);
         fields.Int("tilePixels", "每格逻辑像素", region_.tilePixels, 1, 1024);
@@ -20,8 +20,8 @@ public:
         fields.Float("spawnX", "出生点左上 X（格）", spawnX_, 0.0f, 64.0f);
         fields.Float("spawnY", "出生点左上 Y（格）", spawnY_, 0.0f, 64.0f);
         fields.SceneObject("cameraObject", "区域共享机位", cameraObject_);
-        // 編集器が机位を自動で置いた時の姿勢（"x y z rx ry rz"）。今の机位と違えば作者が手で調整したとみなし、
-        // 重新生成で上書きしない。空は作者が自分で置いた机位。
+        // エディタが自動で置いたカメラの姿勢（"x y z rx ry rz"）。今の姿勢と違えば手で調整したとみなし、
+        // 再生成で上書きしない。空なら作者が置いたカメラ。
         fields.Text("cameraAuto", "机位自动记录（自动）", cameraAuto_);
         fields.Bool("entryRegion", "初始可控制区块", entryRegion_);
         fields.Bool("worldPlaced", "已布置到世界", worldPlaced_);
@@ -30,14 +30,14 @@ public:
         DescribeLargeText(fields, "devices", "设备列表（每行一个）", devices_, 256u * 1024u);
         fields.SceneObject("screenObject", "屏幕模型对象", screen_.screenObject);
         fields.Text("screenSlot", "屏幕材质槽", screen_.screenSlot);
-        // 明るさは capture の画面専用材質だけへ適用し、テレビ筐体を変えない。
+        // 明るさは画面の材質だけに掛け、筐体は変えない。
         fields.Float("screenBrightness", "屏幕亮度", screen_.brightness, .5f, 4.0f);
-        // 公開 property operation の対象にするため常に記述する。専用工作区では自動解決し表示しない。
+        // 公開の操作で扱えるよう常に書き出す。専用の画面では自動で決めて表示しない。
         fields.Int("screenMaterialIndex", "屏幕材质索引（自动）", screen_.materialIndex);
         fields.Text("screenModelAssetGuid", "屏幕模型身份（自动）", screen_.modelAssetGuid);
-        // これはプロジェクトの初期編集範囲であり、SDK の受理寸法を保証する値ではない。
-        // 電視の局所での画面の中心と大きさ（m、縮尺前）。镜头が主角の画面上の位置と焦点を求めるのに使う。
-        // 布置の脚本が電視の型ごとに書く。既定値は ScreenKit の電視で一番多い型。
+        // プロジェクトでの編集範囲。SDK の上限ではない。
+        // テレビのローカルでの画面の中心と大きさ（m、縮尺前）。カメラの焦点などに使う。
+        // テレビのモデルから自動で入る。既定値は一番多い型。
         fields.Float("screenCenterX", "屏幕中心 X（局部）", screenGeometry_.centerX, -2, 2);
         fields.Float("screenCenterY", "屏幕中心 Y（局部）", screenGeometry_.centerY, -2, 4);
         fields.Float("screenCenterZ", "屏幕中心 Z（局部）", screenGeometry_.centerZ, -2, 2);
@@ -58,19 +58,19 @@ public:
     bool IsEntryRegion() const noexcept { return entryRegion_; }
     RegionPlacement Placement() const { return {region_.regionId, region_.cols, region_.rows, worldPlaced_, worldX_, worldY_}; }
     const ScreenConfiguration& Screen() const noexcept { return screen_; }
-    // 作者の地図と装置の解釈（編集中の電視の舞台が読む）。格・装置・寸法・出生点が変わった時だけ作り直す。
+    // 作者の地図と装置を解釈したもの（編集中の画面が読む）。変わった時だけ作り直す。
     const Rules::WorldDefinition& AuthoredDefinition();
 
 private:
     static void DescribeLargeText(HIKARI::PropertyFields& fields, std::string_view id,
                                   std::string_view label, std::string& value, size_t editableBytes) {
-        // Load/Save は SDK の可変長文字列に任せ、既存の長い保存値を固定容量で失わない。
+        // Load/Save は SDK の可変長文字列に任せ、長い値を切り詰めない。
         if (!fields.IsInspecting()) {
             fields.Text(id, label, value);
             return;
         }
-        // Inspect の既定追加容量 256 バイトでは一括編集が収まらない。
-        // 格は最大 64×64、装置は UTF-8 で 256 KiB と終端を確保する。既存値は切り詰めない。
+        // Inspector の既定の追加容量（256 バイト）では足りないので広げる。
+        // マスは最大 64×64、装置は 256 KiB まで。
         std::string buffer = value;
         buffer.resize((std::max)(value.size(), editableBytes) + 1u, '\0');
         if (fields.Text(id, label, HIKARI::GameProjectTextBuffer(buffer.data(), buffer.size()))) {
@@ -85,7 +85,7 @@ private:
     std::string cameraAuto_;
     ScreenGeometry screenGeometry_{};
     bool entryRegion_ = true;
-    // 未配置が既定。旧シーンを読み込んでも全テレビを原点へ重ねて参加させない。
+    // 既定は未配置。古いシーンでもテレビを原点に重ねない。
     bool worldPlaced_ = false;
     int worldX_ = 0, worldY_ = 0;
     std::string devices_;
@@ -95,4 +95,4 @@ private:
     } authored_;
 };
 
-} // namespace TD2
+}

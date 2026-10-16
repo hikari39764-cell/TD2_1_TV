@@ -13,25 +13,24 @@
 
 namespace TD2 {
 namespace {
-// 1 格の texel 数。清晰は 32（像素の描き方で 2×2 texel が一つのゲーム画素）、周りと未配置は 16。
+// 1 マスの texel 数。鮮明は 32（ピクセルの描き方では 2×2 texel が 1 ゲーム画素）、周りと未配置は 16。
 constexpr int kSharpTexelsPerCell = 32, kWideTexelsPerCell = 16, kGamePixelsPerCell = 16;
-// 可読性の保護を一度に掛けられる画面の数（引擎の kScreenReadabilityRegionCount と同じ）。画面が多く写る場面で上限を
-// 超えると、镜头が動くたびに守る画面が入れ替わって色調が跳ぶ。
+// 読みやすさの保護を一度に掛けられる画面の数（エンジンの kScreenReadabilityRegionCount と同じ）。
 constexpr size_t kMaxProtectedScreens = 12;
-// 周りの窓で世界全体を一枚に撮る時の 1 格の最低 texel。これを下回る大きな世界は、見えている所の周りだけを撮る。
+// 周りの窓で世界全体を撮る時の 1 マスの最低 texel。これを下回る大きな世界は、見えている所の周りだけを撮る。
 constexpr int kMinWorldTexelsPerCell = 8;
-// 演出の長さ（秒）。揺れと閃光は二乗で減衰し、瞬移の残像はこの時間で足元へ潰れて消える。
+// 演出の長さ（秒）。揺れと閃光は二乗で減衰し、瞬間移動の残像はこの時間で足元へ潰れて消える。
 constexpr double kShakeSeconds = 0.28, kFlashSeconds = 0.22, kSmearSeconds = 0.12;
-// 蹴り返しの残影を足元から刷り出す秒数（Rules の予告と同じ 0.16 秒）。回収の光跡が細って消える秒数。
+// 跳ね返りの残影を足元から現す秒数（ルールの予告と同じ 0.16 秒）と、回収の光跡が消える秒数。
 constexpr double kEchoPrintSeconds = 0.16, kRecallTrailSeconds = 0.2;
-// 特効は地形の正面より手前に置き、隠れないようにする。
+// エフェクトは地形の正面より手前に置き、隠れないようにする。
 constexpr double kFxDepth = 0.35;
 
 bool SameStyle(const ScreenStyleSettings& a, const ScreenStyleSettings& b) {
     return a.mode == b.mode && a.outline == b.outline && a.shadow == b.shadow && a.sketchDepth == b.sketchDepth &&
            a.brightness == b.brightness;
 }
-// 区域の屏幕亮度（旧 2D の既定 2.2）を基準 1 として描き方の明るさに掛ける。
+// 区域の画面の明るさ（既定 2.2）を基準 1 として描き方の明るさに掛ける。
 ScreenStyleSettings Effective(const StageRoom& room) {
     auto style = room.style;
     style.brightness = std::clamp(style.brightness * room.configuration.brightness / 2.2f, .0f, 4.0f);
@@ -40,7 +39,7 @@ ScreenStyleSettings Effective(const StageRoom& room) {
 HIKARI::GameProjectFloat3 Srgb(uint32_t hex) {
     return {((hex >> 16) & 255) / 255.f, ((hex >> 8) & 255) / 255.f, (hex & 255) / 255.f};
 }
-// 画面専用の描き方。色は ScreenKit07 の配色と同じ値（輪郭・紙・鉛筆・残影の菫）。長さはゲーム画素で、
+// 画面専用の描き方。色は ScreenKit07 の配色と同じ値。長さはゲーム画素で、
 // 1 ゲーム画素の texel 数（pixelSize）は窓の精細度から決まる。
 HIKARI::GameProjectSceneCaptureStyleDesc StyleDesc(const ScreenStyleSettings& style, int palette, float brightness, int density) {
     HIKARI::GameProjectSceneCaptureStyleDesc fx{};
@@ -49,12 +48,11 @@ HIKARI::GameProjectSceneCaptureStyleDesc StyleDesc(const ScreenStyleSettings& st
              : mode == ScreenStyleMode::Sketch   ? HIKARI::GameProjectSceneCaptureStyle::Sketch
                                                  : HIKARI::GameProjectSceneCaptureStyle::Pixel;
     fx.pixelSize = (std::max)(1.0f, static_cast<float>(density) / kGamePixelsPerCell);
-    // 素描の線の太さはゲーム画素で 1（清晰の 2 texel、周りの 1 texel）。texel で 1 にすると窓の密度ごとに線の太さが
-    // 倍違い、並んだ画面の描き方がそろわない。
+    // 素描の線の太さはゲーム画素で 1（鮮明は 2 texel、周りは 1 texel）。窓の密度が違っても線の太さをそろえる。
     fx.lineWidth = mode == ScreenStyleMode::Sketch ? 2.0f : std::clamp(style.outline, 0.0f, 4.0f);
-    // 素描では shadowStrength が纵深の強さ（落ち影・暗い面・接地・空気・外形の太さ）。0 で平らな草図。
+    // 素描では shadowStrength が奥行きの強さ。0 で平面的。
     fx.shadowStrength = std::clamp(mode == ScreenStyleMode::Sketch ? style.sketchDepth : style.shadow, 0.0f, 1.0f);
-    // 光は左上・手前から（試作の焼き込みと同じ向き）。足場から右へ半格、下へ 1 格の帯が奥の壁に落ちる。
+    // 光は左上・手前から。足場から右へ半マス、下へ 1 マスの影が奥の壁に落ちる。
     fx.shadowOffsetX = kGamePixelsPerCell * 0.5f;
     fx.shadowOffsetY = kGamePixelsPerCell * 1.0f;
     fx.backgroundLuminance = 0.035f;
@@ -62,11 +60,11 @@ HIKARI::GameProjectSceneCaptureStyleDesc StyleDesc(const ScreenStyleSettings& st
     const bool teal = palette == 1;
     fx.lineColor = mode == ScreenStyleMode::Sketch ? Srgb(teal ? 0xDDD8C4 : 0xDDD5C1) : Srgb(teal ? 0x061112 : 0x0B1218);
     fx.paperColor = Srgb(teal ? 0x0D2A2B : 0x1A2733);
-    // 残影の菫色。描き方はこの色相の鮮やかな物体を残影として横縞で抜く（主角の琥珀・危険の赤とは色相で分かれる）。
+    // 残影の菫色。この色相の鮮やかな物体を残影として横縞で描く（プレイヤーの琥珀・危険の赤とは色相で分かれる）。
     fx.accentColor = Srgb(0xA879F0);
     return fx;
 }
-// 事件の種類 → 特効の槽。
+// イベントの種類 → エフェクトのスロット。
 ScreenFxSlot SlotOf(ScreenEffectKind kind) {
     switch (kind) {
     case ScreenEffectKind::BlinkTrail: return ScreenFxSlot::Dash;
@@ -83,15 +81,15 @@ ScreenFxSlot SlotOf(ScreenEffectKind kind) {
     default: return ScreenFxSlot::Impact;
     }
 }
-// 初回再生の粒子配置は従来の seed を保つ。座標は再生済み判定には使わない。
+// 初回再生の粒子配置は従来の seed を保つ。座標は再生済みの判定には使わない。
 uint32_t FxRandomSeed(const ScreenEffect& e) {
     const auto& r = e.kind == ScreenEffectKind::BlinkTrail ? e.source : e.rect;
     const auto seed = std::to_string(static_cast<int>(e.kind)) + "/" + std::to_string(e.tick) + "/" +
            std::to_string(static_cast<long long>(std::lround(r.x * 64))) + "/" + std::to_string(static_cast<long long>(std::lround(r.y * 64)));
     return static_cast<uint32_t>(std::hash<std::string>{}(seed));
 }
-// 特効の置き方（格単位で作った資産へ舞台の 1 格の大きさを掛ける）。落地・復活・存档点は足元、ほかは体や装置の中心。
-// 瞬移は出発点の体の中心から +X を終点へ向け、X だけ実際の距離まで伸ばす。e は世界の格。
+// エフェクトの置き方（マス単位の資産に舞台の 1 マスの大きさを掛ける）。着地・復活・チェックポイントは足元、ほかは体や装置の中心。
+// 瞬間移動は出発点の体の中心から終点へ向け、X だけ実際の距離まで伸ばす。e は世界のマス。
 HIKARI::GameProjectTransform FxTransform(const ScreenEffect& e, const StageProjection& projection, double scale) {
     const auto& r = e.rect;
     const bool feet = e.kind == ScreenEffectKind::Land || e.kind == ScreenEffectKind::Respawn || e.kind == ScreenEffectKind::Checkpoint;
@@ -108,18 +106,18 @@ HIKARI::GameProjectTransform FxTransform(const ScreenEffect& e, const StageProje
     }
     return transform;
 }
-// 窓の捕捉の大きさを決める。行数はカメラの正交の高さ（格）で固定し、列数は捕捉の縦横比から求め直す
-// （切り出しの計算と実際に写る範囲を一致させる）。2048 texel を超える時は精細度を下げる。
+// 窓のキャプチャの大きさを決める。行数はカメラの正投影の高さ（マス）で固定し、列数は縦横比から求め直す。
+// 2048 texel を超える時は精細度を下げる。
 void FitWindow(double rows, double wantedCols, int density, double& outCols, int& outDensity, uint32_t& width, uint32_t& height) {
     const double limit = HIKARI::kGameProjectSceneCaptureMaximumExtent;
     outDensity = (std::max)(1, (std::min)(density, static_cast<int>(std::floor(limit / (std::max)(rows, wantedCols)))));
     height = static_cast<uint32_t>(std::clamp(std::lround(rows * outDensity), 1l, static_cast<long>(limit)));
-    // 行数はカメラの正交の高さで決まるので、窓の列数は幅と高さの比で決まる。高さを丸めた分だけ列が欲しい数を下回ると
-    // 両端の部屋が窓に入りきらず結ばれない（黒い画面）ので、幅は欲しい列数を必ず覆うよう切り上げる。
+    // 列数は幅と高さの比で決まる。丸めで列が足りないと両端の部屋が入らず黒い画面になるので、
+    // 幅は欲しい列数を必ず覆うよう切り上げる。
     width = static_cast<uint32_t>(std::clamp(static_cast<long>(std::ceil(wantedCols * height / rows - 1e-6)), 1l, static_cast<long>(limit)));
     outCols = rows * width / height;
 }
-} // namespace
+}
 
 void Screen3DStage::RestoreCamera(HIKARI::WorldView& world, StageCamera& camera) {
     if (camera.handle.IsValid()) {
@@ -146,7 +144,7 @@ bool Screen3DStage::Release(HIKARI::WorldView& world) {
     return true;
 }
 
-// 窓ごとに別の正交カメラを取る（同じ物体だと姿勢を奪い合う）。清晰は必須、周り・未配置は無ければその窓を描かない。
+// 窓ごとに別の正投影カメラを使う（同じ物体だと姿勢を奪い合う）。鮮明は必須、周り・未配置は無ければ描かない。
 bool Screen3DStage::AcquireCameras(HIKARI::WorldView& world, const ScreenStyleSettings& stage) {
     const uint64_t ids[kViewKinds]{stage.captureCameraObject, stage.wideCameraObject, stage.unplacedCameraObject};
     for (size_t kind = 0; kind < kViewKinds; ++kind) {
@@ -181,10 +179,9 @@ void Screen3DStage::PlaceWindows(const std::vector<const StageRoom*>& rooms, con
     const StageRoom* first = find(focus_[0]);
     if (!first) { first = find(frame.activeRegion); }
     if (!first) { for (const auto* room : rooms) { if (room->placed) { first = room; break; } } }
-    // 清晰：一部屋を中央に撮る。主窓は一番目立つ部屋、副窓（未配置の舞台カメラを Play の間だけ借りる）は二番目。
-    // 目立つ二台が同じ密度で写るので、切り替えの演出や落下で並んだ二台の画面の細かさがそろう。
-    // ここは Play の間だけ通る。未配置の作者地図は遊ぶ世界に入らず、Play では呈示側（ScreenPresenter）が部屋の一覧に
-    // 入れないので、未配置のカメラはいつでも副窓に使える。
+    // 鮮明：一部屋を中央に撮る。主窓は一番目立つ部屋、副窓（未配置用のカメラを Play 中だけ借りる）は二番目。
+    // 目立つ二台が同じ密度で写るので、並んだ二台の画面の細かさがそろう。
+    // Play 中は未配置の地図が世界に入らないので、未配置用のカメラはいつでも副窓に使える。
     const auto placeRoom = [&](ViewKind kind, const StageRoom* room) {
         const auto& camera = cameras_[static_cast<size_t>(kind)];
         if (!room || !camera.handle.IsValid()) { return; }
@@ -198,10 +195,9 @@ void Screen3DStage::PlaceWindows(const std::vector<const StageRoom*>& rooms, con
     };
     placeRoom(ViewKind::Sharp, first);
     if (const auto* second = find(focus_[1]); second && second != first) { placeRoom(ViewKind::Unplaced, second); }
-    // 周り：世界に置いた全部屋を一枚で撮る固定の窓（行数はカメラの正交の高さ）。窓を動かさないので、どの電視も Play の
-    // 間ずっと同じ捕捉の同じ場所に結ばれたままになる。動く窓では、窓に出入りする電視の結びを作る・解くたびに引擎が
-    // GPU の場景を作り直して画が止まり（1 回 20〜70 ms）、镜头に写っているのに窓の外で何も映らない電視も出た。
-    // 世界が大きすぎて 1 格 kMinWorldTexelsPerCell texel を保てない時だけ、見えている部屋の重心の周りの 3 部屋分を撮る。
+    // 周り：世界に置いた全部屋を一枚で撮る固定の窓。窓を動かさないので、どのテレビも Play 中ずっと同じ割り当てのまま
+    // （割り当てが変わるとエンジンが GPU のシーンを作り直して画が止まる）。
+    // 世界が大きすぎて 1 マス kMinWorldTexelsPerCell texel を保てない時だけ、見えている部屋の周りの 3 部屋分を撮る。
     const auto& wideCamera = cameras_[static_cast<size_t>(ViewKind::Wide)];
     if (!wideCamera.handle.IsValid()) { return; }
     auto& wide = windows_[static_cast<size_t>(ViewKind::Wide)];
@@ -220,8 +216,8 @@ void Screen3DStage::PlaceWindows(const std::vector<const StageRoom*>& rooms, con
         wide.valid = true;
         return;
     }
-    // 動く窓：中心は見えている部屋の重心（目立ち具合の重み）に一番近い部屋。今の中心は、重心が別の部屋の方へ部屋の
-    // 大きさの 1/4 以上近づくまで保つ。
+    // 動く窓：中心は見えている部屋の重心に一番近い部屋。重心が別の部屋の方へ部屋の大きさの 1/4 以上
+    // 近づくまで今の中心を保つ。
     const StageRoom* center = first;
     if (!seen_.empty() && first) {
         double sx = 0, sy = 0, sw = 0;
@@ -261,8 +257,8 @@ void Screen3DStage::PlaceEditorWindow(const std::vector<const StageRoom*>& rooms
         right = (std::max)(right, double(room->x) + room->Region().cols);
         bottom = (std::max)(bottom, double(room->y) + room->Region().rows);
     }
-    // 作者の並びと境界は保ち、舞台側の縮尺だけを調整する。実際の電視・カメラのレンズ・地図は変更しない。
-    // 全画面で共有する最大 2048^2 の捕捉なので、電視ごとに描画パスを増やさない。
+    // 作者の並びと境界は保ち、舞台側の縮尺だけを調整する。実際のテレビやカメラ、地図は変えない。
+    // 全画面で共有する最大 2048^2 のキャプチャなので、テレビごとに描画パスを増やさない。
     auto& window = windows_[static_cast<size_t>(ViewKind::Sharp)];
     const double cols = (std::max)(1.0, right - left), rows = (std::max)(1.0, bottom - top);
     const double density = (std::min)(double(kSharpTexelsPerCell),
@@ -271,7 +267,7 @@ void Screen3DStage::PlaceEditorWindow(const std::vector<const StageRoom*>& rooms
         double(HIKARI::kGameProjectSceneCaptureMinimumExtent), double(HIKARI::kGameProjectSceneCaptureMaximumExtent)));
     window.height = static_cast<uint32_t>(std::clamp(std::ceil(rows * density),
         double(HIKARI::kGameProjectSceneCaptureMinimumExtent), double(HIKARI::kGameProjectSceneCaptureMaximumExtent)));
-    // 丸めで区域の端が一列だけ窓の外へ落ちないよう、両軸を必ず覆う縦横比へ拡張する。
+    // 丸めで区域の端が窓の外へ落ちないよう、両軸を必ず覆う縦横比へ広げる。
     window.rows = (std::max)(rows, cols * window.height / window.width);
     window.cols = window.rows * window.width / window.height;
     window.x = left; window.y = top; window.valid = true;
@@ -286,7 +282,7 @@ void Screen3DStage::Render(HIKARI::WorldView& world, const std::vector<StageRoom
         const double age = now - start;
         return start < 0 || age < 0 || age >= seconds ? 0.0 : (1 - age / seconds) * (1 - age / seconds);
     };
-    // 1. 描ける部屋と、窓の大きさの目安（世界に置いた部屋の最大の格数）。
+    // 1. 描ける部屋と、窓の大きさの目安（世界に置いた部屋の最大のマス数）。
     std::vector<const StageRoom*> valid;
     int maxCols = 0, maxRows = 0;
     for (const auto& room : rooms) {
@@ -297,7 +293,7 @@ void Screen3DStage::Render(HIKARI::WorldView& world, const std::vector<StageRoom
     if (valid.empty() || !frame.snapshot) { Release(world); status_ = "3D显示已关闭或没有有效区域"; return; }
     if (!maxRows) for (const auto* room : valid) { maxCols = (std::max)(maxCols, room->Region().cols); maxRows = (std::max)(maxRows, room->Region().rows); }
 
-    // 2. 舞台カメラと写し方。1 格の舞台上の長さは、清晰カメラの正交の高さを 1 部屋分の行で割った値。
+    // 2. 舞台カメラと写し方。1 マスの舞台上の長さは、鮮明カメラの正投影の高さを 1 部屋分の行で割った値。
     if (!AcquireCameras(world, stage)) { return; }
     projection_.scale = cameras_[static_cast<size_t>(ViewKind::Sharp)].orthographicHeight / maxRows;
     projection_.pitch = std::clamp(static_cast<double>(stage.pitch), 0.0, kMaxStagePitchDegrees) * kPi / 180.0;
@@ -307,10 +303,10 @@ void Screen3DStage::Render(HIKARI::WorldView& world, const std::vector<StageRoom
     if (frame.authoring) { seen_.clear(); focus_ = {}; PlaceEditorWindow(valid); }
     else { Inspect(world, valid, frame); ChooseFocus(frame); PlaceWindows(valid, frame, maxCols); }
 
-    // 3. 電視ごとの窓（清晰を優先）。一部屋だけを撮る窓（Play の清晰二枚）にはその部屋だけを、残りは窓に収まる部屋を写す。
-    //    どの窓にも入らない部屋は描かず、舞台にも出さない。
-    //    窓を動かしたフレームに画面の切り出しも同じ窓で行う：引擎は捕捉を主描画より先に同じフレームで描くので、
-    //    切り出しを一フレーム遅らせると、窓を移した瞬間に別の部屋が一瞬映る。
+    // 3. テレビごとの窓（鮮明を優先）。一部屋だけを撮る窓（Play の鮮明二枚）にはその部屋だけを、残りは窓に収まる部屋を写す。
+    // どの窓にも入らない部屋は描かない。
+    // 切り出しは窓を動かしたフレームに同じ窓で行う（キャプチャは同じフレームで主描画より先に描かれるため、
+    // 遅らせると別の部屋が一瞬映る）。
     std::vector<Assigned> shown;
     for (const auto kind : {ViewKind::Sharp, ViewKind::Unplaced, ViewKind::Wide}) {
         const auto& window = WindowOf(kind);
@@ -323,7 +319,7 @@ void Screen3DStage::Render(HIKARI::WorldView& world, const std::vector<StageRoom
         }
     }
 
-    // 4. 舞台カメラ。画面の揺れは舞台カメラを画面の右・上へ小さくずらし、電視の中の絵だけを揺らす。
+    // 4. 舞台カメラ。画面の揺れは舞台カメラを右・上へ少しずらし、画面の中の絵だけを揺らす。
     double shakeX = 0, shakeY = 0;
     if (const double amplitude = shakeAmplitude_ * fade(shakeStart_, kShakeSeconds) * projection_.scale; amplitude > 0) {
         shakeX = (std::sin(now * 91.0) * .6 + std::sin(now * 53.0) * .4) * amplitude;
@@ -342,7 +338,7 @@ void Screen3DStage::Render(HIKARI::WorldView& world, const std::vector<StageRoom
         }
     }
 
-    // 5〜7. 捕捉と画面の結び、事件、部品、特効。
+    // 5〜7. キャプチャと画面の割り当て、イベント、部品、エフェクト。
     if (!SyncCaptures(world, shown, stage.palette, flashAmount_ * fade(flashStart_, kFlashSeconds))) { return; }
     if (!frame.authoring) { TraceFrame(); }
     if (frame.simulated) { worldEffects_.Observe(*frame.snapshot); } else { worldEffects_.Reset(); }
@@ -368,7 +364,7 @@ void Screen3DStage::Render(HIKARI::WorldView& world, const std::vector<StageRoom
 
 namespace {
 using F3 = HIKARI::GameProjectFloat3;
-// 四元数 q で v を回す（v' = v + 2w(q×v) + 2q×(q×v)）。inverse は共役で戻す。
+// 四元数 q で v を回す。inverse は共役で戻す。
 F3 Rotate(const HIKARI::GameProjectQuaternion& q, const F3& v, bool inverse) {
     const double w = q.w, x = inverse ? -q.x : q.x, y = inverse ? -q.y : q.y, z = inverse ? -q.z : q.z;
     const double cx = 2 * (y * v.z - z * v.y), cy = 2 * (z * v.x - x * v.z), cz = 2 * (x * v.y - y * v.x);
@@ -397,11 +393,11 @@ bool SegmentHitsBox(const F3& a, const F3& b, const double lo[3], const double h
     }
     return true;
 }
-// 游戏镜头の基底（前・右・上）と、画の半分の幅・高さの正接。点を画の座標（-1〜1）と奥行きへ移す。
+// ゲームカメラの基底（前・右・上）と、画の半分の幅・高さの正接。点を画の座標（-1〜1）と奥行きへ移す。
 struct ViewBasis {
     double eye[3]{}, f[3]{}, r[3]{}, u[3]{}, tx = 1, ty = 1;
     bool valid = false;
-    // 奥行き 0.05 より手前の点は 0.05 として写す（画の外へ大きく振れ、重なりの判定では広めに出る）。
+    // 奥行き 0.05 より手前の点は 0.05 として写す。
     std::pair<double, double> ToView(const F3& q, double* depth = nullptr) const {
         const double d[3]{q.x - eye[0], q.y - eye[1], q.z - eye[2]};
         const double raw = d[0] * f[0] + d[1] * f[1] + d[2] * f[2];
@@ -426,19 +422,19 @@ ViewBasis MakeBasis(const HIKARI::GameProjectCameraPose& pose) {
     b.valid = true;
     return b;
 }
-// 電視の筐体の見積もりの箱（局所・縮尺前）。画面の寸法から：縁を含めた幅、原点（筐体の下）から画面の上の縁の少し上まで、
-// 画面の正面から奥へ。
+// テレビの筐体の見積もりの箱（ローカル・縮尺前）。画面の寸法から、縁を含めた幅、筐体の下から画面の上の縁の少し上まで、
+// 画面の正面から奥まで。
 void BodyBox(const ScreenSurface& s, double lo[3], double hi[3]) {
     lo[0] = s.centerX - s.width * .65; lo[1] = 0; lo[2] = s.centerZ - s.width * .8;
     hi[0] = s.centerX + s.width * .65; hi[1] = s.centerY + s.height * .75; hi[2] = s.centerZ;
 }
-} // namespace
+}
 
 ScreenOnCamera ProjectScreen(const HIKARI::GameProjectCameraPose& pose, const HIKARI::GameProjectTransform& tv, const ScreenSurface& s) {
     ScreenOnCamera out;
     const auto basis = MakeBasis(pose);
     if (!basis.valid) { return out; }
-    // 向き：画面の法線（局所 +Z）と镜头への向きの余弦。裏向きはどこにも写らない扱い。
+    // 向き：画面の法線（ローカル +Z）とカメラへの向きの余弦。裏向きは写らない扱い。
     const auto center = ToWorld(tv, s.centerX, s.centerY, s.centerZ);
     const auto normal = Rotate(tv.rotation, {0, 0, 1}, false);
     const double ex = basis.eye[0] - center.x, ey = basis.eye[1] - center.y, ez = basis.eye[2] - center.z;
@@ -487,7 +483,7 @@ void Screen3DStage::Inspect(HIKARI::WorldView& world, const std::vector<const St
         const auto object = world.FindSceneObject(room->configuration.screenObject);
         if (room->placed && object.IsValid() && object.GetWorldTransform(tv)) { items.push_back({room, tv}); }
     }
-    // 画面の点から镜头への線が、他の電視の箱（筐体の見積もり。grow だけ太らせる）を通るか。
+    // 画面の点からカメラへの線が、他のテレビの箱（grow だけ太らせる）を通るか。
     const auto hidden = [&](const Item& item, double u, double v, double grow) {
         const auto& s = item.room->surface;
         const auto point = ToWorld(item.tv, s.centerX + u * s.width, s.centerY + v * s.height, s.centerZ);
@@ -516,9 +512,9 @@ void Screen3DStage::Inspect(HIKARI::WorldView& world, const std::vector<const St
 }
 
 void Screen3DStage::ChooseFocus(const StageFrame& frame) {
-    // 切り替えの演出の間は、出る部屋と入る部屋を清晰に保つ（道筋はどの瞬間もこの二台のどちらかが画の半分以上に入る
-    // ように作ってある）。镜头が大きく回る間に目立つ画面が替わるたびに清晰の窓を移すと、画面の細かさが行き来する。
-    // 今どちらかが入っている枠はそのまま、空いている方の枠へもう一部屋を入れる。
+    // 切り替え中は出る部屋と入る部屋を鮮明に保つ（経路はどの瞬間もどちらかが画の半分以上に入るように作ってある）。
+    // 目立つ画面が替わるたびに窓を移すと、画面の細かさが行き来する。
+    // 今入っている枠はそのまま、空いている枠へもう一部屋を入れる。
     if (!travel_[0].empty()) {
         auto next = focus_;
         for (const auto& id : travel_) {
@@ -529,7 +525,7 @@ void Screen3DStage::ChooseFocus(const StageFrame& frame) {
         focus_ = next;
         return;
     }
-    // 目立ち具合：画に占める割合を、遮られた分だけ割り引く。游戏镜头が無い時は操作中の部屋だけを清晰にする。
+    // 目立ち具合：画に占める割合を、遮られた分だけ割り引く。ゲームカメラが無い時は操作中の部屋だけを鮮明にする。
     const auto score = [&](std::string_view id) {
         const auto found = seen_.find(id);
         return found == seen_.end() ? 0.0 : found->second.view.coverage * (1 - found->second.blocked / 9.0);
@@ -539,9 +535,8 @@ void Screen3DStage::ChooseFocus(const StageFrame& frame) {
     std::vector<std::pair<double, std::string>> ranked;
     for (const auto& [id, seen] : seen_) { if (const double value = score(id); value > kVisible) { ranked.emplace_back(value, id); } }
     std::sort(ranked.begin(), ranked.end(), [](const auto& a, const auto& b) { return a.first > b.first; });
-    // 今の二部屋は保ち、外の部屋が弱い方の 1.3 倍を超えて写った時だけ入れ替える（見えなくなった部屋は 0 なので、
-    // 写っている部屋が来ればすぐ替わる）。空いた枠は大きい順に埋める。一度埋まった枠は空にしない：副窓の捕捉を
-    // 消して作り直すと、作り直した最初のフレームは画面が空になり点滅する。
+    // 今の二部屋は保ち、外の部屋が弱い方の 1.3 倍を超えて写った時だけ入れ替える。空いた枠は大きい順に埋め、
+    // 一度埋まった枠は空にしない（副窓のキャプチャを作り直すと最初のフレームが空になり点滅する）。
     auto next = focus_;
     for (const auto& [value, id] : ranked) {
         if (id == next[0] || id == next[1]) { continue; }
@@ -556,11 +551,10 @@ void Screen3DStage::ChooseFocus(const StageFrame& frame) {
 }
 
 void Screen3DStage::ChooseProtected(std::map<uint64_t, Binding>& next) const {
-    // 游戏镜头が無い時（編集中）は従来どおり全画面に掛ける（引擎が面積の大きい順に上限まで選ぶ）。
+    // ゲームカメラが無い時（編集中）は全画面に掛ける（エンジンが面積の大きい順に上限まで選ぶ）。
     if (seen_.empty()) { for (auto& [id, binding] : next) { binding.protect = true; } return; }
-    // 保護の有無で画面の見え方が大きく変わる（守らない画面は後処理で地が黒くなる）ので、写っている画面は全部守る。
-    // 他の電視などに一部が隠れていても守ってよい：引擎は保護を画素ごとに場景の深度で確かめ、画面の前にある物の上では
-    // 外す（前の電視の上に画面が透けない）。守る・外すが切り替わるのは画の外へ出る時と裏を向く時だけになる。
+    // 保護の有無で画面の見え方が大きく変わるので、写っている画面は全部守る。
+    // 一部が隠れていても守ってよい（エンジンが画素ごとに深度で確かめ、手前の物の上では外す）。
     const bool travelling = !travel_[0].empty();
     struct Candidate { uint64_t id; double coverage; bool was, travel; };
     std::vector<Candidate> eligible;
@@ -575,8 +569,8 @@ void Screen3DStage::ChooseProtected(std::map<uint64_t, Binding>& next) const {
         if (v.view.coverage <= 0 || v.view.facing <= .05) { continue; }
         eligible.push_back({id, v.view.coverage, was, travel});
     }
-    // 上限（kMaxProtectedScreens）を超える時だけ選ぶ：演出の間は出る部屋・入る部屋を先に、次に保っていた画面、残りは
-    // 大きい順。演出の外では、外の画面が選んだ中の最小の 1.6 倍を超えた時だけ入れ替える。
+    // 上限を超える時だけ選ぶ：演出中は出る部屋・入る部屋を先に、次に守っていた画面、残りは大きい順。
+    // 演出の外では、外の画面が選んだ中の最小の 1.6 倍を超えた時だけ入れ替える。
     std::sort(eligible.begin(), eligible.end(), [](const auto& a, const auto& b) {
         if (a.travel != b.travel) { return a.travel; }
         if (a.was != b.was) { return a.was; }
@@ -610,7 +604,7 @@ void Screen3DStage::TraceFrame() {
         if (old != traceRects_.end() && std::memcmp(&old->second, &binding.rect, sizeof(binding.rect)) != 0) { ++moved; }
         traceRects_[id] = binding.rect;
     }
-    // 保護が変わった画面ごとに理由を残す（遮り・裏向き・小さい・上限か待ち・窓から外れた）。
+    // 保護が変わった画面ごとに理由を記録する。
     std::map<std::string, bool, std::less<>> nowProtect;
     for (const auto& [id, binding] : bound_) { nowProtect[binding.regionId] = binding.protect; }
     for (const auto& [region, on] : nowProtect) {
@@ -629,7 +623,7 @@ void Screen3DStage::TraceFrame() {
     }
     traceProtect_ = std::move(nowProtect);
     for (const auto& p : protect) { state += p + " "; }
-    // 画に写っているのに結ばれていない画面（周りの窓から外れている）。
+    // 画に写っているのに割り当てのない画面（周りの窓から外れている）。
     state += "visibleUnbound=";
     for (const auto& [region, seen] : seen_) {
         const bool bound = std::any_of(bound_.begin(), bound_.end(), [&](const auto& item) { return item.second.regionId == region; });
@@ -646,7 +640,7 @@ void Screen3DStage::TraceFrame() {
 bool Screen3DStage::SyncCaptures(HIKARI::WorldView& world, const std::vector<Assigned>& screens, int palette, double flash) {
     const auto captures = world.GetSceneCapture();
     if (!captures.IsValid()) { status_ = "SceneCapture不可用"; return false; }
-    // 窓と描き方（屏幕亮度込み）の組ごとに捕捉一つ（清晰から順に、引擎の上限まで）。
+    // 窓と描き方（画面の明るさ込み）の組ごとにキャプチャを一つ作る（鮮明から順に、エンジンの上限まで）。
     std::vector<View> wanted;
     std::vector<int> viewOf(screens.size(), -1);
     for (size_t i = 0; i < screens.size(); ++i) {
@@ -658,8 +652,7 @@ bool Screen3DStage::SyncCaptures(HIKARI::WorldView& world, const std::vector<Ass
         }
         viewOf[i] = static_cast<int>(found - wanted.begin());
     }
-    // 今ある捕捉は同じ窓の種類のものを前から順に使い回し、描き方だけを差し替える。要らなくなった捕捉は消す
-    // （その結びは引擎が退役させる）。
+    // 今あるキャプチャは同じ種類の窓のものを前から順に使い回し、描き方だけを差し替える。要らなくなったものは消す。
     std::vector<bool> reused(views_.size(), false);
     for (auto& want : wanted) {
         for (size_t j = 0; j < views_.size(); ++j) {
@@ -679,14 +672,14 @@ bool Screen3DStage::SyncCaptures(HIKARI::WorldView& world, const std::vector<Ass
         const auto& window = WindowOf(view.kind);
         HIKARI::GameProjectSceneCaptureDesc desc{};
         desc.cameraObject = cameras_[static_cast<size_t>(view.kind)].handle; desc.width = window.width; desc.height = window.height;
-        // 特効（VFX）も舞台の一部として写す。
+        // エフェクト（VFX）も舞台の一部として写す。
         desc.flags = HIKARI::GameProjectSceneCaptureFlags(HIKARI::GameProjectSceneCaptureFlag::Enabled |
                                                           HIKARI::GameProjectSceneCaptureFlag::RenderVfx);
         if (!view.handle.IsValid()) {
             view.handle = captures.Create(desc);
             if (!view.handle.IsValid()) { status_ = "3D捕获创建失败（最多4个）"; return false; }
         } else if (view.width != desc.width || view.height != desc.height || view.camera != desc.cameraObject) {
-            // 大きさかカメラが変わった時だけ更新する（毎フレーム Update すると GPU 側の再検証が走る）。
+            // 大きさかカメラが変わった時だけ更新する（毎フレーム更新すると GPU 側の再検証が走る）。
             if (!captures.Update(view.handle, desc)) { status_ = "3D捕获更新失败"; return false; }
         }
         view.width = desc.width; view.height = desc.height; view.camera = desc.cameraObject;
@@ -696,8 +689,8 @@ bool Screen3DStage::SyncCaptures(HIKARI::WorldView& world, const std::vector<Ass
         if (!captures.SetStyle(view.handle, look)) { status_ = "屏幕风格提交失败，需要含SetStyle v2的新引擎"; return false; }
     }
 
-    // 画面の結び：変わった画面だけ結び直す（同じ物体・材質槽の結びは、別の捕捉へ移る時も引擎が差し替える）。
-    // 窓から外れた画面と、材質槽が変わった画面は先に解く。
+    // 画面の割り当て：変わった画面だけやり直す（同じ物体・材質スロットなら、別のキャプチャへ移る時もエンジンが差し替える）。
+    // 窓から外れた画面と、材質スロットが変わった画面は先に外す。
     std::map<uint64_t, Binding> next;
     for (size_t i = 0; i < screens.size(); ++i) {
         if (viewOf[i] < 0) { continue; }
@@ -711,7 +704,7 @@ bool Screen3DStage::SyncCaptures(HIKARI::WorldView& world, const std::vector<Ass
             static_cast<float>(r.cols / window.cols), static_cast<float>(r.rows / window.rows)};
         next[screen.GetHandle().value] = {screen.GetHandle(), view.handle, config.screenSlot, rect, false, room.regionId};
     }
-    // 保護は前のフレームに描いた镜头で測った見え方で選ぶ（1 フレームの遅れは入りと出の幅に収まる）。
+    // 保護は前のフレームのカメラで測った見え方で選ぶ。
     ChooseProtected(next);
     for (const auto& [id, old] : bound_) {
         const auto found = next.find(id);
@@ -742,7 +735,7 @@ void Screen3DStage::SubmitParts(HIKARI::WorldView& world, const std::vector<cons
         if (models.Submit(request)) { ++accepted_; submitted_.emplace_back(request.ownerObjectHandle, request.instanceId); }
         else { ++failed_; }
     };
-    // 世界の占有（格）：舞台に並べた全部屋の地図と、実体のある Solid 装置。部屋の無い所は埋まり扱い。
+    // 世界の占有（マス）：舞台に並べた全部屋の地図と、実体のある Solid 装置。部屋の無い所は埋まり扱い。
     const auto solidAt = [&](int wx, int wy) {
         for (const auto* room : rooms) {
             const auto& r = room->Region();
@@ -755,7 +748,7 @@ void Screen3DStage::SubmitParts(HIKARI::WorldView& world, const std::vector<cons
     std::map<std::string_view, const StageRoom*> byRegion;
     for (const auto& item : shown) { byRegion.emplace(item.room->regionId, item.room); }
 
-    // 背景と地形：部屋と周り 1 格の占有が変わった時だけ作り直し、毎フレームは作った要求をそのまま出す。
+    // 背景と地形：部屋と周り 1 マスの占有が変わった時だけ作り直し、毎フレームは作った要求をそのまま出す。
     std::vector<char> occupancy;
     for (const auto& item : shown) {
         const auto& room = *item.room; const auto& r = room.Region();
@@ -788,9 +781,9 @@ void Screen3DStage::SubmitParts(HIKARI::WorldView& world, const std::vector<cons
 
     // 装置と光線：描く部屋の装置だけ。状態で変わる部品は全部出し、表示だけを切り替える。
     // 通電・実体が変わった時刻は描かない部屋の装置も覚える（後で画面に入った時に古い変化を動かし直さない）。
-    // 編集中（模擬していない）は時刻が進まないので、動きを付けず最終の姿にする。
+    // 編集中は時刻が進まないので、動きを付けず最終の姿にする。
     for (const auto& device : snapshot.devices) {
-        // 弾簧は「使える（冷却が終わった）」の変化も覚える（満ちた瞬間に矢印を弾ませる）。
+        // バネは使えるようになった時刻も覚える（満ちた瞬間に矢印を弾ませる）。
         const bool ready = device.kind == Rules::DeviceKind::Spring && device.cooldown <= 0;
         auto [memory, fresh] = deviceMemory_.try_emplace(device.id, DeviceMemory{device.powered, device.solid, ready});
         if (!fresh && (memory->second.powered != device.powered || memory->second.solid != device.solid || memory->second.ready != ready)) {
@@ -808,13 +801,13 @@ void Screen3DStage::SubmitParts(HIKARI::WorldView& world, const std::vector<cons
         failed_ += builder.Failed();
     }
 
-    // 人物・残影・残影の予告・瞬移の残像：世界に一組ずつ（舞台カメラが持ち主）。部屋の境に立つ身体も一つで、
-    // 両側の電視の切り出しにそれぞれ写る。
+    // 人物・残影・予告・瞬間移動の残像：世界に一組ずつ（持ち主は舞台カメラ）。部屋の境に立つ体も一つで、
+    // 両側のテレビの切り出しにそれぞれ写る。
     StagePartBuilder global{projection_, palette, cameras_[static_cast<size_t>(ViewKind::Sharp)].handle.value, frameParts_};
     Rules::BodyState idle; idle.grounded = true;
     global.Actor(snapshot.player, snapshot.presentationPlayer, false, snapshot.realTime, snapshot.playerPresent);
-    // 残影：いる時はその姿。蹴り返しの予告中（まだいない）は、出る所で姿を足元から刷り出す（予告の 0.16 秒で全高、
-    // 生成の特効も同時に鳴る）。出る所が塞がって予告が長引く間は明滅させ、まだ実体が無いことを見せる。
+    // 残影：いる時はその姿。跳ね返りの予告中は、出る所で姿を足元から現す（0.16 秒で全高、
+    // 生成のエフェクトも同時に出る）。出る所が塞がって予告が長引く間は明滅させる。
     Rules::BodyState echoBody = snapshot.echo ? *snapshot.echo : idle;
     Rules::Rect echoRect = snapshot.echo ? snapshot.echo->rect : Rules::Rect{};
     bool echoShown = snapshot.echo.has_value();
@@ -825,14 +818,14 @@ void Screen3DStage::SubmitParts(HIKARI::WorldView& world, const std::vector<cons
         echoShown = snapshot.pendingEchoAge < kEchoPrintSeconds || std::fmod(snapshot.pendingEchoAge, .1) < .06;
     }
     global.Actor(echoBody, echoRect, true, snapshot.realTime, echoShown, echoGrow);
-    // 残影の印：残影（予告を含む）がいる間、主角の頭の上に菫の菱形を浮かべてゆっくり上下させる（空格で回収できる合図）。
-    // 残影が別の電視にいても主角の上で分かる。
+    // 残影の印：残影がいる間、プレイヤーの頭上に菫の菱形を浮かべる（スペースで回収できる合図）。
+    // 残影が別のテレビにいても分かる。
     global.Begin("echoMarker");
     const auto& body = snapshot.presentationPlayer;
     const bool marked = snapshot.playerPresent && !snapshot.player.dead && (snapshot.echo || snapshot.pendingEcho);
     if (marked) { global.Add("Echo_Marker", body.x + body.w * .5, body.y - .1 - .05 * (1 + std::sin(now * 4.0)), 1, 1, kActorDepth); }
     else { global.Add("Echo_Marker", kParkX, kParkY, 1, 1, kActorDepth, {}, -1, false); }
-    // 回収の光跡：残影がいた所から主角へ伸びる菫の棒が、尾を主角の方へ縮めながら細って消える（吸い込まれる向き）。
+    // 回収の光跡：残影がいた所からプレイヤーへ伸びる菫の棒が、プレイヤーの方へ縮みながら消える。
     const ScreenEffect* recall = nullptr;
     for (const auto& item : worldEffects_.Items()) {
         const double age = (now - item.born) / kRecallTrailSeconds;
@@ -849,8 +842,8 @@ void Screen3DStage::SubmitParts(HIKARI::WorldView& world, const std::vector<cons
     } else {
         global.Add("Echo_Streak", kParkX, kParkY, 1, 1, kActorDepth + .05, {}, 0, false);
     }
-    // 瞬移の残像：出発点と終点の間に主角の姿を二体、横に伸ばして置き、足元へ潰して消す。
-    // 左右の向きごとに二体ずつ常に出し、使う向きの二体だけを見せる。
+    // 瞬間移動の残像：出発点と終点の間にプレイヤーの姿を二体、横に伸ばして置き、足元へ潰して消す。
+    // 左右の向きごとに二体ずつ常に出し、使う向きだけを見せる。
     const ScreenEffect* trail = nullptr;
     if (smear) for (const auto& item : worldEffects_.Items()) {
         const double age = (now - item.born) / kSmearSeconds;
@@ -881,11 +874,11 @@ void Screen3DStage::PlayEffects(HIKARI::WorldView& world, const ScreenFxSettings
         const double age = now - start;
         return start < 0 || age < 0 || age >= seconds ? 0.0 : (1 - age / seconds) * (1 - age / seconds);
     };
-    // 描いている窓の中の事件だけを鳴らす（舞台は一続きなので、境の特効は両側の電視に写る）。
+    // 描いている窓の中のイベントだけを出す（境のエフェクトは両側のテレビに写る）。
     const auto drawn = [this](double x, double y) {
         return std::any_of(windows_.begin(), windows_.end(), [&](const Window& w) { return w.Contains(x, y, x, y); });
     };
-    // 新しい事件ごとに一度鳴らす。瞬移の伸びと主角への吸収は既存インスタンスの位置だけを更新する。
+    // 新しいイベントごとに一度出す。瞬間移動の伸びと吸い込みは既存のインスタンスの位置だけを更新する。
     std::vector<ActiveFx> next;
     for (const auto& item : worldEffects_.Items()) {
         if (item.kind == ScreenEffectKind::RecallTrail) { continue; }   // 光跡は部品で描く
@@ -895,12 +888,12 @@ void Screen3DStage::PlayEffects(HIKARI::WorldView& world, const ScreenFxSettings
         if (!fx.enabled || entry.asset.IsEmpty() || !drawn(anchor.x + anchor.w * .5, anchor.y + anchor.h * .5)) {
             if (found != activeFx_.end()) {
                 if (found->handle.IsValid()) { (void)vfx.Stop(found->handle); }
-                // 画面へ戻った時も同じ事件を再起動しない。未再生の事件だけは入場時に鳴らせる。
+                // 画面へ戻った時も同じイベントを再生し直さない。未再生のものだけは入った時に出せる。
                 next.push_back({item.id, {}});
             }
             continue;
         }
-        // 装置が切れる側は同じ特効を小さく鳴らす。
+        // 装置が切れる側は同じエフェクトを小さく出す。
         const double scale = fx.scale * entry.scale * (item.kind == ScreenEffectKind::DeviceSwitch && item.reversed ? .7 : 1.0);
         const auto transform = FxTransform(item, projection_, scale);
         if (found != activeFx_.end()) {
@@ -917,11 +910,11 @@ void Screen3DStage::PlayEffects(HIKARI::WorldView& world, const ScreenFxSettings
         request.randomSeed = FxRandomSeed(item); request.loopMode = HIKARI::GameProjectVfxLoopMode::OneShot;
         const auto handle = vfx.Play(request);
         if (handle.IsValid()) { next.push_back({item.id, handle}); } else { ++fxRejected_; }
-        // 演出：残っている揺れ・閃光より強い時だけ上書きする（弱い事件が強い演出を打ち消さない）。
+        // 演出：残っている揺れ・閃光より強い時だけ上書きする。
         const double shake = entry.shake * fx.shake, flash = entry.flash * fx.flash;
         if (shake > 0 && shake >= shakeAmplitude_ * fade(shakeStart_, kShakeSeconds)) { shakeAmplitude_ = shake; shakeStart_ = now; }
         if (flash > 0 && flash >= flashAmount_ * fade(flashStart_, kFlashSeconds)) { flashAmount_ = flash; flashStart_ = now; }
     }
     activeFx_ = std::move(next);
 }
-} // namespace TD2
+}

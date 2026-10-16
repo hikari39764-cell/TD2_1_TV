@@ -28,7 +28,7 @@ RegionPlacement Placement(const RegionSettings& s) {
     return {s.region.regionId, s.region.cols, s.region.rows, s.worldPlaced, s.worldX, s.worldY};
 }
 
-// Scene の作者データを共有する。二つの Workspace は同じ選択と未適用草稿を見る。
+// Scene の作者データを共有する。二つのワークスペースは同じ選択と草稿を見る。
 class MapModel {
 public:
     std::vector<RoomItem> rooms;
@@ -65,7 +65,7 @@ public:
         if (!Current()) { selected = rooms.empty() ? 0 : rooms.front().object.objectId; }
         ready = Current() != nullptr;
         if (ready) { draft = Current()->settings; devices.Load(draft.devices); }
-        // 他の面板が作る参照 camera や preview binding も Scene の保存状態に含める。
+        // 他のパネルが作るカメラ参照やプレビューの結びも保存状態に含める。
         const auto state = Execute(ctx, "editor.state", Json::object());
         if (state.ok) {
             const auto scene = state.data.find("scene");
@@ -102,7 +102,7 @@ public:
     }
     bool Commit(EditorWorkspaceHostContext& ctx) {
         auto* item = Current(); if (!ready || !item || !Dirty()) { return true; }
-        // Save や Workspace 切替でも、変更された画面の index は実モデルから再取得する。
+        // 保存やワークスペース切り替えの時も、画面の index は実際のモデルから取り直す。
         if (draft.screenObject != item->settings.screenObject || draft.screenSlot != item->settings.screenSlot) { ResolveScreenMaterial(ctx, draft, screenWarning); }
         if (const auto problem = Validate(draft); !problem.empty()) { error = problem; return false; }
         RegionTarget target; RegionSettings fresh;
@@ -110,7 +110,7 @@ public:
         if (target != item->target || fresh != item->settings) { error = "地图已被其他编辑更新；请撤回草稿并刷新"; return false; }
         Json changes = Json::array(); AppendRegionChanges(changes, target, fresh, draft);
         std::vector<RoomItem*> otherEntries;
-        // 開始テレビの変更も同じ undo に含め、複数の配置済み entry を残さない。
+        // 開始テレビの変更も同じ取り消しに含め、開始区域を二つ残さない。
         if (draft.entryRegion) for (auto& other : rooms) {
             if (other.object.objectId == selected || !other.settings.entryRegion) { continue; }
             RegionTarget otherTarget; RegionSettings otherFresh;
@@ -202,16 +202,16 @@ public:
     void DiscardChanges(EditorWorkspaceHostContext&) override { model_->Discard(); }
     EditorWorkspaceCloseDisposition QueryClose(EditorWorkspaceCloseReason) const override { return IsDirty() ? EditorWorkspaceCloseDisposition::RequiresSave : EditorWorkspaceCloseDisposition::Allow; }
 protected:
-    // Workspace 切替はメモリへ適用するだけ。明示 Save の永続化とは分離する。
+    // ワークスペースの切り替えはメモリへ適用するだけ。ディスクへの保存とは別。
     virtual bool ApplyDraft(EditorWorkspaceHostContext& ctx) { return model_->Commit(ctx); }
     bool MapPanelReady() {
-        // 初回だけ原生 viewport の生成を先行させる。以後の再入場で作者の tab 選択を変えない。
+        // 初回だけ標準のビューポートを先に作る。以後は作者のタブ選択を変えない。
         if (centerWarmupFrames_ > 0) { --centerWarmupFrames_; return false; }
         centerCreated_ = true; return true;
     }
     void SaveControls(EditorWorkspaceHostContext& ctx, std::string_view controlId = "td2.map.save") {
         auto& ui = *ctx.ui;
-        // 作者の明示保存だけが Scene をディスクへ書く。筆刷やドラッグでは書かない。
+        // 作者が保存した時だけ Scene をディスクへ書く。ブラシやドラッグでは書かない。
         if (ui.Button(controlId, "保存场景")) { Save(ctx); }
         ui.SameLine(); ui.Text(IsDirty() ? "草稿未应用" : model_->sceneDirty ? "已应用 · 未保存" : model_->savedOnce ? "已保存" : "已载入");
     }
@@ -219,7 +219,7 @@ protected:
         auto& ui = *ctx.ui;
         if (ui.Button("td2.map.switch", otherName)) { if (ApplyDraft(ctx)) { ctx.commands->RequestActivateWorkspace(otherId); } }
         ui.SameLine();
-        // 撤销・重做の前に未適用の草稿は適用する（作者に「先に応用」を求めない）。
+        // 取り消し・やり直しの前に草稿を適用する。
         if (ui.Button("td2.map.undo", "撤销")) { if (!IsDirty() || ApplyDraft(ctx)) { model_->History(ctx, false); } }
         ui.SameLine();
         if (ui.Button("td2.map.redo", "重做")) { if (!IsDirty() || ApplyDraft(ctx)) { model_->History(ctx, true); } }
@@ -253,7 +253,7 @@ protected:
     int centerWarmupFrames_ = 0;
 };
 
-// テレビ単位の作者編集。実行状態や通路マーカーを持たない。
+// テレビ単位の作者編集。実行時の状態は持たない。
 class TelevisionMapWorkspace final : public MapWorkspace {
 public:
     using MapWorkspace::MapWorkspace;
@@ -270,7 +270,7 @@ public:
         DrawList(ctx);
         if (MapPanelReady()) {
             if (ui.BeginPanel("td2.television.canvas.panel.v5", "电视地图", nullptr, EditorWorkspaceDockRegion::Center)) {
-                // Toolbar dock は宿主の既定レイアウトで隠れるため、作者操作を主 Canvas の上に置く。
+                // ツールバーのドックは既定のレイアウトで隠れるので、操作はメインキャンバスの上に置く。
                 HistoryToolbar(ctx, kWorldWorkspace, "世界地图");
                 ui.SameLine(); SaveControls(ctx);
                 ui.Separator();
@@ -383,7 +383,7 @@ private:
         const auto a = view_.Screen(static_cast<float>(d->x), static_cast<float>(d->y));
         const auto b = view_.Screen(static_cast<float>(d->x + d->w), static_cast<float>(d->y + d->h));
         const auto points = Handles(a, b);
-        // 縮小した薄い装置では複数手柄が近い。最短距離を採用して方向を安定させる。
+        // 縮小した薄い装置ではハンドルが近いので、一番近いものを選んで向きを安定させる。
         int hit = -1; float closest = 81;
         for (size_t i = 0; i < points.size(); ++i) {
             const float dx = screen.x - points[i].x, dy = screen.y - points[i].y, distance = dx * dx + dy * dy;
@@ -577,7 +577,7 @@ private:
                 double brightness = s.screenBrightness;
                 if (EditFloat(ui, "td2.television.screen.brightness", "屏幕亮度", brightness, .5f, 4.0f)) { s.screenBrightness = static_cast<float>(brightness); }
                 if (ui.Button("td2.television.screen.style", "屏幕风格（原生属性）")) {
-                    // 原生 Inspector への明示的な入口だけを置く。共有舞台の設定や演出カメラを複製しない。
+                    // 標準の Inspector への入口だけを置く。共有の設定や演出カメラは複製しない。
                     std::vector<SceneItem> styles;
                     if (QueryObjects(ctx, "TD2.ScreenStyle", styles, model_->error)) {
                         const auto own = std::find_if(styles.begin(), styles.end(), [&](const auto& item) { return item.objectId == model_->selected || item.objectId == s.screenObject; });
@@ -604,13 +604,13 @@ private:
                 if (!model_->screenWarning.empty()) { ui.Text(model_->screenWarning); }
             }
         }
-        // 数値ドラッグも連続フレームを草稿に集め、編集終了で一回だけコミットする。
+        // 数値のドラッグも草稿に集め、編集の終わりに一回だけ確定する。
         if (s != before) { propertyPending_ = true; }
         if (propertyPending_ && !model_->gesture && !ui.GetInteraction().editing) { model_->Commit(ctx); propertyPending_ = false; }
     }
     void RefreshScreens(EditorWorkspaceHostContext& ctx) {
         screens_.clear(); uint64_t offset = 0;
-        // 初期候補は実モデルを持つ物体に絞る。全 Scene の灯光・記録物体で保存欄を押し出さない。
+        // 初期の候補はモデルを持つ物体に絞る（灯や記録用の物体で保存欄を押し出さない）。
         for (int page = 0; page < 256; ++page) {
             const auto result = Execute(ctx, "scene.objects.query", {{"detail", true}, {"offset", offset}, {"limit", 128}});
             if (!result.ok) { model_->error = result.error; return; }
@@ -644,7 +644,7 @@ private:
 struct EdgeSelection { uint64_t a = 0, b = 0; SharedWorldEdge edge; };
 struct SequenceAsset { std::string guid, name; std::vector<std::string> slots; bool slotsKnown = false; };
 
-// 世界地図は既存テレビの整数原点だけを編集し、入口や着地点を生成しない。
+// 世界地図は既存テレビの整数原点だけを編集する。
 class WorldMapWorkspace final : public MapWorkspace {
 public:
     using MapWorkspace::MapWorkspace;
@@ -664,10 +664,10 @@ public:
         DrawLibrary(ctx);
         if (MapPanelReady()) {
             if (ui.BeginPanel("td2.world.canvas.panel.v5", "世界地图", nullptr, EditorWorkspaceDockRegion::Center)) {
-                // リスト→主 Canvas の順は drag の入力集約を保つ。操作ボタンも見える Center に置く。
+                // 一覧→メインキャンバスの順でドラッグの入力をまとめる。操作ボタンも見える中央に置く。
                 HistoryToolbar(ctx, kTelevisionWorkspace, "编辑电视");
                 ui.SameLine(); SaveControls(ctx);
-                // 三つの見方：布局（電視を世界に並べる）・镜头大区域（大区域を塗り分ける）・俯视镜头（机位と道筋を上から見る）。
+                // 三つの見方：配置（テレビを世界に並べる）・カメラ大区域（大区域を塗り分ける）・俯瞰カメラ（カメラと経路を上から見る）。
                 constexpr std::array<std::string_view, 3> modes{"布局", "镜头大区域", "俯视镜头"};
                 for (size_t i = 0; i < modes.size(); ++i) {
                     ui.SameLine();
@@ -680,7 +680,7 @@ public:
                 } else if (mode_ == 1) {
                     ui.Text(areaFocus_.empty() ? "在右栏选择或新建一个大区域，再点击电视加入 / 移出" : "点击电视加入或移出「" + areaFocus_ + "」");
                 }
-                // 試遊の拒否は右欄だけに隠さず、click した主画布にも理由を残す。
+                // 試遊できない理由は右欄だけでなく、クリックしたキャンバスにも出す。
                 if (!model_->error.empty()) { ui.Text(model_->error); }
                 if (mode_ != 0) { EnsureLayout(ctx); }
                 if (mode_ == 2) { DrawPlan(ctx); } else { DrawCanvas(ctx); }
@@ -695,7 +695,7 @@ private:
         sequenceDraft_ = false; return MapWorkspace::ApplyDraft(ctx);
     }
     bool LeaveSequence(EditorWorkspaceHostContext& ctx) {
-        // 文脈変更で草稿を黙って破棄しない。無効な草稿は右欄で撤回できるよう選択を維持する。
+        // 文脈が変わっても草稿は捨てない。無効な草稿は右欄で取り消せるよう選択を保つ。
         if (sequenceDraft_ && pendingBinding_ != observedBinding_ && !WriteBinding(ctx, pendingBinding_)) { return false; }
         sequenceDraft_ = false; edge_ = {}; picker_ = 0; bindingRefresh_ = true; return true;
     }
@@ -802,14 +802,14 @@ private:
                 }
             }
             if ((moving_ || libraryDrag_) && model_->ready) {
-                // source active は target hover を抑制する。常時返る局所 pointer でプレビュー範囲を判定する。
+                // ドラッグ元が動いている間は落とし先のホバーを抑える。プレビュー範囲はローカルのポインタで判定する。
                 if (moving_ || geometricInside) {
                     model_->draft.worldPlaced = true;
                     constexpr float limit = 1000000;
                     model_->draft.worldX = static_cast<int>(std::round(std::clamp(p.x - offset_.x, -limit, limit)));
                     model_->draft.worldY = static_cast<int>(std::round(std::clamp(p.y - offset_.y, -limit, limit)));
                 }
-                // source を先に描き、target の drop を処理してから全 Canvas の終了を判定する。
+                // ドラッグ元を先に描き、落とし先の処理の後で終了を判定する。
                 if (dragReleasedAny_ || (!dragHeldAny_ && !dragPressedAny_)) {
                     const bool accept = moving_ || geometricInside;
                     moving_ = false; libraryDrag_ = false;
@@ -858,7 +858,7 @@ private:
         ui.EndCanvas();
         if (!pickingStart_ && !model_->gesture && !ui.GetInteraction().editing && ui.GetInteraction().deletePressed && edge_.a == 0 && model_->ready) { model_->draft.worldPlaced = false; model_->Commit(ctx); }
     }
-    // 配置の drag と試遊の click を排他的に扱う。マウスは人物の足元中央を指し、半格へ丸めない。
+    // 配置のドラッグと試遊のクリックは排他的に扱う。マウスは人物の足元中央を指し、半マスへ丸めない。
     void DrawSpawnPicker(EditorWorkspaceHostContext& ctx, const EditorWorkspaceCanvasInput& input, EditorWorkspacePoint point) {
         if (!pickingStart_ || !input.hovered || view_.panning) { return; }
         if (input.pressedButtons & kSecondary) { pickingStart_ = false; return; }
@@ -867,7 +867,7 @@ private:
             if (!ContainsWorldPoint(Placement(s), {point.x, point.y})) { continue; }
             const PreviewSpawn spawn{double(point.x) - s.worldX - .3125, double(point.y) - s.worldY - .875};
             bool clear = spawn.x >= 0 && spawn.y >= 0 && spawn.x + .625 <= s.region.cols && spawn.y + .875 <= s.region.rows;
-            // 壁内は赤い枠で示し、勝手に別の空位へ移さない。空中・机关の近くは作者が自由に指定する。
+            // 壁の中は赤い枠で示し、別の場所へは移さない。空中や仕掛けの近くは自由に指定できる。
             if (clear && ValidateRegion(s.region).valid) {
                 for (int y = static_cast<int>(std::floor(spawn.y)); y < static_cast<int>(std::ceil(spawn.y + .875)); ++y)
                     for (int x = static_cast<int>(std::floor(spawn.x)); x < static_cast<int>(std::ceil(spawn.x + .625)); ++x)
@@ -892,7 +892,7 @@ private:
         }
     }
     void DrawProperties(EditorWorkspaceHostContext& ctx);
-    // ---- 镜头（机位・大区域・切り替え演出）の作者編集 ----
+    // ---- カメラ（区域カメラ・大区域・切り替え演出）の作者編集 ----
     void SetMode(EditorWorkspaceHostContext& ctx, int mode) {
         if (mode == mode_) { return; }
         if (!LeaveSequence(ctx) || !ApplyDraft(ctx)) { return; }
@@ -900,13 +900,13 @@ private:
     }
     bool EnsureLayout(EditorWorkspaceHostContext& ctx, bool force = false) {
         layoutClock_ += ctx.unscaledDeltaSeconds;
-        // 他の操作（撤销・原生の検視面板など）の変更も拾うよう、見ている間は時々読み直す。
+        // 他の操作（取り消しや標準の Inspector など）の変更も拾うよう、見ている間は時々読み直す。
         if (!force && !layoutStale_ && layoutRevision_ == model_->revision && layoutClock_ < 2.f) { return layoutValid_; }
         layoutClock_ = 0; layoutStale_ = false; layoutRevision_ = model_->revision;
         std::string error;
         layoutValid_ = LoadLayout(ctx, layout_, error);
         if (!layoutValid_) { model_->error = error; return false; }
-        // 俯视图の切り替えの道筋（今の机位から）。
+        // 俯瞰図の切り替えの経路（今のカメラ位置から）。
         planPaths_.clear();
         std::map<std::string, CameraPose, std::less<>> cameras;
         for (const auto& room : layout_.rooms) { if (room.cameraId) { cameras[room.regionId] = CurrentCameraPose(room); } }
@@ -951,7 +951,7 @@ private:
             ui.CanvasCircle({(a.x + b.x) * .5f, (a.y + b.y) * .5f}, 4.5f, color, 2.0f);
             return;
         }
-        // 大区域の中：点線（镜头は自動で追従し、演出は流れない）。
+        // 大区域の中：点線（カメラは自動で追従し、演出は流れない）。
         const float dx = b.x - a.x, dy = b.y - a.y, length = std::hypot(dx, dy);
         for (float t = 0; t < length; t += 10) {
             const float t1 = (std::min)(t + 5, length);
@@ -963,8 +963,8 @@ private:
                   (report.failed ? "，失败 " + std::to_string(report.failed) : std::string());
         for (size_t i = 0; i < report.notes.size() && i < 6; ++i) { report_ += "\n· " + report.notes[i]; }
     }
-    // 生成は途中で layout_ を何度も読み直す（中の配列は作り直される）。呼び出し側は layout_ を指す名前・ポインタを
-    // 渡すことがあるので、最初に値で写してから読み直す。呼び出し側も生成の後は layout_ を指すものを使わずに戻ること。
+    // 生成は途中で layout_ を何度も読み直す。呼び手が layout_ の中を指す名前を渡すことがあるので、先に値で写す。
+    // 呼び手も生成の後は layout_ の中を指すものを使わずに戻ること。
     void Generate(EditorWorkspaceHostContext& ctx, bool cameras, bool travels, std::string_view areaName, std::string_view roomId,
                   const LayoutEdge* onlyEdge, bool force) {
         const std::string area(areaName), room(roomId);
@@ -972,7 +972,7 @@ private:
         const LayoutEdge* edge = edgeCopy ? &*edgeCopy : nullptr;
         if (!ApplyDraft(ctx) || !EnsureLayout(ctx, true)) { return; }
         std::string error; GenerateReport cameraReport, travelReport;
-        // 画面の寸法は電視の型から自動で決める（作者が入力しなくてよい）。
+        // 画面の寸法はテレビの型から自動で決める。
         if (!SyncScreenGeometry(ctx, layout_, cameraReport, error)) { model_->error = error; return; }
         cameraReport = {};
         if (cameras && !GenerateCameras(ctx, layout_, area, room, force, cameraReport, error)) { model_->error = error; return; }
@@ -988,7 +988,7 @@ private:
         if (!EnsureLayout(ctx, true)) { return; }
         const auto focus = std::find_if(layout_.areas.begin(), layout_.areas.end(), [this](const auto& a) { return a.name == areaFocus_; });
         if (focus == layout_.areas.end()) { model_->error = "先在右栏选择一个大区域"; return; }
-        // 選んだ大区域に入っていれば外し、入っていなければ入れる（他の大区域からは外す）。一つの撤销にまとめる。
+        // 選んだ大区域に入っていれば外し、入っていなければ入れる（他の大区域からは外す）。一回の取り消しにまとめる。
         Json commands = Json::array();
         const bool inside = std::find(focus->regions.begin(), focus->regions.end(), regionId) != focus->regions.end();
         for (const auto& area : layout_.areas) {
@@ -1020,7 +1020,7 @@ private:
             const auto name = "镜头大区域 " + std::to_string(layout_.areas.size() + 1);
             if (CreateArea(ctx, name, {}, error)) { areaFocus_ = name; layoutStale_ = true; model_->sceneDirty = true; } else { model_->error = error; }
         }
-        // 大区域に入っていない電視は、それぞれ一台だけの大区域として扱う（出入りに演出が流れる）。
+        // 大区域に入っていないテレビは、一台だけの大区域として扱う（出入りに演出が流れる）。
         int loose = 0;
         for (const auto& room : layout_.rooms) { if (room.placed && AreaIndex(room.regionId) < 0) { ++loose; } }
         if (loose) { ui.Text(std::to_string(loose) + " 台电视不属于任何大区域"); }
@@ -1032,7 +1032,7 @@ private:
                 const auto selected = Execute(ctx, "scene.object.select", {{"objectId", focus->objectId}});
                 if (!selected.ok) { model_->error = selected.error; }
             }
-            // 机位の構図：画面の占める高さ・出口の側へ斜めに撮る角度・画面より上げる高さ。変えたら「生成机位」で反映。
+            // カメラの構図：画面の占める高さ・出口側へ斜めに撮る角度・画面より上げる高さ。変えたらカメラの生成で反映する。
             double fill = focus->frameFill, orbit = focus->orbitDegrees, lift = focus->cameraLift;
             bool changed = EditFloat(ui, "td2.world.area.fill", "屏幕占画面高度", fill, .15f, .8f);
             changed |= EditFloat(ui, "td2.world.area.orbit", "向出口侧斜拍（度）", orbit, 0, 40);
@@ -1065,7 +1065,7 @@ private:
         EnsureLayout(ctx);
         const auto* room = layoutValid_ ? layout_.Room(regionId) : nullptr;
         if (room) {
-            // 状態：自動（重新生成で置き直す）・已手调 / 作者放置（残す）・已锁定（編集器で鎖定した物体）。
+            // 状態：自動（再生成で置き直す）・手で調整済み／作者が置いた（残す）・ロック済み。
             const std::string state = !room->cameraId ? "没有机位" : room->cameraLocked ? "已锁定 · 重新生成时保留"
                 : room->cameraAuto.empty() ? "作者放置 · 重新生成时保留" : CameraEdited(*room) ? "已手调 · 重新生成时保留" : "自动";
             ui.Text(state);
@@ -1100,7 +1100,7 @@ private:
         } else {
             ui.Text(edge->sequenceGuid.empty() ? "大区域交界 · 尚未生成演出" : edge->keepAuthored ? "大区域交界 · 保留手调" : "大区域交界 · 演出");
             ui.Text(ShortChoiceLabel(edge->a, 12) + " → " + ShortChoiceLabel(edge->b, 12));
-            // 様式（选择即生效，按「生成」后写入演出）。
+            // 様式（選ぶとすぐ反映し、生成の時に演出へ書く）。
             bool changed = false;
             for (const auto& style : TravelStyles()) {
                 const bool current = edgeDraft_.style == style.id;
@@ -1146,13 +1146,13 @@ private:
         const auto started = Execute(ctx, "play.preview", {{"spawnPointId", EncodePreviewSpawn({x, y})}, {"userData", room}});
         model_->error = started.ok ? std::string{} : started.error;
     }
-    // 俯视图：电视（色は大区域）・画面の向き・区域机位（视锥）・大区域どうしの切り替えの道筋・障碍物を上から見る。
+    // 俯瞰図：テレビ（色は大区域）・画面の向き・区域カメラ（視錐）・大区域間の経路・障害物を上から見る。
     void DrawPlan(EditorWorkspaceHostContext& ctx) {
         auto& ui = *ctx.ui;
         const auto input = ui.BeginCanvas("td2.world.plan", 640);
         if (input.size.x > 0 && input.size.y > 0 && layoutValid_) {
             ui.CanvasFill({0, 0}, input.size, {.06f, .08f, .09f, 1});
-            // 範囲：電視と机位の外接（xz）。
+            // 範囲：テレビとカメラの外接（xz）。
             double x0 = 1e9, z0 = 1e9, x1 = -1e9, z1 = -1e9;
             const auto grow = [&](const Vec3& p) { x0 = (std::min)(x0, p[0]); x1 = (std::max)(x1, p[0]); z0 = (std::min)(z0, p[2]); z1 = (std::max)(z1, p[2]); };
             for (const auto& r : layout_.rooms) { if (r.placed) { grow(r.tv.position); if (r.cameraId) { grow(r.camera.position); } } }
@@ -1160,7 +1160,7 @@ private:
             const double margin = 1.5; x0 -= margin; x1 += margin; z0 -= margin; z1 += margin;
             const double scale = (std::min)(input.size.x / (x1 - x0), input.size.y / (z1 - z0));
             const double ox = (input.size.x - (x1 - x0) * scale) * .5, oy = (input.size.y - (z1 - z0) * scale) * .5;
-            // 上から見る：+x を右、-z を上（電視が +z を向くと画の下を向く）。
+            // 上から見る：+x を右、-z を上（+z を向くテレビは画の下を向く）。
             const auto P = [&](double x, double z) { return EditorWorkspacePoint{static_cast<float>(ox + (x - x0) * scale), static_cast<float>(oy + (z1 - z) * scale)}; };
             for (const auto& box : layout_.obstacles) {
                 if (box.hi[0] < x0 || box.lo[0] > x1 || box.hi[2] < z0 || box.lo[2] > z1 || box.hi[1] < .2) { continue; }
@@ -1240,7 +1240,7 @@ private:
     RegionTarget bindingTarget_;
     RegionSequenceBinding binding_;
     RegionSequenceBinding observedBinding_;
-    // 初回も保存前に slot と camera を選べる。Scene の確認値とは分けて保持する。
+    // 初回も保存前にスロットとカメラを選べる。Scene の値とは分けて持つ。
     RegionSequenceBinding pendingBinding_, pendingObserved_;
     RegionTarget pendingTarget_;
     bool sequenceDraft_ = false;
@@ -1255,7 +1255,7 @@ private:
 void WorldMapWorkspace::RefreshAssets(EditorWorkspaceHostContext& ctx) {
     assetsRefresh_ = false; assets_.clear(); cameras_.clear();
     uint64_t offset = 0;
-    // importer の公開索引を使う。選択した資産の slot は原生の活文書から取得する。
+    // インポーターの公開の索引を使う。選んだ資産のスロットは標準の文書から取る。
     for (;;) {
         const auto result = Execute(ctx, "asset.query", {{"type", "Sequence"}, {"offset", offset}, {"limit", 128}});
         if (!result.ok) { model_->error = result.error; return; }
@@ -1349,7 +1349,7 @@ bool WorldMapWorkspace::WriteBinding(EditorWorkspaceHostContext& ctx, const Regi
     bool createdRecord = false;
     if (!target.objectId) {
         if (next.sequenceAssetGuid.empty()) { sequenceDraft_ = false; return true; }
-        // 辺ごとに小さい記録を所有する。同じ camera を複数の辺で使っても既存記録を上書きしない。
+        // 辺ごとに小さい記録を持つ。同じカメラを複数の辺で使っても記録を上書きしない。
         const auto created = Execute(ctx, "scene.create_empty_object", {{"name", "电视交界演出"}});
         if (!created.ok) { model_->error = created.error; return false; }
         target.objectId = ObjectId(created.data.value("objectId", Json{}));
@@ -1465,7 +1465,7 @@ void WorldMapWorkspace::DrawProperties(EditorWorkspaceHostContext& ctx) {
         if (!editable.sequenceAssetGuid.empty() && ui.Button("td2.world.sequence.edit", "编辑演出 / 预览")) {
             if (!sequenceDraft_ || WriteBinding(ctx, pendingBinding_)) OpenTransitionCamera(ctx, binding_, model_->error);
         }
-        // 演出の中身（镜头关键帧）は引擎の演出工作区で作る。ここは区域の対へ既存の演出資産を結ぶだけ。
+        // 演出の中身はエンジンの演出ワークスペースで作る。ここは区域の組へ既存の演出資産を結ぶだけ。
         ui.Text("镜头关键帧请在引擎的演出（Cinematics）工作区编辑");
         return;
     }
@@ -1476,7 +1476,7 @@ void WorldMapWorkspace::DrawProperties(EditorWorkspaceHostContext& ctx) {
     if (ui.Button("td2.world.room.edit", "编辑电视地图")) { OpenTelevision(ctx, model_->selected); }
     DrawRoomCamera(ctx, s.region.regionId);
     if (s.worldPlaced) {
-        // 正式な出生点は変更せず、次の Canvas click を一回限りの試遊入口にする。
+        // 正式なスポーン位置は変えず、次のキャンバスのクリックを一回限りの試遊の入口にする。
         if (ui.Button("td2.world.room.play", "从此区域开始")) {
             if (model_->Commit(ctx)) {
                 pickingStart_ = true; hand_ = false; moving_ = libraryDrag_ = false;
@@ -1509,7 +1509,7 @@ void WorldMapWorkspace::DrawProperties(EditorWorkspaceHostContext& ctx) {
     }
 }
 
-} // namespace
+}
 
 std::vector<std::unique_ptr<IEditorWorkspace>> MakeMapWorkspaces() {
     auto model = std::make_shared<MapModel>();
@@ -1519,4 +1519,4 @@ std::vector<std::unique_ptr<IEditorWorkspace>> MakeMapWorkspaces() {
     return workspaces;
 }
 
-} // namespace TD2::Editor
+}

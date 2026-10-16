@@ -11,14 +11,14 @@ inline constexpr std::string_view kRegionComponentType = "TD2.Region";
 inline constexpr std::string_view kScreenSystemId = "TD2.ScreenPresentation";
 inline constexpr int kDefaultTilePixels = 64;
 
-// ルールはこの列挙と整数の格座標を使う。tilePixels は表示専用で、距離・衝突に使わない。
+// ルールはこの列挙と整数のマス座標を使う。tilePixels は表示専用で、距離・衝突に使わない。
 enum class TileKind : uint8_t {
     Empty = 0,
     Solid = 1,
 };
 
 // 作者データだけを保持する。テレビの大きさや実行中の WorldState はここへ混ぜない。
-// cells は左上原点の行優先配列で、0=空、1=テスト用ブロック。初回は 4×3 とする。
+// cells は左上原点の行優先配列（0=空、1=ブロック）。初期値は 4×3。
 struct RegionDefinition {
     std::string regionId = "td2.region.test";
     int cols = 4;
@@ -47,7 +47,7 @@ inline RegionValidation ValidateRegion(const RegionDefinition& region) noexcept 
     if (region.cols <= 0 || region.rows <= 0 || region.tilePixels <= 0) {
         return {false, "行、列和格子像素必须为正整数"};
     }
-    // 掛け算は先に拡張し、不正な寸法でも符号付き整数をあふれさせない。
+    // 不正な寸法でもあふれないよう、先に広い型へ変えて掛ける。
     const auto count = static_cast<uint64_t>(region.cols) * static_cast<uint64_t>(region.rows);
     if (count != region.cells.size()) {
         return {false, "格数据数量必须等于 cols × rows；可明确重建测试网格"};
@@ -70,8 +70,8 @@ inline size_t CellIndex(const RegionDefinition& region, int col, int row) noexce
     return static_cast<size_t>(row) * static_cast<size_t>(region.cols) + static_cast<size_t>(col);
 }
 
-// シーンの簡潔な文字列保存形式をここで解釈し、ルール側に文字コードの知識を持たせない。
-// 範囲外を空と決め付けず false を返す。境界の扱いは後続のルール契約に従う。
+// シーンの文字列形式はここで解釈し、ルール側には持ち込まない。
+// 範囲外は false。境界の扱いはルール側で決める。
 inline bool TryGetTile(const RegionDefinition& region, int col, int row, TileKind& tile) noexcept {
     if (col < 0 || row < 0 || col >= region.cols || row >= region.rows) { return false; }
     const size_t index = CellIndex(region, col, row);
@@ -81,14 +81,14 @@ inline bool TryGetTile(const RegionDefinition& region, int col, int row, TileKin
     return false;
 }
 
-// この図形は表示確認専用であり、衝突・ジャンプ・残影のルールを定義しない。
+// 表示確認用の図形。衝突やルールには使わない。
 struct RegionColor {
     float r, g, b, a = 1.0f;
 };
 
 inline constexpr RegionColor CellColor(char cell) noexcept {
-    // 暗い外部セットでも格の輪郭が読めるよう、色相数を増やさず画面内だけの明度を上げる。
+    // 暗いセットでもマスが読めるよう、色数は増やさず画面内の明度だけ上げる。
     return cell == '1' ? RegionColor{0.60f, 0.84f, 0.77f} : RegionColor{0.22f, 0.30f, 0.33f};
 }
 
-} // namespace TD2
+}
