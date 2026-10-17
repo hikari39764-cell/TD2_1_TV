@@ -9,9 +9,15 @@ struct DeviceDraft {
     double x = 0, y = 0, w = 1, h = 1, range = 20;
     bool inverted = false, latch = false;
     std::vector<std::string> targets;
-    // 一覧で編集しない項目（バネの強さ、貼り絵の図案など）は原文のまま持ち、書き出しで戻す。
+    // 種類ごとの追加の項目（バネの強さ・溜め・冷却、貼り絵の図案、元へ戻すボタンの形など）は「key=value」のまま持つ。
     std::vector<std::string> extra;
+    // 追加の項目を読む・書く（空の値で消す）。
+    std::string Extra(std::string_view key) const;
+    void SetExtra(std::string_view key, std::string_view value);
 };
+// 圧力板の目標の種類：同じテレビの扉・レーザー・橋、別のテレビの装置（区域ID/装置ID）、画面の外の仕掛け（mech/・slide/・stack/・carousel/）。
+enum class TargetKind { Local, OtherRegion, Machine, Invalid };
+TargetKind ClassifyTarget(std::string_view target);
 
 class DeviceEditor {
 public:
@@ -32,6 +38,8 @@ public:
     bool Paste(const std::vector<DeviceDraft>& copied, double x, double y, int cols, int rows,
                std::vector<std::string>& pastedIds);
     bool ToggleLink(std::string_view sourceId, int targetIndex);
+    // 目標の文字列をそのまま付け外しする（別のテレビの装置・仕掛け）。
+    bool ToggleTarget(std::string_view sourceId, const std::string& target);
     bool IsLoaded() const { return error_.empty(); }
     const std::string& Error() const { return error_; }
 private:

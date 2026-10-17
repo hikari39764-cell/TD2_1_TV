@@ -101,7 +101,7 @@ struct WorldState {
     uint64_t swaps = 0;   // 交換の回数（表示用）
     // 固定ステップの無いフレームでも入力の押下を持ち越し、次のステップで使う。
     bool pendingActionPressed = false, pendingActionReleased = false;
-    // 残影がいる時の空格：押してからの秒数。短く離せば回収、押し続ければ交換。
+    // 残影がいる時のスペース：押してからの秒数。短く離せば回収、押し続ければ交換。
     double actionHold = 0.0;
     bool actionArmed = false;
 };
@@ -124,6 +124,7 @@ struct DeviceSnapshot {
     bool powered = false;
     std::string variant;
     bool latch = false;   // 切り替え式の圧力板
+    bool world = false;   // 画面の外のテレビ（機構・スロット棚）を動かす圧力板。画面の中だけの圧力板と色と形を分ける
 };
 struct WorldSnapshot {
     std::string regionId;

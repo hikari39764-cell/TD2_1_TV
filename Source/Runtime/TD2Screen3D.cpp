@@ -1,5 +1,6 @@
 #include "TD2Screen3D.h"
 #include "TD2StageProjection.h"
+#include "TD2ScreenKitAssets.h"
 #include "HIKARI/Project/ActionViews.h"
 #include "HIKARI/Project/GameFlowViews.h"
 #include "HIKARI/Project/PresentationViews.h"
@@ -23,16 +24,16 @@ constexpr size_t kPartWarning = 1400;
 // 周りの窓で世界全体を撮る時の 1 マスの最低 texel。これを下回る大きな世界は、見えている所の周りだけを撮る
 // （下回ったまま全体を撮ると、鮮明の窓に入らない画面だけが目立ってぼける）。
 constexpr int kMinWorldTexelsPerCell = 24;
+// 大区域ごとに固定する周りの窓の 1 マスの最低 texel（これより粗くなる幅の大区域は、収まる部屋だけを覆う）。
+constexpr int kMinAreaTexelsPerCell = 16;
 // 演出の長さ（秒）。揺れと閃光は二乗で減衰し、瞬間移動の残像はこの時間で足元へ潰れて消える。
 constexpr double kShakeSeconds = 0.28, kFlashSeconds = 0.22, kSmearSeconds = 0.12;
 // 跳ね返りの残影を足元から現す秒数（ルールの予告と同じ 0.16 秒）と、回収の光跡が消える秒数。
 constexpr double kEchoPrintSeconds = 0.16, kRecallTrailSeconds = 0.2;
-// エフェクトは地形の正面より手前に置き、隠れないようにする。
-constexpr double kFxDepth = 0.35;
 
 bool SameStyle(const ScreenStyleSettings& a, const ScreenStyleSettings& b) {
     return a.mode == b.mode && a.outline == b.outline && a.shadow == b.shadow && a.sketchDepth == b.sketchDepth &&
-           a.brightness == b.brightness;
+           a.sketchFill == b.sketchFill && a.brightness == b.brightness;
 }
 // 区域の画面の明るさ（既定 2.2）を基準 1 として描き方の明るさに掛ける。
 ScreenStyleSettings Effective(const StageRoom& room) {
@@ -61,9 +62,12 @@ HIKARI::GameProjectSceneCaptureStyleDesc StyleDesc(const ScreenStyleSettings& st
     fx.shadowOffsetY = kGamePixelsPerCell * 1.0f;
     fx.backgroundLuminance = 0.035f;
     fx.brightness = std::clamp(brightness, 0.0f, 4.0f);
-    const bool teal = palette == 1;
-    fx.lineColor = mode == ScreenStyleMode::Sketch ? Srgb(teal ? 0xDDD8C4 : 0xDDD5C1) : Srgb(teal ? 0x061112 : 0x0B1218);
-    fx.paperColor = Srgb(teal ? 0x0D2A2B : 0x1A2733);
+    // 素描で物体の焼いた色を紙に乗せる濃さ（ほかの描き方では使われない）。
+    fx.fillStrength = std::clamp(style.sketchFill, 0.0f, 1.0f);
+    // 紙は配色の壁より一段明るい暗色、鉛筆は配色の白（白舱は冷たい白、青瓷はわずかに緑の白）。
+    const bool celadon = palette == 1;
+    fx.lineColor = mode == ScreenStyleMode::Sketch ? Srgb(celadon ? 0xDDEAE4 : 0xE4EAEE) : Srgb(celadon ? 0x061112 : 0x0A0F14);
+    fx.paperColor = Srgb(celadon ? 0x0E2425 : 0x18212B);
     // 残影の菫色。この色相の鮮やかな物体を残影として横縞で描く（プレイヤーの琥珀・危険の赤とは色相で分かれる）。
     fx.accentColor = Srgb(0xA879F0);
     return fx;
@@ -98,13 +102,13 @@ HIKARI::GameProjectTransform FxTransform(const ScreenEffect& e, const StageProje
     const auto& r = e.rect;
     const bool feet = e.kind == ScreenEffectKind::Land || e.kind == ScreenEffectKind::Respawn || e.kind == ScreenEffectKind::Checkpoint;
     HIKARI::GameProjectTransform transform{};
-    transform.position = projection.Point(r.x + r.w * .5, feet ? r.y + r.h : r.y + r.h * .5, kFxDepth);
+    transform.position = projection.Point(r.x + r.w * .5, feet ? r.y + r.h : r.y + r.h * .5, projection.FxDepth());
     const float size = static_cast<float>(projection.scale * scale);
     transform.scale = {size, size, size};
     if (e.kind == ScreenEffectKind::BlinkTrail) {
         const double sx = e.source.x + e.source.w * .5, sy = e.source.y + e.source.h * .5;
         const double dx = r.x + r.w * .5 - sx, dy = r.y + r.h * .5 - sy;
-        transform.position = projection.Point(sx, sy, kFxDepth);
+        transform.position = projection.Point(sx, sy, projection.FxDepth());
         transform.rotation = RotateZ(std::atan2(-dy, dx));
         transform.scale.x = static_cast<float>(projection.scale * (std::max)(std::sqrt(dx * dx + dy * dy), .05));
     }
@@ -220,6 +224,44 @@ void Screen3DStage::PlaceWindows(const std::vector<const StageRoom*>& rooms, con
         wide.valid = true;
         return;
     }
+    // 大区域ごとに固定する窓：操作中の部屋から近い順に、同じ大区域の部屋を窓に収まるだけ集め、その外接を覆う位置に置く。
+    // 同じ大区域の中で部屋を移っても、操作中の部屋が窓に入っている間は窓を動かさない（画面の割り当てを作り直さない）。
+    // 預け場所（世界のずっと外）にいる部屋と、窓に収まらない遠い部屋は数えない（鮮明の窓に任せる）。
+    if (const StageRoom* active = find(frame.activeRegion); active && !frame.areaRooms.empty()) {
+        const auto inside = [&](const StageRoom* room) {
+            const auto& r = room->Region();
+            return wide.Contains(room->x, room->y, room->x + r.cols, room->y + r.rows);
+        };
+        const std::string key = frame.areaRooms.front();
+        std::vector<const StageRoom*> members;
+        for (const auto& id : frame.areaRooms) {
+            const auto* room = find(id);
+            if (room && room->x > -50000 && room->y > -50000) { members.push_back(room); }
+        }
+        const auto distance = [&](const StageRoom* room) {
+            return std::abs((room->x + room->Region().cols * .5) - (active->x + active->Region().cols * .5)) +
+                   std::abs((room->y + room->Region().rows * .5) - (active->y + active->Region().rows * .5));
+        };
+        std::sort(members.begin(), members.end(), [&](const StageRoom* a, const StageRoom* b) { return distance(a) < distance(b); });
+        const double maxCols = static_cast<double>(HIKARI::kGameProjectSceneCaptureMaximumExtent) / kMinAreaTexelsPerCell;
+        double l = active->x, t = active->y, rr = active->x + active->Region().cols, b = active->y + active->Region().rows;
+        for (const auto* room : members) {
+            const double nl = (std::min)(l, double(room->x)), nt = (std::min)(t, double(room->y));
+            const double nr = (std::max)(rr, double(room->x + room->Region().cols)), nb = (std::max)(b, double(room->y + room->Region().rows));
+            if (nb - nt > wide.rows || nr - nl > maxCols) { continue; }
+            l = nl; t = nt; rr = nr; b = nb;
+        }
+        // 前の窓が同じ大区域のもので、今の部屋がまだ入っていれば、その窓を使い続ける。
+        if (key == wideArea_ && stickyWide_.valid) {
+            wide = stickyWide_;
+            if (inside(active)) { return; }
+        }
+        FitWindow(wide.rows, (rr - l) + 2, kWideTexelsPerCell, wide.cols, wide.density, wide.width, wide.height);
+        wide.x = (l + rr) * .5 - wide.cols * .5; wide.y = (t + b) * .5 - wide.rows * .5;
+        wide.valid = true;
+        wideArea_ = key; stickyWide_ = wide; wideCenter_ = active->regionId;
+        return;
+    }
     // 動く窓：中心は操作中の部屋（同じ大区域の部屋は隣り合うので窓に入る）。操作中の部屋が無い時（編集中など）は
     // 見えている部屋の重心に一番近い部屋。重心が別の部屋の方へ部屋の大きさの 1/4 以上近づくまで今の中心を保つ。
     const StageRoom* center = find(frame.activeRegion);
@@ -306,8 +348,11 @@ void Screen3DStage::Render(HIKARI::WorldView& world, const std::vector<StageRoom
     // 2. 舞台カメラと写し方。1 マスの舞台上の長さは、鮮明カメラの正投影の高さを 1 部屋分の行で割った値。
     if (!AcquireCameras(world, stage)) { return; }
     projection_.scale = cameras_[static_cast<size_t>(ViewKind::Sharp)].orthographicHeight / maxRows;
-    projection_.pitch = std::clamp(static_cast<double>(stage.pitch), 0.0, kMaxStagePitchDegrees) * kPi / 180.0;
-    projection_.yaw = std::clamp(static_cast<double>(stage.yaw), -kMaxStageYawDegrees, kMaxStageYawDegrees) * kPi / 180.0;
+    // 立体：斜投影を焼いた部品の組を正対のカメラで撮る（天板と右の側面が見え、正面はマスにぴったり）。俯角・側角は使わない。
+    projection_.oblique = stage.depthView ? kScreenKitOblique : 0.0;
+    projection_.pitch = stage.depthView ? 0.0 : std::clamp(static_cast<double>(stage.pitch), 0.0, kMaxStagePitchDegrees) * kPi / 180.0;
+    projection_.yaw = stage.depthView ? 0.0 : std::clamp(static_cast<double>(stage.yaw), -kMaxStageYawDegrees, kMaxStageYawDegrees) * kPi / 180.0;
+    const int kit = stage.palette + (stage.depthView ? 2 : 0);
     travel_ = {frame.travelFrom, frame.travelTo};
     ++frame_;
     if (frame.authoring) { seen_.clear(); focus_ = {}; PlaceEditorWindow(valid); }
@@ -352,7 +397,7 @@ void Screen3DStage::Render(HIKARI::WorldView& world, const std::vector<StageRoom
     if (!SyncCaptures(world, shown, stage.palette, flashAmount_ * fade(flashStart_, kFlashSeconds))) { return; }
     if (!frame.authoring) { TraceFrame(); }
     if (frame.simulated) { worldEffects_.Observe(*frame.snapshot); } else { worldEffects_.Reset(); }
-    SubmitParts(world, valid, shown, *frame.snapshot, stage.palette, fx.enabled && fx.smear, now, frame.simulated);
+    SubmitParts(world, valid, shown, *frame.snapshot, kit, fx.enabled && fx.smear, now, frame.simulated);
     PlayEffects(world, fx, frame.simulated, now);
 
     size_t ready = 0, failedCaptures = 0;
@@ -815,9 +860,10 @@ void Screen3DStage::SubmitParts(HIKARI::WorldView& world, const std::vector<cons
         }
         auto& cache = roomParts_[room.regionId];
         if (cache.occupancy != occupancy || cache.linked != linked || cache.x != room.x || cache.y != room.y || cache.palette != palette ||
-            cache.scale != projection_.scale || cache.pitch != projection_.pitch || cache.yaw != projection_.yaw) {
-            cache = {occupancy, linked, room.x, room.y, palette, projection_.scale, projection_.pitch, projection_.yaw, {}};
+            cache.scale != projection_.scale || cache.pitch != projection_.pitch || cache.yaw != projection_.yaw || cache.compact != !animate) {
+            cache = {occupancy, linked, room.x, room.y, palette, projection_.scale, projection_.pitch, projection_.yaw, !animate, {}};
             StagePartBuilder builder{projection_, palette, room.owner.value, cache.parts};
+            builder.Compact(!animate);
             builder.Backdrop(room.x, room.y, r.cols, r.rows);
             builder.Terrain(room.x, room.y, r.cols, r.rows, occupancy);
             builder.Edges(room.x, room.y, r.cols, r.rows, occupancy, linked);
@@ -833,14 +879,18 @@ void Screen3DStage::SubmitParts(HIKARI::WorldView& world, const std::vector<cons
     for (const auto& device : snapshot.devices) {
         // バネは使えるようになった時刻も覚える（満ちた瞬間に矢印を弾ませる）。
         const bool ready = device.kind == Rules::DeviceKind::Spring && device.cooldown <= 0;
-        auto [memory, fresh] = deviceMemory_.try_emplace(device.id, DeviceMemory{device.powered, device.solid, ready});
-        if (!fresh && (memory->second.powered != device.powered || memory->second.solid != device.solid || memory->second.ready != ready)) {
-            memory->second = {device.powered, device.solid, ready, animate ? now : -1e9};
+        // チェックポイントは触れて有効になった時刻も覚える（旗を上げる）。
+        const bool checkpoint = device.id == snapshot.checkpointId;
+        auto [memory, fresh] = deviceMemory_.try_emplace(device.id, DeviceMemory{device.powered, device.solid, ready, checkpoint});
+        if (!fresh && (memory->second.powered != device.powered || memory->second.solid != device.solid || memory->second.ready != ready ||
+                       memory->second.checkpoint != checkpoint)) {
+            memory->second = {device.powered, device.solid, ready, checkpoint, animate ? now : -1e9};
         }
         const auto slash = device.id.find('/');
         const auto room = byRegion.find(std::string_view(device.id).substr(0, slash));
         if (slash == std::string::npos || room == byRegion.end()) { continue; }
         StagePartBuilder builder{projection_, palette, room->second->owner.value, frameParts_};
+        builder.SetTime(animate ? now : 0.0);
         mirrorFor(builder, room->second);
         builder.Device(device, device.id == snapshot.checkpointId, now - memory->second.changed);
         if (device.kind == Rules::DeviceKind::Laser) {
@@ -856,6 +906,7 @@ void Screen3DStage::SubmitParts(HIKARI::WorldView& world, const std::vector<cons
     Rules::BodyState idle; idle.grounded = true;
     const auto& shownPlayer = snapshot.presentationPlayer;
     mirrorFor(global, flippedRoomAt(shownPlayer.x + shownPlayer.w * .5, shownPlayer.y + shownPlayer.h * .5));
+    // 骨と動きつきの人形を使う時は、焼いた静止の形を退けておく。
     global.Actor(snapshot.player, snapshot.presentationPlayer, false, snapshot.realTime, snapshot.playerPresent);
     global.NoMirror();
     // 残影：いる時はその姿。跳ね返りの予告中は、出る所で姿を足元から現す（0.16 秒で全高、
@@ -877,8 +928,8 @@ void Screen3DStage::SubmitParts(HIKARI::WorldView& world, const std::vector<cons
     global.Begin("echoMarker");
     const auto& body = snapshot.presentationPlayer;
     const bool marked = snapshot.playerPresent && !snapshot.player.dead && (snapshot.echo || snapshot.pendingEcho);
-    if (marked) { global.Add("Echo_Marker", body.x + body.w * .5, body.y - .1 - .05 * (1 + std::sin(now * 4.0)), 1, 1, kActorDepth); }
-    else { global.Add("Echo_Marker", kParkX, kParkY, 1, 1, kActorDepth, {}, -1, false); }
+    if (marked) { global.Add("Echo_Marker", body.x + body.w * .5, body.y - .1 - .05 * (1 + std::sin(now * 4.0)), 1, 1, projection_.ActorDepth()); }
+    else { global.Add("Echo_Marker", kParkX, kParkY, 1, 1, projection_.ActorDepth(), {}, -1, false); }
     // 回収の光跡：残影がいた所からプレイヤーへ伸びる菫の棒が、プレイヤーの方へ縮みながら消える。
     const ScreenEffect* recall = nullptr;
     for (const auto& item : worldEffects_.Items()) {
@@ -891,10 +942,10 @@ void Screen3DStage::SubmitParts(HIKARI::WorldView& world, const std::vector<cons
         const double sx = recall->source.x + recall->source.w * .5, sy = recall->source.y + recall->source.h * .5;
         const double ex = recall->rect.x + recall->rect.w * .5, ey = recall->rect.y + recall->rect.h * .5;
         const double tx = sx + (ex - sx) * t, ty = sy + (ey - sy) * t, length = std::hypot(ex - tx, ey - ty);
-        global.Add("Echo_Streak", (tx + ex) * .5, (ty + ey) * .5, (std::max)(length, .01), (std::max)(1 - t, .05), kActorDepth + .05,
+        global.Add("Echo_Streak", (tx + ex) * .5, (ty + ey) * .5, (std::max)(length, .01), (std::max)(1 - t, .05), projection_.ActorDepth() + .05,
                    RotateZ(std::atan2(-(ey - ty), ex - tx)), 0, length > .05);
     } else {
-        global.Add("Echo_Streak", kParkX, kParkY, 1, 1, kActorDepth + .05, {}, 0, false);
+        global.Add("Echo_Streak", kParkX, kParkY, 1, 1, projection_.ActorDepth() + .05, {}, 0, false);
     }
     // 瞬間移動の残像：出発点と終点の間にプレイヤーの姿を二体、横に伸ばして置き、足元へ潰して消す。
     // 左右の向きごとに二体ずつ常に出し、使う向きだけを見せる。
@@ -906,13 +957,13 @@ void Screen3DStage::SubmitParts(HIKARI::WorldView& world, const std::vector<cons
     global.Begin("smear");
     for (const bool rightward : {true, false}) for (int i = 1; i <= 2; ++i) {
         const std::string_view pose = rightward ? "Ninja_Air0_R" : "Ninja_Air0_L";
-        if (!trail) { global.Add(pose, kParkX, kParkY, 1, 1, kActorDepth - .08, {}, -1, false); continue; }
+        if (!trail) { global.Add(pose, kParkX, kParkY, 1, 1, projection_.ActorDepth() - .08, {}, -1, false); continue; }
         const double t = (now - trail->born) / kSmearSeconds, k = i / 3.0;
         const double sx = trail->source.x + trail->source.w * .5, sb = trail->source.y + trail->source.h;
         const double dx = trail->rect.x + trail->rect.w * .5 - sx, db = trail->rect.y + trail->rect.h - sb, h = trail->rect.h;
         const bool used = (dx >= 0) == rightward;
-        if (used) { global.Add(pose, sx + dx * k, sb + db * k, h * 1.3, (std::max)(h * (1 - t), .01), kActorDepth - .08); }
-        else { global.Add(pose, kParkX, kParkY, 1, 1, kActorDepth - .08, {}, -1, false); }
+        if (used) { global.Add(pose, sx + dx * k, sb + db * k, h * 1.3, (std::max)(h * (1 - t), .01), projection_.ActorDepth() - .08); }
+        else { global.Add(pose, kParkX, kParkY, 1, 1, projection_.ActorDepth() - .08, {}, -1, false); }
     }
     global.NoMirror();
     failed_ += global.Failed();
@@ -961,7 +1012,7 @@ void Screen3DStage::PlayEffects(HIKARI::WorldView& world, const ScreenFxSettings
         for (const auto& [id, room] : flippedRooms_) {
             if (anchor.x + anchor.w * .5 < room[0] || anchor.y + anchor.h * .5 < room[1] || anchor.x + anchor.w * .5 >= room[2] ||
                 anchor.y + anchor.h * .5 >= room[3]) { continue; }
-            const auto center = projection_.Point((room[0] + room[2]) * .5, (room[1] + room[3]) * .5, kFxDepth);
+            const auto center = projection_.Point((room[0] + room[2]) * .5, (room[1] + room[3]) * .5, projection_.FxDepth());
             transform.position = {2 * center.x - transform.position.x, 2 * center.y - transform.position.y, transform.position.z};
             const auto q = transform.rotation;
             transform.rotation = {-q.y, q.x, q.w, -q.z};   // Z 軸 180° を左から掛ける

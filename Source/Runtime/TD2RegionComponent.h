@@ -11,7 +11,13 @@ namespace TD2 {
 class RegionComponent final : public HIKARI::IGameComponent {
 public:
     void DescribeProperties(HIKARI::PropertyFields& fields) override {
+        // 地図・仕掛け・世界の位置・カメラはレベル編集ワークスペースで直す。Inspector は名前と明るさだけを前に出し、残りは畳んでおく。
+        if (fields.IsInspecting()) { fields.Note("在「关卡编辑」工作区编辑这台电视的地图、机关、世界位置和机位。"); }
         fields.Text("regionId", "稳定区域 ID", region_.regionId);
+        fields.Bool("entryRegion", "开始电视", entryRegion_);
+        // 明るさは画面の材質だけに掛け、筐体は変えない。
+        fields.Float("screenBrightness", "屏幕亮度", screen_.brightness, .5f, 4.0f);
+        if (!fields.Section("原始数据（一般不用手改）")) { return; }
         // 縦穴などの縦長の画面に合わせ、一台 128 マスまで受け付ける。
         fields.Int("cols", "整数列数", region_.cols, 1, 128);
         fields.Int("rows", "整数行数", region_.rows, 1, 128);
@@ -23,15 +29,12 @@ public:
         // エディタが自動で置いたカメラの姿勢（"x y z rx ry rz"）。今の姿勢と違えば手で調整したとみなし、
         // 再生成で上書きしない。空なら作者が置いたカメラ。
         fields.Text("cameraAuto", "机位自动记录（自动）", cameraAuto_);
-        fields.Bool("entryRegion", "初始可控制区块", entryRegion_);
         fields.Bool("worldPlaced", "已布置到世界", worldPlaced_);
         fields.Int("worldX", "世界格 X", worldX_);
         fields.Int("worldY", "世界格 Y", worldY_);
         DescribeLargeText(fields, "devices", "设备列表（每行一个）", devices_, 256u * 1024u);
         fields.SceneObject("screenObject", "屏幕模型对象", screen_.screenObject);
         fields.Text("screenSlot", "屏幕材质槽", screen_.screenSlot);
-        // 明るさは画面の材質だけに掛け、筐体は変えない。
-        fields.Float("screenBrightness", "屏幕亮度", screen_.brightness, .5f, 4.0f);
         // 公開の操作で扱えるよう常に書き出す。専用の画面では自動で決めて表示しない。
         fields.Int("screenMaterialIndex", "屏幕材质索引（自动）", screen_.materialIndex);
         fields.Text("screenModelAssetGuid", "屏幕模型身份（自动）", screen_.modelAssetGuid);

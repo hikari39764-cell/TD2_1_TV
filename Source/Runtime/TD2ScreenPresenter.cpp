@@ -113,6 +113,7 @@ void ScreenPresentationSystem::Update(HIKARI::WorldView& world, const HIKARI::Fr
     if (session) {
         stage.snapshot = &session->Snapshot(); stage.activeRegion = session->ActiveRegion(); stage.simulated = true;
         (void)session->TravelRooms(stage.travelFrom, stage.travelTo);
+        stage.areaRooms = session->AreaRooms(stage.activeRegion);
     } else {
         // 未配置の地図は世界の下に 1 マスずつ空けて並べる。
         int left = 0, bottom = 0, maxCols = 1, maxRows = 1; bool any = false;
@@ -134,7 +135,10 @@ void ScreenPresentationSystem::Update(HIKARI::WorldView& world, const HIKARI::Fr
                 {device.rect.x + rooms_[i].x, device.rect.y + rooms_[i].y, device.rect.w, device.rect.h}, device.direction,
                 device.inverted, false,
                 device.kind == Rules::DeviceKind::Solid || device.kind == Rules::DeviceKind::Door || device.kind == Rules::DeviceKind::LockWall};
-            item.variant = device.variant;
+            item.variant = device.variant; item.latch = device.latch;
+            item.world = device.kind == Rules::DeviceKind::Plate && std::any_of(device.targets.begin(), device.targets.end(), [](const std::string& t) {
+                return t.starts_with("mech/") || t.starts_with("slide/") || t.starts_with("stack/") || t.starts_with("carousel/");
+            });
             authored_.devices.push_back(std::move(item));
         }
         if (entry < rooms_.size()) {

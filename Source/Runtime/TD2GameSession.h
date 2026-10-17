@@ -31,17 +31,37 @@ public:
     }
     // 世界座標の表示状態（画面の舞台が読む）。
     const Rules::WorldSnapshot& Snapshot() { return exploration_.Snapshot(); }
+    // 同じ大区域の部屋（大区域に入っていなければその部屋だけ）。画面の舞台の周りの窓を大区域ごとに固定するのに使う。
+    std::vector<std::string> AreaRooms(std::string_view region) const {
+        const auto key = areaKey_.find(region);
+        if (key == areaKey_.end()) { return {std::string(region)}; }
+        std::vector<std::string> rooms;
+        for (const auto& [id, value] : areaKey_) { if (value == key->second) { rooms.push_back(id); } }
+        return rooms;
+    }
 private:
     void SyncRegions(HIKARI::WorldView& world);
     void SyncCameraAreas(HIKARI::WorldView& world);
     void TraceEvents(std::string_view region, const Rules::StepOutput& output);
     void TraceSequence(HIKARI::WorldView& world, uint64_t frame);
     void FocusActiveScreen(HIKARI::WorldView& world, double seconds);
-    void SyncMechanisms(HIKARI::WorldView& world, std::vector<Rules::MechanismSource>& sources);
+    // 区域 ID → 作者が置いた配置（相対で書いた仕掛けを絶対へ直す基準）。
+    using Placements = std::map<std::string, RegionPlacement, std::less<>>;
+    void SyncMechanisms(HIKARI::WorldView& world, std::vector<Rules::MechanismSource>& sources, const Placements& placements);
+    // 世界地図のどことも重ならない預け場所（抜いたテレビ・回転柱の行き止まり）。呼ぶたびに別の位置。
+    std::pair<int, int> Park() { const int k = parked_++; return {-100000 - 128 * k, -100000}; }
+    int parked_ = 0;
     void UpdateMechanismObjects(HIKARI::WorldView& world);
     void SyncCables(HIKARI::WorldView& world);
-    void SyncSlides(HIKARI::WorldView& world, std::vector<Rules::SlideSource>& sources);
+    void SyncSlides(HIKARI::WorldView& world, std::vector<Rules::SlideSource>& sources, const Placements& placements);
+    // スロット棚のスロットを、メンバーの今の配置とテレビの位置、一番目のメンバーから見た空きスロットのずれで作る。
+    bool DeriveSlideSlots(HIKARI::WorldView& world, Rules::SlideSource& source, const std::vector<std::pair<int, int>>& empty,
+                          const Placements& placements, std::vector<SlideSlotPose>& poses, std::string& error);
     void UpdateSlideObjects(HIKARI::WorldView& world, double seconds);
+    void SyncStacks(HIKARI::WorldView& world, std::vector<Rules::StackSource>& sources, const Placements& placements);
+    void UpdateStackObjects(HIKARI::WorldView& world, double seconds);
+    void SyncCarousels(HIKARI::WorldView& world, std::vector<Rules::CarouselSource>& sources, std::vector<Rules::RegionSource>& regions);
+    void UpdateCarouselObjects(HIKARI::WorldView& world);
     void UpdateCables(HIKARI::WorldView& world);
 
     // ---- カメラ（大区域の中は追従、大区域どうしは演出） ----
@@ -105,7 +125,7 @@ private:
         float cameraLift = 0, cameraPull = 0;   // 動きの途中だけカメラを持ち上げ・引く量（転台以外）
     };
     std::vector<MechanismView> mechanismViews_;
-    // 槽の棚：メンバーのテレビ、槽ごとのテレビの位置。動けなかった時は shake 秒だけ揺らす（区域カメラは動かさない）。
+    // スロット棚：メンバーのテレビ、スロットごとのテレビの位置。動けなかった時は shake 秒だけ揺らす（区域カメラは動かさない）。
     struct SlideMember { HIKARI::GameProjectObjectHandle tv{}, camera{}; HIKARI::GameProjectTransform tvPose{}, cameraPose{}; };
     struct SlideView {
         std::vector<SlideSlotPose> slots;
@@ -113,6 +133,24 @@ private:
         int lastMoving = -1; uint64_t blockedCount = 0; int shaking = -1; double shake = 0;
     };
     std::vector<SlideView> slideViews_;
+    // テレビの塔：メンバーのテレビと区域カメラ、スロット・置き場ごとのテレビの位置。カメラはテレビと同じだけ動かすが、
+    // 追従のばねは運ばない（落ちるテレビが画面の中で落ちて見え、カメラが後から追いつく）。
+    // 抜けなかった時は一番下のテレビを shake 秒だけ揺らす。
+    struct StackView {
+        std::vector<SlideSlotPose> slots, docks;
+        std::vector<SlideMember> members;
+        int lastPhase = 0; uint64_t blockedCount = 0; double shake = -1;
+    };
+    std::vector<StackView> stackViews_;
+    // 回転柱：一緒に回る物（面のテレビ・柱の胴・回転盤）と、面に付いた区域カメラの最初の姿勢。柱の軸のまわりに回す。
+    struct CarouselPart { HIKARI::GameProjectObjectHandle handle{}, tv{}; HIKARI::GameProjectTransform pose{}; bool camera = false; };
+    struct CarouselView {
+        float pivot[3]{};
+        size_t count = 4;
+        std::vector<CarouselPart> parts;
+        double written = -1;   // 最後に書いた回り具合（面の数で割った単位）
+    };
+    std::vector<CarouselView> carouselViews_;
     // 信号線：つながった圧力板の通電で、光る版と元のモデルを差し替える。
     struct SignalCable { HIKARI::GameProjectObjectHandle handle{}; std::string plate, normal, lit; bool shown = false; };
     std::vector<SignalCable> cables_;

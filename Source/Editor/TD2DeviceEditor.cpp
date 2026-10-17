@@ -21,6 +21,38 @@ bool StableId(std::string_view id) {
 }
 }
 
+std::string DeviceDraft::Extra(std::string_view key) const {
+    for (const auto& option : extra) {
+        if (option.size() > key.size() && option.compare(0, key.size(), key) == 0 && option[key.size()] == '=') { return option.substr(key.size() + 1); }
+    }
+    return {};
+}
+void DeviceDraft::SetExtra(std::string_view key, std::string_view value) {
+    std::erase_if(extra, [key](const std::string& option) { return option.size() > key.size() && option.compare(0, key.size(), key) == 0 && option[key.size()] == '='; });
+    if (!value.empty()) { extra.push_back(std::string(key) + "=" + std::string(value)); }
+}
+
+TargetKind ClassifyTarget(std::string_view target) {
+    const auto parts = [](std::string_view text) {
+        std::vector<std::string_view> result;
+        for (size_t start = 0;;) {
+            const auto slash = text.find('/', start);
+            result.push_back(text.substr(start, slash == std::string_view::npos ? std::string_view::npos : slash - start));
+            if (slash == std::string_view::npos) { return result; }
+            start = slash + 1;
+        }
+    };
+    const auto p = parts(target);
+    if (std::any_of(p.begin(), p.end(), [](std::string_view s) { return !StableId(s); })) { return TargetKind::Invalid; }
+    if (p.size() == 1) { return TargetKind::Local; }
+    if (p[0] == "mech" && (p.size() == 2 || (p.size() == 3 && p[2] == "r"))) { return TargetKind::Machine; }
+    if (p[0] == "slide" && p.size() == 2) { return TargetKind::Machine; }
+    if (p[0] == "stack" && p.size() == 3 && (p[2] == "pull" || p[2] == "reset")) { return TargetKind::Machine; }
+    if (p[0] == "carousel" && p.size() == 3 && (p[2] == "cw" || p[2] == "ccw")) { return TargetKind::Machine; }
+    if (p.size() == 2 && p[0] != "mech" && p[0] != "slide" && p[0] != "stack" && p[0] != "carousel") { return TargetKind::OtherRegion; }
+    return TargetKind::Invalid;
+}
+
 void DeviceEditor::Load(std::string_view text) {
     const std::string selectedId = HasSelection() ? devices_[selected_].id : "";
     devices_.clear(); selected_ = -1; error_.clear();
@@ -140,6 +172,16 @@ bool DeviceEditor::Paste(const std::vector<DeviceDraft>& copied, double x, doubl
     return true;
 }
 
+bool DeviceEditor::ToggleTarget(std::string_view sourceId, const std::string& target) {
+    if (!IsLoaded() || ClassifyTarget(target) == TargetKind::Invalid) { return false; }
+    auto source = std::find_if(devices_.begin(), devices_.end(), [sourceId](const auto& d) { return d.id == sourceId && d.kind == "Plate"; });
+    if (source == devices_.end()) { return false; }
+    const auto found = std::find(source->targets.begin(), source->targets.end(), target);
+    if (found == source->targets.end()) { source->targets.push_back(target); }
+    else { source->targets.erase(found); }
+    return true;
+}
+
 bool DeviceEditor::ToggleLink(std::string_view sourceId, int targetIndex) {
     if (!IsLoaded() || targetIndex < 0 || targetIndex >= static_cast<int>(devices_.size())) { return false; }
     const auto& target = devices_[targetIndex];
@@ -183,10 +225,15 @@ std::string DeviceEditor::Validate(int cols, int rows) const {
         }
         if (!std::isfinite(device.range) || device.range <= 0) { return device.id + " 的射程须大于零。"; }
     }
+    // 同じテレビの目標は扉・レーザー・橋であること。別のテレビの装置と仕掛けは書式だけ確かめる（あるかどうかは世界地図で示す）。
     for (const auto& device : devices_) for (const auto& target : device.targets) {
+        if (device.kind != "Plate") { return device.id + " 不是压板，不能连接目标。"; }
+        const auto kind = ClassifyTarget(target);
+        if (kind == TargetKind::Invalid) { return device.id + " 的连接目标格式无效：" + target; }
+        if (kind != TargetKind::Local) { continue; }
         const auto item = std::find_if(devices_.begin(), devices_.end(), [&target](const auto& value) { return value.id == target; });
-        if (device.kind != "Plate" || item == devices_.end() || (item->kind != "Door" && item->kind != "Laser")) {
-            return device.id + " 的连接必须指向本区块的门或激光。";
+        if (item == devices_.end() || (item->kind != "Door" && item->kind != "Laser" && item->kind != "Bridge")) {
+            return device.id + " 的本屏连接必须指向门、激光或伸缩桥。";
         }
     }
     return {};

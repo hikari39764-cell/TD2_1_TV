@@ -1,0 +1,120 @@
+{
+ "asset": {
+  "generator": "TD2 td2_props.py",
+  "version": "2.0"
+ },
+ "scene": 0,
+ "scenes": [
+  {
+   "name": "Scene",
+   "nodes": [
+    0
+   ]
+  }
+ ],
+ "nodes": [
+  {
+   "mesh": 0,
+   "name": "SM_TD2_Cable_L_Turn_Lit"
+  }
+ ],
+ "meshes": [
+  {
+   "name": "SM_TD2_Cable_L_Turn_Lit",
+   "primitives": [
+    {
+     "attributes": {
+      "POSITION": 0,
+      "NORMAL": 1
+     },
+     "indices": 2,
+     "material": 0
+    }
+   ]
+  }
+ ],
+ "materials": [
+  {
+   "name": "TD2P_signal_lit",
+   "pbrMetallicRoughness": {
+    "baseColorFactor": [
+     1.0,
+     0.3,
+     0.62,
+     1
+    ],
+    "metallicFactor": 0.0,
+    "roughnessFactor": 0.4
+   },
+   "emissiveFactor": [
+    1.0,
+    0.26,
+    0.6
+   ],
+   "extensions": {
+    "KHR_materials_emissive_strength": {
+     "emissiveStrength": 4.0
+    }
+   }
+  }
+ ],
+ "buffers": [
+  {
+   "byteLength": 13440,
+   "uri": "SM_TD2_Cable_L_Turn_Lit.bin"
+  }
+ ],
+ "bufferViews": [
+  {
+   "buffer": 0,
+   "byteOffset": 0,
+   "byteLength": 4512,
+   "target": 34962
+  },
+  {
+   "buffer": 0,
+   "byteOffset": 4512,
+   "byteLength": 4512,
+   "target": 34962
+  },
+  {
+   "buffer": 0,
+   "byteOffset": 9024,
+   "byteLength": 4416,
+   "target": 34963
+  }
+ ],
+ "accessors": [
+  {
+   "bufferView": 0,
+   "componentType": 5126,
+   "count": 376,
+   "type": "VEC3",
+   "min": [
+    -0.523989070939936,
+    -1.2270666009587528,
+    -0.18892566858796067
+   ],
+   "max": [
+    0.025185184957008035,
+    0.00012635158189725884,
+    0.3796776492304751
+   ]
+  },
+  {
+   "bufferView": 1,
+   "componentType": 5126,
+   "count": 376,
+   "type": "VEC3"
+  },
+  {
+   "bufferView": 2,
+   "componentType": 5123,
+   "count": 2208,
+   "type": "SCALAR"
+  }
+ ],
+ "extensionsUsed": [
+  "KHR_materials_emissive_strength"
+ ]
+}

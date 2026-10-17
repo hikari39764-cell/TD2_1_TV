@@ -37,7 +37,7 @@ struct MechanismRuntime {
     double rest = 0.0;                    // 自動往復で、端に着いてから止まっている秒数
     int pending = 0; double pendingTime = 0.0;   // settle の間、待っている次の状態と経過秒
 };
-// 槽の並んだ棚。メンバーの部屋の圧力板（targets=slide/区域ID）を踏むと、その部屋が隣の空いた槽へ滑る。
+// スロットの並んだ棚。メンバーの部屋の圧力板（targets=slide/区域ID）を踏むと、その部屋が隣の空いたスロットへ滑る。
 // 空きが隣に無ければ動かず、blockedCount が増える（揺れの合図）。
 struct SlideSlot { int worldX = 0, worldY = 0, col = 0, row = 0; };
 struct SlideSource {
@@ -48,13 +48,47 @@ struct SlideSource {
 };
 struct SlideRuntime {
     SlideSource source;
-    std::vector<int> slotOf;          // メンバーごとの今の槽
+    std::vector<int> slotOf;          // メンバーごとの今のスロット
     std::vector<size_t> devices;      // メンバーごとの受け口（slide/区域ID）
     std::vector<char> powered;
     int moving = -1, from = -1, to = -1;
     double progress = 0.0;
     int blocked = -1;                 // 最後に動けなかったメンバー
     uint64_t blockedCount = 0;
+};
+// 同じ受け口を指す圧力板ごとの踏み込み。どれか一枚が押されたままでも、別の板を踏めば一回分になる。
+struct PlateEdges {
+    std::vector<size_t> plates;
+    std::vector<char> was;
+};
+// 重ねたテレビ：下から上へのスロットと、抜いたテレビの置き場。一番下を後ろへ抜くと、上のテレビが一段ずつ落ちる。
+struct StackSource {
+    std::string id;
+    double pullSeconds = .8, dropSeconds = .35, resetSeconds = 2.0;
+    std::vector<std::pair<int, int>> slots;   // 世界位置（下から上）
+    std::vector<std::pair<int, int>> docks;   // 抜いたテレビの置き場（どこともつながらない所）
+    std::vector<std::string> members;         // 最初に下のスロットから順に並ぶ部屋
+};
+struct StackRuntime {
+    StackSource source;
+    std::vector<int> at, to;      // メンバーごとの今の場所と向かう先：0 以上はスロット、-1-k は置き場 k
+    PlateEdges pull, reset;
+    int phase = 0;                // 0 止まっている、1 抜く、2 落ちる、3 元へ戻す
+    double progress = 0.0;
+    uint64_t blockedCount = 0;    // 抜けなかった回数（画面側の揺れの合図）
+};
+// 四面の回転柱：面（部屋）が立ち位置を時計回りに巡る。step だけ回した時、面 i は立ち位置 (i + step) mod 面の数。
+struct CarouselSource {
+    std::string id;
+    double seconds = 1.6;
+    std::vector<std::pair<int, int>> stations;   // 世界位置（正面・右・背面・左の順）
+    std::vector<std::string> faces;              // 最初に立ち位置 0 から順にいる部屋
+};
+struct CarouselRuntime {
+    CarouselSource source;
+    int step = 0, direction = 0;   // direction：回っている間 +1（時計回り）か -1
+    double progress = 0.0;
+    PlateEdges cw, ccw;
 };
 struct RegionEvents { std::string regionId; StepOutput output; };
 struct RegionTransition { std::string kind, fromRegion, toRegion; Vec2 worldPosition; };
@@ -68,9 +102,14 @@ class Exploration {
 public:
     // この試遊だけ開始区域を差し替える。作者の設定は変えない。
     std::string Initialize(std::vector<RegionSource> sources, std::vector<MechanismSource> mechanisms,
-                           std::vector<SlideSource> slides = {}, std::string_view entryOverride = {}, std::optional<Vec2> spawnOverride = {});
+                           std::vector<SlideSource> slides = {}, std::vector<StackSource> stacks = {}, std::vector<CarouselSource> carousels = {},
+                           std::string_view entryOverride = {}, std::optional<Vec2> spawnOverride = {});
     const std::vector<MechanismRuntime>& Mechanisms() const noexcept { return mechanisms_; }
     const std::vector<SlideRuntime>& Slides() const noexcept { return slides_; }
+    const std::vector<StackRuntime>& Stacks() const noexcept { return stacks_; }
+    const std::vector<CarouselRuntime>& Carousels() const noexcept { return carousels_; }
+    // 初期化で止めた仕掛けや外した圧力板の目標（世界は動かしたまま、作者へ知らせる）。
+    const std::vector<std::string>& Problems() const noexcept { return problems_; }
     ExplorationOutput Step(const InputState& input, double seconds);
     const RegionRuntime* FindRegion(std::string_view id) const;
     const std::map<std::string, RegionRuntime>& Regions() const noexcept { return regions_; }
@@ -92,12 +131,18 @@ private:
     std::string RegionAt(const Rect& body) const;
     void UpdateMechanisms(double seconds);
     void UpdateSlides(double seconds);
+    bool Rising(PlateEdges& edges) const;
+    void UpdateStacks(double seconds);
+    void UpdateCarousels(double seconds);
     std::vector<MechanismMove> TargetsFor(const MechanismRuntime& mechanism, int state) const;
     // 部屋をまとめて動かす（重なるなら何もしない）。中の体・装置・記録も一緒に運び、flip が変われば 180° 回す。
     bool MoveRegions(const std::vector<MechanismMove>& targets);
 
     std::vector<MechanismRuntime> mechanisms_;
     std::vector<SlideRuntime> slides_;
+    std::vector<StackRuntime> stacks_;
+    std::vector<CarouselRuntime> carousels_;
+    std::vector<std::string> problems_;
     std::set<std::string, std::less<>> isolated_;   // 動いている部屋（境界でどこともつながない）
 
     std::map<std::string, RegionRuntime> regions_;

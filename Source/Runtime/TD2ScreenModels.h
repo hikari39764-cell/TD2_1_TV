@@ -14,21 +14,24 @@
 
 namespace TD2 {
 using PartRequest = HIKARI::GameProjectPresentationModelRequest;
-// 人物は地形の奥行きの中ほどに立たせる（正面が 0、モデルの奥行きは約 0.4 マス）。
-inline constexpr double kActorDepth = -0.15;
 // 世界の外の退避点（世界のマス）。人物・残像・予告の輪の使わないモデルをここへ置く。
 inline constexpr double kParkX = -64, kParkY = -64;
 
 class StagePartBuilder {
 public:
-    StagePartBuilder(const StageProjection& projection, int palette, uint64_t owner, std::vector<PartRequest>& out)
-        : projection_(projection), palette_(palette), owner_(owner), out_(out) {}
+    // kit は部品の組（0 白舱、1 青瓷、2・3 はその立体の組）。
+    StagePartBuilder(const StageProjection& projection, int kit, uint64_t owner, std::vector<PartRequest>& out)
+        : projection_(projection), palette_(kit), owner_(owner), out_(out) {}
     // 意味名ごとに ID の系列を固定する（マスや装置が増減しても別の部品の ID を使い回さない）。
     void Begin(std::string_view key);
     // 180° 回された部屋の中の物を描く時：(cx, cy)（世界のマス）について点対称に置き、部品も 180° 回す。
     // 回されたテレビの画面は絵ごと逆さに写るので、規則の上で正立している物が画面でも正立して見える。
     void Mirror(double cx, double cy) { mirror_ = true; mirrorX_ = cx; mirrorY_ = cy; }
     void NoMirror() { mirror_ = false; }
+    // 編集中（全部の部屋を一度に写す）は目盛りの線と、つながった口の鎧戸を出さない（描画物体の上限に収める）。
+    void Compact(bool on) { compact_ = on; }
+    // 装置の小さな動き（硬貨の回転、丸鋸、輪の脈、キーの押し、光線の脈）に使う実時間（秒）。編集中は止める。
+    void SetTime(double seconds) { time_ = seconds; }
     // leanPivot は傾きを釣り合わせる高さ（部品の下辺から、マス）。負なら部品の高さの中ほど。
     bool Add(std::string_view part, double x, double bottomY, double width = 1, double height = 1, double depth = 0,
              HIKARI::GameProjectQuaternion rotation = {}, double leanPivot = -1, bool visible = true);
@@ -51,16 +54,16 @@ public:
 
 private:
     // 仕掛けの通電灯（点灯・消灯の二つを出して片方だけ見せる）。点いた直後は灯が一度膨らみ、光の粒が散る。
-    void Lamp(double x, double bottomY, bool lit, double since);
+    void Lamp(double x, double bottomY, bool lit, double since, bool world = false);
     // 引っ込んだ仕掛けの輪郭（菫の破線）。部品の数は寸法だけで決まる。
-    void Outline(double left, double top, double right, double bottom, bool visible);
+    void Outline(double left, double top, double right, double bottom, bool visible, bool link = false);
     const StageProjection& projection_;
     int palette_ = 0;
     uint64_t owner_ = 0;
     std::vector<PartRequest>& out_;
     uint64_t semantic_ = 1, partIndex_ = 0;
-    bool mirror_ = false;
-    double mirrorX_ = 0, mirrorY_ = 0;
+    bool mirror_ = false, compact_ = false;
+    double mirrorX_ = 0, mirrorY_ = 0, time_ = 0;
     size_t failed_ = 0;
 };
 }

@@ -3,9 +3,12 @@
 #include "TD2EditorChoices.h"
 #include "TD2CameraAuthoring.h"
 #include "TD2CameraLayout.h"
+#include "TD2MachineEditor.h"
+#include "TD2StageTools.h"
 #include "../Common/TD2WorldLayout.h"
 #include "../Common/TD2PreviewEntry.h"
 #include <array>
+#include <functional>
 #include <limits>
 #include <memory>
 #include <optional>
@@ -15,8 +18,9 @@ namespace TD2::Editor {
 namespace {
 constexpr uint32_t kPrimary = static_cast<uint32_t>(EditorWorkspacePointerButton::Primary);
 constexpr uint32_t kSecondary = static_cast<uint32_t>(EditorWorkspacePointerButton::Secondary);
-constexpr const char* kTelevisionWorkspace = "td2.television_region";
-constexpr const char* kWorldWorkspace = "td2.world_map";
+constexpr const char* kLevelWorkspace = "td2.level_editor";
+// 見方：-1 はテレビ地図、0〜3 は世界地図の配置・カメラ大区域・俯瞰カメラ・仕掛け。
+constexpr int kTelevisionView = -1;
 
 struct RoomItem {
     SceneItem object;
@@ -40,6 +44,25 @@ public:
     uint64_t revision = 0;
     bool sceneDirty = false, savedOnce = false;
     std::string error, published, screenWarning;
+    // 画面の外の仕掛け（読み直しは重いので、開いた時・仕掛けを書いた時・刷新を押した時だけ）。
+    std::vector<Machine> machines;
+    bool machinesStale = true;
+    void RefreshMachines(EditorWorkspaceHostContext& ctx) {
+        if (!machinesStale) { return; }
+        machinesStale = false;
+        std::string problem;
+        if (!LoadMachines(ctx, machines, problem)) { error = problem; }
+    }
+    // 全部の区域の圧力板の目標（"区域ID/装置ID" → 目標）。草稿中の区域は草稿の値。
+    std::map<std::string, std::vector<std::string>> PlateTargets() const {
+        std::map<std::string, std::vector<std::string>> result;
+        for (const auto& room : rooms) {
+            const auto& s = room.object.objectId == selected && ready ? draft : room.settings;
+            DeviceEditor d; d.Load(s.devices);
+            for (const auto& device : d.Items()) { if (device.kind == "Plate") { result[s.region.regionId + "/" + device.id] = device.targets; } }
+        }
+        return result;
+    }
 
     RoomItem* Current() {
         const auto it = std::find_if(rooms.begin(), rooms.end(), [this](const auto& r) { return r.object.objectId == selected; });
@@ -50,6 +73,8 @@ public:
     void Discard() { if (const auto* item = Current()) { draft = item->settings; devices.Load(draft.devices); } gesture = false; error.clear(); screenWarning.clear(); }
     void Poll(EditorWorkspaceHostContext& ctx, bool force = false) {
         elapsed += ctx.unscaledDeltaSeconds;
+        // 標準の Ctrl+Z / Ctrl+Y はシーンの履歴を直接動かすので、その後の数フレームは草稿を捨てて読み直す。
+        if (historyFrames > 0) { --historyFrames; if (!gesture) { Discard(); force = true; machinesStale = true; } }
         if (gesture || Dirty() || (!force && !refresh && elapsed < .75f)) { return; }
         elapsed = 0; refresh = false;
         std::vector<SceneItem> objects;
@@ -169,6 +194,65 @@ public:
         ResolveScreenMaterial(ctx, draft, screenWarning);
         if (Commit(ctx)) { error.clear(); }
     }
+    // ---- シーン（3D）の選択との同期。シーンでテレビを選ぶと地図もそのテレビを開き、地図で選ぶとシーンでもそのテレビを選ぶ。
+    uint64_t sceneSelection = 0;
+    float selectionClock = 1;
+    int historyFrames = 0;
+    static uint64_t TelevisionObject(const RoomItem& room) { return room.settings.screenObject ? room.settings.screenObject : room.object.objectId; }
+    void FollowScene(EditorWorkspaceHostContext& ctx) {
+        selectionClock += ctx.unscaledDeltaSeconds;
+        if (gesture || selectionClock < .25f) { return; }
+        selectionClock = 0;
+        const auto state = Execute(ctx, "editor.state", Json::object());
+        if (!state.ok) { return; }
+        const auto selection = state.data.value("selection", Json::object());
+        const uint64_t id = selection.is_object() ? ObjectId(selection.value("activeObjectId", Json{})) : 0;
+        if (id == sceneSelection) { return; }
+        sceneSelection = id;
+        for (const auto& room : rooms) {
+            if (!id || (room.object.objectId != id && room.settings.screenObject != id)) { continue; }
+            if (room.object.objectId != selected) { Select(ctx, room.object.objectId); }
+            return;
+        }
+    }
+    void ShowInScene(EditorWorkspaceHostContext& ctx) {
+        const auto* room = Current();
+        if (!room) { return; }
+        const auto id = TelevisionObject(*room);
+        if (id != sceneSelection && Execute(ctx, "scene.object.select", {{"objectId", id}}).ok) { sceneSelection = id; }
+    }
+    // 新しく置いたテレビの物体を区域にする：型の格子、床だけの地図、画面の解像度。
+    // beside が世界に置いてあれば、世界地図ではその右（空いていなければ左・上・下）に下端を揃えて置く。
+    bool AdoptTelevision(EditorWorkspaceHostContext& ctx, uint64_t object, const TelevisionModel& model, std::optional<RegionSettings> beside) {
+        if (Dirty() && !Commit(ctx)) { return false; }
+        if (!AddRegion(ctx, object, true, error)) { return false; }
+        sceneDirty = true;
+        refresh = true; Poll(ctx, true);
+        if (!Select(ctx, object)) { return false; }
+        ResolveScreenMaterial(ctx, draft, screenWarning);
+        const auto previous = draft.region;
+        draft.region.cols = model.cols; draft.region.rows = model.rows;
+        if (!ResizeCells(previous, draft.region)) { draft.region = previous; error = "格子尺寸设置失败"; return false; }
+        std::fill(draft.region.cells.begin(), draft.region.cells.end(), '0');
+        for (int x = 0; x < model.cols; ++x) { draft.region.cells[CellIndex(draft.region, x, model.rows - 1)] = '1'; }
+        const float scale = (std::min)(1.0f, 2048.0f / static_cast<float>((std::max)(model.cols, model.rows) * draft.region.tilePixels));
+        draft.outputWidth = (std::max)(32, static_cast<int>(std::round(static_cast<float>(model.cols * draft.region.tilePixels) * scale)));
+        draft.outputHeight = (std::max)(32, static_cast<int>(std::round(static_cast<float>(model.rows * draft.region.tilePixels) * scale)));
+        draft.spawnX = 1.1875f; draft.spawnY = static_cast<float>(model.rows) - 1.875f;
+        draft.devices.clear(); devices.Load(draft.devices);
+        draft.worldPlaced = false;
+        if (beside && beside->worldPlaced) {
+            const int bx = beside->worldX, by = beside->worldY, bc = beside->region.cols, br = beside->region.rows;
+            const std::array<std::pair<int, int>, 4> spots{{{bx + bc, by + br - model.rows}, {bx - model.cols, by + br - model.rows}, {bx, by - model.rows}, {bx, by + br}}};
+            for (const auto& [x, y] : spots) {
+                auto trial = draft; trial.worldPlaced = true; trial.worldX = x; trial.worldY = y;
+                if (ValidateWorldLayout(Layout(&trial)).valid) { draft = trial; break; }
+            }
+        }
+        if (!Commit(ctx)) { return false; }
+        error = draft.worldPlaced || !beside ? std::string{} : "已建好；世界地图上旁边没有空位，请从列表把它拖进世界";
+        return true;
+    }
     void Publish(EditorWorkspaceHostContext& ctx) {
         std::string message = !error.empty() ? error : screenWarning;
         if (message.empty() && !rooms.empty()) {
@@ -182,60 +266,77 @@ public:
     }
 };
 
-class MapWorkspace : public IEditorWorkspace {
+// レベル編集の二つの見方（テレビ地図・世界地図）の共通部分。左の欄（一覧と属性）と右の欄（地図）の中身を描く。
+class MapMode {
 public:
-    explicit MapWorkspace(std::shared_ptr<MapModel> model) : model_(std::move(model)) {}
-    std::string_view GetDocumentIdentity() const override { return "td2.scene.maps"; }
-    void OnActivate(EditorWorkspaceHostContext& ctx) override {
-        model_->Poll(ctx, true);
-        if (!centerCreated_) { centerWarmupFrames_ = 2; }
-    }
-    void OnDeactivate(EditorWorkspaceHostContext& ctx) override { if (model_->gesture) { model_->Finish(ctx, true); } }
-    bool IsDirty() const override { return model_->Dirty(); }
-    EditorWorkspaceSaveResult Save(EditorWorkspaceHostContext& ctx) override {
+    explicit MapMode(std::shared_ptr<MapModel> model) : model_(std::move(model)) {}
+    virtual ~MapMode() = default;
+    virtual void OnActivate(EditorWorkspaceHostContext& ctx) { model_->Poll(ctx, true); model_->machinesStale = true; }
+    virtual void OnDeactivate(EditorWorkspaceHostContext& ctx) { if (model_->gesture) { model_->Finish(ctx, true); } }
+    virtual bool IsDirty() const { return model_->Dirty(); }
+    EditorWorkspaceSaveResult Save(EditorWorkspaceHostContext& ctx) {
         if (!ApplyDraft(ctx)) { return EditorWorkspaceSaveResult::Failed; }
         const auto saved = Execute(ctx, "scene.save", Json::object());
         if (!saved.ok) { model_->error = saved.error; return EditorWorkspaceSaveResult::Failed; }
         model_->sceneDirty = false; model_->savedOnce = true; model_->error.clear();
         return EditorWorkspaceSaveResult::Saved;
     }
-    void DiscardChanges(EditorWorkspaceHostContext&) override { model_->Discard(); }
-    EditorWorkspaceCloseDisposition QueryClose(EditorWorkspaceCloseReason) const override { return IsDirty() ? EditorWorkspaceCloseDisposition::RequiresSave : EditorWorkspaceCloseDisposition::Allow; }
-protected:
-    // ワークスペースの切り替えはメモリへ適用するだけ。ディスクへの保存とは別。
+    virtual void DiscardChanges(EditorWorkspaceHostContext&) { model_->Discard(); }
+    // 見方を変える前に草稿をシーンへ適用する。ディスクへの保存とは別。
     virtual bool ApplyDraft(EditorWorkspaceHostContext& ctx) { return model_->Commit(ctx); }
-    bool MapPanelReady() {
-        // 初回だけ標準のビューポートを先に作る。以後は作者のタブ選択を変えない。
-        if (centerWarmupFrames_ > 0) { --centerWarmupFrames_; return false; }
-        centerCreated_ = true; return true;
-    }
+    // 一フレームの始まり（左右の欄を描く前）。
+    virtual void BeginFrame(EditorWorkspaceHostContext&) {}
+    virtual void DrawSide(EditorWorkspaceHostContext& ctx) = 0;   // 左：一覧と属性
+    virtual void DrawMap(EditorWorkspaceHostContext& ctx) = 0;    // 右：2D の地図
+    // 見方の切り替えを頼む（実際の切り替えは次のフレームの初め）。
+    std::function<void(int)> switcher;
+protected:
     void SaveControls(EditorWorkspaceHostContext& ctx, std::string_view controlId = "td2.map.save") {
         auto& ui = *ctx.ui;
         // 作者が保存した時だけ Scene をディスクへ書く。ブラシやドラッグでは書かない。
         if (ui.Button(controlId, "保存场景")) { Save(ctx); }
         ui.SameLine(); ui.Text(IsDirty() ? "草稿未应用" : model_->sceneDirty ? "已应用 · 未保存" : model_->savedOnce ? "已保存" : "已载入");
     }
-    void HistoryToolbar(EditorWorkspaceHostContext& ctx, std::string_view otherId, std::string_view otherName) {
+    // 左の欄の上：保存・取り消し・やり直し・草稿。
+    void HistoryToolbar(EditorWorkspaceHostContext& ctx) {
         auto& ui = *ctx.ui;
-        if (ui.Button("td2.map.switch", otherName)) { if (ApplyDraft(ctx)) { ctx.commands->RequestActivateWorkspace(otherId); } }
-        ui.SameLine();
+        SaveControls(ctx);
         // 取り消し・やり直しの前に草稿を適用する。
         if (ui.Button("td2.map.undo", "撤销")) { if (!IsDirty() || ApplyDraft(ctx)) { model_->History(ctx, false); } }
         ui.SameLine();
         if (ui.Button("td2.map.redo", "重做")) { if (!IsDirty() || ApplyDraft(ctx)) { model_->History(ctx, true); } }
         ui.SameLine();
-        if (ui.Button("td2.map.fit", "适应")) { view_.fit = true; }
-        ui.SameLine();
-        if (ui.Button("td2.map.pan", hand_ ? "平移 ●" : "平移")) { hand_ = !hand_; }
-        ui.SameLine();
-        if (ui.Button("td2.map.refresh", "刷新")) { model_->Poll(ctx, true); }
+        if (ui.Button("td2.map.refresh", "刷新")) { model_->Poll(ctx, true); model_->machinesStale = true; }
         if (model_->Dirty() && !model_->gesture) {
             ui.SameLine(); if (ui.Button("td2.map.apply", "应用")) { model_->Commit(ctx); }
             ui.SameLine(); if (ui.Button("td2.map.discard", "撤回草稿")) { model_->Discard(); }
         }
+        // 標準の Ctrl+Z / Ctrl+Y はエンジンがシーンの履歴へ送る。ここでは重ねて取り消さず、読み直しだけを頼む。
         const auto interaction = ui.GetInteraction();
-        if (!interaction.editing && interaction.undoPressed && (!IsDirty() || ApplyDraft(ctx))) { model_->History(ctx, false); }
-        if (!interaction.editing && interaction.redoPressed && (!IsDirty() || ApplyDraft(ctx))) { model_->History(ctx, true); }
+        if (!interaction.editing && (interaction.undoPressed || interaction.redoPressed)) { model_->historyFrames = 3; model_->sceneDirty = true; }
+        if (!model_->error.empty()) { ui.Text("⚠ " + model_->error); }
+        ui.Separator();
+    }
+    // 右の欄の上：見方の切り替え。
+    // 欄が狭くても切れないよう、表の列に並べる。
+    void ModeBar(EditorWorkspaceHostContext& ctx, int current) {
+        auto& ui = *ctx.ui;
+        constexpr std::array<std::string_view, 5> names{"电视地图", "世界布局", "镜头大区域", "俯视镜头", "机关"};
+        if (!ui.BeginTable("td2.level.views", static_cast<uint32_t>(names.size()))) { return; }
+        ui.TableNextRow();
+        for (size_t i = 0; i < names.size(); ++i) {
+            const int view = static_cast<int>(i) - 1;
+            ui.TableNextColumn();
+            if (ui.Button("td2.level.view." + std::to_string(i), (view == current ? "● " : "") + std::string(names[i])) && view != current && switcher) { switcher(view); }
+        }
+        ui.EndTable();
+    }
+    // 地図の見方（合わせる・つかんで動かす）。中ボタンのドラッグとホイールはいつでも使える。
+    void ViewControls(EditorWorkspaceHostContext& ctx) {
+        auto& ui = *ctx.ui;
+        if (ui.Button("td2.map.fit", "适应")) { view_.fit = true; }
+        ui.SameLine();
+        if (ui.Button("td2.map.pan", hand_ ? "平移 ●" : "平移")) { hand_ = !hand_; }
     }
     void DrawThumbnail(IEditorWorkspaceUi& ui, const RoomItem& room, const EditorWorkspaceCanvasInput& canvas) {
         const auto& settings = room.object.objectId == model_->selected && model_->ready ? model_->draft : room.settings;
@@ -249,107 +350,120 @@ protected:
     std::shared_ptr<MapModel> model_;
     MapCanvasView view_;
     bool hand_ = false;
-    bool centerCreated_ = false;
-    int centerWarmupFrames_ = 0;
 };
 
 // テレビ単位の作者編集。実行時の状態は持たない。
-class TelevisionMapWorkspace final : public MapWorkspace {
+class TelevisionMode final : public MapMode {
 public:
-    using MapWorkspace::MapWorkspace;
-    EditorWorkspaceDescriptor GetDescriptor() const override {
-        EditorWorkspaceDescriptor d; d.workspaceId = kTelevisionWorkspace; d.displayName = "电视地图";
-        d.options = static_cast<uint32_t>(EditorWorkspaceOption::RequestSceneViewport); return d;
-    }
-    void OnActivate(EditorWorkspaceHostContext& ctx) override { MapWorkspace::OnActivate(ctx); drag_ = Drag::None; ChooseTool(0); }
-    void OnDeactivate(EditorWorkspaceHostContext& ctx) override { MapWorkspace::OnDeactivate(ctx); drag_ = Drag::None; linkSource_.clear(); }
-    void Draw(EditorWorkspaceHostContext& ctx) override {
-        if (!ctx.ui || !ctx.commands) { return; }
-        model_->Poll(ctx);
+    using MapMode::MapMode;
+    void OnActivate(EditorWorkspaceHostContext& ctx) override { MapMode::OnActivate(ctx); drag_ = Drag::None; ChooseTool(0); view_.fit = true; }
+    void OnDeactivate(EditorWorkspaceHostContext& ctx) override { MapMode::OnDeactivate(ctx); drag_ = Drag::None; linkSource_.clear(); }
+    // 左：保存と履歴・今のテレビ・テレビの一覧（畳める）・選んだものの属性。
+    void DrawSide(EditorWorkspaceHostContext& ctx) override {
         auto& ui = *ctx.ui;
-        DrawList(ctx);
-        if (MapPanelReady()) {
-            if (ui.BeginPanel("td2.television.canvas.panel.v5", "电视地图", nullptr, EditorWorkspaceDockRegion::Center)) {
-                // ツールバーのドックは既定のレイアウトで隠れるので、操作はメインキャンバスの上に置く。
-                HistoryToolbar(ctx, kWorldWorkspace, "世界地图");
-                ui.SameLine(); SaveControls(ctx);
-                ui.Separator();
-                if (tool_ == 3) { ui.Text("放置：" + DeviceLabel(kind_) + " · 点空格放置，按住 Shift 可叠放"); }
-                else if (tool_ == 4) { ui.Text("连线：点压板，再点门或激光"); }
-                DrawCanvas(ctx);
-            } ui.EndPanel();
+        HistoryToolbar(ctx);
+        if (const auto* room = model_->Current()) {
+            ui.Text(ShortChoiceLabel(room->object.name, 16) + "  " + std::to_string(room->settings.region.cols) + "×" + std::to_string(room->settings.region.rows));
+            ui.SameLine();
         }
-        if (ui.BeginPanel("td2.television.properties", "选中属性", nullptr, EditorWorkspaceDockRegion::Right)) { DrawProperties(ctx); } ui.EndPanel();
-        model_->Publish(ctx);
+        if (ui.Button("td2.television.gallery", gallery_ ? "收起列表" : "换一台电视")) { gallery_ = !gallery_; }
+        if (gallery_ || !model_->ready) { DrawGallery(ctx); ui.Separator(); }
+        DrawProperties(ctx);
+    }
+    // 右：見方の切り替え・道具と仕掛けの板・地図。置くものを選ぶのに欄を切り替えなくてよいよう、全部を地図の上に並べる。
+    void DrawMap(EditorWorkspaceHostContext& ctx) override {
+        ModeBar(ctx, kTelevisionView);
+        // シーンでの選択などでテレビが変わったら、新しいテレビに合わせる。
+        if (model_->selected != shown_) { shown_ = model_->selected; view_.fit = true; drag_ = Drag::None; ChooseTool(tool_ == 3 ? 3 : 0); }
+        DrawPalette(ctx);
+        DrawCanvas(ctx);
     }
 private:
     enum class Drag { None, Paint, Move, Resize, Spawn, Box };
     void ChooseTool(int tool) { tool_ = tool; hand_ = false; linkSource_.clear(); groupIds_.clear(); }
     void ChooseKind(size_t index) { kind_ = kEditorDeviceKinds[index]; ChooseTool(3); model_->devices.Select(-1); }
-    void DrawList(EditorWorkspaceHostContext& ctx) {
+    void DrawGallery(EditorWorkspaceHostContext& ctx) {
         auto& ui = *ctx.ui;
-        if (ui.BeginPanel("td2.television.library", "工具与机关", nullptr, EditorWorkspaceDockRegion::Left)) {
-            SaveControls(ctx, "td2.map.save.backup"); ui.Separator();
-            if (const auto* room = model_->Current()) { ui.Text(ShortChoiceLabel(room->object.name)); }
-            if (ui.Button("td2.television.gallery", gallery_ ? "收起电视列表" : "切换电视")) { gallery_ = !gallery_; }
-            if (gallery_ || !model_->ready) {
-                if (ui.Button("td2.television.add_selected", "选中电视建图")) { model_->AddSelectedTelevision(ctx); view_.fit = true; ChooseTool(0); }
-                if (ui.Button("td2.television.new", "+ 空白地图")) { model_->Create(ctx); view_.fit = true; ChooseTool(0); }
-                EditText(ui, "td2.television.gallery.search", "查找", gallerySearch_);
-                const auto rooms = model_->rooms;
-                for (size_t i = 0; i < rooms.size(); ++i) {
-                    const auto& room = rooms[i];
-                    if (!gallerySearch_.empty() && room.object.name.find(gallerySearch_) == std::string::npos &&
-                        room.settings.region.regionId.find(gallerySearch_) == std::string::npos) { continue; }
-                    ui.Text(ShortChoiceLabel(room.object.name) + " " + std::to_string(room.settings.region.cols) + "×" + std::to_string(room.settings.region.rows));
-                    const auto input = ui.BeginCanvas("td2.television.thumbnail." + std::to_string(room.object.objectId), 72);
-                    DrawThumbnail(ui, room, input);
-                    if (input.hovered && (input.pressedButtons & kPrimary)) {
-                        if (model_->Select(ctx, room.object.objectId)) { view_.fit = true; drag_ = Drag::None; gallery_ = false; ChooseTool(0); }
-                    }
-                    ui.EndCanvas();
-                }
+        if (ui.Button("td2.television.add_selected", "选中电视建图")) { model_->AddSelectedTelevision(ctx); view_.fit = true; ChooseTool(0); }
+        ui.SameLine();
+        if (ui.Button("td2.television.new", "+ 空白地图")) { model_->Create(ctx); view_.fit = true; ChooseTool(0); }
+        EditText(ui, "td2.television.gallery.search", "查找", gallerySearch_);
+        const auto rooms = model_->rooms;
+        for (size_t i = 0; i < rooms.size(); ++i) {
+            const auto& room = rooms[i];
+            if (!gallerySearch_.empty() && room.object.name.find(gallerySearch_) == std::string::npos &&
+                room.settings.region.regionId.find(gallerySearch_) == std::string::npos) { continue; }
+            ui.Text(ShortChoiceLabel(room.object.name) + " " + std::to_string(room.settings.region.cols) + "×" + std::to_string(room.settings.region.rows));
+            const auto input = ui.BeginCanvas("td2.television.thumbnail." + std::to_string(room.object.objectId), 60);
+            DrawThumbnail(ui, room, input);
+            if (input.hovered && (input.pressedButtons & kPrimary)) {
+                if (model_->Select(ctx, room.object.objectId)) { view_.fit = true; drag_ = Drag::None; gallery_ = false; ChooseTool(0); }
             }
-            ui.Separator(); ui.Text("工具 / 地形");
-            constexpr std::array<std::string_view, 8> tools{"↖ 选择", "▧ 地形", "⌫ 擦除", "+ 放机关", "⌁ 连线", "◉ 出生点", "□ 框选", "▣ 粘贴"};
-            const bool toolsTable = ui.BeginTable("td2.television.tools", 4);
-            for (size_t i = 0; i < tools.size(); ++i) {
-                if (toolsTable) { if (i % 4 == 0) { ui.TableNextRow(); } ui.TableNextColumn(); }
-                if (ui.Button("td2.television.tool." + std::to_string(i), std::string(tools[i]) + (tool_ == static_cast<int>(i) ? " ●" : ""))) { ChooseTool(static_cast<int>(i)); }
+            ui.EndCanvas();
+        }
+    }
+    // 道具（選ぶ・地形・消す・連線・スポーン位置・範囲選択・貼り付け）と仕掛けの種類を一枚の板にする。仕掛けの種類を押すとそのまま置く道具になる。
+    void DrawPalette(EditorWorkspaceHostContext& ctx) {
+        auto& ui = *ctx.ui;
+        constexpr std::array<std::pair<int, std::string_view>, 7> tools{{{0, "↖ 选择"}, {1, "▧ 地形"}, {2, "⌫ 擦除"}, {4, "⌁ 连线"}, {5, "◉ 出生点"}, {6, "□ 框选"}, {7, "▣ 粘贴"}}};
+        constexpr size_t columns = 4;
+        if (ui.BeginTable("td2.television.tools", static_cast<uint32_t>(columns))) {
+            for (size_t i = 0; i <= tools.size(); ++i) {
+                if (i % columns == 0) { ui.TableNextRow(); }
+                ui.TableNextColumn();
+                if (i == tools.size()) { ViewControls(ctx); break; }
+                const auto [tool, label] = tools[i];
+                if (ui.Button("td2.television.tool." + std::to_string(tool), std::string(tool_ == tool ? "● " : "") + std::string(label))) { ChooseTool(tool); }
             }
-            if (toolsTable) { ui.EndTable(); }
-            if (tool_ == 6) {
-                ui.Text("框选机关：" + std::to_string(groupIds_.size()));
-                if (ui.Button("td2.television.group.copy", "复制框选")) {
-                    clipboard_.clear(); for (const auto& d : model_->devices.Items()) { if (std::find(groupIds_.begin(), groupIds_.end(), d.id) != groupIds_.end()) { clipboard_.push_back(d); } }
-                    if (clipboard_.empty()) { model_->error = "先拖框选中机关"; }
-                    else { ChooseTool(7); model_->error.clear(); }
-                }
-            }
-            if (tool_ == 7) { ui.Text(clipboard_.empty() ? "先框选并复制机关" : "点击地图粘贴 " + std::to_string(clipboard_.size()) + " 个机关"); }
-            if (tool_ == 1 || tool_ == 2) {
-                EditInt(ui, "td2.television.brush.size", "笔刷", brushSize_, 1, 4);
-                ui.Checkbox("td2.television.brush.rectangle", "矩形填充", &rectanglePaint_);
-            }
-            ui.Separator(); ui.Text("机关类型");
-            const bool kindsTable = ui.BeginTable("td2.television.kinds", 2);
+            ui.EndTable();
+        }
+        ui.Text("机关");
+        if (ui.BeginTable("td2.television.kinds", static_cast<uint32_t>(columns))) {
             for (size_t i = 0; i < kEditorDeviceKinds.size(); ++i) {
-                if (kindsTable) { if (i % 2 == 0) { ui.TableNextRow(); } ui.TableNextColumn(); }
-                if (ui.Button("td2.television.kind." + std::to_string(i), std::string(kEditorDeviceLabels[i]) + (tool_ == 3 && kind_ == kEditorDeviceKinds[i] ? " ●" : ""))) { ChooseKind(i); }
+                if (i % columns == 0) { ui.TableNextRow(); }
+                ui.TableNextColumn();
+                const bool current = tool_ == 3 && kind_ == kEditorDeviceKinds[i];
+                if (ui.Button("td2.television.kind." + std::to_string(i), std::string(current ? "● " : "") + std::string(kEditorDeviceLabels[i]))) { ChooseKind(i); }
             }
-            if (kindsTable) { ui.EndTable(); }
-            ui.Separator(); ui.Text("现有机关");
-            EditText(ui, "td2.television.devices.search", "查找", deviceSearch_);
-            std::vector<EditorChoice> choices; std::vector<int> indices;
-            for (size_t i = 0; i < model_->devices.Items().size(); ++i) {
-                const auto& d = model_->devices.Items()[i];
-                const std::string name = DeviceLabel(d.kind) + " " + std::to_string(i + 1);
-                if (!deviceSearch_.empty() && name.find(deviceSearch_) == std::string::npos && d.id.find(deviceSearch_) == std::string::npos) { continue; }
-                choices.push_back({"td2.television.device.select." + d.id, name, model_->devices.SelectedIndex() == static_cast<int>(i)}); indices.push_back(static_cast<int>(i));
+            ui.EndTable();
+        }
+        // 道具ごとの補助（筆の太さ・範囲選択のコピー）と一行の説明。
+        if (tool_ == 1 || tool_ == 2) {
+            EditInt(ui, "td2.television.brush.size", "笔刷", brushSize_, 1, 4);
+            ui.SameLine(); ui.Checkbox("td2.television.brush.rectangle", "矩形填充", &rectanglePaint_);
+        }
+        if (tool_ == 6) {
+            ui.Text("框选机关：" + std::to_string(groupIds_.size()));
+            ui.SameLine();
+            if (ui.Button("td2.television.group.copy", "复制框选")) {
+                clipboard_.clear(); for (const auto& d : model_->devices.Items()) { if (std::find(groupIds_.begin(), groupIds_.end(), d.id) != groupIds_.end()) { clipboard_.push_back(d); } }
+                if (clipboard_.empty()) { model_->error = "先拖框选中机关"; }
+                else { ChooseTool(7); model_->error.clear(); }
             }
-            if (choices.empty()) { ui.Text(model_->devices.Items().empty() ? "点击类型，再点地图放置" : "没有匹配的机关"); }
-            else if (const int selected = DrawChoices(ui, choices); selected >= 0) { model_->devices.Select(indices[static_cast<size_t>(selected)]); ChooseTool(0); }
-        } ui.EndPanel();
+        }
+        ui.Text(Hint());
+    }
+    // 一行が欄の幅で切れないよう、短い行に分ける。
+    std::string Hint() const {
+        switch (tool_) {
+        case 1: return "左键拖动画地形 · 右键拖动擦除";
+        case 2: return "拖动擦除地形和机关";
+        case 3: return "点空格放「" + DeviceLabel(kind_) + "」· 点已有的机关改为选中\nShift+点击叠放 · 新放的沿用上次调好的属性";
+        case 4: return "先点压板，再点门 / 激光 / 桥\n再点一次断开";
+        case 5: return "点击设出生点";
+        case 6: return "拖框选中多个机关，再「复制框选」";
+        case 7: return clipboard_.empty() ? "先框选并复制机关" : "点击地图粘贴 " + std::to_string(clipboard_.size()) + " 个机关";
+        default: return "点机关选中并拖动 · 拖角改大小 · Delete 删除\n右键拖动擦除 · 滚轮缩放 · 中键平移";
+        }
+    }
+    // 種類ごとに最後に直した形（大きさ・向き・射程・追加の項目）を覚え、次に置くものへ写す。
+    void RememberTemplate(const DeviceDraft& d) { templates_[d.kind] = d; }
+    void ApplyTemplate(DeviceDraft& d, int cols, int rows) const {
+        const auto found = templates_.find(d.kind);
+        if (found == templates_.end()) { return; }
+        const auto& t = found->second;
+        d.w = std::clamp(t.w, .125, cols - d.x); d.h = std::clamp(t.h, .125, rows - d.y);
+        d.direction = t.direction; d.range = t.range; d.inverted = t.inverted; d.latch = t.latch; d.extra = t.extra;
     }
     void PaintLine(EditorWorkspacePoint a, EditorWorkspacePoint b, bool erase) {
         int x = static_cast<int>(std::floor(a.x)), y = static_cast<int>(std::floor(a.y));
@@ -407,7 +521,8 @@ private:
     }
     void DrawCanvas(EditorWorkspaceHostContext& ctx) {
         auto& ui = *ctx.ui;
-        const auto input = ui.BeginCanvas("td2.television.canvas", 640);
+        const auto input = ui.BeginCanvas("td2.television.canvas", 0);
+        canvasHovered_ = input.hovered != 0;
         view_.ObserveSize(input.size);
         if (model_->ready && input.size.x > 0 && input.size.y > 0) {
             auto& s = model_->draft;
@@ -453,7 +568,10 @@ private:
                     } else if (tool_ == 3 && !erase_) {
                         const int hit = model_->devices.Hit(p.x, p.y);
                         if (hit >= 0 && !input.shift) { model_->devices.Select(hit); ChooseTool(0); }
-                        else if (model_->devices.Add(kind_, static_cast<int>(std::floor(p.x)), static_cast<int>(std::floor(p.y)), s.region.cols, s.region.rows)) { s.devices = model_->devices.Serialize(); model_->Commit(ctx); }
+                        else if (model_->devices.Add(kind_, static_cast<int>(std::floor(p.x)), static_cast<int>(std::floor(p.y)), s.region.cols, s.region.rows)) {
+                            if (auto* added = model_->devices.Selected()) { ApplyTemplate(*added, s.region.cols, s.region.rows); }
+                            s.devices = model_->devices.Serialize(); model_->Commit(ctx);
+                        }
                     } else if (tool_ == 5 && !erase_) { drag_ = Drag::Spawn; }
                     else { drag_ = Drag::Paint; }
                     model_->gesture = drag_ != Drag::None;
@@ -495,6 +613,7 @@ private:
                             const double top = (std::min)(start_.y, last_.y), bottom = (std::max)(start_.y, last_.y);
                             for (const auto& d : model_->devices.Items()) { if (d.x < right && d.x + d.w > left && d.y < bottom && d.y + d.h > top) { groupIds_.push_back(d.id); } }
                         }
+                        if (drag_ == Drag::Resize) { if (const auto* d = model_->devices.Selected()) { RememberTemplate(*d); } }
                         drag_ = Drag::None; model_->Finish(ctx);
                     }
                 }
@@ -510,16 +629,26 @@ private:
                     const auto source = std::find_if(model_->devices.Items().begin(), model_->devices.Items().end(), [this](const auto& d) { return d.id == linkSource_; });
                     if (source != model_->devices.Items().end()) { ui.CanvasLine(view_.Screen(static_cast<float>(source->x + source->w * .5), static_cast<float>(source->y + source->h * .5)), input.pointer, {.93f, .76f, .36f, .75f}, 2); }
                 }
+                // 置く前の影：指しているマスに、これから置く仕掛けを薄く描く。
+                if (tool_ == 3 && drag_ == Drag::None && input.hovered && !view_.panning && !hand_ && inside && (model_->devices.Hit(p.x, p.y) < 0 || input.shift)) {
+                    DeviceDraft ghost; ghost.kind = kind_; ghost.x = std::floor(p.x); ghost.y = std::floor(p.y);
+                    if (kind_ == "Door" || kind_ == "LockWall") { ghost.h = (std::min)(3.0, s.region.rows - ghost.y); }
+                    if (kind_ == "OneWay" || kind_ == "Bridge") { ghost.w = (std::min)(3.0, s.region.cols - ghost.x); }
+                    if (kind_ == "Laser") { ghost.direction = "Right"; }
+                    ApplyTemplate(ghost, s.region.cols, s.region.rows);
+                    DrawDeviceGlyph(ui, ghost, view_);
+                    ui.CanvasRect(view_.Screen(static_cast<float>(ghost.x), static_cast<float>(ghost.y)), view_.Screen(static_cast<float>(ghost.x + ghost.w), static_cast<float>(ghost.y + ghost.h)), {.97f, .80f, .40f, .7f}, 1.5f);
+                }
             } else { ui.CanvasText({20, 20}, {.85f, .4f, .4f, 1}, valid.message); }
         }
         ui.EndCanvas();
-        if (model_->ready && !model_->gesture && !ui.GetInteraction().editing && ui.GetInteraction().deletePressed) {
+        // Delete は地図の上にマウスがある時だけ（3D ビューポートの Delete は物体を消すので、同じキーで装置まで消さない）。
+        if (canvasHovered_ && model_->ready && !model_->gesture && !ui.GetInteraction().editing && ui.GetInteraction().deletePressed) {
             if (model_->devices.RemoveSelected()) { model_->draft.devices = model_->devices.Serialize(); model_->Commit(ctx); }
         }
     }
     void DrawProperties(EditorWorkspaceHostContext& ctx) {
         auto& ui = *ctx.ui; if (!model_->ready) { return; }
-        if (!model_->error.empty()) { ui.Text(model_->error); }
         auto& s = model_->draft;
         const auto before = s;
         if (tool_ == 3 && !model_->devices.HasSelection()) { ui.Text("放置 " + DeviceLabel(kind_)); ui.Text("点空格放置；点现有机关选中"); }
@@ -536,19 +665,29 @@ private:
                 for (size_t i = 0; i < directions.size(); ++i) { if (i) { ui.SameLine(); } if (ui.Button("td2.television.device.direction." + std::to_string(i), d->direction == directions[i] ? std::string(names[i]) + " ●" : std::string(names[i]))) { d->direction = directions[i]; } }
             }
             if (d->kind == "Laser") { EditFloat(ui, "td2.television.device.range", "射程", d->range, .125f, 128); }
+            if (d->kind == "Spring") { DrawSpring(ui, *d); }
+            if (d->kind == "Decal") { DrawDecal(ui, *d); }
             if (d->kind == "Laser" || d->kind == "Door" || d->kind == "Bridge") { ui.Checkbox("td2.television.device.invert", "反向激活", &d->inverted); }
-            if (d->kind == "Plate") { ui.Checkbox("td2.television.device.latch", "踩一下切换（关：踩住时才通电）", &d->latch); }
+            if (d->kind == "Plate") {
+                ui.Checkbox("td2.television.device.latch", "踩一下切换（关：踩住时才通电）", &d->latch);
+                bool reset = d->Extra("variant") == "reset";
+                if (ui.Checkbox("td2.television.device.reset", "圆形复位钮外观（电视塔复位用）", &reset)) { d->SetExtra("variant", reset ? "reset" : ""); }
+            }
             if (d->kind == "Plate") {
                 ui.Separator(); ui.Text("连接目标（" + std::to_string(d->targets.size()) + "）");
                 if (ui.Button("td2.television.device.link", "在地图上连线")) { tool_ = 4; linkSource_ = d->id; hand_ = false; }
                 std::vector<int> targets;
                 for (size_t i = 0; i < model_->devices.Items().size(); ++i) { const auto& target = model_->devices.Items()[i]; if (target.kind == "Door" || target.kind == "Laser" || target.kind == "Bridge") { targets.push_back(static_cast<int>(i)); } }
-                if (targets.empty()) { ui.Text("先放置门、激光或桥"); }
+                if (targets.empty()) { ui.Text("本屏没有门、激光或桥"); }
                 for (size_t i = 0; i < targets.size(); ++i) {
                     const int index = targets[i]; const auto& target = model_->devices.Items()[static_cast<size_t>(index)];
                     bool linked = std::find(d->targets.begin(), d->targets.end(), target.id) != d->targets.end();
                     if (ui.Checkbox("td2.television.device.target." + target.id, DeviceLabel(target.kind) + " " + std::to_string(index + 1), &linked)) { model_->devices.ToggleLink(d->id, index); }
                 }
+                const std::string plateId = d->id;
+                DrawExternalTargets(ctx, plateId);
+                d = model_->devices.Selected();
+                if (!d) { s.devices = model_->devices.Serialize(); return; }
             }
             if (ui.Button("td2.television.device.duplicate", "复制")) { model_->devices.DuplicateSelected(s.region.cols, s.region.rows); }
             ui.SameLine(); if (ui.Button("td2.television.device.delete", "删除")) { model_->devices.RemoveSelected(); }
@@ -605,9 +744,126 @@ private:
                 if (!model_->screenWarning.empty()) { ui.Text(model_->screenWarning); }
             }
         }
-        // 数値のドラッグも草稿に集め、編集の終わりに一回だけ確定する。
-        if (s != before) { propertyPending_ = true; }
+        // 数値のドラッグも草稿に集め、編集の終わりに一回だけ確定する。直した形は次に置く同じ種類へ写す。
+        if (s != before) { propertyPending_ = true; if (const auto* d = model_->devices.Selected()) { RememberTemplate(*d); } }
         if (propertyPending_ && !model_->gesture && !ui.GetInteraction().editing) { model_->Commit(ctx); propertyPending_ = false; }
+        if (!model_->devices.HasSelection()) { DrawDeviceList(ctx); }
+    }
+    // 今のテレビの仕掛けの一覧（地図の属性の下）。地図で見つけにくい小さな仕掛けを選ぶのに使う。
+    void DrawDeviceList(EditorWorkspaceHostContext& ctx) {
+        auto& ui = *ctx.ui;
+        if (model_->devices.Items().empty()) { return; }
+        ui.Separator(); ui.Text("现有机关（" + std::to_string(model_->devices.Items().size()) + "）");
+        EditText(ui, "td2.television.devices.search", "查找", deviceSearch_);
+        std::vector<EditorChoice> choices; std::vector<int> indices;
+        for (size_t i = 0; i < model_->devices.Items().size(); ++i) {
+            const auto& d = model_->devices.Items()[i];
+            const std::string name = DeviceLabel(d.kind) + " " + std::to_string(i + 1);
+            if (!deviceSearch_.empty() && name.find(deviceSearch_) == std::string::npos && d.id.find(deviceSearch_) == std::string::npos) { continue; }
+            choices.push_back({"td2.television.device.select." + d.id, name, model_->devices.SelectedIndex() == static_cast<int>(i)}); indices.push_back(static_cast<int>(i));
+        }
+        if (choices.empty()) { ui.Text("没有匹配的机关"); }
+        else if (const int selected = DrawChoices(ui, choices); selected >= 0) { model_->devices.Select(indices[static_cast<size_t>(selected)]); ChooseTool(0); }
+    }
+    // バネ：強さ（高さの目安つき）・立ってから発射までの秒・冷却。既定値は書き出さない。
+    static std::string ShortNumber(double v) {
+        std::string s = std::to_string(std::round(v * 100) / 100);
+        while (!s.empty() && s.back() == '0') { s.pop_back(); }
+        if (!s.empty() && s.back() == '.') { s.pop_back(); }
+        return s;
+    }
+    static void DrawSpring(IEditorWorkspaceUi& ui, DeviceDraft& d) {
+        const auto read = [&d](std::string_view key, double fallback) {
+            const auto text = d.Extra(key);
+            try { return text.empty() ? fallback : std::stod(text); } catch (...) { return fallback; }
+        };
+        double power = read("power", 22.5), delay = read("delay", .85), cooldown = read("cooldown", 3);
+        if (EditFloat(ui, "td2.television.device.power", "弹力", power, 3, 44)) { d.SetExtra("power", std::abs(power - 22.5) < 1e-6 ? "" : ShortNumber(power)); }
+        ui.Text("站着发射约弹起 " + ShortNumber(power * power / 87.5) + " 格（从高处落下会更高）");
+        if (EditFloat(ui, "td2.television.device.delay", "站上去多久发射（秒）", delay, .05f, 3)) { d.SetExtra("delay", std::abs(delay - .85) < 1e-6 ? "" : ShortNumber(delay)); }
+        if (EditFloat(ui, "td2.television.device.cooldown", "发射后冷却（秒）", cooldown, 3, 30)) { d.SetExtra("cooldown", std::abs(cooldown - 3) < 1e-6 ? "" : ShortNumber(cooldown)); }
+    }
+    // 貼り絵の図案：按键の説明と出口の矢印。
+    static void DrawDecal(IEditorWorkspaceUi& ui, DeviceDraft& d) {
+        constexpr std::array<std::pair<std::string_view, std::string_view>, 7> variants{{{"ad", "A / D 移动"}, {"space", "空格"}, {"spaceHold", "长按空格"},
+            {"exit", "出口 →"}, {"exitLeft", "出口 ←"}, {"exitUp", "出口 ↑"}, {"exitDown", "出口 ↓"}}};
+        ui.Text("图案");
+        const auto current = d.Extra("variant");
+        for (size_t i = 0; i < variants.size(); ++i) {
+            if (ui.Selectable("td2.television.device.decal." + std::string(variants[i].first), std::string(variants[i].second), current == variants[i].first)) {
+                d.SetExtra("variant", variants[i].first);
+            }
+        }
+    }
+    // 圧力板の、別のテレビの装置と画面の外の仕掛けへの接続。今の接続の一覧（見つからない目標は印を付ける）も出す。
+    void DrawExternalTargets(EditorWorkspaceHostContext& ctx, const std::string& plateId) {
+        auto& ui = *ctx.ui;
+        model_->RefreshMachines(ctx);
+        const auto* self = model_->Current();
+        if (!self || !model_->devices.Selected()) { return; }
+        const auto here = Placement(model_->draft);
+        const auto linked = [&](const std::string& target) {
+            const auto* p = model_->devices.Selected();
+            return p && std::find(p->targets.begin(), p->targets.end(), target) != p->targets.end();
+        };
+        // 別のテレビ：既定では辺を接するテレビだけ（作者が確かめやすい近い所から）。
+        ui.Separator(); ui.Text("其他电视的门 / 激光 / 桥");
+        ui.Checkbox("td2.television.device.remote.all", "显示所有电视（默认只显示相邻的）", &remoteAll_);
+        int shown = 0;
+        for (const auto& room : model_->rooms) {
+            if (room.object.objectId == self->object.objectId) { continue; }
+            const bool adjacent = here.worldPlaced && room.settings.worldPlaced && FindSharedWorldEdge(here, Placement(room.settings)).has_value();
+            if (!remoteAll_ && !adjacent) { continue; }
+            DeviceEditor other; other.Load(room.settings.devices);
+            for (size_t i = 0; i < other.Items().size(); ++i) {
+                const auto& device = other.Items()[i];
+                if (device.kind != "Door" && device.kind != "Laser" && device.kind != "Bridge") { continue; }
+                const std::string target = room.settings.region.regionId + "/" + device.id;
+                bool on = linked(target);
+                if (ui.Checkbox("td2.television.device.remote." + target, ShortChoiceLabel(room.object.name, 12) + " · " + DeviceLabel(device.kind) + " " + std::to_string(i + 1), &on)) {
+                    model_->devices.ToggleTarget(plateId, target);
+                }
+                ++shown;
+            }
+        }
+        if (!shown) { ui.Text(remoteAll_ ? "其他电视没有门、激光或桥" : "相邻电视没有门、激光或桥"); }
+        ui.Text("提示：压板尽量和它控制的东西放在同一块屏幕里");
+        // 画面の外の仕掛け。
+        ui.Separator(); ui.Text("机关目标（转台、吊车、货架、电视塔、转柱）");
+        int machines = 0;
+        for (const auto& machine : model_->machines) {
+            for (const auto& [target, label] : machine.Receivers()) {
+                bool on = linked(target);
+                if (ui.Checkbox("td2.television.device.machine." + target, label, &on)) { model_->devices.ToggleTarget(plateId, target); }
+                ++machines;
+            }
+        }
+        if (!machines) { ui.Text("场景里还没有机关（在世界地图的「机关」模式新建）"); }
+        // 今の接続。どこにも見つからない目標は外せるようにする。
+        const auto* current = model_->devices.Selected();
+        if (!current || current->targets.empty()) { return; }
+        ui.Separator(); ui.Text("当前连接");
+        std::string removing;
+        for (const auto& target : current->targets) {
+            bool found = false;
+            const auto kind = ClassifyTarget(target);
+            if (kind == TargetKind::Local) {
+                found = std::any_of(model_->devices.Items().begin(), model_->devices.Items().end(), [&](const auto& d) { return d.id == target; });
+            } else if (kind == TargetKind::Machine) {
+                for (const auto& m : model_->machines) for (const auto& r : m.Receivers()) { found = found || r.first == target; }
+            } else if (kind == TargetKind::OtherRegion) {
+                const auto slash = target.find('/');
+                for (const auto& room : model_->rooms) {
+                    if (room.settings.region.regionId != target.substr(0, slash)) { continue; }
+                    DeviceEditor other; other.Load(room.settings.devices);
+                    found = std::any_of(other.Items().begin(), other.Items().end(), [&](const auto& d) { return d.id == target.substr(slash + 1); });
+                }
+            }
+            ui.Text(std::string(found ? "· " : "✕ 找不到：") + target);
+            ui.SameLine();
+            if (ui.Button("td2.television.device.unlink." + target, "移除")) { removing = target; }
+        }
+        if (!removing.empty()) { model_->devices.ToggleTarget(plateId, removing); }
     }
     void RefreshScreens(EditorWorkspaceHostContext& ctx) {
         screens_.clear(); uint64_t offset = 0;
@@ -632,7 +888,7 @@ private:
     int tool_ = 0, handle_ = -1, roomPage_ = 0, devicePage_ = 0, targetPage_ = 0, brushSize_ = 1;
     bool erase_ = false, propertyPending_ = false, screenSettings_ = false, screenPicker_ = false, allScreens_ = false;
     bool gallery_ = false;
-    bool rectanglePaint_ = false;
+    bool rectanglePaint_ = false, remoteAll_ = false;
     std::set<size_t> erasedDeviceCells_;
     std::string kind_ = "Plate", linkSource_, deviceSearch_, gallerySearch_;
     std::string screenSearch_;
@@ -640,61 +896,88 @@ private:
     std::vector<std::string> groupIds_;
     std::vector<DeviceDraft> clipboard_;
     std::vector<SceneItem> screens_;
+    std::map<std::string, DeviceDraft, std::less<>> templates_;
+    uint64_t shown_ = 0;
+    bool canvasHovered_ = false;
 };
 
 struct EdgeSelection { uint64_t a = 0, b = 0; SharedWorldEdge edge; };
 struct SequenceAsset { std::string guid, name; std::vector<std::string> slots; bool slotsKnown = false; };
 
 // 世界地図は既存テレビの整数原点だけを編集する。
-class WorldMapWorkspace final : public MapWorkspace {
+class WorldMode final : public MapMode {
 public:
-    using MapWorkspace::MapWorkspace;
-    bool IsDirty() const override { return MapWorkspace::IsDirty() || (sequenceDraft_ && pendingBinding_ != observedBinding_); }
-    void DiscardChanges(EditorWorkspaceHostContext& ctx) override { sequenceDraft_ = false; bindingRefresh_ = true; MapWorkspace::DiscardChanges(ctx); }
-    EditorWorkspaceDescriptor GetDescriptor() const override {
-        EditorWorkspaceDescriptor d; d.workspaceId = kWorldWorkspace; d.displayName = "世界地图";
-        d.options = static_cast<uint32_t>(EditorWorkspaceOption::RequestSceneViewport); return d;
+    using MapMode::MapMode;
+    bool IsDirty() const override { return MapMode::IsDirty() || (sequenceDraft_ && pendingBinding_ != observedBinding_); }
+    void DiscardChanges(EditorWorkspaceHostContext& ctx) override { sequenceDraft_ = false; bindingRefresh_ = true; MapMode::DiscardChanges(ctx); }
+    void OnActivate(EditorWorkspaceHostContext& ctx) override { MapMode::OnActivate(ctx); assetsRefresh_ = true; bindingRefresh_ = true; layoutStale_ = true; view_.fit = true; }
+    void OnDeactivate(EditorWorkspaceHostContext& ctx) override {
+        if (posing_) { CancelPose(ctx); }
+        if (libraryDrag_) { model_->Discard(); } else { MapMode::OnDeactivate(ctx); }
+        moving_ = false; libraryDrag_ = false; pickingStart_ = false; groupMoving_ = false; boxing_ = false; ghost_ = -1;
     }
-    void OnActivate(EditorWorkspaceHostContext& ctx) override { MapWorkspace::OnActivate(ctx); assetsRefresh_ = true; bindingRefresh_ = true; }
-    void OnDeactivate(EditorWorkspaceHostContext& ctx) override { if (libraryDrag_) { model_->Discard(); } else { MapWorkspace::OnDeactivate(ctx); } moving_ = false; libraryDrag_ = false; pickingStart_ = false; }
-    void Draw(EditorWorkspaceHostContext& ctx) override {
-        if (!ctx.ui || !ctx.commands) { return; }
-        model_->Poll(ctx); clock_ += ctx.unscaledDeltaSeconds;
-        dragHeldAny_ = dragPressedAny_ = dragReleasedAny_ = false;
-        auto& ui = *ctx.ui;
-        DrawLibrary(ctx);
-        if (MapPanelReady()) {
-            if (ui.BeginPanel("td2.world.canvas.panel.v5", "世界地图", nullptr, EditorWorkspaceDockRegion::Center)) {
-                // 一覧→メインキャンバスの順でドラッグの入力をまとめる。操作ボタンも見える中央に置く。
-                HistoryToolbar(ctx, kTelevisionWorkspace, "编辑电视");
-                ui.SameLine(); SaveControls(ctx);
-                // 三つの見方：配置（テレビを世界に並べる）・カメラ大区域（大区域を塗り分ける）・俯瞰カメラ（カメラと経路を上から見る）。
-                constexpr std::array<std::string_view, 3> modes{"布局", "镜头大区域", "俯视镜头"};
-                for (size_t i = 0; i < modes.size(); ++i) {
-                    ui.SameLine();
-                    if (ui.Button("td2.world.mode." + std::to_string(i), (mode_ == static_cast<int>(i) ? std::string("● ") : std::string()) + std::string(modes[i]))) { SetMode(ctx, static_cast<int>(i)); }
-                }
-                ui.Separator();
-                if (pickingStart_) {
-                    ui.Text("点击角色脚下的位置开始游玩 · 空中也可选 · 右键取消");
-                    if (ui.Button("td2.world.spawn.cancel", "取消选择出生位置")) { pickingStart_ = false; }
-                } else if (mode_ == 1) {
-                    ui.Text(areaFocus_.empty() ? "在右栏选择或新建一个大区域，再点击电视加入 / 移出" : "点击电视加入或移出「" + areaFocus_ + "」");
-                }
-                // 試遊できない理由は右欄だけでなく、クリックしたキャンバスにも出す。
-                if (!model_->error.empty()) { ui.Text(model_->error); }
-                if (mode_ != 0) { EnsureLayout(ctx); }
-                if (mode_ == 2) { DrawPlan(ctx); } else { DrawCanvas(ctx); }
-            } ui.EndPanel();
+    bool ApplyDraft(EditorWorkspaceHostContext& ctx) override {
+        if (posing_) { CancelPose(ctx); }
+        if (sequenceDraft_ && pendingBinding_ != observedBinding_ && !WriteBinding(ctx, pendingBinding_)) { return false; }
+        sequenceDraft_ = false; return MapMode::ApplyDraft(ctx);
+    }
+    // 見方（配置・カメラ大区域・俯瞰カメラ・仕掛け）を変える。
+    void ChangeMode(EditorWorkspaceHostContext& ctx, int mode) { SetMode(ctx, mode); }
+    int Mode() const { return mode_; }
+    // 新しく置いたテレビのカメラを作る（隣のテレビが大区域に入っていれば同じ大区域へ入れてから）。
+    void SetUpNewRoom(EditorWorkspaceHostContext& ctx, const std::string& regionId, const std::string& besideRegion) {
+        if (!besideRegion.empty() && EnsureLayout(ctx, true)) {
+            if (const auto* area = layout_.AreaOf(besideRegion)) {
+                const std::string name = area->name; areaFocus_ = name;
+                ToggleArea(ctx, regionId);
+            }
         }
-        if (ui.BeginPanel("td2.world.properties", "选中属性", nullptr, EditorWorkspaceDockRegion::Right)) { DrawProperties(ctx); } ui.EndPanel();
-        model_->Publish(ctx);
+        Generate(ctx, true, false, {}, regionId, nullptr, false);
+    }
+    void BeginFrame(EditorWorkspaceHostContext& ctx) override {
+        clock_ += ctx.unscaledDeltaSeconds;
+        dragHeldAny_ = dragPressedAny_ = dragReleasedAny_ = false;
+    }
+    // 左：保存と履歴・テレビの一覧（世界へドラッグして置く）・選んだものの属性。一覧→地図の順でドラッグの入力をまとめる。
+    void DrawSide(EditorWorkspaceHostContext& ctx) override {
+        auto& ui = *ctx.ui;
+        HistoryToolbar(ctx);
+        const int unplaced = static_cast<int>(std::count_if(model_->rooms.begin(), model_->rooms.end(), [](const auto& r) { return !r.settings.worldPlaced; }));
+        if (ui.Button("td2.world.library.toggle", libraryOpen_ ? "收起电视列表" : "电视列表" + (unplaced ? "（" + std::to_string(unplaced) + " 台未放进世界）" : std::string()))) { libraryOpen_ = !libraryOpen_; }
+        if (libraryOpen_ || libraryDrag_) { DrawLibrary(ctx); ui.Separator(); }
+        if (!report_.empty()) { ui.Text(report_); }
+        DrawProperties(ctx);
+    }
+    // 右：見方の切り替え・一行の説明・地図（俯瞰カメラの時は上から見た図）。
+    void DrawMap(EditorWorkspaceHostContext& ctx) override {
+        auto& ui = *ctx.ui;
+        ModeBar(ctx, mode_);
+        ViewControls(ctx);
+        // 説明は短い行に分ける（欄の幅で切れないように）。
+        if (pickingStart_) {
+            ui.Text("点击角色脚下的位置开始游玩\n空中也可选 · 右键取消");
+            if (ui.Button("td2.world.spawn.cancel", "取消选择出生位置")) { pickingStart_ = false; }
+            if (!model_->error.empty()) { ui.Text(model_->error); }
+        } else if (mode_ == 1) {
+            ui.Text(areaFocus_.empty() ? "在左栏选择或新建一个大区域\n再点击电视加入 / 移出" : "点击电视加入或移出\n「" + areaFocus_ + "」");
+        } else if (mode_ == 2) {
+            ui.Text("点电视或机位选中\n在左栏生成、调整机位");
+        } else if (mode_ == 3) {
+            const auto* m = SelectedMachine();
+            ui.Text(!m ? "在左栏选择或新建机关\n点电视可找到它所属的机关"
+                : m->kind == MachineKind::Mechanism ? "点电视加入 / 移出状态" + std::string(machineC_ ? "C" : "B") + "的区域\n拖动虚线框设定它在该状态的位置"
+                : m->kind == MachineKind::Slide ? "点电视加入 / 移出货架成员\n点空着的格子设为空槽"
+                : m->kind == MachineKind::Stack ? "点电视加入 / 移出电视塔\n自动按自下而上排序"
+                : "点电视加入 / 移出转柱的面\n顺序在左栏调整");
+        } else if (!multi_.empty()) {
+            ui.Text("多选 " + std::to_string(multi_.size()) + " 台 · 拖动其中一台整体平移\nShift+点击增减 · 点空白处取消");
+        } else {
+            ui.Text("拖动电视移动 · 双击打开电视地图 · 从左栏列表拖入\nShift+点击多选 · 空白处拖框 · Delete 移出世界");
+        }
+        if (mode_ != 0) { EnsureLayout(ctx); }
+        if (mode_ == 2) { DrawPlan(ctx); } else { DrawCanvas(ctx); }
     }
 private:
-    bool ApplyDraft(EditorWorkspaceHostContext& ctx) override {
-        if (sequenceDraft_ && pendingBinding_ != observedBinding_ && !WriteBinding(ctx, pendingBinding_)) { return false; }
-        sequenceDraft_ = false; return MapWorkspace::ApplyDraft(ctx);
-    }
     bool LeaveSequence(EditorWorkspaceHostContext& ctx) {
         // 文脈が変わっても草稿は捨てない。無効な草稿は右欄で取り消せるよう選択を保つ。
         if (sequenceDraft_ && pendingBinding_ != observedBinding_ && !WriteBinding(ctx, pendingBinding_)) { return false; }
@@ -705,21 +988,23 @@ private:
         if (!LeaveSequence(ctx)) { return false; }
         edge_ = next; bindingRefresh_ = true; return true;
     }
-    void OpenTelevision(EditorWorkspaceHostContext& ctx, uint64_t id) { if (LeaveSequence(ctx) && model_->Select(ctx, id) && model_->Commit(ctx)) { ctx.commands->RequestActivateWorkspace(kTelevisionWorkspace); } }
+    void OpenTelevision(EditorWorkspaceHostContext& ctx, uint64_t id) { if (LeaveSequence(ctx) && model_->Select(ctx, id) && model_->Commit(ctx) && switcher) { switcher(kTelevisionView); } }
+    // テレビの一覧。まだ世界に置いていないテレビを先に並べる。押したまま地図へドラッグすると置ける。ダブルクリックでテレビ地図を開く。
     void DrawLibrary(EditorWorkspaceHostContext& ctx) {
         auto& ui = *ctx.ui;
-        if (ui.BeginPanel("td2.world.library", "电视地图", nullptr, EditorWorkspaceDockRegion::Left)) {
-            SaveControls(ctx, "td2.map.save.backup"); ui.Separator();
+        {
             if (ui.Button("td2.world.add_selected", "选中电视建图") && LeaveSequence(ctx)) { model_->AddSelectedTelevision(ctx); OpenTelevision(ctx, model_->selected); }
+            ui.SameLine();
             if (ui.Button("td2.world.new", "+ 空白地图") && LeaveSequence(ctx)) { model_->Create(ctx); OpenTelevision(ctx, model_->selected); }
             EditText(ui, "td2.world.rooms.search", "查找", librarySearch_);
-            const auto rooms = model_->rooms;
+            auto rooms = model_->rooms;
+            std::stable_partition(rooms.begin(), rooms.end(), [](const auto& r) { return !r.settings.worldPlaced; });
             for (size_t i = 0; i < rooms.size(); ++i) {
                 const auto& room = rooms[i];
                 if (!librarySearch_.empty() && room.object.name.find(librarySearch_) == std::string::npos &&
                     room.settings.region.regionId.find(librarySearch_) == std::string::npos) { continue; }
-                ui.Text(ShortChoiceLabel(room.object.name) + "  " + std::to_string(room.settings.region.cols) + "×" + std::to_string(room.settings.region.rows));
-                const auto input = ui.BeginCanvas("td2.world.thumbnail." + std::to_string(room.object.objectId), 92);
+                ui.Text((room.settings.worldPlaced ? "" : "○ ") + ShortChoiceLabel(room.object.name) + "  " + std::to_string(room.settings.region.cols) + "×" + std::to_string(room.settings.region.rows));
+                const auto input = ui.BeginCanvas("td2.world.thumbnail." + std::to_string(room.object.objectId), 64);
                 dragHeldAny_ |= (input.heldButtons & kPrimary) != 0;
                 dragPressedAny_ |= (input.pressedButtons & kPrimary) != 0;
                 dragReleasedAny_ |= (input.releasedButtons & kPrimary) != 0;
@@ -736,7 +1021,7 @@ private:
                 }
                 ui.EndCanvas();
             }
-        } ui.EndPanel();
+        }
     }
     std::vector<EdgeSelection> Edges() const {
         std::vector<EdgeSelection> result;
@@ -764,7 +1049,8 @@ private:
     }
     void DrawCanvas(EditorWorkspaceHostContext& ctx) {
         auto& ui = *ctx.ui;
-        const auto input = ui.BeginCanvas("td2.world.canvas", 640);
+        const auto input = ui.BeginCanvas("td2.world.canvas", 0);
+        canvasHovered_ = input.hovered != 0;
         view_.ObserveSize(input.size);
         dragHeldAny_ |= (input.heldButtons & kPrimary) != 0;
         dragPressedAny_ |= (input.pressedButtons & kPrimary) != 0;
@@ -780,7 +1066,12 @@ private:
                     if (ContainsWorldPoint(Placement(it->settings), {p.x, p.y})) { ToggleArea(ctx, it->settings.region.regionId); break; }
                 }
             }
-            if (mode_ == 0 && !pickingStart_ && !moving_ && !libraryDrag_ && !hand_ && !view_.panning && input.hovered && (input.pressedButtons & kPrimary)) {
+            if (mode_ == 3 && !pickingStart_ && !hand_ && !view_.panning && input.hovered && (input.pressedButtons & kPrimary)) { MachinePress(ctx, p); }
+            if (mode_ == 3) { MachineDrag(ctx, input, p); }
+            if (mode_ == 0) { GroupDrag(ctx, input, p); }
+            if (mode_ == 0 && !pickingStart_ && !moving_ && !libraryDrag_ && !groupMoving_ && !boxing_ && !hand_ && !view_.panning && input.hovered &&
+                (input.pressedButtons & kPrimary) && GroupPress(ctx, input, p)) {}
+            else if (mode_ == 0 && !pickingStart_ && !moving_ && !libraryDrag_ && !groupMoving_ && !boxing_ && !hand_ && !view_.panning && input.hovered && (input.pressedButtons & kPrimary)) {
                 bool hitEdge = false;
                 for (const auto& e : Edges()) {
                     const auto [a, b] = EdgePoints(e.edge);
@@ -819,8 +1110,10 @@ private:
                 }
             }
             for (const auto& room : model_->rooms) {
-                const auto& s = room.object.objectId == model_->selected && model_->ready ? model_->draft : room.settings;
+                auto s = room.object.objectId == model_->selected && model_->ready ? model_->draft : room.settings;
                 if (!s.worldPlaced) { continue; }
+                // 複数選択の平行移動の途中は、動かした先に描く。
+                if (groupMoving_ && multi_.contains(room.object.objectId)) { s.worldX += groupDx_; s.worldY += groupDy_; }
                 MapCanvasView local = view_; local.origin = view_.Screen(static_cast<float>(s.worldX), static_cast<float>(s.worldY));
                 DrawRoomMap(ui, s, local, view_.tile >= 16, false);
                 const auto a = local.Screen(0, 0), b = local.Screen(static_cast<float>(s.region.cols), static_cast<float>(s.region.rows));
@@ -835,7 +1128,7 @@ private:
                         }
                     }
                 }
-                const bool selected = room.object.objectId == model_->selected && edge_.a == 0;
+                const bool selected = (room.object.objectId == model_->selected && edge_.a == 0) || multi_.contains(room.object.objectId);
                 const bool invalid = model_->gesture && selected && !model_->Validate(s).empty();
                 ui.CanvasRect(a, b, invalid ? EditorWorkspaceColor{.92f, .36f, .38f, 1} : selected ? EditorWorkspaceColor{.93f, .78f, .4f, 1} : EditorWorkspaceColor{.32f, .49f, .53f, 1}, selected ? 3.0f : 1.0f);
                 if (selected && view_.tile >= 16) { ui.CanvasText({a.x + 5, a.y + 4}, {.9f, .94f, .94f, 1}, room.object.name); }
@@ -854,10 +1147,14 @@ private:
                 if (sequenceDraft_) { model_->error = "该相邻区域已移动；请撤回演出草稿"; }
                 else { edge_ = {}; bindingRefresh_ = true; }
             }
+            if (mode_ == 3) { DrawMachineOverlay(ui); }
+            if (boxing_) { ui.CanvasRect(view_.Screen((std::min)(boxStart_.x, p.x), (std::min)(boxStart_.y, p.y)), view_.Screen((std::max)(boxStart_.x, p.x), (std::max)(boxStart_.y, p.y)), {.95f, .78f, .4f, 1}, 1.5f); }
             DrawSpawnPicker(ctx, input, p);
         }
         ui.EndCanvas();
-        if (!pickingStart_ && !model_->gesture && !ui.GetInteraction().editing && ui.GetInteraction().deletePressed && edge_.a == 0 && model_->ready) { model_->draft.worldPlaced = false; model_->Commit(ctx); }
+        // 配置の見方だけで、選んだテレビを世界から外す（ほかの見方の Delete では外さない）。
+        // 地図の上にマウスがある時だけ（3D ビューポートの Delete は物体を消すので、同じキーでテレビまで外さない）。
+        if (canvasHovered_ && mode_ == 0 && multi_.empty() && !pickingStart_ && !model_->gesture && !ui.GetInteraction().editing && ui.GetInteraction().deletePressed && edge_.a == 0 && model_->ready) { model_->draft.worldPlaced = false; model_->Commit(ctx); }
     }
     // 配置のドラッグと試遊のクリックは排他的に扱う。マウスは人物の足元中央を指し、半マスへ丸めない。
     void DrawSpawnPicker(EditorWorkspaceHostContext& ctx, const EditorWorkspaceCanvasInput& input, EditorWorkspacePoint point) {
@@ -897,7 +1194,9 @@ private:
     void SetMode(EditorWorkspaceHostContext& ctx, int mode) {
         if (mode == mode_) { return; }
         if (!LeaveSequence(ctx) || !ApplyDraft(ctx)) { return; }
-        mode_ = mode; layoutStale_ = true; pickingStart_ = false;
+        if (posing_) { CancelPose(ctx); }
+        mode_ = mode; layoutStale_ = true; pickingStart_ = false; multi_.clear(); ghost_ = -1; libraryOpen_ = mode == 0;
+        if (mode_ == 3) { model_->machinesStale = true; checkClock_ = 10; }
     }
     bool EnsureLayout(EditorWorkspaceHostContext& ctx, bool force = false) {
         layoutClock_ += ctx.unscaledDeltaSeconds;
@@ -1150,7 +1449,7 @@ private:
     // 俯瞰図：テレビ（色は大区域）・画面の向き・区域カメラ（視錐）・大区域間の経路・障害物を上から見る。
     void DrawPlan(EditorWorkspaceHostContext& ctx) {
         auto& ui = *ctx.ui;
-        const auto input = ui.BeginCanvas("td2.world.plan", 640);
+        const auto input = ui.BeginCanvas("td2.world.plan", 0);
         if (input.size.x > 0 && input.size.y > 0 && layoutValid_) {
             ui.CanvasFill({0, 0}, input.size, {.06f, .08f, .09f, 1});
             // 範囲：テレビとカメラの外接（xz）。
@@ -1212,6 +1511,56 @@ private:
         ui.EndCanvas();
     }
     struct PlanPath { std::string a, b; std::vector<Vec3> points; std::string problem; };
+    // ---- 配置：複数選択と平行移動、矩形選択
+    bool GroupPress(EditorWorkspaceHostContext& ctx, const EditorWorkspaceCanvasInput& input, EditorWorkspacePoint p);
+    void GroupDrag(EditorWorkspaceHostContext& ctx, const EditorWorkspaceCanvasInput& input, EditorWorkspacePoint p);
+    std::set<uint64_t> multi_;
+    bool groupMoving_ = false, boxing_ = false;
+    EditorWorkspacePoint groupPointer_{}, boxStart_{};
+    int groupDx_ = 0, groupDy_ = 0;
+    // ---- 预算
+    void DrawBudget(EditorWorkspaceHostContext& ctx);
+    bool budgetOpen_ = false;
+    std::vector<std::string> budget_;
+    // ---- 仕掛けの見方
+    Machine* SelectedMachine() {
+        const auto it = std::find_if(model_->machines.begin(), model_->machines.end(), [this](const Machine& m) { return m.objectId == machineObject_ && m.componentId == machineComponent_; });
+        return it == model_->machines.end() ? nullptr : &*it;
+    }
+    std::optional<RegionPlacement> PlacementOf(const std::string& regionId) const {
+        for (const auto& room : model_->rooms) { if (room.settings.region.regionId == regionId) { return Placement(room.settings); } }
+        return std::nullopt;
+    }
+    bool WriteSelected(EditorWorkspaceHostContext& ctx, const Machine& after);
+    void ToggleMember(EditorWorkspaceHostContext& ctx, const std::string& regionId);
+    void MachinePress(EditorWorkspaceHostContext& ctx, EditorWorkspacePoint p);
+    void MachineDrag(EditorWorkspaceHostContext& ctx, const EditorWorkspaceCanvasInput& input, EditorWorkspacePoint p);
+    void DrawMachineOverlay(IEditorWorkspaceUi& ui);
+    void DrawMachinePanel(EditorWorkspaceHostContext& ctx);
+    void DrawMechanism(EditorWorkspaceHostContext& ctx, const Machine m);
+    void RefreshCheckInput(EditorWorkspaceHostContext& ctx);
+    bool RenameMachine(EditorWorkspaceHostContext& ctx, const Machine& before, const std::string& id);
+    bool ReadPoses(EditorWorkspaceHostContext& ctx, std::map<uint64_t, Pose>& poses, std::map<uint64_t, Json>& expected, std::string& sceneId, uint64_t& revision);
+    bool BeginPose(EditorWorkspaceHostContext& ctx);
+    bool SavePose(EditorWorkspaceHostContext& ctx);
+    void CancelPose(EditorWorkspaceHostContext& ctx);
+    uint64_t machineObject_ = 0, machineComponent_ = 0;
+    bool machineC_ = false, posing_ = false, posingC_ = false, confirmDelete_ = false;
+    std::map<uint64_t, Pose> poseA_;
+    int ghost_ = -1, ghostDx_ = 0, ghostDy_ = 0, newKind_ = 0;
+    EditorWorkspacePoint ghostGrab_{};
+    std::optional<Machine> ghostPreview_;
+    std::string newMachineId_ = "machine1", machineIdDraft_;
+    MachineCheckInput checkInput_;
+    std::map<uint64_t, std::string> objectNames_;
+    float checkClock_ = 10;
+    std::optional<Machine> pendingMachine_;
+    static std::string ShortNumber(double v) {
+        std::string s = std::to_string(std::round(v * 100) / 100);
+        while (!s.empty() && s.back() == '0') { s.pop_back(); }
+        if (!s.empty() && s.back() == '.') { s.pop_back(); }
+        return s;
+    }
     int mode_ = 0;
     LayoutSnapshot layout_;
     bool layoutValid_ = false, layoutStale_ = true;
@@ -1251,9 +1600,640 @@ private:
     std::vector<SceneItem> cameras_;
     int picker_ = 0, assetPage_ = 0, slotPage_ = 0, cameraPage_ = 0, neighborPage_ = 0, roomPage_ = 0;
     std::string assetSearch_, cameraSearch_;
+    bool canvasHovered_ = false, libraryOpen_ = true;
 };
 
-void WorldMapWorkspace::RefreshAssets(EditorWorkspaceHostContext& ctx) {
+// ---------------------------------------------------------------- 配置：複数選択と平行移動
+bool WorldMode::GroupPress(EditorWorkspaceHostContext& ctx, const EditorWorkspaceCanvasInput& input, EditorWorkspacePoint p) {
+    uint64_t hit = 0;
+    for (auto it = model_->rooms.rbegin(); it != model_->rooms.rend(); ++it) {
+        if (it->settings.worldPlaced && ContainsWorldPoint(Placement(it->settings), {p.x, p.y})) { hit = it->object.objectId; break; }
+    }
+    if (input.shift && hit) {
+        // Shift+クリック：複数選択に足す・外す（今の選択も入れておく）。
+        if (multi_.empty() && model_->selected && model_->selected != hit) { multi_.insert(model_->selected); }
+        if (!multi_.erase(hit)) { multi_.insert(hit); }
+        return true;
+    }
+    if (hit && multi_.size() > 1 && multi_.contains(hit)) {
+        if (model_->Dirty() && !model_->Commit(ctx)) { return true; }
+        groupMoving_ = true; groupPointer_ = p; groupDx_ = groupDy_ = 0; model_->gesture = true;
+        return true;
+    }
+    if (!hit) {
+        // 辺の上でなければ、空いた所からの矩形選択。
+        for (const auto& e : Edges()) {
+            const auto [a, b] = EdgePoints(e.edge);
+            const float dx = b.x - a.x, dy = b.y - a.y;
+            const float t = std::clamp(((input.pointer.x - a.x) * dx + (input.pointer.y - a.y) * dy) / (std::max)(.001f, dx * dx + dy * dy), 0.0f, 1.0f);
+            if (std::hypot(input.pointer.x - a.x - t * dx, input.pointer.y - a.y - t * dy) < 6) { return false; }
+        }
+        boxing_ = true; boxStart_ = p;
+        return true;
+    }
+    multi_.clear();
+    return false;
+}
+
+void WorldMode::GroupDrag(EditorWorkspaceHostContext& ctx, const EditorWorkspaceCanvasInput& input, EditorWorkspacePoint p) {
+    const bool released = (input.releasedButtons & kPrimary) || !(input.heldButtons & kPrimary);
+    if (boxing_ && released) {
+        boxing_ = false;
+        const float x0 = (std::min)(boxStart_.x, p.x), x1 = (std::max)(boxStart_.x, p.x), y0 = (std::min)(boxStart_.y, p.y), y1 = (std::max)(boxStart_.y, p.y);
+        multi_.clear();
+        if (x1 - x0 < .5f && y1 - y0 < .5f) { return; }
+        for (const auto& room : model_->rooms) {
+            if (!room.settings.worldPlaced) { continue; }
+            const auto r = WorldBounds(Placement(room.settings));
+            if (r.left < x1 && r.right > x0 && r.top < y1 && r.bottom > y0) { multi_.insert(room.object.objectId); }
+        }
+        return;
+    }
+    if (!groupMoving_) { return; }
+    groupDx_ = static_cast<int>(std::round(p.x - groupPointer_.x)); groupDy_ = static_cast<int>(std::round(p.y - groupPointer_.y));
+    if (!released) { return; }
+    groupMoving_ = false; model_->gesture = false;
+    if (!groupDx_ && !groupDy_) { return; }
+    // 動かした後の配置で重なりを確かめ、全部を一回の取り消しで書く。仕掛けは相対で書いてあるので一緒に付いて行く。
+    std::vector<RegionPlacement> layout; Json commands = Json::array();
+    for (const auto& room : model_->rooms) {
+        auto placement = Placement(room.settings);
+        if (multi_.contains(room.object.objectId) && placement.worldPlaced) {
+            placement.worldX += groupDx_; placement.worldY += groupDy_;
+            commands.push_back({{"objectId", room.target.objectId}, {"componentId", room.target.componentId}, {"propertyId", "worldX"}, {"value", placement.worldX}});
+            commands.push_back({{"objectId", room.target.objectId}, {"componentId", room.target.componentId}, {"propertyId", "worldY"}, {"value", placement.worldY}});
+        }
+        layout.push_back(placement);
+    }
+    groupDx_ = groupDy_ = 0;
+    if (const auto valid = ValidateWorldLayout(layout); !valid.valid) { model_->error = "不能放在这里：" + valid.message + "：" + valid.regionA + " / " + valid.regionB; return; }
+    const auto written = Execute(ctx, "authoring.transaction", {{"commands", commands}});
+    if (!written.ok) { model_->error = written.error; return; }
+    model_->error.clear(); model_->sceneDirty = true; model_->refresh = true; model_->Poll(ctx, true); layoutStale_ = true;
+}
+
+// ---------------------------------------------------------------- 预算
+void WorldMode::DrawBudget(EditorWorkspaceHostContext& ctx) {
+    auto& ui = *ctx.ui;
+    if (!ui.Checkbox("td2.world.budget", "显示预算", &budgetOpen_) && !budgetOpen_) { return; }
+    if (!budgetOpen_) { return; }
+    if (budget_.empty() || ui.Button("td2.world.budget.refresh", "重新计算")) {
+        budget_.clear();
+        // 世界の広さ（編集中は全部の部屋を 2048 texel の一枚に写すので、広いほど一台あたりが粗くなる）。
+        int64_t left = 0, top = 0, right = 0, bottom = 0; int placed = 0, devices = 0; bool any = false;
+        for (const auto& room : model_->rooms) {
+            DeviceEditor d; d.Load(room.settings.devices); devices += static_cast<int>(d.Items().size());
+            if (!room.settings.worldPlaced) { continue; }
+            ++placed;
+            const auto r = WorldBounds(Placement(room.settings));
+            if (!any) { left = r.left; top = r.top; right = r.right; bottom = r.bottom; any = true; }
+            left = (std::min)(left, r.left); top = (std::min)(top, r.top); right = (std::max)(right, r.right); bottom = (std::max)(bottom, r.bottom);
+        }
+        const int64_t span = (std::max)(right - left, bottom - top);
+        const double texels = span > 0 ? (std::min)(48.0, 2048.0 / static_cast<double>(span)) : 48.0;
+        budget_.push_back("电视地图 " + std::to_string(model_->rooms.size()) + " 台（世界里 " + std::to_string(placed) + " 台），机关 " + std::to_string(devices) + " 个");
+        budget_.push_back("世界范围 " + std::to_string(right - left) + " × " + std::to_string(bottom - top) + " 格 · 编辑预览每格约 " + std::to_string(static_cast<int>(texels)) + " 像素" +
+                          (texels < 8 ? "（偏糊：可把相关区域摆得更紧凑）" : ""));
+        // 描画物体（エンジンの 1 フレーム上限 2048）：シーンのモデル + 編集中に全部の部屋を描く舞台の部品（部屋あたり約 21）。
+        std::vector<SceneItem> models; std::string error;
+        if (QueryObjects(ctx, "ModelComponent", models, error)) {
+            const int stage = static_cast<int>(model_->rooms.size()) * 21 + devices * 3;
+            const int total = static_cast<int>(models.size()) + stage;
+            budget_.push_back("绘制物体约 " + std::to_string(total) + " / 2048（场景模型 " + std::to_string(models.size()) + " + 编辑时屏幕部件约 " + std::to_string(stage) + "）" +
+                              (total > 1800 ? " · 接近上限" : ""));
+        }
+        // 大区域ごとの台数（画面の読みやすさの保護は一度に 12 台まで）。
+        if (EnsureLayout(ctx, true)) {
+            for (const auto& area : layout_.areas) {
+                budget_.push_back("「" + ShortChoiceLabel(area.name, 12) + "」 " + std::to_string(area.regions.size()) + " 台" +
+                                  (area.regions.size() > 12 ? " · 超过画面保护上限 12，同时看到的屏幕请控制在 12 台以内" : ""));
+            }
+        }
+    }
+    for (const auto& line : budget_) { ui.Text(line); }
+    ui.Separator();
+}
+
+// ---------------------------------------------------------------- 仕掛けの見方
+bool WorldMode::WriteSelected(EditorWorkspaceHostContext& ctx, const Machine& after) {
+    const auto* before = SelectedMachine();
+    if (!before) { return false; }
+    std::string error;
+    if (!WriteMachine(ctx, *before, after, error)) { model_->error = error; return false; }
+    model_->sceneDirty = true; model_->machinesStale = true; model_->RefreshMachines(ctx); checkClock_ = 10;
+    model_->error.clear();
+    return true;
+}
+
+void WorldMode::ToggleMember(EditorWorkspaceHostContext& ctx, const std::string& regionId) {
+    auto* m = SelectedMachine();
+    if (!m) { return; }
+    auto after = *m;
+    if (after.kind == MachineKind::Mechanism) {
+        auto& offsets = machineC_ ? after.offsetsC : after.offsets;
+        const auto found = std::find_if(offsets.begin(), offsets.end(), [&](const auto& o) { return o.regionId == regionId; });
+        if (found != offsets.end()) { offsets.erase(found); } else { offsets.push_back({regionId}); }
+    } else {
+        const auto found = std::find(after.members.begin(), after.members.end(), regionId);
+        if (found != after.members.end()) { after.members.erase(found); } else { after.members.push_back(regionId); }
+        // テレビの塔は世界地図の下（Y が大きい）から上へ並べる。
+        if (after.kind == MachineKind::Stack) {
+            std::stable_sort(after.members.begin(), after.members.end(), [this](const std::string& a, const std::string& b) {
+                const auto pa = PlacementOf(a); const auto pb = PlacementOf(b);
+                return (pa ? pa->worldY : 0) > (pb ? pb->worldY : 0);
+            });
+        }
+        // スロット棚の一番目が変わったら、空きスロットのずれを新しい一番目から測り直す。
+        if (after.kind == MachineKind::Slide && !m->members.empty() && !after.members.empty() && m->members.front() != after.members.front()) {
+            const auto oldFirst = PlacementOf(m->members.front()); const auto newFirst = PlacementOf(after.members.front());
+            if (oldFirst && newFirst) { for (auto& [x, y] : after.emptySlots) { x += oldFirst->worldX - newFirst->worldX; y += oldFirst->worldY - newFirst->worldY; } }
+        }
+    }
+    WriteSelected(ctx, after);
+}
+
+void WorldMode::MachinePress(EditorWorkspaceHostContext& ctx, EditorWorkspacePoint p) {
+    std::string room;
+    for (auto it = model_->rooms.rbegin(); it != model_->rooms.rend(); ++it) {
+        if (it->settings.worldPlaced && ContainsWorldPoint(Placement(it->settings), {p.x, p.y})) { room = it->settings.region.regionId; break; }
+    }
+    auto* m = SelectedMachine();
+    if (!m) {
+        // 仕掛けを選んでいない時：そのテレビが入っている仕掛けを選ぶ。
+        for (const auto& machine : model_->machines) {
+            const auto regions = machine.Regions();
+            if (!room.empty() && std::find(regions.begin(), regions.end(), room) != regions.end()) {
+                machineObject_ = machine.objectId; machineComponent_ = machine.componentId; machineIdDraft_ = machine.id; return;
+            }
+        }
+        return;
+    }
+    if (posing_) { model_->error = "正在摆状态B：先保存或放弃"; return; }
+    // 機構：状態の位置を表す点線の枠をつかむ。
+    if (m->kind == MachineKind::Mechanism) {
+        const auto& offsets = machineC_ ? m->offsetsC : m->offsets;
+        for (size_t i = 0; i < offsets.size(); ++i) {
+            const auto& o = offsets[i];
+            const auto self = PlacementOf(o.regionId); const auto base = PlacementOf(o.anchor.empty() ? o.regionId : o.anchor);
+            if (o.park || !self || !base || !base->worldPlaced) { continue; }
+            RegionPlacement ghost = *self; ghost.worldPlaced = true; ghost.worldX = base->worldX + o.dx; ghost.worldY = base->worldY + o.dy;
+            if (ContainsWorldPoint(ghost, {p.x, p.y}) && (o.dx || o.dy || !o.anchor.empty())) {
+                ghost_ = static_cast<int>(i); ghostGrab_ = p; ghostDx_ = o.dx; ghostDy_ = o.dy; return;
+            }
+        }
+    }
+    if (!room.empty()) { ToggleMember(ctx, room); return; }
+    // スロット棚：空いた格子を空きスロットにする・外す（一番目のメンバーの大きさの格子に合わせる）。
+    if (m->kind == MachineKind::Slide && !m->members.empty()) {
+        const auto first = PlacementOf(m->members.front());
+        if (!first) { return; }
+        const int w = (std::max)(1, first->cols), h = (std::max)(1, first->rows);
+        const int ox = static_cast<int>(std::floor((p.x - first->worldX) / w)) * w, oy = static_cast<int>(std::floor((p.y - first->worldY) / h)) * h;
+        auto after = *m;
+        const auto found = std::find(after.emptySlots.begin(), after.emptySlots.end(), std::pair{ox, oy});
+        if (found != after.emptySlots.end()) { after.emptySlots.erase(found); } else { after.emptySlots.push_back({ox, oy}); }
+        WriteSelected(ctx, after);
+    }
+}
+
+void WorldMode::MachineDrag(EditorWorkspaceHostContext& ctx, const EditorWorkspaceCanvasInput& input, EditorWorkspacePoint p) {
+    if (ghost_ < 0) { ghostPreview_.reset(); return; }
+    auto* m = SelectedMachine();
+    if (!m) { ghost_ = -1; ghostPreview_.reset(); return; }
+    auto after = *m;
+    auto& offsets = machineC_ ? after.offsetsC : after.offsets;
+    if (ghost_ >= static_cast<int>(offsets.size())) { ghost_ = -1; ghostPreview_.reset(); return; }
+    offsets[static_cast<size_t>(ghost_)].dx = ghostDx_ + static_cast<int>(std::round(p.x - ghostGrab_.x));
+    offsets[static_cast<size_t>(ghost_)].dy = ghostDy_ + static_cast<int>(std::round(p.y - ghostGrab_.y));
+    ghostPreview_ = after;
+    if ((input.releasedButtons & kPrimary) || !(input.heldButtons & kPrimary)) {
+        ghost_ = -1; ghostPreview_.reset();
+        WriteSelected(ctx, after);
+    }
+}
+
+void WorldMode::DrawMachineOverlay(IEditorWorkspaceUi& ui) {
+    const Machine* m = ghostPreview_ ? &*ghostPreview_ : SelectedMachine();
+    constexpr EditorWorkspaceColor magenta{.93f, .42f, .74f, 1}, faint{.93f, .42f, .74f, .35f};
+    // 選んでいない仕掛けのテレビは薄く縁取る（どのテレビが仕掛けに入っているか見える）。
+    for (const auto& machine : model_->machines) {
+        if (m && machine.objectId == m->objectId && machine.componentId == m->componentId) { continue; }
+        for (const auto& id : machine.Regions()) {
+            const auto p = PlacementOf(id);
+            if (!p || !p->worldPlaced) { continue; }
+            ui.CanvasRect(view_.Screen(static_cast<float>(p->worldX), static_cast<float>(p->worldY)), view_.Screen(static_cast<float>(p->worldX + p->cols), static_cast<float>(p->worldY + p->rows)), faint, 1);
+        }
+    }
+    if (!m) { return; }
+    const auto rect = [&](const RegionPlacement& p, EditorWorkspaceColor color, float width) {
+        ui.CanvasRect(view_.Screen(static_cast<float>(p.worldX), static_cast<float>(p.worldY)), view_.Screen(static_cast<float>(p.worldX + p.cols), static_cast<float>(p.worldY + p.rows)), color, width);
+    };
+    const auto label = [&](const RegionPlacement& p, const std::string& text) {
+        if (view_.tile >= 4) { ui.CanvasText(view_.Screen(static_cast<float>(p.worldX) + .3f, static_cast<float>(p.worldY) + .2f), magenta, text); }
+    };
+    if (m->kind == MachineKind::Mechanism) {
+        for (const auto* list : {&m->offsets, &m->offsetsC}) {
+            const bool current = (list == &m->offsetsC) == machineC_;
+            for (const auto& o : *list) {
+                const auto self = PlacementOf(o.regionId);
+                if (!self) { continue; }
+                if (self->worldPlaced) { rect(*self, current ? magenta : faint, current ? 3.f : 1.f); }
+                const auto base = PlacementOf(o.anchor.empty() ? o.regionId : o.anchor);
+                if (o.park) { if (current && self->worldPlaced) { label(*self, "离开世界"); } continue; }
+                if (!base || !base->worldPlaced) { continue; }
+                RegionPlacement ghost = *self; ghost.worldX = base->worldX + o.dx; ghost.worldY = base->worldY + o.dy;
+                // 状態の位置：点線の枠と、元の位置からの線。
+                const auto a = view_.Screen(static_cast<float>(ghost.worldX), static_cast<float>(ghost.worldY));
+                const auto b = view_.Screen(static_cast<float>(ghost.worldX + ghost.cols), static_cast<float>(ghost.worldY + ghost.rows));
+                const auto color = current ? magenta : faint;
+                for (float t = 0; t < 1; t += .1f) {
+                    ui.CanvasLine({a.x + (b.x - a.x) * t, a.y}, {a.x + (b.x - a.x) * (t + .05f), a.y}, color, 2);
+                    ui.CanvasLine({a.x + (b.x - a.x) * t, b.y}, {a.x + (b.x - a.x) * (t + .05f), b.y}, color, 2);
+                    ui.CanvasLine({a.x, a.y + (b.y - a.y) * t}, {a.x, a.y + (b.y - a.y) * (t + .05f)}, color, 2);
+                    ui.CanvasLine({b.x, a.y + (b.y - a.y) * t}, {b.x, a.y + (b.y - a.y) * (t + .05f)}, color, 2);
+                }
+                if (self->worldPlaced && (o.dx || o.dy || !o.anchor.empty())) {
+                    ui.CanvasLine(view_.Screen(self->worldX + self->cols * .5f, self->worldY + self->rows * .5f), {(a.x + b.x) * .5f, (a.y + b.y) * .5f}, color, 1.5f);
+                }
+                if (current) { label(ghost, std::string(machineC_ ? "状态C" : "状态B") + (o.flip ? " · 翻转" : "")); }
+            }
+        }
+        return;
+    }
+    for (size_t i = 0; i < m->members.size(); ++i) {
+        const auto p = PlacementOf(m->members[i]);
+        if (!p) { continue; }
+        if (!p->worldPlaced) { continue; }
+        rect(*p, magenta, 3);
+        std::string text = std::to_string(i + 1);
+        if (m->kind == MachineKind::Stack) { text = i == 0 ? "底 1" : std::to_string(i + 1); }
+        if (m->kind == MachineKind::Carousel && m->members.size() == 4) { constexpr std::array<std::string_view, 4> names{"正面", "右", "背面", "左"}; text = std::string(names[i]); }
+        label(*p, text);
+    }
+    if (m->kind == MachineKind::Slide && !m->members.empty()) {
+        if (const auto first = PlacementOf(m->members.front())) {
+            for (const auto& [dx, dy] : m->emptySlots) {
+                RegionPlacement slot = *first; slot.worldX += dx; slot.worldY += dy;
+                rect(slot, faint, 2); label(slot, "空槽");
+            }
+        }
+    }
+}
+
+void WorldMode::RefreshCheckInput(EditorWorkspaceHostContext& ctx) {
+    checkClock_ += ctx.unscaledDeltaSeconds;
+    if (checkClock_ < 2) { return; }
+    checkClock_ = 0;
+    checkInput_ = {};
+    checkInput_.placements = model_->Layout();
+    checkInput_.plateTargets = model_->PlateTargets();
+    objectNames_.clear();
+    for (uint64_t offset = 0;;) {
+        const auto page = Execute(ctx, "scene.objects.query", {{"offset", offset}, {"limit", 128}});
+        if (!page.ok) { break; }
+        const auto objects = page.data.value("objects", Json::array());
+        for (const auto& object : objects) {
+            const auto id = ObjectId(object.value("objectId", Json{}));
+            if (!id) { continue; }
+            checkInput_.sceneObjects.push_back(id);
+            objectNames_[id] = object.value("name", "");
+            bool model = false;
+            for (const auto& c : object.value("components", Json::array())) { model = model || c.value("type", "") == "ModelComponent"; }
+            checkInput_.objectHasModel[id] = model;
+        }
+        if (!page.data.contains("nextOffset")) { break; }
+        const auto next = ObjectId(page.data["nextOffset"]);
+        if (next <= offset || objects.empty()) { break; }
+        offset = next;
+    }
+}
+
+// ID を変えたら、その仕掛けを目標にしている圧力板の目標も同じ取り消しの中で書き換える。
+bool WorldMode::RenameMachine(EditorWorkspaceHostContext& ctx, const Machine& before, const std::string& id) {
+    if (!StableAuthoringId(id)) { model_->error = "ID 只能用英文字母、数字、点、短横线和下划线"; return false; }
+    if (model_->Dirty() && !model_->Commit(ctx)) { return false; }
+    auto after = before; after.id = id;
+    const auto oldReceivers = before.Receivers(), newReceivers = after.Receivers();
+    Json commands = Json::array();
+    for (const auto& room : model_->rooms) {
+        DeviceEditor devices; devices.Load(room.settings.devices);
+        bool changed = false;
+        for (const auto& device : devices.Items()) {
+            for (const auto& target : device.targets) {
+                for (size_t i = 0; i < oldReceivers.size() && i < newReceivers.size(); ++i) {
+                    if (target != oldReceivers[i].first) { continue; }
+                    devices.ToggleTarget(device.id, target); devices.ToggleTarget(device.id, newReceivers[i].first); changed = true;
+                }
+            }
+        }
+        if (changed) { commands.push_back({{"objectId", room.target.objectId}, {"componentId", room.target.componentId}, {"propertyId", "devices"}, {"value", devices.Serialize()}}); }
+    }
+    Json idCommand = {{"objectId", before.objectId}, {"componentId", before.componentId}, {"value", id}};
+    idCommand["propertyId"] = before.kind == MachineKind::Mechanism ? "mechanismId" : before.kind == MachineKind::Slide ? "rackId" : before.kind == MachineKind::Stack ? "stackId" : "carouselId";
+    commands.push_back(idCommand);
+    const auto written = Execute(ctx, "authoring.transaction", {{"commands", commands}});
+    if (!written.ok) { model_->error = written.error; return false; }
+    model_->sceneDirty = true; model_->machinesStale = true; model_->refresh = true; model_->Poll(ctx, true); model_->RefreshMachines(ctx);
+    return true;
+}
+
+bool WorldMode::ReadPoses(EditorWorkspaceHostContext& ctx, std::map<uint64_t, Pose>& poses, std::map<uint64_t, Json>& expected, std::string& sceneId, uint64_t& revision) {
+    const auto layout = Execute(ctx, "scene.layout.query", Json::object());
+    if (!layout.ok) { model_->error = layout.error; return false; }
+    sceneId = layout.data.value("sceneId", ""); revision = layout.data.value("documentRevision", uint64_t{0});
+    const auto vec = [](const Json& v, std::array<double, 3> fallback) {
+        if (!v.is_array() || v.size() != 3) { return fallback; }
+        return std::array<double, 3>{v[0].get<double>(), v[1].get<double>(), v[2].get<double>()};
+    };
+    for (const auto& object : layout.data.value("objects", Json::array())) {
+        const auto id = ObjectId(object.value("objectId", Json{}));
+        const auto t = object.value("transform", Json::object());
+        Pose pose; pose.position = vec(t.value("position", Json{}), {0, 0, 0});
+        pose.rotation = vec(t.contains("rotation") ? t["rotation"] : t.value("rotationEulerDeg", Json{}), {0, 0, 0});
+        pose.scale = vec(t.value("scale", Json{}), {1, 1, 1});
+        poses[id] = pose; expected[id] = t;
+    }
+    return true;
+}
+
+// 状態 B（または天平の状態 C）をシーンに置いて見せる。作者はビューポートで物体を動かし、保存で相対の姿勢に直す。
+bool WorldMode::BeginPose(EditorWorkspaceHostContext& ctx) {
+    auto* m = SelectedMachine();
+    if (!m || m->kind != MachineKind::Mechanism) { return false; }
+    std::map<uint64_t, Pose> poses; std::map<uint64_t, Json> expected; std::string sceneId; uint64_t revision = 0;
+    if (!ReadPoses(ctx, poses, expected, sceneId, revision)) { return false; }
+    const auto& deltas = machineC_ ? m->deltasC : m->deltas;
+    Json commands = Json::array();
+    poseA_.clear();
+    for (const auto& d : deltas) {
+        const auto a = poses.find(d.object);
+        if (a == poses.end()) { model_->error = "物体不存在：" + std::to_string(d.object); return false; }
+        poseA_[d.object] = a->second;
+        const auto base = d.anchor ? poses.find(d.anchor) : a;
+        if (base == poses.end()) { model_->error = "锚点物体不存在：" + std::to_string(d.anchor); return false; }
+        const auto b = ApplyDelta(a->second, base->second, d);
+        commands.push_back({{"objectId", d.object}, {"expected", expected[d.object]}, {"position", b.position}, {"rotation", b.rotation}});
+    }
+    if (!commands.empty()) {
+        const auto applied = Execute(ctx, "scene.layout.apply", {{"sceneId", sceneId}, {"documentRevision", revision}, {"commands", commands}});
+        if (!applied.ok) { model_->error = applied.error; return false; }
+    }
+    posing_ = true; posingC_ = machineC_; model_->error.clear();
+    return true;
+}
+
+bool WorldMode::SavePose(EditorWorkspaceHostContext& ctx) {
+    auto* m = SelectedMachine();
+    if (!posing_ || !m) { posing_ = false; return false; }
+    std::map<uint64_t, Pose> poses; std::map<uint64_t, Json> expected; std::string sceneId; uint64_t revision = 0;
+    if (!ReadPoses(ctx, poses, expected, sceneId, revision)) { return false; }
+    auto after = *m;
+    auto& deltas = posingC_ ? after.deltasC : after.deltas;
+    Json restore = Json::array();
+    for (auto& d : deltas) {
+        const auto a = poseA_.find(d.object); const auto b = poses.find(d.object);
+        if (a == poseA_.end() || b == poses.end()) { continue; }
+        // 錨は動かさない前提で、今の錨の姿勢を基準にする（錨が同じ機構で動く物なら状態 A の姿勢）。
+        Pose base = a->second;
+        if (d.anchor) { base = poseA_.contains(d.anchor) ? poseA_[d.anchor] : poses.contains(d.anchor) ? poses[d.anchor] : base; }
+        d = MakeDelta(a->second, base, b->second, d);
+        restore.push_back({{"objectId", d.object}, {"expected", expected[d.object]}, {"position", a->second.position}, {"rotation", a->second.rotation}});
+    }
+    if (!restore.empty()) {
+        const auto applied = Execute(ctx, "scene.layout.apply", {{"sceneId", sceneId}, {"documentRevision", revision}, {"commands", restore}});
+        if (!applied.ok) { model_->error = "状态B已读取，但恢复状态A失败：" + applied.error; return false; }
+    }
+    posing_ = false; poseA_.clear();
+    return WriteSelected(ctx, after);
+}
+
+void WorldMode::CancelPose(EditorWorkspaceHostContext& ctx) {
+    if (!posing_) { return; }
+    posing_ = false;
+    std::map<uint64_t, Pose> poses; std::map<uint64_t, Json> expected; std::string sceneId; uint64_t revision = 0;
+    if (!ReadPoses(ctx, poses, expected, sceneId, revision)) { return; }
+    Json restore = Json::array();
+    for (const auto& [id, a] : poseA_) {
+        if (!expected.contains(id)) { continue; }
+        restore.push_back({{"objectId", id}, {"expected", expected[id]}, {"position", a.position}, {"rotation", a.rotation}});
+    }
+    poseA_.clear();
+    if (restore.empty()) { return; }
+    const auto applied = Execute(ctx, "scene.layout.apply", {{"sceneId", sceneId}, {"documentRevision", revision}, {"commands", restore}});
+    if (!applied.ok) { model_->error = "恢复状态A失败：" + applied.error; }
+}
+
+void WorldMode::DrawMechanism(EditorWorkspaceHostContext& ctx, const Machine m) {
+    auto& ui = *ctx.ui;
+    auto after = m;
+    bool changed = false;
+    changed |= ui.Checkbox("td2.machine.toggle", "每踩一次切换（关：踩住时才动）", &after.toggle);
+    changed |= ui.Checkbox("td2.machine.balance", "天平（两块压板对抗，三个状态）", &after.balance);
+    changed |= EditFloat(ui, "td2.machine.seconds", "移动秒数", after.seconds, .2f, 8);
+    changed |= EditFloat(ui, "td2.machine.dwell", "自动往复：两端停留秒数（0=由压板驱动）", after.dwell, 0, 20);
+    changed |= EditFloat(ui, "td2.machine.settle", "压稳多久才动（秒）", after.settle, 0, 2);
+    changed |= EditFloat(ui, "td2.machine.lift", "移动途中镜头抬高（米）", after.cameraLift, 0, 4);
+    changed |= EditFloat(ui, "td2.machine.pull", "移动途中镜头后拉（米）", after.cameraPull, 0, 4);
+    if (after.balance) {
+        ui.Text("正在编辑：" + std::string(machineC_ ? "状态C（mech/ID/r 一侧）" : "状态B（mech/ID 一侧）"));
+        if (ui.Button("td2.machine.side", machineC_ ? "改编辑状态B" : "改编辑状态C")) { if (posing_) { CancelPose(ctx); } machineC_ = !machineC_; }
+    } else if (machineC_) { machineC_ = false; }
+    // 区域：状態での世界地図の位置。
+    ui.Separator(); ui.Text("区域（状态" + std::string(machineC_ ? "C" : "B") + "的位置）");
+    auto& offsets = machineC_ ? after.offsetsC : after.offsets;
+    if (offsets.empty()) { ui.Text("在地图上点电视加入"); }
+    for (size_t i = 0; i < offsets.size(); ++i) {
+        auto& o = offsets[i];
+        const std::string key = "td2.machine.offset." + std::to_string(i);
+        ui.Text(ShortChoiceLabel(o.regionId, 16));
+        changed |= ui.Checkbox(key + ".park", "离开世界（不与任何区域相连）", &o.park);
+        if (!o.park) {
+            EditInt(ui, key + ".dx", "偏移 X", o.dx, -100000, 100000);
+            EditInt(ui, key + ".dy", "偏移 Y", o.dy, -100000, 100000);
+            changed |= ui.Checkbox(key + ".flip", "翻转 180°", &o.flip);
+            ui.Text(o.anchor.empty() ? "相对：自己原来的位置" : "相对：区域 " + o.anchor);
+            // 錨：状態の位置で辺を接するテレビに固定すると、そのテレビ（の章）を動かしても隣に付いて行く。錨を変えても状態の位置は変えない。
+            const auto self = PlacementOf(o.regionId);
+            const auto oldBase = PlacementOf(o.anchor.empty() ? o.regionId : o.anchor);
+            if (self && oldBase && oldBase->worldPlaced) {
+                RegionPlacement ghost = *self; ghost.worldPlaced = true; ghost.worldX = oldBase->worldX + o.dx; ghost.worldY = oldBase->worldY + o.dy;
+                std::string choice;
+                for (const auto& room : model_->rooms) {
+                    const auto& id = room.settings.region.regionId;
+                    if (id == o.regionId || id == o.anchor || !room.settings.worldPlaced) { continue; }
+                    if (std::any_of(offsets.begin(), offsets.end(), [&](const auto& other) { return other.regionId == id; })) { continue; }
+                    if (!FindSharedWorldEdge(ghost, Placement(room.settings))) { continue; }
+                    if (ui.Button(key + ".anchor." + id, "锚定到相邻的 " + ShortChoiceLabel(room.object.name, 12))) { choice = id; }
+                }
+                if (!o.anchor.empty() && ui.Button(key + ".anchor.self", "改为相对自己")) { choice = o.regionId; }
+                if (!choice.empty()) {
+                    const auto newBase = PlacementOf(choice);
+                    if (newBase) { o.dx += oldBase->worldX - newBase->worldX; o.dy += oldBase->worldY - newBase->worldY; o.anchor = choice == o.regionId ? std::string{} : choice; changed = true; }
+                }
+            }
+        }
+        if (ui.Button(key + ".remove", "移除此区域")) { offsets.erase(offsets.begin() + static_cast<std::ptrdiff_t>(i)); changed = true; break; }
+    }
+    // 物体：状態 A（シーンに置いた姿勢）から見た状態 B の姿勢。
+    ui.Separator(); ui.Text("物体（状态" + std::string(machineC_ ? "C" : "B") + "的姿势）");
+    auto& deltas = machineC_ ? after.deltasC : after.deltas;
+    for (size_t i = 0; i < deltas.size(); ++i) {
+        auto& d = deltas[i];
+        const std::string key = "td2.machine.delta." + std::to_string(i);
+        const auto name = objectNames_.contains(d.object) ? objectNames_[d.object] : "物体 " + std::to_string(d.object);
+        ui.Text(ShortChoiceLabel(name, 16) + "  移动 " + ShortNumber(std::hypot(d.position[0], d.position[1], d.position[2])) + " 米");
+        if (d.anchor) { ui.Text("相对锚点：" + (objectNames_.contains(d.anchor) ? objectNames_[d.anchor] : std::to_string(d.anchor))); }
+        bool pivot = d.hasPivot;
+        if (ui.Checkbox(key + ".pivot", "绕中心转动（倒立、翻转用）", &pivot)) { d.hasPivot = pivot; changed = true; }
+        if (d.hasPivot) {
+            for (size_t k = 0; k < 3; ++k) { changed |= EditFloat(ui, key + ".pivot." + std::to_string(k), std::string("中心 ") + "XYZ"[k] + "（物体自身坐标，米）", d.pivot[k], -20, 20); }
+        }
+        if (!posing_ && ui.Button(key + ".remove", "移除此物体")) { deltas.erase(deltas.begin() + static_cast<std::ptrdiff_t>(i)); changed = true; break; }
+    }
+    if (!posing_) {
+        if (ui.Button("td2.machine.add_selected", "加入场景中选中的物体")) {
+            const auto state = Execute(ctx, "editor.state", Json::object());
+            int added = 0;
+            if (state.ok) {
+                for (const auto& object : state.data.value("selection", Json::object()).value("objects", Json::array())) {
+                    const auto id = ObjectId(object.value("objectId", Json{}));
+                    if (!id || std::any_of(deltas.begin(), deltas.end(), [id](const auto& d) { return d.object == id; })) { continue; }
+                    MachineObjectDelta d; d.object = id; deltas.push_back(d); ++added;
+                }
+            }
+            if (added) { changed = true; } else { model_->error = "先在场景里选中要动的物体（可多选）"; }
+        }
+        if (!deltas.empty() && ui.Button("td2.machine.pose", "在视口里摆状态" + std::string(machineC_ ? "C" : "B"))) {
+            if (!(after == m)) { WriteSelected(ctx, after); }
+            BeginPose(ctx);
+            return;
+        }
+    } else {
+        ui.Text("正在摆状态" + std::string(posingC_ ? "C" : "B") + "：用视口的移动、旋转工具摆好这些物体，然后保存。");
+        ui.Text("摆的期间请不要保存场景。");
+        if (ui.Button("td2.machine.pose.save", "保存这个姿势")) { SavePose(ctx); return; }
+        ui.SameLine(); if (ui.Button("td2.machine.pose.cancel", "放弃，回到状态A")) { CancelPose(ctx); }
+    }
+    // 入力中の数値は入力が終わってから一回で書く。
+    if (changed || !(after == m)) {
+        if (!ui.GetInteraction().editing) { WriteSelected(ctx, after); } else { pendingMachine_ = after; }
+    }
+}
+
+void WorldMode::DrawMachinePanel(EditorWorkspaceHostContext& ctx) {
+    auto& ui = *ctx.ui;
+    model_->RefreshMachines(ctx);
+    RefreshCheckInput(ctx);
+    // 数値の入力中に貯めた変更は、入力が終わった時に一回で書く。
+    if (pendingMachine_ && !ui.GetInteraction().editing) { const auto next = *pendingMachine_; pendingMachine_.reset(); WriteSelected(ctx, next); }
+    ui.Text("机关");
+    for (const auto& machine : model_->machines) {
+        const bool selected = machine.objectId == machineObject_ && machine.componentId == machineComponent_;
+        const auto problems = CheckMachine(machine, model_->machines, checkInput_);
+        if (ui.Selectable("td2.machine.item." + std::to_string(machine.objectId) + "." + std::to_string(machine.componentId),
+                          machine.KindLabel() + "  " + machine.id + (problems.empty() ? "" : "  ⚠"), selected)) {
+            if (posing_) { CancelPose(ctx); }
+            machineObject_ = machine.objectId; machineComponent_ = machine.componentId; machineIdDraft_ = machine.id; confirmDelete_ = false; machineC_ = false;
+        }
+    }
+    // 新規作成：機構・スロット棚・テレビの塔は空の物体に付ける。回転柱は柱の物体に付ける（シーンで柱を選んでから）。
+    ui.Separator(); ui.Text("新建机关");
+    constexpr std::array<std::string_view, 4> kinds{"机构（转台、吊车、往复…）", "滑块货架", "电视塔", "转柱（先在场景选中柱子）"};
+    for (size_t i = 0; i < kinds.size(); ++i) {
+        if (ui.Selectable("td2.machine.newkind." + std::to_string(i), std::string(kinds[i]), newKind_ == static_cast<int>(i))) { newKind_ = static_cast<int>(i); }
+    }
+    EditText(ui, "td2.machine.newid", "ID", newMachineId_);
+    if (ui.Button("td2.machine.create", "新建")) {
+        const auto kind = static_cast<MachineKind>(newKind_);
+        std::string error;
+        uint64_t host = 0;
+        if (kind == MachineKind::Carousel) { host = SelectedObject(ctx, error); }
+        if (kind == MachineKind::Carousel && !host) { model_->error = "先在场景里选中转柱的柱子（柱子的位置就是转轴）"; }
+        else if (!StableAuthoringId(newMachineId_)) { model_->error = "ID 只能用英文字母、数字、点、短横线和下划线"; }
+        else if (!CreateMachine(ctx, kind, host, newMachineId_, error)) { model_->error = error; }
+        else {
+            model_->sceneDirty = true; model_->machinesStale = true; model_->RefreshMachines(ctx); checkClock_ = 10;
+            for (const auto& machine : model_->machines) { if (machine.kind == kind && machine.id == newMachineId_) { machineObject_ = machine.objectId; machineComponent_ = machine.componentId; machineIdDraft_ = machine.id; } }
+            model_->error.clear();
+        }
+    }
+    auto* m = SelectedMachine();
+    if (!m) { return; }
+    ui.Separator();
+    ui.Text(m->KindLabel() + "  " + m->id + "  （" + ShortChoiceLabel(m->objectName, 14) + "）");
+    EditText(ui, "td2.machine.id", "ID（改名会同步压板的目标）", machineIdDraft_);
+    if (machineIdDraft_ != m->id && !ui.GetInteraction().editing) {
+        if (!RenameMachine(ctx, *m, machineIdDraft_)) { machineIdDraft_ = m->id; }
+        return;
+    }
+    if (m->kind == MachineKind::Mechanism) { DrawMechanism(ctx, *m); m = SelectedMachine(); if (!m) { return; } }
+    else {
+        auto after = *m;
+        bool changed = false;
+        if (m->kind == MachineKind::Slide) { changed |= EditFloat(ui, "td2.machine.seconds", "滑动秒数", after.seconds, .2f, 4); }
+        if (m->kind == MachineKind::Carousel) { changed |= EditFloat(ui, "td2.machine.seconds", "每转一面秒数", after.seconds, .3f, 6); }
+        if (m->kind == MachineKind::Stack) {
+            changed |= EditFloat(ui, "td2.machine.pull", "抽出秒数", after.pullSeconds, .2f, 4);
+            changed |= EditFloat(ui, "td2.machine.drop", "每层下落秒数", after.dropSeconds, .1f, 2);
+            changed |= EditFloat(ui, "td2.machine.reset", "复位秒数", after.resetSeconds, .5f, 6);
+            ui.Text("抽出距离（米，向最下面电视的背面；先抽的停得远）");
+            for (size_t i = 0; i < after.dockDistances.size(); ++i) {
+                changed |= EditFloat(ui, "td2.machine.dock." + std::to_string(i), "第 " + std::to_string(i + 1) + " 台", after.dockDistances[i], .3f, 10);
+            }
+            if (ui.Button("td2.machine.dock.add", "+ 停放位")) { after.dockDistances.push_back(after.dockDistances.empty() ? 2.4 : (std::max)(.6, after.dockDistances.back() - 1.15)); changed = true; }
+            if (!after.dockDistances.empty()) { ui.SameLine(); if (ui.Button("td2.machine.dock.remove", "- 停放位")) { after.dockDistances.pop_back(); changed = true; } }
+        }
+        ui.Separator();
+        ui.Text(m->kind == MachineKind::Stack ? "电视（自下而上）" : m->kind == MachineKind::Carousel ? "面（顺时针：正面、右、背面、左）" : "成员（第一台是空槽的基准）");
+        for (size_t i = 0; i < after.members.size(); ++i) {
+            const auto p = PlacementOf(after.members[i]);
+            ui.Text(std::to_string(i + 1) + ". " + ShortChoiceLabel(after.members[i], 16) + (p && p->worldPlaced ? "" : m->kind == MachineKind::Carousel ? "（口袋：不在世界里）" : "（未放进世界）"));
+            if (m->kind == MachineKind::Carousel || m->kind == MachineKind::Slide) {
+                ui.SameLine();
+                if (i > 0 && ui.Button("td2.machine.member.up." + std::to_string(i), "↑")) { std::swap(after.members[i], after.members[i - 1]); changed = true; }
+                ui.SameLine();
+                if (i + 1 < after.members.size() && ui.Button("td2.machine.member.down." + std::to_string(i), "↓")) { std::swap(after.members[i], after.members[i + 1]); changed = true; }
+            }
+        }
+        if (m->kind == MachineKind::Slide) {
+            ui.Text("空槽（相对第一台）");
+            for (const auto& [x, y] : after.emptySlots) { ui.Text("· " + std::to_string(x) + ", " + std::to_string(y)); }
+        }
+        if (changed || !(after == *m)) {
+            if (!ui.GetInteraction().editing) { WriteSelected(ctx, after); m = SelectedMachine(); if (!m) { return; } } else { pendingMachine_ = after; }
+        }
+    }
+    // 確かめ：実行時に動かない理由と、つながっている圧力板。
+    ui.Separator();
+    const auto problems = CheckMachine(*m, model_->machines, checkInput_);
+    if (problems.empty()) { ui.Text("✓ 可以运行"); }
+    for (const auto& problem : problems) { ui.Text("⚠ " + problem); }
+    const auto plates = PlatesFor(*m, checkInput_);
+    if (!plates.empty()) {
+        ui.Text("连到它的压板");
+        for (const auto& plate : plates) {
+            const auto region = plate.substr(0, plate.find('/'));
+            if (ui.Button("td2.machine.plate." + plate, "打开 " + ShortChoiceLabel(plate, 22))) {
+                for (const auto& room : model_->rooms) { if (room.settings.region.regionId == region) { OpenTelevision(ctx, room.object.objectId); return; } }
+            }
+        }
+    }
+    ui.Separator();
+    if (!confirmDelete_) { if (ui.Button("td2.machine.delete", "删除这个机关")) { confirmDelete_ = true; } }
+    else {
+        ui.Text("删除后连到它的压板会显示「找不到」。");
+        if (ui.Button("td2.machine.delete.confirm", "确认删除")) {
+            std::string error;
+            if (posing_) { CancelPose(ctx); }
+            if (!RemoveMachine(ctx, *m, error)) { model_->error = error; }
+            else { model_->sceneDirty = true; model_->machinesStale = true; machineObject_ = machineComponent_ = 0; model_->RefreshMachines(ctx); }
+            confirmDelete_ = false;
+        }
+        ui.SameLine(); if (ui.Button("td2.machine.delete.cancel", "取消")) { confirmDelete_ = false; }
+    }
+}
+
+void WorldMode::RefreshAssets(EditorWorkspaceHostContext& ctx) {
     assetsRefresh_ = false; assets_.clear(); cameras_.clear();
     uint64_t offset = 0;
     // インポーターの公開の索引を使う。選んだ資産のスロットは標準の文書から取る。
@@ -1275,7 +2255,7 @@ void WorldMapWorkspace::RefreshAssets(EditorWorkspaceHostContext& ctx) {
     QueryObjects(ctx, "CameraComponent", cameras_, model_->error);
 }
 
-bool WorldMapWorkspace::ReadAssetSlots(EditorWorkspaceHostContext& ctx, SequenceAsset& asset) {
+bool WorldMode::ReadAssetSlots(EditorWorkspaceHostContext& ctx, SequenceAsset& asset) {
     if (asset.slotsKnown) { return true; }
     const auto opened = Execute(ctx, "authoring.session.open", {{"workspace", "cinematics"}, {"assetGuid", asset.guid}});
     if (!opened.ok) { model_->error = opened.error; return false; }
@@ -1295,7 +2275,7 @@ bool WorldMapWorkspace::ReadAssetSlots(EditorWorkspaceHostContext& ctx, Sequence
     asset.slotsKnown = true; return true;
 }
 
-void WorldMapWorkspace::ReadBinding(EditorWorkspaceHostContext& ctx) {
+void WorldMode::ReadBinding(EditorWorkspaceHostContext& ctx) {
     bindingRefresh_ = false; bindingTarget_ = {}; binding_ = {}; bindingValid_ = false; bindingRevision_ = model_->revision;
     if (!edge_.a || !edge_.b) { return; }
     const auto a = std::find_if(model_->rooms.begin(), model_->rooms.end(), [this](const auto& r) { return r.object.objectId == edge_.a; });
@@ -1327,7 +2307,7 @@ void WorldMapWorkspace::ReadBinding(EditorWorkspaceHostContext& ctx) {
     if (sequenceDraft_ && !SameRegionPair(pendingBinding_, binding_)) { sequenceDraft_ = false; }
 }
 
-bool WorldMapWorkspace::WriteBinding(EditorWorkspaceHostContext& ctx, const RegionSequenceBinding& requested) {
+bool WorldMode::WriteBinding(EditorWorkspaceHostContext& ctx, const RegionSequenceBinding& requested) {
     if (!bindingValid_) { return false; }
     const auto next = requested;
     if (next.sequenceAssetGuid.empty()) {
@@ -1372,11 +2352,11 @@ bool WorldMapWorkspace::WriteBinding(EditorWorkspaceHostContext& ctx, const Regi
     sequenceDraft_ = false; model_->error.clear(); return true;
 }
 
-void WorldMapWorkspace::DrawProperties(EditorWorkspaceHostContext& ctx) {
+void WorldMode::DrawProperties(EditorWorkspaceHostContext& ctx) {
     auto& ui = *ctx.ui;
-    if (!model_->error.empty()) { ui.Text(model_->error); }
-    if (!report_.empty()) { ui.Text(report_); }
     if (mode_ == 1) { DrawAreaPanel(ctx); return; }
+    if (mode_ == 3) { DrawMachinePanel(ctx); return; }
+    DrawBudget(ctx);
     if (pickingStart_) {
         ui.Text("在世界地图中选择出生位置");
         ui.Text("绿色轮廓是角色位置；点击立即开始");
@@ -1510,13 +2490,280 @@ void WorldMapWorkspace::DrawProperties(EditorWorkspaceHostContext& ctx) {
     }
 }
 
+// ---------------------------------------------------------------- 3D の舞台（下の欄）
+// ビューポートの操作の案内、選んだ物体の位置と向き、テレビの新規作成、台や道具の配置、地図の隣に合わせた並べ方。
+// 物体を動かすのは標準のビューポートのギズモ（W / E / R）が主で、ここは数値と「一押しで済む」並べ方だけを受け持つ。
+class StagePanel {
+public:
+    void Draw(EditorWorkspaceHostContext& ctx, MapModel& model, WorldMode& world) {
+        auto& ui = *ctx.ui;
+        ui.Text("视口：左键点选 · 按住右键拖动看四周（同时 WASD 移动、Q / E 降升、滚轮调速度）· 滚轮前后推 · F 聚焦选中\n"
+                "手柄：W 移动 / E 旋转 / R 缩放 / Q 收起 · X 切换世界 / 本地坐标 · Ctrl+D 复制 · Delete 删除");
+        if (!error_.empty()) { ui.Text("⚠ " + error_); } else if (!note_.empty()) { ui.Text(note_); }
+        Refresh(ctx, model);
+        FinishStand(ctx, model, world);
+        if (ui.BeginTable("td2.stage.columns", 3)) {
+            ui.TableNextRow();
+            ui.TableNextColumn(); DrawSelection(ctx, model, world);
+            ui.TableNextColumn(); DrawTelevisions(ctx, model, world);
+            ui.TableNextColumn(); DrawProps(ctx, model, world);
+            ui.EndTable();
+        }
+    }
+private:
+    // 選んだ物体の姿勢を読む（選択が変わった時と、時々）。数値を入力している間は読み直さない。
+    void Refresh(EditorWorkspaceHostContext& ctx, MapModel& model) {
+        clock_ += ctx.unscaledDeltaSeconds;
+        const uint64_t id = model.sceneSelection;
+        if (pending_ || (id == object_ && clock_ < .5f)) { return; }
+        clock_ = 0; object_ = id; readOk_ = false;
+        std::string error;
+        if (id) { readOk_ = ReadStageObject(ctx, id, read_, error); }
+    }
+    const RoomItem* RoomOf(const MapModel& model, uint64_t object) const {
+        for (const auto& room : model.rooms) { if (object && MapModel::TelevisionObject(room) == object) { return &room; } }
+        return nullptr;
+    }
+    // テレビを動かした後、そのカメラを今の配置で作り直す（作者が手で直したカメラは残る）。
+    void Recamera(EditorWorkspaceHostContext& ctx, MapModel& model, WorldMode& world, uint64_t television) {
+        if (const auto* room = RoomOf(model, television)) { const std::string region = room->settings.region.regionId; world.SetUpNewRoom(ctx, region, {}); }
+    }
+    void DrawSelection(EditorWorkspaceHostContext& ctx, MapModel& model, WorldMode& world) {
+        auto& ui = *ctx.ui;
+        if (!object_ || !readOk_) { ui.Text("在视口里点选一个物体"); return; }
+        const auto* room = RoomOf(model, object_);
+        ui.Text("选中：" + ShortChoiceLabel(read_.name, 18) + (read_.television ? "（" + std::string(read_.television->label) + "）" : ""));
+        if (room) { ui.Text("区域 " + ShortChoiceLabel(room->settings.region.regionId, 14) + " · 左栏和右侧地图编辑它"); }
+        else if (read_.television && ui.Button("td2.stage.adopt", "把这台电视建成区域")) {
+            const auto model3d = *read_.television;
+            if (model.AdoptTelevision(ctx, object_, model3d, std::nullopt)) { const auto* fresh = model.Current(); if (fresh) { world.SetUpNewRoom(ctx, fresh->settings.region.regionId, {}); } note_ = "已建成区域，请在世界布局里把它拖进世界"; error_.clear(); }
+            else { error_ = model.error; }
+            return;
+        }
+        if (!pending_) { editing_ = read_.pose; }
+        bool changed = false;
+        changed |= EditFloat(ui, "td2.stage.x", "X（米）", editing_.position[0], -1000, 1000);
+        changed |= EditFloat(ui, "td2.stage.y", "Y（米，高度）", editing_.position[1], -1000, 1000);
+        changed |= EditFloat(ui, "td2.stage.z", "Z（米）", editing_.position[2], -1000, 1000);
+        changed |= EditFloat(ui, "td2.stage.yaw", "朝向（度，绕竖轴）", editing_.rotation[1], -360, 360);
+        const bool uniform = std::abs(editing_.scale[0] - editing_.scale[1]) < 1e-4 && std::abs(editing_.scale[0] - editing_.scale[2]) < 1e-4;
+        if (uniform) {
+            double s = editing_.scale[0];
+            if (EditFloat(ui, "td2.stage.scale", "缩放", s, .05f, 20)) { editing_.scale = {s, s, s}; changed = true; }
+        }
+        // よく使う向きの直し：15° と 90° ずつ。
+        constexpr std::array<std::pair<double, std::string_view>, 4> turns{{{-90, "↺ 90°"}, {-15, "↺ 15°"}, {15, "↻ 15°"}, {90, "↻ 90°"}}};
+        for (size_t i = 0; i < turns.size(); ++i) {
+            if (i) { ui.SameLine(); }
+            if (ui.Button("td2.stage.turn." + std::to_string(i), turns[i].second)) { editing_.rotation[1] = std::fmod(editing_.rotation[1] + turns[i].first + 540.0, 360.0) - 180; changed = true; }
+        }
+        if (ui.Button("td2.stage.floor", "落到地面") && read_.hasBounds) { editing_.position[1] -= read_.lo[1]; changed = true; }
+        if (room) { ui.SameLine(); if (ui.Button("td2.stage.recamera", "按现在的位置重新生成机位")) { Recamera(ctx, model, world, object_); note_ = "已重新生成机位（手调过的机位保留）"; } }
+        if (changed) { pending_ = true; }
+        if (pending_ && !ui.GetInteraction().editing) {
+            pending_ = false;
+            std::string error;
+            if (SetStagePose(ctx, object_, editing_, error)) { error_.clear(); model.sceneDirty = true; } else { error_ = error; }
+            clock_ = 1;
+        }
+    }
+    void DrawTelevisions(EditorWorkspaceHostContext& ctx, MapModel& model, WorldMode& world) {
+        auto& ui = *ctx.ui;
+        const auto* current = model.Current();
+        ui.Text(current ? "新建电视（放在「" + ShortChoiceLabel(current->object.name, 10) + "」右边，地图接在它右侧）" : "新建电视（放在视口前方的地面）");
+        constexpr size_t columns = 3;
+        if (ui.BeginTable("td2.stage.televisions", static_cast<uint32_t>(columns))) {
+            for (size_t i = 0; i < std::size(kTelevisionModels); ++i) {
+                if (i % columns == 0) { ui.TableNextRow(); }
+                ui.TableNextColumn();
+                const auto& m = kTelevisionModels[i];
+                if (ui.Button("td2.stage.tv." + std::to_string(i), std::string(m.label) + " " + std::to_string(m.cols) + "×" + std::to_string(m.rows))) { CreateTelevision(ctx, model, world, m); return; }
+            }
+            ui.EndTable();
+        }
+        // 地図で隣り合うテレビの横・上・下へ、今のテレビを 3D でも寄せる。
+        if (!current || !current->settings.worldPlaced) { return; }
+        const auto here = Placement(current->settings);
+        bool any = false;
+        for (const auto& other : model.rooms) {
+            if (other.object.objectId == current->object.objectId || !other.settings.worldPlaced) { continue; }
+            const auto edge = FindSharedWorldEdge(Placement(other.settings), here);
+            if (!edge) { continue; }
+            const int side = edge->sideA == WorldSide::Right ? 1 : edge->sideA == WorldSide::Left ? -1 : edge->sideA == WorldSide::Top ? 2 : -2;
+            const std::string where = side == 1 ? "右边" : side == -1 ? "左边" : side == 2 ? "上面" : "下面";
+            if (!any) { ui.Text("按世界地图贴到邻居旁（3D）"); any = true; }
+            if (ui.Button("td2.stage.snap." + std::to_string(other.object.objectId), "贴到「" + ShortChoiceLabel(other.object.name, 10) + "」" + where)) {
+                SnapBeside(ctx, model, world, MapModel::TelevisionObject(*current), MapModel::TelevisionObject(other), side);
+                return;
+            }
+        }
+    }
+    void CreateTelevision(EditorWorkspaceHostContext& ctx, MapModel& model, WorldMode& world, const TelevisionModel& m) {
+        error_.clear(); note_.clear();
+        const auto* current = model.Current();
+        // 区域の一覧は作り直されるので、隣の情報は先に値で写す。
+        const std::optional<RegionSettings> beside = current ? std::optional<RegionSettings>(current->settings) : std::nullopt;
+        const std::string besideRegion = current ? current->settings.region.regionId : std::string{};
+        StageObject anchor;
+        std::string error;
+        const bool hasAnchor = current && ReadStageObject(ctx, MapModel::TelevisionObject(*current), anchor, error);
+        Pose pose;
+        if (hasAnchor) { pose = PoseBeside(anchor, m.width * m.scale, m.height * m.scale, 1); }
+        else if (!PoseAtView(ctx, pose, error_)) { return; }
+        pose.scale = {m.scale, m.scale, m.scale};
+        const std::string name = "电视 " + std::string(m.label);
+        const uint64_t id = CreateStageModel(ctx, m.path, name, pose, error_);
+        if (!id) { return; }
+        model.sceneDirty = true;
+        if (hasAnchor) { JoinFolderOf(ctx, id, anchor.objectId); }
+        if (!model.AdoptTelevision(ctx, id, m, beside)) { error_ = model.error; return; }
+        const auto* fresh = model.Current();
+        if (fresh) { const std::string region = fresh->settings.region.regionId; world.SetUpNewRoom(ctx, region, besideRegion); }
+        if (Execute(ctx, "scene.object.select", {{"objectId", id}}).ok) { model.sceneSelection = id; }
+        fresh = model.Current();
+        note_ = "已新建「" + name + "」：地图 " + std::to_string(m.cols) + "×" + std::to_string(m.rows) +
+                (fresh && fresh->settings.worldPlaced ? "，已接到世界地图里并生成机位" : "，已生成机位") + " · 在右侧地图画地形";
+        if (!model.error.empty()) { note_ += " · " + model.error; }
+    }
+    void SnapBeside(EditorWorkspaceHostContext& ctx, MapModel& model, WorldMode& world, uint64_t television, uint64_t neighbor, int side) {
+        StageObject self, other;
+        if (!ReadStageObject(ctx, television, self, error_) || !ReadStageObject(ctx, neighbor, other, error_)) { return; }
+        auto pose = PoseBeside(other, StageWidth(self), StageHeight(self), side);
+        pose.scale = self.pose.scale;
+        if (!SetStagePose(ctx, television, pose, error_)) { return; }
+        model.sceneDirty = true; error_.clear(); clock_ = 1;
+        Recamera(ctx, model, world, television);
+        note_ = "已贴到「" + ShortChoiceLabel(other.name, 12) + "」旁边并重新生成机位";
+    }
+    void DrawProps(EditorWorkspaceHostContext& ctx, MapModel& model, WorldMode&) {
+        auto& ui = *ctx.ui;
+        const auto* current = model.Current();
+        ui.Text(current ? "布景（台类垫在「" + ShortChoiceLabel(current->object.name, 10) + "」下面，其余放在视口前方）" : "布景（放在视口前方）");
+        constexpr size_t columns = 4;
+        if (ui.BeginTable("td2.stage.props", static_cast<uint32_t>(columns))) {
+            for (size_t i = 0; i < std::size(kStageProps); ++i) {
+                if (i % columns == 0) { ui.TableNextRow(); }
+                ui.TableNextColumn();
+                const auto& prop = kStageProps[i];
+                if (ui.Button("td2.stage.prop." + std::to_string(i), std::string(prop.stand && current ? "▁ " : "") + std::string(prop.label))) { PlaceProp(ctx, model, prop); return; }
+            }
+            ui.EndTable();
+        }
+    }
+    // 台はテレビの真下の床に置き、モデルが読み込まれて高さが分かったらテレビを台の上へ載せる（FinishStand）。
+    void PlaceProp(EditorWorkspaceHostContext& ctx, MapModel& model, const StageProp& prop) {
+        error_.clear(); note_.clear();
+        const auto* current = model.Current();
+        StageObject tv;
+        Pose pose;
+        const bool under = prop.stand && current && ReadStageObject(ctx, MapModel::TelevisionObject(*current), tv, error_);
+        // 台は床に立てる：テレビの真下、向きはテレビの縦軸の向きだけ写す。
+        if (under) { pose = tv.pose; pose.position[1] = 0; pose.rotation = {0, tv.pose.rotation[1], 0}; pose.scale = {1, 1, 1}; }
+        else if (!PoseAtView(ctx, pose, error_)) { return; }
+        const uint64_t id = CreateStageModel(ctx, prop.path, prop.label, pose, error_);
+        if (!id) { return; }
+        model.sceneDirty = true;
+        if (under) {
+            JoinFolderOf(ctx, id, tv.objectId);
+            stand_ = id; standTelevision_ = tv.objectId; standFrames_ = 240;
+            note_ = "已在「" + ShortChoiceLabel(tv.name, 12) + "」下面放「" + std::string(prop.label) + "」，读出台高后把电视放上去…";
+        } else {
+            if (Execute(ctx, "scene.object.select", {{"objectId", id}}).ok) { model.sceneSelection = id; }
+            note_ = "已放「" + std::string(prop.label) + "」：用 W / E 移动、旋转它";
+        }
+    }
+    void FinishStand(EditorWorkspaceHostContext& ctx, MapModel& model, WorldMode& world) {
+        if (!stand_) { return; }
+        StageObject stand, tv;
+        std::string error;
+        if (!ReadStageObject(ctx, stand_, stand, error) || !ReadStageObject(ctx, standTelevision_, tv, error)) { stand_ = 0; error_ = error; return; }
+        if (!stand.hasBounds) {
+            if (--standFrames_ <= 0) { stand_ = 0; error_ = "读不到台的高度：请用 W 手动把电视移到台面上"; }
+            return;
+        }
+        tv.pose.position[1] = stand.hi[1];
+        const auto television = standTelevision_;
+        stand_ = 0;
+        if (!SetStagePose(ctx, television, tv.pose, error_)) { return; }
+        clock_ = 1;
+        Recamera(ctx, model, world, television);
+        note_ = "电视已放到台面上（高 " + std::to_string(static_cast<int>(std::round(stand.hi[1] * 100))) + " 厘米）并重新生成机位";
+    }
+    float clock_ = 1;
+    uint64_t object_ = 0;
+    StageObject read_;
+    bool readOk_ = false, pending_ = false;
+    Pose editing_;
+    std::string error_, note_;
+    uint64_t stand_ = 0, standTelevision_ = 0;
+    int standFrames_ = 0;
+};
+
+// ---------------------------------------------------------------- 关卡编辑
+// テレビ地図と世界地図を一つのワークスペースにまとめる。中央は標準の 3D ビューポート、左は一覧と属性、右は 2D の地図、下は 3D の舞台。
+// 2D の地図と 3D のビューポートを同時に見られるので、タブを切り替えずに配置と見た目を確かめられる。
+class LevelEditorWorkspace final : public IEditorWorkspace {
+public:
+    explicit LevelEditorWorkspace(std::shared_ptr<MapModel> model) : model_(model), television_(model), world_(model) {
+        const auto request = [this](int view) { requested_ = view; };
+        television_.switcher = request; world_.switcher = request;
+    }
+    EditorWorkspaceDescriptor GetDescriptor() const override {
+        EditorWorkspaceDescriptor d; d.workspaceId = kLevelWorkspace; d.displayName = "关卡编辑";
+        d.options = static_cast<uint32_t>(EditorWorkspaceOption::RequestSceneViewport); return d;
+    }
+    std::string_view GetDocumentIdentity() const override { return "td2.scene.maps"; }
+    void OnActivate(EditorWorkspaceHostContext& ctx) override {
+        Active().OnActivate(ctx);
+        // 開いた時の地図の選択をシーンへ押し付けない（シーンで選んでいるテレビの方へ地図が付いて行く）。
+        pushed_ = model_->selected; model_->selectionClock = 1; model_->sceneSelection = 0;
+    }
+    void OnDeactivate(EditorWorkspaceHostContext& ctx) override { Active().OnDeactivate(ctx); }
+    void Draw(EditorWorkspaceHostContext& ctx) override {
+        if (!ctx.ui || !ctx.commands) { return; }
+        ApplyRequestedView(ctx);
+        model_->Poll(ctx);
+        model_->FollowScene(ctx);
+        if (model_->selected != pushed_ && !model_->gesture) { pushed_ = model_->selected; model_->ShowInScene(ctx); }
+        auto& ui = *ctx.ui;
+        Active().BeginFrame(ctx);
+        // 三つの欄は毎フレーム同じ ID で開く（最初のドッキングで各欄を決まった場所に置くため）。
+        if (ui.BeginPanel("td2.level.side", "关卡", nullptr, EditorWorkspaceDockRegion::Left)) { Active().DrawSide(ctx); } ui.EndPanel();
+        if (ui.BeginPanel("td2.level.map", "地图", nullptr, EditorWorkspaceDockRegion::Right)) { Active().DrawMap(ctx); } ui.EndPanel();
+        if (ui.BeginPanel("td2.level.stage", "3D 布景", nullptr, EditorWorkspaceDockRegion::Bottom)) { stage_.Draw(ctx, *model_, world_); } ui.EndPanel();
+        model_->Publish(ctx);
+    }
+    bool IsDirty() const override { return television_.IsDirty() || world_.IsDirty(); }
+    EditorWorkspaceSaveResult Save(EditorWorkspaceHostContext& ctx) override { return Active().Save(ctx); }
+    void DiscardChanges(EditorWorkspaceHostContext& ctx) override { television_.DiscardChanges(ctx); world_.DiscardChanges(ctx); }
+    EditorWorkspaceCloseDisposition QueryClose(EditorWorkspaceCloseReason) const override { return IsDirty() ? EditorWorkspaceCloseDisposition::RequiresSave : EditorWorkspaceCloseDisposition::Allow; }
+private:
+    MapMode& Active() { return worldActive_ ? static_cast<MapMode&>(world_) : static_cast<MapMode&>(television_); }
+    // 見方の切り替えはフレームの初めにまとめて行う（描画の途中で欄の中身を入れ替えない）。
+    void ApplyRequestedView(EditorWorkspaceHostContext& ctx) {
+        if (!requested_) { return; }
+        const int view = *requested_; requested_.reset();
+        const bool toWorld = view != kTelevisionView;
+        if (toWorld != worldActive_) {
+            if (!Active().ApplyDraft(ctx)) { return; }
+            Active().OnDeactivate(ctx); worldActive_ = toWorld; Active().OnActivate(ctx);
+        }
+        if (toWorld && world_.Mode() != view) { world_.ChangeMode(ctx, view); }
+    }
+    std::shared_ptr<MapModel> model_;
+    TelevisionMode television_;
+    WorldMode world_;
+    StagePanel stage_;
+    bool worldActive_ = false;
+    std::optional<int> requested_;
+    uint64_t pushed_ = 0;
+};
+
 }
 
 std::vector<std::unique_ptr<IEditorWorkspace>> MakeMapWorkspaces() {
-    auto model = std::make_shared<MapModel>();
     std::vector<std::unique_ptr<IEditorWorkspace>> workspaces;
-    workspaces.push_back(std::make_unique<TelevisionMapWorkspace>(model));
-    workspaces.push_back(std::make_unique<WorldMapWorkspace>(model));
+    workspaces.push_back(std::make_unique<LevelEditorWorkspace>(std::make_shared<MapModel>()));
     return workspaces;
 }
 

@@ -512,7 +512,14 @@ public:
                 return !b.dead && OverlapX(b.rect, dev.rect) && feet >= bottom - 7.0 / 32 &&
                        feet <= bottom + 2.0 / 32 && b.rect.y < bottom && b.vy >= -kEps;
             };
-            const bool pressed = (s.playerPresent && presses(s.player)) || (s.echo && presses(*s.echo));
+            // 蹬墙の冲刺で残影が出るまでの間も、出発点の板は押されたままにする（離して押し直すと二回分の入力になる）。
+            const auto pending = [&] {
+                if (!s.pendingEcho) return false;
+                const Rect& r = s.pendingEcho->origin;
+                const double feet = r.y + r.h, bottom = dev.rect.y + dev.rect.h;
+                return OverlapX(r, dev.rect) && feet >= bottom - 7.0 / 32 && feet <= bottom + 2.0 / 32 && r.y < bottom;
+            };
+            const bool pressed = (s.playerPresent && presses(s.player)) || (s.echo && presses(*s.echo)) || pending();
             if (state.pressed != pressed) Event(EventKind::PlateChanged, dev.id, pressed ? "pressed" : "released", dev.rect);
             // 切り替え式は踏み込んだ瞬間だけ入・切を反転し、離しても保つ。
             if (!dev.latch) state.active = pressed;
@@ -712,7 +719,7 @@ public:
             if (s.deathRemaining <= kEps && s.automaticRespawn) Respawn();
             return;
         }
-        // 空格：残影がいない時は冲刺。残影がいる時は短く離すと回収、kSwapHold 秒押し続けると交換（離すのを待たずに入れ替える）。
+        // スペース：残影がいない時はダッシュ。残影がいる時は短く離すと回収、kSwapHold 秒押し続けると交換（離すのを待たずに入れ替える）。
         const bool hasEcho = s.echo || s.pendingEcho;
         if (actionPressed && hasEcho) { s.actionArmed = true; s.actionHold = 0; }
         else if (actionPressed) s.blinkBuffer = .12;
@@ -867,6 +874,9 @@ WorldSnapshot BuildSnapshot(const WorldDefinition& d, const WorldState& s) {
         snapshot.powered = dev.kind == DeviceKind::Plate ? state.active
                          : linked.contains(dev.id) && (dev.inverted ? !state.active : state.active);
         snapshot.variant = dev.variant; snapshot.latch = dev.latch;
+        snapshot.world = dev.kind == DeviceKind::Plate && std::any_of(dev.targets.begin(), dev.targets.end(), [](const std::string& t) {
+            return t.starts_with("mech/") || t.starts_with("slide/") || t.starts_with("stack/") || t.starts_with("carousel/");
+        });
         result.devices.push_back(std::move(snapshot));
     }
     return result;

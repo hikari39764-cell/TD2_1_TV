@@ -61,6 +61,14 @@ public:
                 .typeName = TD2::kSlideRackComponentType, .displayName = "TD2 滑块货架", .category = "TD2",
                 .description = "压板让所在电视滑进相邻的空槽",
             }) &&
+            context.RegisterComponent<TD2::StackColumnComponent>({
+                .typeName = TD2::kStackColumnComponentType, .displayName = "TD2 电视塔", .category = "TD2",
+                .description = "抽出最下面的电视，上面的电视整摞下落",
+            }) &&
+            context.RegisterComponent<TD2::CarouselComponent>({
+                .typeName = TD2::kCarouselComponentType, .displayName = "TD2 转柱", .category = "TD2",
+                .description = "四面挂电视的方柱，每次转一面",
+            }) &&
             context.RegisterComponent<TD2::SignalCableComponent>({
                 .typeName = TD2::kSignalCableComponentType, .displayName = "TD2 信号线", .category = "TD2",
                 .description = "连接的压板通电时换成发光的模型",

@@ -53,6 +53,8 @@ struct StageFrame {
     // 大区域の切り替え中なら、出る部屋と入る部屋。鮮明な窓・保護・焦点をこの二部屋に絞り、
     // 画で目立つ画面が替わるたびに切り替わらないようにする。
     std::string travelFrom, travelTo;
+    // 操作中の部屋と同じ大区域の部屋。周りの窓はこの部屋たちを覆う位置に固定する（部屋を移るたびに窓を動かさない）。
+    std::vector<std::string> areaRooms;
 };
 
 // 一つの World に一つの連続した舞台。世界地図どおりに部屋を置き、プレイヤー・光線・エフェクトは世界に一つずつ。
@@ -110,6 +112,7 @@ private:
         std::vector<char> occupancy, linked;
         int x = 0, y = 0, palette = -1;
         double scale = 0, pitch = 0, yaw = 0;
+        bool compact = false;
         std::vector<PartRequest> parts;
     };
     struct Assigned { const StageRoom* room = nullptr; ViewKind kind = ViewKind::Sharp; };
@@ -143,12 +146,14 @@ private:
     std::map<std::string, Seen, std::less<>> seen_;   // このフレームの見え方（区域 ID → 値。ゲームカメラが無い時は空）
     std::array<std::string, 2> focus_{};          // Play で鮮明に撮る二部屋（区域 ID）
     std::string wideCenter_;                      // 周りの窓の中心の部屋（区域 ID）
+    std::string wideArea_;                        // 周りの窓を固定した大区域（その大区域の最初の部屋の ID）
+    Window stickyWide_;                           // その大区域で使い続けている周りの窓
     std::map<std::string, RoomParts> roomParts_;   // 区域 ID → 背景と地形の描画要求
     // 180° 回されている部屋の世界の範囲（左・上・右・下）。エフェクトを点対称に置くのに使う。
     std::vector<std::pair<std::string, std::array<double, 4>>> flippedRooms_;
     std::vector<PartRequest> frameParts_;          // このフレームの装置・人物・演出（毎フレーム作る）
     // 装置ごとの通電・実体と、それが最後に変わった実時刻（扉・橋の出入りと通電灯の点灯を動かす）。
-    struct DeviceMemory { bool powered = false, solid = false, ready = false; double changed = -1e9; };
+    struct DeviceMemory { bool powered = false, solid = false, ready = false, checkpoint = false; double changed = -1e9; };
     std::map<std::string, DeviceMemory> deviceMemory_;
     std::vector<std::pair<uint64_t, uint64_t>> submitted_;
     size_t accepted_ = 0, failed_ = 0;

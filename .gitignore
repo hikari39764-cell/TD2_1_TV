@@ -56,22 +56,6 @@ id_ed25519
 *.blend[0-9]*
 *.blend@
 
-# このセットの派生プレビューと検証結果だけを除外し、資産一覧と再生成スクリプトは残す。
-/ArtSource/ModularSet01/Previews/
-/ArtSource/ModularSet01/validation_report.json
-/ArtSource/ModularSet01/roundtrip_report.json
-# 検証専用スクリプトはローカルに残し、生成・FBX 出力スクリプトは追跡する。
-/ArtSource/ModularSet01/verify_exports.py
-/ArtSource/ModularSet01/verify_blender_roundtrip.py
-
-# Set02 のプレビュー・作業キャッシュ・一覧を含む検証報告はローカルに残す。
-/ArtSource/ModularSet02/Previews/
-/ArtSource/ModularSet02/Temp/
-/ArtSource/ModularSet02/asset_manifest.json
-/ArtSource/ModularSet02/verification*.json
-/ArtSource/ModularSet02/verification*.py
-/ArtSource/ModularSet02/verify*.py
-
 # 素材・レベル生成時の Python キャッシュはローカルに残す。
 __pycache__/
 
@@ -88,12 +72,6 @@ __pycache__/
 /ArtSource/ExternalDisplays01/Previews/
 /ArtSource/ExternalDisplays01/*.txt
 
-# 確認画像・検証・画風の試作用スクリプトはローカルに残す。
-/ArtSource/ScreenGame06/preview_*.py
-/ArtSource/Sprites04/check_*.py
-/ArtSource/ScreenStyle07/*_study.py
-/ArtSource/ScreenStyleStudy01/
-/ArtSource/ScreenStyleStudy02/
-
-# 素材を作る Python スクリプトは実行時に使わないのでローカルに残す。
+# 素材を作る Python スクリプトと、その雛形は実行時に使わないのでローカルに残す。
 /ArtSource/**/*.py
+/ArtSource/ScreenStyle07/model_meta_template.json

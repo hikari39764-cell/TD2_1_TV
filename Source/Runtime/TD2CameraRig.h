@@ -88,7 +88,7 @@ public:
     // 基準をこの姿勢へ置き直す（ずれは 0 から寄せ直す）。復活と演出の終わりに使う。
     void Snap(const HIKARI::GameProjectFloat3& eye, const HIKARI::GameProjectFloat3& look, float verticalFovRadians);
     bool Ready() const noexcept { return ready_; }
-    // 基準の機位を from から to への剛体の動きで運ぶ（乗っているテレビが回る・動く間、画面との位置関係を保つ）。
+    // 基準のカメラを from から to への剛体の動きで運ぶ（乗っているテレビが回る・動く間、画面との位置関係を保つ）。
     void Carry(const HIKARI::GameProjectTransform& from, const HIKARI::GameProjectTransform& to);
     // 1 フレーム進める。target はプレイヤーの画面上の点、velocity はその速さ（m/s）。present=false なら追わない。
     CameraRigPose Update(const CameraRegionFrame& frame, const CameraAreaSettings& area, const HIKARI::GameProjectFloat3& target,
