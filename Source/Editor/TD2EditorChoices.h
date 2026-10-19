@@ -1,11 +1,12 @@
 #pragma once
 #include "TD2EditorSupport.h"
+#include "../Common/TD2DeviceText.h"
 #include <algorithm>
 #include <array>
 
 namespace TD2::Editor {
-inline constexpr std::array<std::string_view, 12> kEditorDeviceKinds{"Solid", "OneWay", "Plate", "Door", "Laser", "Spikes", "Checkpoint", "LockWall",
-                                                                     "Spring", "Bridge", "Collectible", "Decal"};
+// 装置の種類（並びと名前は TD2DeviceText.h）と、エディタでの表示名。
+inline constexpr const auto& kEditorDeviceKinds = kDeviceKindNames;
 inline constexpr std::array<std::string_view, 12> kEditorDeviceLabels{"▧ 实体块", "━ 单向平台", "▰ 压板", "▥ 门", "→ 激光", "▲ 尖刺", "⚑ 存档点", "▣ 锁墙",
                                                                       "⤒ 弹簧", "═ 伸缩桥", "◆ 收集物", "✎ 教程贴画"};
 

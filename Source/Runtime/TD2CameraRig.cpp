@@ -5,45 +5,38 @@
 
 namespace TD2 {
 namespace {
-constexpr double kPi = 3.14159265358979323846;
 using F3 = HIKARI::GameProjectFloat3;
+using Math::Vec3;
+using Math::kPi;
 
-void Load(const F3& v, double out[3]) { out[0] = v.x; out[1] = v.y; out[2] = v.z; }
-F3 Store(const double v[3]) { return {static_cast<float>(v[0]), static_cast<float>(v[1]), static_cast<float>(v[2])}; }
-double Dot(const double a[3], const double b[3]) { return a[0] * b[0] + a[1] * b[1] + a[2] * b[2]; }
-void Cross(const double a[3], const double b[3], double out[3]) {
-    out[0] = a[1] * b[2] - a[2] * b[1]; out[1] = a[2] * b[0] - a[0] * b[2]; out[2] = a[0] * b[1] - a[1] * b[0];
-}
-bool Normalize(double v[3]) {
-    const double length = std::sqrt(Dot(v, v));
+// 長さが 0 に近ければ false を返し、v は変えない。
+bool Normalize(Vec3& v) {
+    const double length = std::sqrt(Math::Dot(v, v));
     if (length < 1e-9) { return false; }
-    for (int i = 0; i < 3; ++i) { v[i] /= length; }
+    for (double& e : v) { e /= length; }
+    return true;
+}
+// 前の向きから右（前 × 世界の上）と上（右 × 前）を作る。前がほぼ 0 か真上・真下なら false で、right と up は変えない。
+bool SideAxes(Vec3 forward, Vec3& right, Vec3& up) {
+    if (!Normalize(forward)) { return false; }
+    Vec3 candidate = Math::Cross(forward, {0, 1, 0});
+    if (!Normalize(candidate)) { return false; }
+    right = candidate;
+    up = Math::Cross(right, forward);
     return true;
 }
 // ローカルの点をテレビのワールド変換で移す（縮尺→回転→平行移動）。
 F3 Transform(const HIKARI::GameProjectTransform& t, double x, double y, double z, bool translate) {
-    const double v[3]{x * t.scale.x, y * t.scale.y, z * t.scale.z};
-    const double q[3]{t.rotation.x, t.rotation.y, t.rotation.z};
-    double c[3], d[3];
-    Cross(q, v, c);
+    const Vec3 v{x * t.scale.x, y * t.scale.y, z * t.scale.z};
+    const Vec3 q{t.rotation.x, t.rotation.y, t.rotation.z};
+    Vec3 c = Math::Cross(q, v);
     for (double& e : c) { e *= 2; }
-    Cross(q, c, d);
-    double out[3];
-    for (int i = 0; i < 3; ++i) { out[i] = v[i] + t.rotation.w * c[i] + d[i]; }
+    const Vec3 d = Math::Cross(q, c);
+    Vec3 out;
+    for (size_t i = 0; i < 3; ++i) { out[i] = v[i] + t.rotation.w * c[i] + d[i]; }
     if (translate) { out[0] += t.position.x; out[1] += t.position.y; out[2] += t.position.z; }
-    return Store(out);
+    return ToF3(out);
 }
-}
-
-// 臨界減衰のばね（SmoothDamp と同じ近似）。行き過ぎず、目標が跳んでも速度は連続する。
-void CameraRig::Spring::Step(const double target[3], double seconds, double dt) {
-    const double omega = 2.0 / (std::max)(seconds, 1e-3), x = omega * dt;
-    const double decay = 1.0 / (1.0 + x + .48 * x * x + .235 * x * x * x);
-    for (int i = 0; i < 3; ++i) {
-        const double change = value[i] - target[i], temp = (velocity[i] + omega * change) * dt;
-        velocity[i] = (velocity[i] - omega * temp) * decay;
-        value[i] = target[i] + (change + temp) * decay;
-    }
 }
 
 F3 CameraRig::ScreenPoint(const CameraRegionFrame& frame, double x, double y) {
@@ -62,18 +55,12 @@ F3 CameraRig::ScreenVelocity(const CameraRegionFrame& frame, double vx, double v
 F3 CameraRig::Forward(const HIKARI::GameProjectTransform& transform) {
     HIKARI::GameProjectTransform rotation = transform;
     rotation.scale = {1, 1, 1};
-    const F3 f = Transform(rotation, 0, 0, 1, false);
-    double v[3]{f.x, f.y, f.z};
-    if (!Normalize(v)) { v[0] = 0; v[1] = 0; v[2] = 1; }
-    return Store(v);
+    return ToF3(Math::Normalize(ToVec3(Transform(rotation, 0, 0, 1, false))));
 }
 
 void CameraRig::Snap(const F3& eye, const F3& look, float verticalFovRadians) {
-    double e[3], l[3];
-    Load(eye, e); Load(look, l);
-    baseEye_.Snap(e); baseLook_.Snap(l);
-    const double zero[3]{};
-    offset_.Snap(zero); aim_.Snap(zero); roll_.Snap(zero);
+    baseEye_.Snap(ToVec3(eye)); baseLook_.Snap(ToVec3(look));
+    offset_.Snap({}); aim_.Snap({}); roll_.Snap({});
     fov_ = verticalFovRadians;
     last_ = {eye, look, {0, 1, 0}, verticalFovRadians};
     ready_ = true;
@@ -81,7 +68,7 @@ void CameraRig::Snap(const F3& eye, const F3& look, float verticalFovRadians) {
 
 namespace {
 // 右・上の向きと注視点までの距離から、揺れのずれと傾きを出す。
-void BreathAlong(const CameraAreaSettings& area, double time, const double right[3], const double up[3], double distance,
+void BreathAlong(const CameraAreaSettings& area, double time, const Vec3& right, const Vec3& up, double distance,
                  F3& eyeOffset, F3& lookOffset, double& roll) {
     const auto wave = [time](double period, double phase) { return std::sin(time * 2 * kPi / period + phase); };
     // 呼吸：周期の違う正弦の和（7〜11 秒）。
@@ -100,33 +87,24 @@ void BreathAlong(const CameraAreaSettings& area, double time, const double right
     lx += handAngle * (wave(2.3, .9) + .5 * wave(1.6, 2.7));
     ly += handAngle * .8 * (wave(2.9, 1.7) + .5 * wave(1.7, .2));
     roll = hand * .25 * kPi / 180 * (wave(3.9, .5) + .4 * wave(2.6, 1.9));
-    double e[3], l[3];
-    for (int i = 0; i < 3; ++i) { e[i] = right[i] * bx + up[i] * by; l[i] = right[i] * lx + up[i] * ly; }
-    eyeOffset = Store(e); lookOffset = Store(l);
+    Vec3 e, l;
+    for (size_t i = 0; i < 3; ++i) { e[i] = right[i] * bx + up[i] * by; l[i] = right[i] * lx + up[i] * ly; }
+    eyeOffset = ToF3(e); lookOffset = ToF3(l);
 }
 }
 
 void CameraRig::Breath(const CameraAreaSettings& area, double time, F3& eyeOffset, F3& lookOffset, double& roll) const {
-    double d[3];
-    for (int i = 0; i < 3; ++i) { d[i] = baseLook_.value[i] - baseEye_.value[i]; }
-    BreathAlong(area, time, right_, up_, std::sqrt(Dot(d, d)), eyeOffset, lookOffset, roll);
+    const Vec3 d = Math::Sub(baseLook_.value, baseEye_.value);
+    BreathAlong(area, time, right_, up_, std::sqrt(Math::Dot(d, d)), eyeOffset, lookOffset, roll);
 }
 
 void CameraRig::BreathAround(const CameraAreaSettings& area, double time, const F3& eye, const F3& look, F3& eyeOffset,
                              F3& lookOffset, double& roll) {
     // 追従の Update と同じ取り方（前 × 世界の上 = 右、右 × 前 = 上）。
-    double forward[3]{look.x - eye.x, look.y - eye.y, look.z - eye.z}, right[3]{1, 0, 0}, up[3]{0, 1, 0};
-    const double distance = std::sqrt(Dot(forward, forward));
-    if (Normalize(forward)) {
-        const double worldUp[3]{0, 1, 0};
-        double candidate[3];
-        Cross(forward, worldUp, candidate);
-        if (Normalize(candidate)) {
-            for (int i = 0; i < 3; ++i) { right[i] = candidate[i]; }
-            Cross(right, forward, up);
-        }
-    }
-    BreathAlong(area, time, right, up, distance, eyeOffset, lookOffset, roll);
+    const Vec3 forward{look.x - eye.x, look.y - eye.y, look.z - eye.z};
+    Vec3 right{1, 0, 0}, up{0, 1, 0};
+    (void)SideAxes(forward, right, up);
+    BreathAlong(area, time, right, up, std::sqrt(Math::Dot(forward, forward)), eyeOffset, lookOffset, roll);
 }
 
 void CameraRig::Carry(const HIKARI::GameProjectTransform& from, const HIKARI::GameProjectTransform& to) {
@@ -145,35 +123,22 @@ CameraRigPose CameraRig::Update(const CameraRegionFrame& frame, const CameraArea
                                 bool present, double dt, double time) {
     dt = std::clamp(dt, 0.0, .1);
     // 1. 今の区域のカメラ位置へ滑らかに寄せる。
-    double frameEye[3], frameLook[3];
-    Load(frame.eye, frameEye); Load(frame.look, frameLook);
     if (!ready_) { Snap(frame.eye, frame.look, frame.verticalFovRadians); }
-    baseEye_.Step(frameEye, area.regionSeconds, dt);
-    baseLook_.Step(frameLook, area.regionSeconds, dt);
+    baseEye_.Step(ToVec3(frame.eye), area.regionSeconds, dt);
+    baseLook_.Step(ToVec3(frame.look), area.regionSeconds, dt);
     fov_ = frame.verticalFovRadians;
-    double forward[3];
-    for (int i = 0; i < 3; ++i) { forward[i] = baseLook_.value[i] - baseEye_.value[i]; }
-    const double distance = std::sqrt(Dot(forward, forward));
-    if (Normalize(forward)) {
-        const double worldUp[3]{0, 1, 0};
-        double right[3];
-        Cross(forward, worldUp, right);
-        if (Normalize(right)) {
-            for (int i = 0; i < 3; ++i) { right_[i] = right[i]; }
-            Cross(right_, forward, up_);
-        }
-    }
+    const Vec3 forward = Math::Sub(baseLook_.value, baseEye_.value);
+    const double distance = std::sqrt(Math::Dot(forward, forward));
+    (void)SideAxes(forward, right_, up_);
     // 2. プレイヤーの方へ平行移動し、残りの差の一部だけ注視を振る（どちらも上限内）。
     // プレイヤーがいない時（死亡中など）は今の位置を保つ。
     if (present) {
-        double point[3], speed[3], offsetTarget[3]{}, aimTarget[3]{};
-        Load(target, point); Load(velocity, speed);
-        double ahead[3];
-        for (int i = 0; i < 3; ++i) { ahead[i] = speed[i] * area.lookAhead; }
-        if (const double length = std::sqrt(Dot(ahead, ahead)); length > .6) { for (double& e : ahead) { e *= .6 / length; } }
-        double delta[3];
-        for (int i = 0; i < 3; ++i) { delta[i] = point[i] + ahead[i] - baseLook_.value[i]; }
-        const double dx = Dot(delta, right_), dy = Dot(delta, up_);
+        const Vec3 point = ToVec3(target), speed = ToVec3(velocity);
+        Vec3 offsetTarget{}, aimTarget{}, ahead, delta;
+        for (size_t i = 0; i < 3; ++i) { ahead[i] = speed[i] * area.lookAhead; }
+        if (const double length = std::sqrt(Math::Dot(ahead, ahead)); length > .6) { for (double& e : ahead) { e *= .6 / length; } }
+        for (size_t i = 0; i < 3; ++i) { delta[i] = point[i] + ahead[i] - baseLook_.value[i]; }
+        const double dx = Math::Dot(delta, right_), dy = Math::Dot(delta, up_);
         offsetTarget[0] = std::clamp(dx * area.followX, -static_cast<double>(area.rangeX), static_cast<double>(area.rangeX));
         offsetTarget[1] = std::clamp(dy * area.followY, -static_cast<double>(area.rangeY), static_cast<double>(area.rangeY));
         offset_.Step(offsetTarget, area.positionSeconds, dt);
@@ -186,22 +151,22 @@ CameraRigPose CameraRig::Update(const CameraRegionFrame& frame, const CameraArea
         aim_.Step(aim_.value, area.aimSeconds, dt);
     }
     // 3. 横の速さに応じたわずかな傾き（±3° まで）。
-    const double lateral = offset_.velocity[0] + Dot(baseEye_.velocity, right_);
-    const double rollTarget[3]{std::clamp(-lateral * area.bank, -3.0, 3.0) * kPi / 180, 0, 0};
+    const double lateral = offset_.velocity[0] + Math::Dot(baseEye_.velocity, right_);
+    const Vec3 rollTarget{std::clamp(-lateral * area.bank, -3.0, 3.0) * kPi / 180, 0, 0};
     roll_.Step(rollTarget, .35, dt);
     // 4. 呼吸を足す。注視は平行移動に lookCarry の分だけ付いて行く（視差が出る）。
     F3 breathEye, breathLook;
     double handRoll = 0;
     Breath(area, time, breathEye, breathLook, handRoll);
-    double eye[3], look[3], up[3];
-    const double be[3]{breathEye.x, breathEye.y, breathEye.z}, bl[3]{breathLook.x, breathLook.y, breathLook.z};
-    for (int i = 0; i < 3; ++i) {
+    Vec3 eye, look, up;
+    const Vec3 be = ToVec3(breathEye), bl = ToVec3(breathLook);
+    for (size_t i = 0; i < 3; ++i) {
         eye[i] = baseEye_.value[i] + right_[i] * offset_.value[0] + up_[i] * offset_.value[1] + be[i];
         look[i] = baseLook_.value[i] + right_[i] * (offset_.value[0] * area.lookCarry + aim_.value[0]) +
                   up_[i] * (offset_.value[1] * area.lookCarry + aim_.value[1]) + bl[i];
         up[i] = up_[i] * std::cos(roll_.value[0] + handRoll) + right_[i] * std::sin(roll_.value[0] + handRoll);
     }
-    last_ = {Store(eye), Store(look), Store(up), fov_};
+    last_ = {ToF3(eye), ToF3(look), ToF3(up), fov_};
     return last_;
 }
 }

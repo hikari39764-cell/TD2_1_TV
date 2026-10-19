@@ -1,5 +1,6 @@
 #pragma once
 
+#include "TD2RegionData.h"
 #include <algorithm>
 #include <cmath>
 #include <cstddef>
@@ -72,14 +73,6 @@ struct RegionSequenceBinding {
 };
 
 namespace WorldLayoutDetail {
-inline bool ValidRegionId(std::string_view id) noexcept {
-    if (id.empty() || id.size() > 95) return false;
-    for (const char c : id) {
-        if (!((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') ||
-              (c >= '0' && c <= '9') || c == '.' || c == '_' || c == '-')) return false;
-    }
-    return true;
-}
 inline bool HexDigit(char c) noexcept {
     return (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F');
 }
@@ -92,7 +85,7 @@ inline WorldGridRect WorldBounds(const RegionPlacement& region) noexcept {
 }
 
 inline WorldLayoutValidation ValidateRegionPlacement(const RegionPlacement& region) {
-    if (!WorldLayoutDetail::ValidRegionId(region.regionId))
+    if (!IsStableId(region.regionId))
         return {false, "区域 ID 必须为 1–95 个 ASCII 字母、数字、点、短横线或下划线", region.regionId, {}};
     if (region.cols <= 0 || region.rows <= 0)
         return {false, "电视地图的整数行列必须为正", region.regionId, {}};
@@ -139,12 +132,6 @@ inline std::optional<SharedWorldEdge> FindSharedWorldEdge(const RegionPlacement&
     return {};
 }
 
-inline WorldPoint LocalToWorld(const RegionPlacement& region, WorldPoint local) noexcept {
-    return {local.x + region.worldX, local.y + region.worldY};
-}
-inline WorldPoint WorldToLocal(const RegionPlacement& region, WorldPoint world) noexcept {
-    return {world.x - region.worldX, world.y - region.worldY};
-}
 inline bool ContainsWorldPoint(const RegionPlacement& region, WorldPoint point) noexcept {
     if (!region.worldPlaced || region.cols <= 0 || region.rows <= 0 ||
         !std::isfinite(point.x) || !std::isfinite(point.y)) return false;
@@ -173,7 +160,7 @@ inline bool SameRegionPair(const RegionSequenceBinding& a, const RegionSequenceB
 // 資産の存在やスロット名、SceneObject の解決は SDK 側で確かめる。
 // ここでは演出の値だけを調べ、隣接を通行の条件にはしない。
 inline WorldLayoutValidation ValidateRegionSequenceBinding(const RegionSequenceBinding& binding) {
-    if (!WorldLayoutDetail::ValidRegionId(binding.regionA) || !WorldLayoutDetail::ValidRegionId(binding.regionB) ||
+    if (!IsStableId(binding.regionA) || !IsStableId(binding.regionB) ||
         binding.regionA == binding.regionB)
         return {false, "Sequence 绑定需要两个不同的有效区域 ID", binding.regionA, binding.regionB};
     if (!binding.sequenceAssetGuid.empty() &&

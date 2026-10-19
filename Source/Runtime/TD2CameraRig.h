@@ -4,6 +4,7 @@
 // ・基準の上に、プレイヤーへの平行移動（視差）、注視の振り、進む向きへの先読み、
 // 横移動時のわずかな傾き、止まっても続く呼吸を重ね、作者が決めた範囲に収める。
 // ・大区域どうしの切り替えはエンジンの演出（Sequence）が受け持ち、その間はカメラを出さない。
+#include "../Common/TD2Math.h"
 #include "HIKARI/Project/GameComponent.h"
 #include "HIKARI/Project/ValueTypes.h"
 #include <string>
@@ -103,13 +104,16 @@ public:
     const CameraRigPose& Last() const noexcept { return last_; }
 
 private:
+    // 三成分それぞれの臨界減衰のばね。
     struct Spring {
-        double value[3]{}, velocity[3]{};
-        void Snap(const double v[3]) { for (int i = 0; i < 3; ++i) { value[i] = v[i]; velocity[i] = 0; } }
-        void Step(const double target[3], double seconds, double dt);
+        Math::Vec3 value{}, velocity{};
+        void Snap(const Math::Vec3& v) { value = v; velocity = {}; }
+        void Step(const Math::Vec3& target, double seconds, double dt) {
+            for (size_t i = 0; i < 3; ++i) { value[i] = Math::CriticalDamp(value[i], target[i], velocity[i], seconds, dt); }
+        }
     };
     Spring baseEye_, baseLook_, offset_, aim_, roll_;
-    double right_[3]{1, 0, 0}, up_[3]{0, 1, 0};
+    Math::Vec3 right_{1, 0, 0}, up_{0, 1, 0};
     CameraRigPose last_{};
     float fov_ = .4538f;
     bool ready_ = false;

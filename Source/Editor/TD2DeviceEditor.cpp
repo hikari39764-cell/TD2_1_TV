@@ -1,6 +1,6 @@
 #include "TD2DeviceEditor.h"
+#include "../Common/TD2DeviceText.h"
 #include <algorithm>
-#include <array>
 #include <cmath>
 #include <iomanip>
 #include <limits>
@@ -9,18 +9,6 @@
 #include <sstream>
 
 namespace TD2::Editor {
-namespace {
-constexpr std::array<std::string_view, 12> kKinds{"Solid", "OneWay", "Plate", "Door", "Laser", "Spikes", "Checkpoint", "LockWall",
-                                                  "Spring", "Bridge", "Collectible", "Decal"};
-constexpr std::array<std::string_view, 4> kDirections{"Up", "Down", "Left", "Right"};
-constexpr std::array<std::string_view, 8> kLabels{"实体块", "单向平台", "压板", "门", "激光", "尖刺", "存档点", "锁墙"};
-bool StableId(std::string_view id) {
-    return !id.empty() && id.size() <= 95 && std::all_of(id.begin(), id.end(), [](unsigned char c) {
-        return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '_' || c == '-' || c == '.';
-    });
-}
-}
-
 std::string DeviceDraft::Extra(std::string_view key) const {
     for (const auto& option : extra) {
         if (option.size() > key.size() && option.compare(0, key.size(), key) == 0 && option[key.size()] == '=') { return option.substr(key.size() + 1); }
@@ -43,7 +31,7 @@ TargetKind ClassifyTarget(std::string_view target) {
         }
     };
     const auto p = parts(target);
-    if (std::any_of(p.begin(), p.end(), [](std::string_view s) { return !StableId(s); })) { return TargetKind::Invalid; }
+    if (std::any_of(p.begin(), p.end(), [](std::string_view s) { return !IsStableId(s); })) { return TargetKind::Invalid; }
     if (p.size() == 1) { return TargetKind::Local; }
     if (p[0] == "mech" && (p.size() == 2 || (p.size() == 3 && p[2] == "r"))) { return TargetKind::Machine; }
     if (p[0] == "slide" && p.size() == 2) { return TargetKind::Machine; }
@@ -56,47 +44,20 @@ TargetKind ClassifyTarget(std::string_view target) {
 void DeviceEditor::Load(std::string_view text) {
     const std::string selectedId = HasSelection() ? devices_[selected_].id : "";
     devices_.clear(); selected_ = -1; error_.clear();
-    std::istringstream input{std::string(text)};
-    std::string line;
-    unsigned lineNumber = 0;
-    while (std::getline(input, line)) {
-        ++lineNumber;
-        if (const auto comment = line.find('#'); comment != std::string::npos) { line.resize(comment); }
-        std::istringstream values(line); values.imbue(std::locale::classic());
+    // 読めない行があれば、その前までを表示し、編集はさせない（原文を場景に残す）。
+    std::vector<DeviceLine> lines;
+    if (!DeviceText::Parse(text, lines, error_)) { error_ += "；原文保留，未覆盖场景。"; }
+    for (auto& line : lines) {
         DeviceDraft device;
-        if (!(values >> device.id)) { continue; }
-        const auto invalid = [this, lineNumber] {
-            error_ = "设备第 " + std::to_string(lineNumber) + " 行格式无效；原文保留，未覆盖场景。";
-        };
-        if (!(values >> device.kind >> device.x >> device.y >> device.w >> device.h) ||
-            std::find(kKinds.begin(), kKinds.end(), device.kind) == kKinds.end()) { invalid(); return; }
-        std::string option;
-        while (values >> option) {
-            const size_t separator = option.find('=');
-            if (separator == std::string::npos) { invalid(); return; }
-            const auto key = option.substr(0, separator), value = option.substr(separator + 1);
-            if (key == "targets") {
-                if (value.empty() || value.back() == ',') { invalid(); return; }
-                std::istringstream ids(value); std::string id;
-                while (std::getline(ids, id, ',')) {
-                    if (id.empty()) { invalid(); return; }
-                    device.targets.push_back(id);
-                }
-            } else if (key == "dir") {
-                if (std::find(kDirections.begin(), kDirections.end(), value) == kDirections.end()) { invalid(); return; }
-                device.direction = value;
-            } else if (key == "range") {
-                std::istringstream number(value); number.imbue(std::locale::classic());
-                if (!(number >> device.range) || !number.eof() || !std::isfinite(device.range)) { invalid(); return; }
-            } else if (key == "invert") {
-                if (value != "0" && value != "1") { invalid(); return; }
-                device.inverted = value == "1";
-            } else if (key == "latch") {
-                if (value != "0" && value != "1") { invalid(); return; }
-                device.latch = value == "1";
-            } else if (key == "power" || key == "delay" || key == "cooldown" || key == "variant" || key == "opacity") {
-                device.extra.push_back(option);
-            } else { invalid(); return; }
+        device.id = std::move(line.id); device.kind = std::move(line.kind);
+        device.x = line.x; device.y = line.y; device.w = line.w; device.h = line.h;
+        device.targets = std::move(line.targets);
+        for (const auto& [key, value] : line.options) {
+            if (key == "dir") { device.direction = value; }
+            else if (key == "range") { (void)DeviceText::Number(value, device.range); }
+            else if (key == "invert") { device.inverted = value == "1"; }
+            else if (key == "latch") { device.latch = value == "1"; }
+            else { device.extra.push_back(key + "=" + value); }
         }
         if (device.id == selectedId) { selected_ = static_cast<int>(devices_.size()); }
         devices_.push_back(std::move(device));
@@ -115,7 +76,7 @@ int DeviceEditor::Hit(double x, double y) const {
 }
 
 bool DeviceEditor::Add(std::string_view kind, int col, int row, int cols, int rows) {
-    if (!IsLoaded() || std::find(kKinds.begin(), kKinds.end(), kind) == kKinds.end() || col < 0 || row < 0 || col >= cols || row >= rows) { return false; }
+    if (!IsLoaded() || DeviceText::IndexOf(kDeviceKindNames, kind) < 0 || col < 0 || row < 0 || col >= cols || row >= rows) { return false; }
     DeviceDraft d; d.kind = kind; d.x = col; d.y = row;
     if (kind == "Door" || kind == "LockWall") { d.h = (std::min)(3, rows - row); }
     if (kind == "OneWay" || kind == "Bridge") { d.w = (std::min)(3, cols - col); }
@@ -218,7 +179,7 @@ std::string DeviceEditor::Validate(int cols, int rows) const {
     if (!IsLoaded()) { return error_; }
     std::set<std::string> ids;
     for (const auto& device : devices_) {
-        if (!StableId(device.id) || !ids.insert(device.id).second) { return "机关 ID 须唯一，仅使用 ASCII 字母、数字、点、短横线和下划线。"; }
+        if (!IsStableId(device.id) || !ids.insert(device.id).second) { return "机关 ID 须唯一，仅使用 ASCII 字母、数字、点、短横线和下划线。"; }
         if (!std::isfinite(device.x) || !std::isfinite(device.y) || !std::isfinite(device.w) || !std::isfinite(device.h) ||
             device.x < 0 || device.y < 0 || device.w <= 0 || device.h <= 0 || device.x + device.w > cols || device.y + device.h > rows) {
             return device.id + " 的矩形必须完整位于区块内。";

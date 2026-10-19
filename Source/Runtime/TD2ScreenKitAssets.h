@@ -8,7 +8,7 @@
 namespace TD2 {
 // 立体の組の部品に焼いた斜投影：奥へ 1 マスで右と上へずれる量（マス）。
 inline constexpr double kScreenKitOblique = 0.4;
-inline constexpr std::array<std::string_view, 117> kScreenKitParts{
+inline constexpr std::array<std::string_view, 123> kScreenKitParts{
     "Backdrop",
     "Backdrop_GridH1",
     "Backdrop_GridH2",
@@ -43,6 +43,9 @@ inline constexpr std::array<std::string_view, 117> kScreenKitParts{
     "Gem_3",
     "Ghost_DashH",
     "Ghost_DashV",
+    "Hall_Column",
+    "Hall_Far",
+    "Hall_Slit",
     "Key_A",
     "Key_A_Down",
     "Key_D",
@@ -126,8 +129,11 @@ inline constexpr std::array<std::string_view, 117> kScreenKitParts{
     "Terrain_TopRun8L",
     "Terrain_TopRun8LR",
     "Terrain_TopRun8R",
+    "Wall_Opening",
+    "Wall_Panel",
+    "Window_FrameV",
 };
-inline constexpr std::array<std::array<std::string_view, 117>, 4> kScreenKitGuids{{
+inline constexpr std::array<std::array<std::string_view, 123>, 4> kScreenKitGuids{{
     {{
         "c6a9f0fe70177ad2a1775717e625edee",
         "fb0d6d3bebf123758d56045282fb2905",
@@ -163,6 +169,9 @@ inline constexpr std::array<std::array<std::string_view, 117>, 4> kScreenKitGuid
         "96b27f66805b240ddd544c6a05f83cef",
         "907d886ec62bf45293988f35b500d609",
         "eb6720dd7c7eaddc53d81fbb7758ff3c",
+        "7b3e1bf9d6de3702357ff59ee70cd863",
+        "1093b2186b25dc892ecbc6acf30b80db",
+        "929602297c4d5d61c0b059370a879379",
         "582af8c0af2dd0bfa82aa1da5970345a",
         "bd7d76d34bfbd9e80c047bc5e24cbcc4",
         "95e740afa7dee1727134cee97939c4f5",
@@ -246,6 +255,9 @@ inline constexpr std::array<std::array<std::string_view, 117>, 4> kScreenKitGuid
         "072ce264269f13d1eeeb04e1246effd2",
         "5afb9b76b21081b092bd5b13beb24ebc",
         "a0854b64cadb12e1c04486386695b373",
+        "ce5d4bfbcd44866cb174dc96a32c7e1a",
+        "de00037df4969e3d78eee7287cf91ab7",
+        "fbe3509181c294c9567c66defb92ed54",
     }},
     {{
         "f023024d4c01b7a3b866a4a0b6b447b0",
@@ -282,6 +294,9 @@ inline constexpr std::array<std::array<std::string_view, 117>, 4> kScreenKitGuid
         "957fe0706d4d5027c81ddd0e30144c05",
         "40f8ae76b8e9494943408e5581992a19",
         "b46fdb0d86347898caa75984e86fc1bf",
+        "2f6033a562614cd716dba800dc949d89",
+        "764e5e71268b56e12c4ffa1a9f6d795d",
+        "8fb03e3b9525aa76e0bcfc32f18c6ee9",
         "c47c7668efae580d7797698007b6f3eb",
         "bdb075a05eace1dac322936fa989735d",
         "62169e449f9eef8125fce5d48ed1af30",
@@ -365,6 +380,9 @@ inline constexpr std::array<std::array<std::string_view, 117>, 4> kScreenKitGuid
         "0e3b3edb3ed479387d83266565322c65",
         "a4ebb990c41552564b18bc55caf35b5c",
         "1de6333df34c96352ddc48cce83c1859",
+        "616b9cf2f255f7e229b21ac5038cfe49",
+        "bb0fa3c4702f1519da47c30f42c8df98",
+        "7994f6dd0b530a6f6fc09fb634a56f94",
     }},
     {{
         "8ede9c1172a7c7325d33fe901c4778be",
@@ -401,6 +419,9 @@ inline constexpr std::array<std::array<std::string_view, 117>, 4> kScreenKitGuid
         "cc2448f12c2c9eb30321b2ef2998f918",
         "35b5b42bd240534565a561157a002914",
         "c8f39ba728655b17af9af2d34de543b7",
+        "0cbfd3304429083e115e975fc58f62c5",
+        "c6bf9142f6b38614a4831691272a0387",
+        "76e8ede39185e0b77ebd1fc895e5ac4c",
         "89d66dc4ebbd0baa12f84767665980cd",
         "cf380bf1a0f6cd7580430be99243463b",
         "202449e2116a8ef81c5d4e82b75e0cc6",
@@ -484,6 +505,9 @@ inline constexpr std::array<std::array<std::string_view, 117>, 4> kScreenKitGuid
         "37362ebd3aac30584525406f0f0fdf94",
         "ce853a3b6eeffd7af748df925d3a177f",
         "30888bca0bbf79e0c6bbe95e25ff23f7",
+        "20e331618ca8f761e203c589dcb68781",
+        "9e149796f7908c3a7bb20e870ce7f301",
+        "28bb6778617c947b56cfc07adff76529",
     }},
     {{
         "b85a47b90dc63e32e6bf846f06dc2a43",
@@ -520,6 +544,9 @@ inline constexpr std::array<std::array<std::string_view, 117>, 4> kScreenKitGuid
         "e61ef4e475ce7711b71a70cef67d766b",
         "50398136dd970000966d7feb1f05a8db",
         "14f6ee033efa33ca253d85f8a86e7c65",
+        "db7ecae60c75a86058e9383b87470a76",
+        "1ccc4716776006c360ca8b489ac1a76c",
+        "46880272926c06381c424a387c88a0e2",
         "3f298a7cee2bacfbb9668e0cfa9c8cdb",
         "b4a59701f49fb1c3e16a111e2ca78039",
         "2234d57aa83c2d3555a17ef8855699af",
@@ -603,6 +630,9 @@ inline constexpr std::array<std::array<std::string_view, 117>, 4> kScreenKitGuid
         "3ab47dd0306e6dde95f3907f23ff43c3",
         "ae4ed0570e0456e281bbea57e4fb7d7e",
         "6065a26e37b2161bd80e5e5d94316bd8",
+        "d3232d18038051229dc4e92099e62ef9",
+        "9e20000f90c920fe200ecc54f592fcc0",
+        "07ab6885556e6d249660f58fd127a98d",
     }},
 }};
 // 名前順に並んでいるので二分探索で引く。

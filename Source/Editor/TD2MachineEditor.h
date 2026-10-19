@@ -1,5 +1,6 @@
 #pragma once
 #include "TD2EditorSupport.h"
+#include "../Common/TD2MachineText.h"
 #include "../Common/TD2WorldLayout.h"
 #include <array>
 #include <map>
@@ -8,21 +9,8 @@
 
 namespace TD2::Editor {
 // 画面の外の仕掛け（機構・スロット棚・テレビの塔・回転柱）の作者データ。世界地図の仕掛けの見方で作り、直し、確かめる。
-// 書き方は実行時の部品と同じ文字列。位置は作者が置いた今の配置から求める相対の形だけを書く。
+// 書き方は実行時の部品と同じ文字列（TD2MachineText.h）。位置は作者が置いた今の配置から求める相対の形だけを書く。
 enum class MachineKind { Mechanism, Slide, Stack, Carousel };
-
-struct MachineRegionOffset {
-    std::string regionId, anchor;   // anchor が空なら自分の配置からのずれ
-    int dx = 0, dy = 0;
-    bool flip = false, park = false;
-    bool operator==(const MachineRegionOffset&) const = default;
-};
-struct MachineObjectDelta {
-    uint64_t object = 0, anchor = 0;   // anchor が 0 なら状態 A の自分の姿勢が基準
-    std::array<double, 3> position{}, rotation{}, pivot{};
-    bool hasPivot = false;
-    bool operator==(const MachineObjectDelta&) const = default;
-};
 
 struct Machine {
     MachineKind kind = MachineKind::Mechanism;
@@ -33,7 +21,6 @@ struct Machine {
     double seconds = .8, dwell = 0, settle = 0, cameraLift = 1.5, cameraPull = 1;
     std::vector<MachineRegionOffset> offsets, offsetsC;
     std::vector<MachineObjectDelta> deltas, deltasC;
-    bool legacy = false;                       // 旧形式（絶対の座標）の行が残っている
     // スロット棚（メンバー）・テレビの塔（下から上）・回転柱（時計回りの面）
     std::vector<std::string> members;
     std::vector<std::pair<int, int>> emptySlots;   // スロット棚：一番目のメンバーから見たずれ

@@ -95,6 +95,7 @@ void ScreenPresentationSystem::Update(HIKARI::WorldView& world, const HIKARI::Fr
                 const auto* runtime = session->FindRegion(placement.regionId);
                 if (!runtime) { return; }
                 room.x = runtime->placement.worldX; room.y = runtime->placement.worldY; room.region = &runtime->definition.region;
+                room.linkX = room.x; room.linkY = room.y;
                 room.flipped = runtime->flipped;
                 rooms_.push_back(std::move(room));
                 return;
@@ -123,6 +124,9 @@ void ScreenPresentationSystem::Update(HIKARI::WorldView& world, const HIKARI::Fr
         }
         int next = 0;
         for (auto& room : rooms_) if (!room.placed) { room.x = left + next++ * (maxCols + 1); room.y = bottom + 2 * maxRows; }
+        // 世界の位置は隣り合いの判定に残し、描く位置だけを詰めて並べ直す（画面がぼやけないよう 1 マスの texel を確保する）。
+        for (auto& room : rooms_) { room.linkX = room.x; room.linkY = room.y; }
+        PackRoomsForEditor(rooms_);
         // 開始区域（無ければ最初の部屋）のスポーン位置にプレイヤーを立たせる。
         size_t entry = rooms_.size();
         for (size_t i = 0; i < rooms_.size() && entry == rooms_.size(); ++i) { if (rooms_[i].placed && authored[i].entry) { entry = i; } }

@@ -11,6 +11,12 @@
  "palettes": {
   "white": {
    "Backdrop": "c6a9f0fe70177ad2a1775717e625edee",
+   "Wall_Panel": "de00037df4969e3d78eee7287cf91ab7",
+   "Window_FrameV": "fbe3509181c294c9567c66defb92ed54",
+   "Wall_Opening": "ce5d4bfbcd44866cb174dc96a32c7e1a",
+   "Hall_Far": "1093b2186b25dc892ecbc6acf30b80db",
+   "Hall_Slit": "929602297c4d5d61c0b059370a879379",
+   "Hall_Column": "7b3e1bf9d6de3702357ff59ee70cd863",
    "Plate_Base": "840df9241018953ee9781b72c18c140c",
    "Plate_Pad": "965bcdb8b2f1f39478a6f2b1d64fa724",
    "Plate_LatchBase": "506eb850df6b07c5857a5600a998aaa5",
@@ -130,6 +136,12 @@
   },
   "celadon": {
    "Backdrop": "f023024d4c01b7a3b866a4a0b6b447b0",
+   "Wall_Panel": "bb0fa3c4702f1519da47c30f42c8df98",
+   "Window_FrameV": "7994f6dd0b530a6f6fc09fb634a56f94",
+   "Wall_Opening": "616b9cf2f255f7e229b21ac5038cfe49",
+   "Hall_Far": "764e5e71268b56e12c4ffa1a9f6d795d",
+   "Hall_Slit": "8fb03e3b9525aa76e0bcfc32f18c6ee9",
+   "Hall_Column": "2f6033a562614cd716dba800dc949d89",
    "Plate_Base": "4c8a0fb313f9f55a472a810d4750afbc",
    "Plate_Pad": "3d6e587ac5b6a141c550b55552e94a17",
    "Plate_LatchBase": "e7b37c0e913bd3e1df67dcc29b78e995",
@@ -249,6 +261,12 @@
   },
   "white3d": {
    "Backdrop": "8ede9c1172a7c7325d33fe901c4778be",
+   "Wall_Panel": "9e149796f7908c3a7bb20e870ce7f301",
+   "Window_FrameV": "28bb6778617c947b56cfc07adff76529",
+   "Wall_Opening": "20e331618ca8f761e203c589dcb68781",
+   "Hall_Far": "c6bf9142f6b38614a4831691272a0387",
+   "Hall_Slit": "76e8ede39185e0b77ebd1fc895e5ac4c",
+   "Hall_Column": "0cbfd3304429083e115e975fc58f62c5",
    "Plate_Base": "83a0cfa9a047236c52d0a3d0fde960fd",
    "Plate_Pad": "22567dceb9f17ac39a52e26411ddc5cf",
    "Plate_LatchBase": "5debd50d6eda97a1d7e231ac235e8a2f",
@@ -368,6 +386,12 @@
   },
   "celadon3d": {
    "Backdrop": "b85a47b90dc63e32e6bf846f06dc2a43",
+   "Wall_Panel": "9e20000f90c920fe200ecc54f592fcc0",
+   "Window_FrameV": "07ab6885556e6d249660f58fd127a98d",
+   "Wall_Opening": "d3232d18038051229dc4e92099e62ef9",
+   "Hall_Far": "1ccc4716776006c360ca8b489ac1a76c",
+   "Hall_Slit": "46880272926c06381c424a387c88a0e2",
+   "Hall_Column": "db7ecae60c75a86058e9383b87470a76",
    "Plate_Base": "3cee388f18ef5eb6b1228baf24b39904",
    "Plate_Pad": "354c11f66b11e6a8f7c511285e56120c",
    "Plate_LatchBase": "30e158681271caa5b10f93c38cbce57a",
@@ -490,6 +514,24 @@
   "Backdrop": {
    "triangles": 78
   },
+  "Wall_Panel": {
+   "triangles": 2
+  },
+  "Window_FrameV": {
+   "triangles": 24
+  },
+  "Wall_Opening": {
+   "triangles": 4
+  },
+  "Hall_Far": {
+   "triangles": 2
+  },
+  "Hall_Slit": {
+   "triangles": 24
+  },
+  "Hall_Column": {
+   "triangles": 24
+  },
   "Plate_Base": {
    "triangles": 36
   },
@@ -548,28 +590,28 @@
    "triangles": 112
   },
   "Key_A": {
-   "triangles": 228
+   "triangles": 54
   },
   "Key_D": {
-   "triangles": 228
+   "triangles": 54
   },
   "Key_Space": {
-   "triangles": 192
+   "triangles": 48
   },
   "Key_SpaceHold": {
-   "triangles": 312
+   "triangles": 52
   },
   "Key_A_Down": {
-   "triangles": 228
+   "triangles": 54
   },
   "Key_D_Down": {
-   "triangles": 228
+   "triangles": 54
   },
   "Key_Space_Down": {
-   "triangles": 192
+   "triangles": 48
   },
   "Key_SpaceHold_Down": {
-   "triangles": 312
+   "triangles": 52
   },
   "Door_Jamb": {
    "triangles": 120
@@ -605,7 +647,7 @@
    "triangles": 24
   },
   "Bridge_Deck": {
-   "triangles": 276
+   "triangles": 196
   },
   "Bridge_Anchor": {
    "triangles": 60
@@ -647,7 +689,7 @@
    "triangles": 60
   },
   "LockWall_Tile": {
-   "triangles": 404
+   "triangles": 324
   },
   "LockWall_Emblem": {
    "triangles": 140
@@ -659,88 +701,88 @@
    "triangles": 8
   },
   "Terrain_Block8x4": {
-   "triangles": 5376
+   "triangles": 2816
   },
   "Terrain_Block4x4": {
-   "triangles": 2688
+   "triangles": 1408
   },
   "Terrain_Block8x2": {
-   "triangles": 2688
+   "triangles": 1408
   },
   "Terrain_Block4x2": {
-   "triangles": 1344
+   "triangles": 704
   },
   "Terrain_Block2x4": {
-   "triangles": 1344
+   "triangles": 704
   },
   "Terrain_Block8x1": {
-   "triangles": 1344
+   "triangles": 704
   },
   "Terrain_Block2x2": {
-   "triangles": 672
+   "triangles": 352
   },
   "Terrain_Block4x1": {
-   "triangles": 672
+   "triangles": 352
   },
   "Terrain_Block1x4": {
-   "triangles": 672
+   "triangles": 352
   },
   "Terrain_Block2x1": {
-   "triangles": 336
+   "triangles": 176
   },
   "Terrain_Block1x2": {
-   "triangles": 336
+   "triangles": 176
   },
   "Terrain_Block1x1": {
-   "triangles": 168
+   "triangles": 88
   },
   "Terrain_TopRun8": {
-   "triangles": 1540
+   "triangles": 900
   },
   "Terrain_TopRun8L": {
-   "triangles": 1540
+   "triangles": 900
   },
   "Terrain_TopRun8R": {
-   "triangles": 1540
+   "triangles": 900
   },
   "Terrain_TopRun8LR": {
-   "triangles": 1540
+   "triangles": 900
   },
   "Terrain_TopRun4": {
-   "triangles": 868
+   "triangles": 548
   },
   "Terrain_TopRun4L": {
-   "triangles": 868
+   "triangles": 548
   },
   "Terrain_TopRun4R": {
-   "triangles": 868
+   "triangles": 548
   },
   "Terrain_TopRun4LR": {
-   "triangles": 868
+   "triangles": 548
   },
   "Terrain_TopRun2": {
-   "triangles": 532
+   "triangles": 372
   },
   "Terrain_TopRun2L": {
-   "triangles": 532
+   "triangles": 372
   },
   "Terrain_TopRun2R": {
-   "triangles": 532
+   "triangles": 372
   },
   "Terrain_TopRun2LR": {
-   "triangles": 532
+   "triangles": 372
   },
   "Terrain_TopRun1": {
-   "triangles": 364
+   "triangles": 284
   },
   "Terrain_TopRun1L": {
-   "triangles": 364
+   "triangles": 284
   },
   "Terrain_TopRun1R": {
-   "triangles": 364
+   "triangles": 284
   },
   "Terrain_TopRun1LR": {
-   "triangles": 364
+   "triangles": 284
   },
   "Backdrop_GridH8": {
    "triangles": 96

@@ -21,6 +21,15 @@ struct ScreenStyleSettings {
     // 立体（共有設定だけが効く）：斜投影を焼いた部品で、ブロックの天板と右の側面を見せる。正面はマスにぴったり残り、判定は変えない。
     // 入れている間は下の俯角・側角を使わない。
     bool depthView = true;
+    // 立体の空間感（後処理。舞台カメラの深度を使い、立体の時だけ効く）。
+    float atmosphere = 0.85f;     // 奥の大広間の霧（奥ほど霞む）
+    float occlusion = 0.6f;       // 物の周り・入隅の暗がり
+    float castLight = 0.6f;       // 物の高さに応じた影（像素・素描の落ち影はこれに置き換わる）
+    float inkLine = 0.8f;         // 原版の外形の墨線
+    // 後ろの壁の窓と、その向こうの大広間（共有設定だけが効く）。parallax は外のカメラが画面を見る角度に合わせて
+    // 奥の層をずらす強さ（1 で角度どおり）。テレビが奥行きのある箱に見える。
+    bool hall = true;
+    float parallax = 1.0f;
     // 画面内のカメラ（共有設定だけが効く）。俯角で上面、側角で側面が見える。判定は変えない。
     float pitch = 7.0f;           // 俯角（度、0〜30）
     float yaw = 0.0f;             // 側角（度、-30〜30、正は右から見る）
@@ -48,6 +57,12 @@ public:
         fields.Float("sketchFill", "素描上色浓度（0.32 为以前的淡色）", settings_.sketchFill, 0, 1);
         fields.Float("brightness", "画面亮度", settings_.brightness, .5f, 2);
         fields.Bool("depthView", "立体（方块露出顶面和右侧面）", settings_.depthView);
+        fields.Float("atmosphere", "远景雾（窗外大厅越深越淡）", settings_.atmosphere, 0, 1);
+        fields.Float("occlusion", "环境遮蔽（物体周围与内角变暗）", settings_.occlusion, 0, 1);
+        fields.Float("castLight", "立体投影（按高度投下的影子）", settings_.castLight, 0, 1);
+        fields.Float("inkLine", "原版描边", settings_.inkLine, 0, 1);
+        fields.Bool("hall", "后墙窗口与窗外大厅", settings_.hall);
+        fields.Float("parallax", "视差（随外部镜头角度移动深处）", settings_.parallax, 0, 2);
         // 画面内のカメラ。表示だけを変え、判定は変えない。
         fields.Float("pitch", "镜头俯角（看到顶面）", settings_.pitch, 0, 30);
         fields.Float("yaw", "镜头侧角（正值从右侧看）", settings_.yaw, -30, 30);
@@ -56,7 +71,8 @@ public:
         fields.SceneObject("wideCameraObject", "舞台正交镜头（周围电视，高度为主镜头3倍）", settings_.wideCameraObject);
         fields.SceneObject("unplacedCameraObject", "舞台正交镜头（Play 时第二台清晰电视，高度同主镜头；编辑时未布置的地图）", settings_.unplacedCameraObject);
         fields.Note("挂在舞台镜头上是全部电视的设置；挂在某台电视的区域对象上只改那一台的风格（配色、立体和镜头角度以舞台镜头为准）。"
-                    "打开「立体」时不使用俯角和侧角。俯角和侧角同时较大时，竖墙会出现轻微错位。");
+                    "打开「立体」时不使用俯角和侧角。俯角和侧角同时较大时，竖墙会出现轻微错位。"
+                    "远景雾、遮蔽、投影、描边、窗外大厅和视差只在「立体」时生效。");
     }
 private:
     ScreenStyleSettings settings_;

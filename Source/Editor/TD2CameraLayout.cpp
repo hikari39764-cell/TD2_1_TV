@@ -1,4 +1,6 @@
 #include "TD2CameraLayout.h"
+#include "../Common/TD2MachineText.h"
+#include "../Common/TD2Math.h"
 #include "../Common/TD2RegionData.h"
 #include "../Common/TD2TelevisionModels.h"
 #include <algorithm>
@@ -10,20 +12,20 @@
 
 namespace TD2::Editor {
 namespace {
-constexpr double kPi = 3.14159265358979323846;
+using Math::Add;
+using Math::Cross;
+using Math::Dot;
+using Math::kPi;
+using Math::Lerp;
+using Math::Normalize;
+using Math::Sub;
 constexpr double kFov = 26.0;              // 区域カメラと演出の基準の画角（度）
 constexpr double kNarrowAspect = 4.0 / 3;  // 画面の検査は一番狭い縦横比（4:3 前後）で行う
 constexpr double kMinShare = .6;           // 切り替え中はどの瞬間も、少なくとも一台の画面の半分以上を画に入れる
 constexpr std::string_view kAreaComponent = "TD2.CameraArea";
 
 using M3 = std::array<std::array<double, 3>, 3>;
-Vec3 Add(const Vec3& a, const Vec3& b, double k = 1) { return {a[0] + b[0] * k, a[1] + b[1] * k, a[2] + b[2] * k}; }
-Vec3 Sub(const Vec3& a, const Vec3& b) { return {a[0] - b[0], a[1] - b[1], a[2] - b[2]}; }
-double Dot(const Vec3& a, const Vec3& b) { return a[0] * b[0] + a[1] * b[1] + a[2] * b[2]; }
-Vec3 Cross(const Vec3& a, const Vec3& b) { return {a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]}; }
-Vec3 Norm(const Vec3& a) { const double n = std::sqrt(Dot(a, a)); return n > 1e-9 ? Vec3{a[0] / n, a[1] / n, a[2] / n} : Vec3{0, 0, 1}; }
-Vec3 Lerp(const Vec3& a, const Vec3& b, double t) { return {a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t}; }
-Vec3 Flat(const Vec3& a) { return Norm({a[0], 0, a[2]}); }
+Vec3 Flat(const Vec3& a) { return Normalize({a[0], 0, a[2]}); }
 constexpr Vec3 kUp{0, 1, 0};
 
 // エンジンの回転順：M = Rz·Ry·Rx（X → Y → Z）。カメラもテレビもローカル +Z を向く。
@@ -51,8 +53,8 @@ Vec3 RotateY(const Vec3& v, double deg) {
 }
 // カメラの回転行列（列 = ローカル X（画の左）・Y（上）・Z（前））。roll は前の軸まわりの傾き（度）。
 M3 LookMatrix(const Vec3& eye, const Vec3& look, double roll = 0) {
-    const auto f = Norm(Sub(look, eye));
-    auto left = Norm(Cross(kUp, f));
+    const auto f = Normalize(Sub(look, eye));
+    auto left = Normalize(Cross(kUp, f));
     auto up = Cross(f, left);
     if (roll != 0) {
         const double c = std::cos(roll * kPi / 180), s = std::sin(roll * kPi / 180);
@@ -93,7 +95,7 @@ Vec3 TvLocal(const LayoutRoom& r, const Vec3& local) {
 Vec3 ScreenPoint(const LayoutRoom& r, double u = .5, double v = .5) {
     return TvLocal(r, {r.screenCenter[0] + (u - .5) * r.screenWidth, r.screenCenter[1] + (.5 - v) * r.screenHeight, r.screenCenter[2]});
 }
-Vec3 TvAxis(const LayoutRoom& r, int axis) { return Norm(Apply(TvMatrix(r), {axis == 0 ? 1.0 : 0, axis == 1 ? 1.0 : 0, axis == 2 ? 1.0 : 0})); }
+Vec3 TvAxis(const LayoutRoom& r, int axis) { return Normalize(Apply(TvMatrix(r), {axis == 0 ? 1.0 : 0, axis == 1 ? 1.0 : 0, axis == 2 ? 1.0 : 0})); }
 LayoutBox TvBox(const LayoutRoom& r) {
     LayoutBox box{{1e9, 1e9, 1e9}, {-1e9, -1e9, -1e9}, r.objectId};
     for (const double x : {-r.body[0] / 2, r.body[0] / 2}) for (const double y : {0.0, r.body[1]}) for (const double z : {-r.body[2] / 2, r.body[2] / 2}) {
@@ -147,11 +149,6 @@ std::vector<std::string> SplitRegions(const std::string& text) {
     }
     return result;
 }
-std::string Join(const std::vector<std::string>& items) {
-    std::string out;
-    for (const auto& item : items) { if (!out.empty()) { out += ","; } out += item; }
-    return out;
-}
 
 // ---- 経路 ----
 struct Pivot { Vec3 corner{}, out{}; bool valid = false; };
@@ -174,7 +171,7 @@ Pivot CornerOf(const LayoutRoom& a, const LayoutRoom& b, double y) {
 double ScreenShare(const LayoutRoom& r, const TravelKey& key) {
     const auto m = LookMatrix(key.eye, key.look, key.roll);
     const Vec3 left{m[0][0], m[1][0], m[2][0]}, up{m[0][1], m[1][1], m[2][1]}, forward{m[0][2], m[1][2], m[2][2]};
-    if (Dot(TvAxis(r, 2), Norm(Sub(key.eye, ScreenPoint(r)))) < .1) { return 0; }
+    if (Dot(TvAxis(r, 2), Normalize(Sub(key.eye, ScreenPoint(r)))) < .1) { return 0; }
     const double ty = std::tan(key.fov * kPi / 360), tx = ty * kNarrowAspect;
     int seen = 0;
     for (int i = 0; i < 5; ++i) for (int j = 0; j < 5; ++j) {
@@ -240,23 +237,16 @@ bool LoadLayout(EditorWorkspaceHostContext& ctx, LayoutSnapshot& snap, std::stri
     // 2. 全物体の要約（部品の種類と世界の箱）。区域・大区域・境界の部品を見つけ、障害物も集める。
     struct Summary { uint64_t id; std::string name; std::vector<std::pair<std::string, uint64_t>> components; bool bounds = false; Vec3 lo{}, hi{}; };
     std::vector<Summary> summaries;
-    for (uint64_t offset = 0;;) {
-        const auto page = Execute(ctx, "scene.objects.query", {{"offset", offset}, {"limit", 128}});
-        if (!page.ok) { error = page.error; return false; }
-        const auto objects = page.data.value("objects", Json::array());
-        for (const auto& object : objects) {
-            Summary s{ObjectId(object.value("objectId", Json{})), object.value("name", ""), {}};
-            for (const auto& c : object.value("components", Json::array())) { s.components.emplace_back(c.value("type", ""), ObjectId(c.value("componentId", Json{}))); }
-            if (object.contains("worldBounds") && object["worldBounds"].is_object()) {
-                s.bounds = true; s.lo = ReadVec3(object["worldBounds"].value("min", Json{}), {}); s.hi = ReadVec3(object["worldBounds"].value("max", Json{}), {});
-            }
-            summaries.push_back(std::move(s));
+    const bool listed = QueryAll(ctx, "scene.objects.query", Json::object(), "objects", [&summaries](const Json& object) {
+        Summary s{ObjectId(object.value("objectId", Json{})), object.value("name", ""), {}};
+        for (const auto& c : object.value("components", Json::array())) { s.components.emplace_back(c.value("type", ""), ObjectId(c.value("componentId", Json{}))); }
+        if (object.contains("worldBounds") && object["worldBounds"].is_object()) {
+            s.bounds = true; s.lo = ReadVec3(object["worldBounds"].value("min", Json{}), {}); s.hi = ReadVec3(object["worldBounds"].value("max", Json{}), {});
         }
-        if (!page.data.contains("nextOffset")) { break; }
-        const auto next = ObjectId(page.data["nextOffset"]);
-        if (next <= offset || objects.empty()) { break; }
-        offset = next;
-    }
+        summaries.push_back(std::move(s));
+        return true;
+    }, error);
+    if (!listed) { return false; }
     const auto componentOf = [](const Summary& s, std::string_view type) -> uint64_t {
         for (const auto& [t, id] : s.components) { if (t == type) { return id; } }
         return 0;
@@ -428,7 +418,7 @@ CameraPose RegionCamera(const LayoutSnapshot& snap, const LayoutRoom& room) {
 }
 
 CameraPose CurrentCameraPose(const LayoutRoom& room) {
-    const auto forward = Norm(Apply(Rotation(room.camera.rotation), {0, 0, 1}));
+    const auto forward = Normalize(Apply(Rotation(room.camera.rotation), {0, 0, 1}));
     const double depth = (std::max)(.5, Dot(Sub(ScreenPoint(room), room.camera.position), forward));
     return {room.camera.position, Add(room.camera.position, forward, depth)};
 }
@@ -700,9 +690,7 @@ bool GenerateCameras(EditorWorkspaceHostContext& ctx, LayoutSnapshot& snap, std:
         const auto id = ObjectId(object.data.value("objectId", Json{}));
         const auto added = Execute(ctx, "component.add", {{"objectId", id}, {"componentType", "CameraComponent"}});
         if (!added.ok) { error = added.error; return false; }
-        const auto bound = Execute(ctx, "authoring.transaction", {{"commands", {{{"objectId", room.objectId}, {"componentId", room.componentId},
-                                                                                 {"propertyId", "cameraObject"}, {"value", id}}}}});
-        if (!bound.ok) { error = bound.error; return false; }
+        if (!Transact(ctx, Json::array({PropertyCommand(room.objectId, room.componentId, "cameraObject", id)}), error)) { return false; }
         report.notes.push_back(room.regionId + "：新建机位");
         created = true;
     }
@@ -722,14 +710,10 @@ bool GenerateCameras(EditorWorkspaceHostContext& ctx, LayoutSnapshot& snap, std:
         commands.push_back({{"objectId", room.cameraId}, {"expected", expected->second},
                             {"position", TransformJson(next)["position"]}, {"rotation", TransformJson(next)["rotation"]}});
         room.camera = next;
-        memos.push_back({{"objectId", room.objectId}, {"componentId", room.componentId}, {"propertyId", "cameraAuto"}, {"value", CameraMemo(next)}});
+        memos.push_back(PropertyCommand(room.objectId, room.componentId, "cameraAuto", CameraMemo(next)));
         ++report.written;
     }
-    if (!ApplyTransforms(ctx, snap, commands, error)) { return false; }
-    if (!memos.empty()) {
-        const auto written = Execute(ctx, "authoring.transaction", {{"commands", memos}});
-        if (!written.ok) { error = written.error; return false; }
-    }
+    if (!ApplyTransforms(ctx, snap, commands, error) || !Transact(ctx, memos, error)) { return false; }
     return LoadLayout(ctx, snap, error);
 }
 
@@ -797,7 +781,7 @@ bool GenerateTravels(EditorWorkspaceHostContext& ctx, LayoutSnapshot& snap, std:
             }
         }
         const double seconds = std::clamp(edge.seconds, .4, 10.0);
-        const auto set = [&](std::string_view id, const Json& value) { return Json{{"objectId", object}, {"componentId", component}, {"propertyId", id}, {"value", value}}; };
+        const auto set = [&](std::string_view id, const Json& value) { return PropertyCommand(object, component, id, value); };
         Json commands = Json::array({set("regionA", edge.a), set("regionB", edge.b), set("sequenceAssetGuid", guid), set("sequenceSlotName", "Camera"),
                                      set("speed", Round(1 / seconds, 1e-4)), set("seconds", seconds), set("autoHash", hash)});
         commands.push_back(set("style", edge.style.empty() ? std::string("auto") : edge.style));
@@ -810,8 +794,7 @@ bool GenerateTravels(EditorWorkspaceHostContext& ctx, LayoutSnapshot& snap, std:
                 if (const auto id = ReferenceId(FieldValue(fields, "cameraObject"))) { commands.push_back(set("cameraObject", id)); break; }
             }
         }
-        const auto written = Execute(ctx, "authoring.transaction", {{"commands", commands}});
-        if (!written.ok) { error = written.error; return false; }
+        if (!Transact(ctx, commands, error)) { return false; }
         report.notes.push_back(name + "：" + plan.style);
         ++report.written;
     }
@@ -822,24 +805,16 @@ bool SyncScreenGeometry(EditorWorkspaceHostContext& ctx, const LayoutSnapshot& s
     Json commands = Json::array();
     for (const auto& room : snap.rooms) {
         if (!room.knownModel) { continue; }
-        const auto set = [&](std::string_view id, double value) {
-            commands.push_back({{"objectId", room.objectId}, {"componentId", room.componentId}, {"propertyId", id}, {"value", value}});
-        };
+        const auto set = [&](std::string_view id, double value) { commands.push_back(PropertyCommand(room.objectId, room.componentId, id, value)); };
         set("screenCenterX", room.screenCenter[0]); set("screenCenterY", room.screenCenter[1]); set("screenCenterZ", room.screenCenter[2]);
         set("screenWidth", room.screenWidth); set("screenHeight", room.screenHeight);
         ++report.written;
     }
-    if (commands.empty()) { return true; }
-    const auto written = Execute(ctx, "authoring.transaction", {{"commands", commands}});
-    if (!written.ok) { error = written.error; return false; }
-    return true;
+    return Transact(ctx, commands, error);
 }
 
 bool WriteAreaRegions(EditorWorkspaceHostContext& ctx, const LayoutArea& area, const std::vector<std::string>& regions, std::string& error) {
-    const auto written = Execute(ctx, "authoring.transaction", {{"commands", {{{"objectId", area.objectId}, {"componentId", area.componentId},
-                                                                              {"propertyId", "regions"}, {"value", Join(regions)}}}}});
-    if (!written.ok) { error = written.error; return false; }
-    return true;
+    return Transact(ctx, Json::array({PropertyCommand(area.objectId, area.componentId, "regions", MachineText::JoinNames(regions))}), error);
 }
 
 bool CreateArea(EditorWorkspaceHostContext& ctx, const std::string& name, const std::vector<std::string>& regions, std::string& error) {
@@ -868,11 +843,9 @@ bool PruneInAreaBindings(EditorWorkspaceHostContext& ctx, const LayoutSnapshot& 
 bool WriteEdgeSettings(EditorWorkspaceHostContext& ctx, const LayoutEdge& edge, std::string& error) {
     if (!edge.bindingObject) { return true; }   // まだ演出の無い辺は、生成する時に設定ごと書く
     const double seconds = std::clamp(edge.seconds, .4, 10.0);
-    const auto set = [&](std::string_view id, const Json& value) { return Json{{"objectId", edge.bindingObject}, {"componentId", edge.bindingComponent}, {"propertyId", id}, {"value", value}}; };
-    const auto written = Execute(ctx, "authoring.transaction", {{"commands", {set("style", edge.style), set("seconds", seconds),
-                                                                              set("speed", Round(1 / seconds, 1e-4)), set("keepAuthored", edge.keepAuthored)}}});
-    if (!written.ok) { error = written.error; return false; }
-    return true;
+    const auto set = [&](std::string_view id, const Json& value) { return PropertyCommand(edge.bindingObject, edge.bindingComponent, id, value); };
+    return Transact(ctx, Json::array({set("style", edge.style), set("seconds", seconds), set("speed", Round(1 / seconds, 1e-4)),
+                                      set("keepAuthored", edge.keepAuthored)}), error);
 }
 
 bool EdgeTrialSpawn(const LayoutSnapshot& snap, const LayoutEdge& edge, bool fromA, double& x, double& y, uint64_t& roomObject) {

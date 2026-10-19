@@ -2,7 +2,6 @@
 #include "HIKARI/Project/GameProjectEditorModule.h"
 #include <nlohmann/json.hpp>
 #include <algorithm>
-#include <array>
 #include <cmath>
 #include <cstring>
 #include <limits>
@@ -13,12 +12,6 @@ namespace TD2::Editor {
 
 using Json = nlohmann::json;
 using namespace HIKARI::EDITOR_PROJECT;
-
-bool StableAuthoringId(std::string_view id) {
-    return !id.empty() && id.size() <= 95 && std::all_of(id.begin(), id.end(), [](unsigned char c) {
-        return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '_' || c == '-' || c == '.';
-    });
-}
 
 OperationResult Execute(EditorWorkspaceHostContext& context, std::string_view operation,
                         const Json& parameters) {
@@ -34,35 +27,51 @@ uint64_t ObjectId(const Json& value) {
     return 0;
 }
 
+bool QueryAll(EditorWorkspaceHostContext& context, std::string_view operation, Json parameters, std::string_view listKey,
+              const std::function<bool(const Json&)>& visit, std::string& error) {
+    if (!parameters.contains("limit")) { parameters["limit"] = 128; }
+    for (uint64_t offset = 0;;) {
+        parameters["offset"] = offset;
+        const auto page = Execute(context, operation, parameters);
+        if (!page.ok) { error = page.error; return false; }
+        const auto entries = page.data.find(listKey);
+        if (entries == page.data.end() || !entries->is_array()) {
+            error = std::string(operation) + ": INVALID_RESULT: " + std::string(listKey) + " 数组缺失"; return false;
+        }
+        for (const auto& entry : *entries) { if (!visit(entry)) { return false; } }
+        const auto next = page.data.find("nextOffset");
+        if (next == page.data.end()) { return true; }
+        const uint64_t nextOffset = ObjectId(*next);
+        if (nextOffset <= offset || entries->empty()) { error = std::string(operation) + ": INVALID_RESULT: 分页没有前进"; return false; }
+        offset = nextOffset;
+    }
+}
+
+Json PropertyCommand(uint64_t objectId, uint64_t componentId, std::string_view propertyId, const Json& value) {
+    return {{"objectId", objectId}, {"componentId", componentId}, {"propertyId", std::string(propertyId)}, {"value", value}};
+}
+
+bool Transact(EditorWorkspaceHostContext& context, const Json& commands, std::string& error) {
+    if (commands.empty()) { return true; }
+    const auto result = Execute(context, "authoring.transaction", {{"commands", commands}});
+    if (!result.ok) { error = result.error; return false; }
+    return true;
+}
+
 // 決まった領域操作だけを使い、ブリッジには依存しない。
 bool QueryObjects(EditorWorkspaceHostContext& context, std::string_view componentType,
                   std::vector<SceneItem>& objects, std::string& error) {
     objects.clear();
-    uint64_t offset = 0;
-    for (;;) {
-        Json parameters{{"offset", offset}, {"limit", 64}};
-        if (!componentType.empty()) { parameters["componentType"] = componentType; }
-        const auto result = Execute(context, "scene.objects.query", parameters);
-        if (!result.ok) { error = result.error; return false; }
-        const auto entries = result.data.find("objects");
-        if (entries == result.data.end() || !entries->is_array()) {
-            error = "scene.objects.query: INVALID_RESULT: objects 数组缺失"; return false;
+    Json parameters{{"limit", 64}};
+    if (!componentType.empty()) { parameters["componentType"] = componentType; }
+    return QueryAll(context, "scene.objects.query", parameters, "objects", [&objects, &error](const Json& object) {
+        if (!object.is_object() || !object.contains("objectId") || !object.contains("name") ||
+            ObjectId(object["objectId"]) == 0 || !object["name"].is_string()) {
+            error = "scene.objects.query: INVALID_RESULT: 对象身份或名称缺失"; return false;
         }
-        for (const auto& object : *entries) {
-            if (!object.is_object() || !object.contains("objectId") || !object.contains("name") ||
-                ObjectId(object["objectId"]) == 0 || !object["name"].is_string()) {
-                error = "scene.objects.query: INVALID_RESULT: 对象身份或名称缺失"; return false;
-            }
-            objects.push_back({ObjectId(object["objectId"]), object["name"].get<std::string>()});
-        }
-        const auto next = result.data.find("nextOffset");
-        if (next == result.data.end()) { return true; }
-        const uint64_t nextOffset = ObjectId(*next);
-        if (nextOffset <= offset || entries->empty()) {
-            error = "scene.objects.query: INVALID_RESULT: 分页没有前进"; return false;
-        }
-        offset = nextOffset;
-    }
+        objects.push_back({ObjectId(object["objectId"]), object["name"].get<std::string>()});
+        return true;
+    }, error);
 }
 
 uint64_t RegionComponentId(const Json& components) {
@@ -103,9 +112,8 @@ bool ReadRegion(EditorWorkspaceHostContext& context, uint64_t objectId, RegionTa
     const auto result = Execute(context, "component.describe",
         {{"objectId", target.objectId}, {"componentId", target.componentId},
          {"propertyIds", {"regionId", "cols", "rows", "tilePixels", "cells", "screenObject",
-                          "screenSlot", "outputWidth", "outputHeight",
-                          "spawnX", "spawnY", "entryRegion", "devices", "worldPlaced", "worldX", "worldY",
-                          "screenBrightness", "screenMaterialIndex", "screenModelAssetGuid"}}});
+                          "screenSlot", "spawnX", "spawnY", "entryRegion", "devices", "worldPlaced", "worldX", "worldY",
+                          "screenBrightness"}}});
     if (!result.ok) { error = result.error; return false; }
     const auto fields = result.data.find("fields");
     if (fields == result.data.end() || !fields->is_array()) {
@@ -153,32 +161,19 @@ bool ReadRegion(EditorWorkspaceHostContext& context, uint64_t objectId, RegionTa
     }
     settings.worldPlaced = placed->get<bool>(); settings.worldX = worldX->get<int>(); settings.worldY = worldY->get<int>();
     // 古い Scene に無い項目は既定値で読む。型が違う時はエラーにする。
-    settings.screenBrightness = 2.2f; settings.screenMaterialIndex = -1; settings.screenModelAssetGuid.clear();
+    settings.screenBrightness = 2.2f;
     if (const auto* brightness = FieldValue(*fields, "screenBrightness")) {
         if (!brightness->is_number() || !std::isfinite(brightness->get<float>())) { error = "component.describe: INVALID_RESULT: 屏幕亮度无效"; return false; }
         settings.screenBrightness = brightness->get<float>();
     }
-    if (const auto* materialIndex = FieldValue(*fields, "screenMaterialIndex")) {
-        if (!materialIndex->is_number_integer() || *materialIndex < -1 || *materialIndex > (std::numeric_limits<int>::max)()) { error = "component.describe: INVALID_RESULT: 屏幕材质缓存无效"; return false; }
-        settings.screenMaterialIndex = materialIndex->get<int>();
-    }
-    if (const auto* modelGuid = FieldValue(*fields, "screenModelAssetGuid")) {
-        if (!modelGuid->is_string()) { error = "component.describe: INVALID_RESULT: 屏幕模型身份缓存无效"; return false; }
-        settings.screenModelAssetGuid = modelGuid->get<std::string>();
-    }
     return text("regionId", settings.region.regionId) && number("cols", settings.region.cols) &&
         number("rows", settings.region.rows) && number("tilePixels", settings.region.tilePixels) &&
-        text("cells", settings.region.cells) && text("screenSlot", settings.screenSlot) &&
-        number("outputWidth", settings.outputWidth) &&
-        number("outputHeight", settings.outputHeight) && text("devices", settings.devices);
+        text("cells", settings.region.cells) && text("screenSlot", settings.screenSlot) && text("devices", settings.devices);
 }
 
 void AppendRegionChanges(Json& commands, const RegionTarget& target, const RegionSettings& before, const RegionSettings& after) {
     const auto add = [&commands, &target](std::string_view id, const auto& oldValue, const auto& newValue) {
-        if (oldValue != newValue) {
-            commands.push_back({{"objectId", target.objectId}, {"componentId", target.componentId},
-                                {"propertyId", id}, {"value", newValue}});
-        }
+        if (oldValue != newValue) { commands.push_back(PropertyCommand(target.objectId, target.componentId, id, newValue)); }
     };
     add("regionId", before.region.regionId, after.region.regionId);
     add("cols", before.region.cols, after.region.cols);
@@ -188,10 +183,6 @@ void AppendRegionChanges(Json& commands, const RegionTarget& target, const Regio
     add("screenObject", before.screenObject, after.screenObject);
     add("screenSlot", before.screenSlot, after.screenSlot);
     add("screenBrightness", before.screenBrightness, after.screenBrightness);
-    add("screenMaterialIndex", before.screenMaterialIndex, after.screenMaterialIndex);
-    add("screenModelAssetGuid", before.screenModelAssetGuid, after.screenModelAssetGuid);
-    add("outputWidth", before.outputWidth, after.outputWidth);
-    add("outputHeight", before.outputHeight, after.outputHeight);
     add("spawnX", before.spawnX, after.spawnX);
     add("spawnY", before.spawnY, after.spawnY);
     add("entryRegion", before.entryRegion, after.entryRegion);
@@ -203,47 +194,29 @@ void AppendRegionChanges(Json& commands, const RegionTarget& target, const Regio
 
 bool CommitProperties(EditorWorkspaceHostContext& context, const RegionTarget& target,
                       const RegionSettings& before, const RegionSettings& after, std::string& error) {
+    // 寸法と配列をまとめて変え、一回の取り消しで戻せるようにする。
     Json commands = Json::array();
     AppendRegionChanges(commands, target, before, after);
-    if (commands.empty()) { return true; }
-    // 寸法と配列をまとめて変え、一回の取り消しで戻せるようにする。
-    const auto result = Execute(context, "authoring.transaction", {{"commands", commands}});
-    if (!result.ok) { error = result.error; return false; }
-    return true;
+    return Transact(context, commands, error);
 }
 
-bool ResolveScreenMaterial(EditorWorkspaceHostContext& context, RegionSettings& settings, std::string& diagnostic) {
-    // 古い index を新しいモデルに使わない。slotId は材質配列の index ではない。
-    settings.screenMaterialIndex = -1; settings.screenModelAssetGuid.clear(); diagnostic.clear();
-    if (!settings.screenObject) { return true; }
-    if (settings.screenSlot.empty()) { diagnostic = "请指定屏幕材质槽名称；亮度增益未启用"; return false; }
+std::string ScreenSlotWarning(EditorWorkspaceHostContext& context, const RegionSettings& settings) {
+    if (!settings.screenObject) { return {}; }
+    if (settings.screenSlot.empty()) { return "请指定屏幕材质槽名称"; }
     const auto result = Execute(context, "scene.objects.query", {{"objectIds", {settings.screenObject}}, {"detail", true}});
-    if (!result.ok) { diagnostic = result.error; return false; }
-    const auto objects = result.data.find("objects");
-    if (objects == result.data.end() || !objects->is_array()) { diagnostic = "屏幕对象的模型信息缺失"; return false; }
-    const Json* model = nullptr;
-    for (const auto& object : *objects) {
+    if (!result.ok) { return result.error; }
+    for (const auto& object : result.data.value("objects", Json::array())) {
         if (!object.is_object() || ObjectId(object.value("objectId", Json{})) != settings.screenObject) { continue; }
-        if (object.contains("model") && object["model"].is_object()) { model = &object["model"]; }
-        break;
-    }
-    if (!model) { diagnostic = "屏幕对象没有可确认的模型"; return false; }
-    const auto asset = model->find("assetId"), count = model->find("materialSlotCount"), slots = model->find("materialSlots"), truncated = model->find("materialSlotsTruncated");
-    if (asset == model->end() || !asset->is_string() || asset->get<std::string>().empty() || count == model->end() || !count->is_number_integer() ||
-        *count < 0 || *count > (std::numeric_limits<int>::max)() || slots == model->end() || !slots->is_array() || truncated == model->end() ||
-        !truncated->is_boolean() || truncated->get<bool>() || slots->size() != count->get<size_t>()) {
-        diagnostic = "屏幕材质槽信息缺失或被截断；亮度增益未启用"; return false;
-    }
-    settings.screenModelAssetGuid = asset->get<std::string>();
-    for (size_t i = 0; i < slots->size(); ++i) {
-        const auto& slot = (*slots)[i];
-        if (!slot.is_object() || !slot.contains("name") || !slot["name"].is_string()) { diagnostic = "屏幕材质槽名称无效"; return false; }
-        if (slot["name"].get<std::string>() == settings.screenSlot) {
-            // BindSurface と同じく最初の完全一致を使う。配列の順が materialIndex に対応する。
-            settings.screenMaterialIndex = static_cast<int>(i); return true;
+        const auto model = object.find("model");
+        if (model == object.end() || !model->is_object()) { break; }
+        // 一覧が途中で切れている時は確かめられないので注意しない。
+        if (model->value("materialSlotsTruncated", false)) { return {}; }
+        for (const auto& slot : model->value("materialSlots", Json::array())) {
+            if (slot.is_object() && slot.value("name", "") == settings.screenSlot) { return {}; }
         }
+        return "找不到屏幕材质槽：" + settings.screenSlot;
     }
-    diagnostic = "找不到屏幕材质槽：" + settings.screenSlot + "；亮度增益未启用"; return false;
+    return "屏幕对象没有可确认的模型";
 }
 
 uint64_t SelectedObject(EditorWorkspaceHostContext& context, std::string& error) {
@@ -272,8 +245,7 @@ bool AddRegion(EditorWorkspaceHostContext& context, uint64_t objectId, bool bind
     const uint64_t componentId = added == result.data.end() ? 0 : RegionComponentId(*added);
     if (componentId == 0) { status = "component.add: INVALID_RESULT: 新区块组件身份缺失"; return false; }
     // 新しい ID は Scene の Object ID から作る。既存の ID は変えない。
-    Json commands = {{{"objectId", objectId}, {"componentId", componentId}, {"propertyId", "regionId"},
-                      {"value", "td2.region." + std::to_string(objectId)}}};
+    Json commands = Json::array({PropertyCommand(objectId, componentId, "regionId", "td2.region." + std::to_string(objectId))});
     // 最初の地図だけを開始区域にする。
     std::vector<SceneItem> regions;
     if (!QueryObjects(context, kRegionComponentType, regions, status)) { return false; }
@@ -284,14 +256,13 @@ bool AddRegion(EditorWorkspaceHostContext& context, uint64_t objectId, bool bind
         if (!ReadRegion(context, item.objectId, existingTarget, existing, status)) { return false; }
         if (existing.entryRegion) { firstEntry = false; break; }
     }
-    commands.push_back({{"objectId", objectId}, {"componentId", componentId}, {"propertyId", "entryRegion"}, {"value", firstEntry}});
+    commands.push_back(PropertyCommand(objectId, componentId, "entryRegion", firstEntry));
     if (bindSelf) {
-        commands.push_back({{"objectId", objectId}, {"componentId", componentId}, {"propertyId", "screenObject"}, {"value", objectId}});
-        commands.push_back({{"objectId", objectId}, {"componentId", componentId}, {"propertyId", "screenSlot"}, {"value", "TD2_Screen"}});
+        commands.push_back(PropertyCommand(objectId, componentId, "screenObject", objectId));
+        commands.push_back(PropertyCommand(objectId, componentId, "screenSlot", "TD2_Screen"));
     }
-    const auto initialized = Execute(context, "authoring.transaction", {{"commands", commands}});
-    if (!initialized.ok) {
-        status = "区块组件已添加；初始化配置失败：" + initialized.error; return false;
+    if (std::string error; !Transact(context, commands, error)) {
+        status = "区块组件已添加；初始化配置失败：" + error; return false;
     }
     return true;
 }

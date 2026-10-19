@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <optional>
 #include <string>
+#include <string_view>
 #include <vector>
 
 namespace TD2::Rules {
@@ -67,8 +68,10 @@ struct BeamState { std::string sourceId; Rect rect; };
 enum class EventKind {
     Blink, Bounce, BlinkRejected, EchoCreated, EchoRecalled, EchoRemoved,
     EchoSpawnBlocked, PlateChanged, DeviceChanged, CheckpointActivated,
-    PlayerDied, PlayerRespawned, ExplorationRestarted, SpringLaunched, CollectibleTaken, EchoSwapped
+    PlayerDied, PlayerRespawned, SpringLaunched, CollectibleTaken, EchoSwapped
 };
+// ログ用のイベント名。
+std::string_view EventName(EventKind kind);
 struct RuleEvent {
     EventKind kind = EventKind::Blink;
     std::string subjectId, detail;
@@ -82,8 +85,6 @@ struct DashState { Rect source, contact; int facing = 1; double age = 0.0, durat
 struct BounceState { Rect contact; double age = 0.0; };
 struct WorldState {
     BodyState player;
-    // 非活動の領域には本体を置かない。死亡の完了を探索全体で扱う時だけ自動復帰を切る。
-    bool playerPresent = true, automaticRespawn = true;
     std::optional<BodyState> echo;
     std::vector<DeviceState> devices; // WorldDefinition.devices と同じ順序。
     std::vector<BeamState> beams;
@@ -128,7 +129,7 @@ struct DeviceSnapshot {
 };
 struct WorldSnapshot {
     std::string regionId;
-    bool playerPresent = true;
+    bool playerPresent = true;   // 常に true（画面の描画がまだ読む）
     BodyState player; // 判定座標。描画には presentationPlayer を使う。
     Rect presentationPlayer;
     std::optional<BodyState> echo;
@@ -152,19 +153,6 @@ WorldState CreateWorldState(const WorldDefinition& definition);
 StepOutput StepRules(const WorldDefinition& definition, WorldState& state,
                      const InputState& input, double realDeltaSeconds);
 WorldSnapshot BuildSnapshot(const WorldDefinition& definition, const WorldState& state);
-// 通常の復帰は世界を保つ。探索の再開だけが残影・装置・セーブ・死亡回数を初期化する。
-StepOutput ReturnToCheckpoint(const WorldDefinition& definition, WorldState& state);
-StepOutput RestartExploration(const WorldDefinition& definition, WorldState& state);
-
-// 複数の領域は同じ tick 数で、残影と装置を同じ時計で進める。
-StepOutput StepBackgroundRules(const WorldDefinition& definition, WorldState& state,
-                               uint32_t simulationSteps, double realSeconds);
-bool IsSafeArrival(const WorldDefinition& definition, const WorldState& state, Vec2 position,
-                   const std::optional<Rect>& carriedEcho = {});
-StepOutput RemovePlayer(const WorldDefinition& definition, WorldState& state);
-StepOutput PlacePlayer(const WorldDefinition& definition, WorldState& state, Vec2 position,
-                      int facing, bool respawning = false);
-StepOutput RecallWorldEcho(const WorldDefinition& definition, WorldState& state);
 // 残影を回収の演出なしで消す（大区域を出た時など）。消えた残影が押していた装置はその場で戻る。
 StepOutput RemoveWorldEcho(const WorldDefinition& definition, WorldState& state);
 

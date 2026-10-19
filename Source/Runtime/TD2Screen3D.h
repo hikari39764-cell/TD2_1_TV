@@ -27,12 +27,18 @@ struct ScreenConfiguration {
 struct ScreenSurface { float centerX = 0, centerY = .4f, centerZ = .28f, width = .84f, height = .49f; };
 // 画面がゲームカメラの画にどう写っているか。coverage は画の中に入った面積の割合（裏向きは 0）、depth は画面の中心
 // までの奥行き、centerX/Y は中心の画の位置（-1〜1）。鮮明に撮る部屋・保護・焦点の選択に使う。
-struct ScreenOnCamera { double coverage = 0, depth = 0, centerX = 0, centerY = 0, facing = 0; };
+// eyeX/Y は画面の右・上に対する目の向きの正接（画面の中の奥の層を見る角度）。
+struct ScreenOnCamera { double coverage = 0, depth = 0, centerX = 0, centerY = 0, facing = 0, eyeX = 0, eyeY = 0; };
 ScreenOnCamera ProjectScreen(const HIKARI::GameProjectCameraPose& pose, const HIKARI::GameProjectTransform& tv, const ScreenSurface& surface);
 struct StageRoom {
     HIKARI::GameProjectObjectHandle owner;
     std::string regionId;
     int x = 0, y = 0;
+    // 隣り合いの判定（部屋の外周の口がつながるか、地形が隣へ続くか）に使う世界の位置。Play では x, y と同じ。
+    // 編集中は描く位置 x, y だけを詰めて並べ直す（PackRoomsForEditor）ので、世界の位置をここに残す。
+    int linkX = 0, linkY = 0;
+    // 編集中に詰めて並べた組（0 か 1）。組ごとに別の窓で撮る。
+    int editorGroup = 0;
     bool placed = true;
     // 機構で 180° 回されている。region は作者の向きのまま（画面は絵ごと逆さに写る）。
     bool flipped = false;
@@ -56,6 +62,11 @@ struct StageFrame {
     // 操作中の部屋と同じ大区域の部屋。周りの窓はこの部屋たちを覆う位置に固定する（部屋を移るたびに窓を動かさない）。
     std::vector<std::string> areaRooms;
 };
+
+// 編集中の並べ直し：全部の部屋を一枚ずつの窓に収めるため、描く位置（x, y）だけを二つの組に詰めて並べる。
+// 世界の並びのまま写すと、大きな地図（500 マス四方など）では 1 マス 4 texel ほどになり画面がひどくぼやける。
+// 呼ぶ前に linkX, linkY へ世界の位置を入れておく。
+void PackRoomsForEditor(std::vector<StageRoom>& rooms);
 
 // 一つの World に一つの連続した舞台。世界地図どおりに部屋を置き、プレイヤー・光線・エフェクトは世界に一つずつ。
 // 舞台カメラ（鮮明・周り・未配置）と描き方の組ごとにキャプチャを一つ作り、各テレビは自分の部屋の範囲を切り出して映す。
@@ -112,7 +123,8 @@ private:
         std::vector<char> occupancy, linked;
         int x = 0, y = 0, palette = -1;
         double scale = 0, pitch = 0, yaw = 0;
-        bool compact = false;
+        bool compact = false, hall = false;
+        WindowSpan window;
         std::vector<PartRequest> parts;
     };
     struct Assigned { const StageRoom* room = nullptr; ViewKind kind = ViewKind::Sharp; };
@@ -139,6 +151,11 @@ private:
 
     std::array<StageCamera, kViewKinds> cameras_{};
     std::array<Window, kViewKinds> windows_{};
+    // 窓の向こうの大広間：使うか、視差の強さ、部屋ごとのなめらかにした目の向きの正接（区域 ID → 右・上）。
+    bool hall_ = true;
+    double parallaxGain_ = 1.0, lastParallaxTime_ = -1;
+    std::map<std::string, std::array<double, 2>, std::less<>> parallax_;
+    std::map<std::string, WindowSpan, std::less<>> windowSpans_;   // 区域 ID → 窓の上下（操作の札を避けた位置）
     std::array<std::string, 2> travel_{};          // 切り替え中の二部屋（無ければ空）
     StageProjection projection_;
     std::vector<View> views_;

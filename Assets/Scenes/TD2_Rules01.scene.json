@@ -10807,10 +10807,12 @@
               "$hikariRef": "SceneObject",
               "id": 0
             },
+            "depthView": true,
             "enabled": true,
-            "mode": "素描",
+            "hall": true,
+            "mode": "像素",
             "outline": 1.0,
-            "palette": "墨蓝",
+            "palette": "青瓷",
             "pitch": 0.0,
             "shadow": 1.0,
             "unplacedCameraObject": {

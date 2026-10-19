@@ -13,29 +13,27 @@ void ScreenEffects::Observe(const Rules::WorldSnapshot& s) {
     };
     if (previous_) {
         const auto& p = *previous_;
-        if (s.playerPresent && p.playerPresent) {
-            if (s.dashing && !p.dashing) { add(ScreenEffectKind::BlinkTrail, s.presentationPlayer, .16, p.presentationPlayer); }
-            if (p.dashing && !s.dashing) { add(ScreenEffectKind::Impact, s.presentationPlayer, .2); }
-            if (s.bouncing && !p.bouncing) { add(ScreenEffectKind::Bounce, s.presentationPlayer, .22); }
-            if (!p.player.grounded && s.player.grounded && p.player.vy > 0) { add(ScreenEffectKind::Land, s.presentationPlayer, .18); }
-        }
-        if (p.playerPresent && (s.deaths > p.deaths || (!p.player.dead && s.player.dead))) { add(ScreenEffectKind::Death, p.presentationPlayer, .36); }
-        if (s.playerPresent && !s.player.dead && p.player.dead) { add(ScreenEffectKind::Respawn, s.presentationPlayer, .35); }
+        if (s.dashing && !p.dashing) { add(ScreenEffectKind::BlinkTrail, s.presentationPlayer, .16, p.presentationPlayer); }
+        if (p.dashing && !s.dashing) { add(ScreenEffectKind::Impact, s.presentationPlayer, .2); }
+        if (s.bouncing && !p.bouncing) { add(ScreenEffectKind::Bounce, s.presentationPlayer, .22); }
+        if (!p.player.grounded && s.player.grounded && p.player.vy > 0) { add(ScreenEffectKind::Land, s.presentationPlayer, .18); }
+        if (s.deaths > p.deaths || (!p.player.dead && s.player.dead)) { add(ScreenEffectKind::Death, p.presentationPlayer, .36); }
+        if (!s.player.dead && p.player.dead) { add(ScreenEffectKind::Respawn, s.presentationPlayer, .35); }
         // 跳ね返りの残影は予告の開始時に生成エフェクトを出す（出現時には重ねない）。
         if (s.pendingEcho && !p.pendingEcho) { add(ScreenEffectKind::EchoCreate, *s.pendingEcho, .28); }
         if (s.echo && !p.echo && !p.pendingEcho) { add(ScreenEffectKind::EchoCreate, s.echo->rect, .28); }
         if (p.echo && !s.echo) { add(ScreenEffectKind::EchoRecall, p.echo->rect, .22, {}, true); }
         // 交換：入れ替わった本体に復活の光、元の場所へ移った残影に生成の光。
-        if (s.swaps > p.swaps && s.playerPresent) {
+        if (s.swaps > p.swaps) {
             add(ScreenEffectKind::Respawn, s.presentationPlayer, .3);
             if (s.echo) { add(ScreenEffectKind::EchoCreate, s.echo->rect, .28); }
         }
         // 回収：残影が消えるエフェクト、プレイヤーへの吸い込み、残影からプレイヤーへの光跡。
-        if (s.recalls > p.recalls && s.playerPresent && !s.player.dead) {
+        if (s.recalls > p.recalls && !s.player.dead) {
             add(ScreenEffectKind::EchoAbsorb, s.presentationPlayer, .42);
             if (p.echo || p.pendingEcho) { add(ScreenEffectKind::RecallTrail, s.presentationPlayer, .2, p.echo ? p.echo->rect : *p.pendingEcho); }
         }
-        if (p.pendingEcho && !s.pendingEcho && !s.echo && s.playerPresent) { add(ScreenEffectKind::EchoBlocked, *p.pendingEcho, .24); }
+        if (p.pendingEcho && !s.pendingEcho && !s.echo) { add(ScreenEffectKind::EchoBlocked, *p.pendingEcho, .24); }
         for (const auto& d : s.devices) {
             // 圧力板・扉・橋は部品自体の動きで切り替えを見せる。
             if (d.kind == Rules::DeviceKind::Plate || d.kind == Rules::DeviceKind::Door || d.kind == Rules::DeviceKind::Bridge) { continue; }

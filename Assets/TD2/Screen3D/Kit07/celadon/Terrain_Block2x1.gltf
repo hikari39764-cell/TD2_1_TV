@@ -27,12 +27,12 @@
 			"extensions":{
 				"KHR_materials_unlit":{}
 			},
-			"name":"K07_celadon_graphite_dark",
+			"name":"K07_celadon_seam_soft",
 			"pbrMetallicRoughness":{
 				"baseColorFactor":[
-					0.027320891618728638,
-					0.05951123684644699,
-					0.05612849071621895,
+					0.08228270709514618,
+					0.13286831974983215,
+					0.11443537473678589,
 					1
 				],
 				"metallicFactor":0,
@@ -44,12 +44,12 @@
 			"extensions":{
 				"KHR_materials_unlit":{}
 			},
-			"name":"K07_celadon_panel_dark",
+			"name":"K07_celadon_panel_wall_dark",
 			"pbrMetallicRoughness":{
 				"baseColorFactor":[
-					0.23074005544185638,
-					0.34670406579971313,
-					0.31854677200317383,
+					0.1946178376674652,
+					0.2917706370353699,
+					0.26635560393333435,
 					1
 				],
 				"metallicFactor":0,
@@ -61,12 +61,12 @@
 			"extensions":{
 				"KHR_materials_unlit":{}
 			},
-			"name":"K07_celadon_panel",
+			"name":"K07_celadon_panel_wall_light",
 			"pbrMetallicRoughness":{
 				"baseColorFactor":[
-					0.5028864741325378,
-					0.6583748459815979,
-					0.6104955673217773,
+					0.637596845626831,
+					0.7454041838645935,
+					0.7083757519721985,
 					1
 				],
 				"metallicFactor":0,
@@ -78,12 +78,12 @@
 			"extensions":{
 				"KHR_materials_unlit":{}
 			},
-			"name":"K07_celadon_panel_light",
+			"name":"K07_celadon_panel_wall",
 			"pbrMetallicRoughness":{
 				"baseColorFactor":[
-					0.7758222222328186,
-					0.8713670969009399,
-					0.8307698965072632,
+					0.40724021196365356,
+					0.5394794940948486,
+					0.4969329833984375,
 					1
 				],
 				"metallicFactor":0,
@@ -162,7 +162,7 @@
 		{
 			"bufferView":3,
 			"componentType":5126,
-			"count":272,
+			"count":110,
 			"max":[
 				0.9375,
 				0.9375,
@@ -178,69 +178,69 @@
 		{
 			"bufferView":4,
 			"componentType":5126,
-			"count":272,
+			"count":110,
 			"type":"VEC3"
 		},
 		{
 			"bufferView":5,
 			"componentType":5123,
-			"count":444,
+			"count":150,
 			"type":"SCALAR"
 		},
 		{
 			"bufferView":6,
 			"componentType":5126,
-			"count":104,
+			"count":30,
 			"max":[
-				0.9165664911270142,
+				0.8125,
 				0.9375,
 				0
 			],
 			"min":[
 				-0.9375,
-				0.125,
-				-0.699999988079071
+				0.8125,
+				-0.574999988079071
 			],
 			"type":"VEC3"
 		},
 		{
 			"bufferView":7,
 			"componentType":5126,
-			"count":104,
+			"count":30,
 			"type":"VEC3"
 		},
 		{
 			"bufferView":8,
 			"componentType":5123,
-			"count":192,
+			"count":42,
 			"type":"SCALAR"
 		},
 		{
 			"bufferView":9,
 			"componentType":5126,
-			"count":72,
+			"count":52,
 			"max":[
-				0.859375,
+				0.9375,
 				0.9375,
 				0
 			],
 			"min":[
 				-0.9375,
-				0.7730216979980469,
-				-0.637499988079071
+				0.1875,
+				-0.699999988079071
 			],
 			"type":"VEC3"
 		},
 		{
 			"bufferView":10,
 			"componentType":5126,
-			"count":72,
+			"count":52,
 			"type":"VEC3"
 		},
 		{
 			"bufferView":11,
 			"componentType":5123,
-			"count":108,
+			"count":72,
 			"type":"SCALAR"
 		}
 	],
@@ -265,62 +265,62 @@
 		},
 		{
 			"buffer":0,
-			"byteLength":3264,
+			"byteLength":1320,
 			"byteOffset":5136,
 			"target":34962
 		},
 		{
 			"buffer":0,
-			"byteLength":3264,
-			"byteOffset":8400,
+			"byteLength":1320,
+			"byteOffset":6456,
 			"target":34962
 		},
 		{
 			"buffer":0,
-			"byteLength":888,
-			"byteOffset":11664,
+			"byteLength":300,
+			"byteOffset":7776,
 			"target":34963
 		},
 		{
 			"buffer":0,
-			"byteLength":1248,
-			"byteOffset":12552,
+			"byteLength":360,
+			"byteOffset":8076,
 			"target":34962
 		},
 		{
 			"buffer":0,
-			"byteLength":1248,
-			"byteOffset":13800,
+			"byteLength":360,
+			"byteOffset":8436,
 			"target":34962
 		},
 		{
 			"buffer":0,
-			"byteLength":384,
-			"byteOffset":15048,
+			"byteLength":84,
+			"byteOffset":8796,
 			"target":34963
 		},
 		{
 			"buffer":0,
-			"byteLength":864,
-			"byteOffset":15432,
+			"byteLength":624,
+			"byteOffset":8880,
 			"target":34962
 		},
 		{
 			"buffer":0,
-			"byteLength":864,
-			"byteOffset":16296,
+			"byteLength":624,
+			"byteOffset":9504,
 			"target":34962
 		},
 		{
 			"buffer":0,
-			"byteLength":216,
-			"byteOffset":17160,
+			"byteLength":144,
+			"byteOffset":10128,
 			"target":34963
 		}
 	],
 	"buffers":[
 		{
-			"byteLength":17376,
+			"byteLength":10272,
 			"uri":"Terrain_Block2x1.bin"
 		}
 	]

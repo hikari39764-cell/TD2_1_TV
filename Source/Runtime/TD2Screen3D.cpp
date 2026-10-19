@@ -6,6 +6,7 @@
 #include "HIKARI/Project/PresentationViews.h"
 #include "HIKARI/Project/VfxView.h"
 #include <algorithm>
+#include <climits>
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
@@ -33,7 +34,8 @@ constexpr double kEchoPrintSeconds = 0.16, kRecallTrailSeconds = 0.2;
 
 bool SameStyle(const ScreenStyleSettings& a, const ScreenStyleSettings& b) {
     return a.mode == b.mode && a.outline == b.outline && a.shadow == b.shadow && a.sketchDepth == b.sketchDepth &&
-           a.sketchFill == b.sketchFill && a.brightness == b.brightness;
+           a.sketchFill == b.sketchFill && a.brightness == b.brightness && a.atmosphere == b.atmosphere &&
+           a.occlusion == b.occlusion && a.castLight == b.castLight && a.inkLine == b.inkLine;
 }
 // 区域の画面の明るさ（既定 2.2）を基準 1 として描き方の明るさに掛ける。
 ScreenStyleSettings Effective(const StageRoom& room) {
@@ -46,7 +48,9 @@ HIKARI::GameProjectFloat3 Srgb(uint32_t hex) {
 }
 // 画面専用の描き方。色は ScreenKit07 の配色と同じ値。長さはゲーム画素で、
 // 1 ゲーム画素の texel 数（pixelSize）は窓の精細度から決まる。
-HIKARI::GameProjectSceneCaptureStyleDesc StyleDesc(const ScreenStyleSettings& style, int palette, float brightness, int density) {
+// cell は舞台の 1 マスの長さ、depth は立体（深度の効果を使う）。
+HIKARI::GameProjectSceneCaptureStyleDesc StyleDesc(const ScreenStyleSettings& style, int palette, float brightness, int density,
+                                                   double cell, bool depth) {
     HIKARI::GameProjectSceneCaptureStyleDesc fx{};
     const auto mode = static_cast<ScreenStyleMode>(style.mode);
     fx.style = mode == ScreenStyleMode::Original ? HIKARI::GameProjectSceneCaptureStyle::Clean
@@ -68,6 +72,26 @@ HIKARI::GameProjectSceneCaptureStyleDesc StyleDesc(const ScreenStyleSettings& st
     const bool celadon = palette == 1;
     fx.lineColor = mode == ScreenStyleMode::Sketch ? Srgb(celadon ? 0xDDEAE4 : 0xE4EAEE) : Srgb(celadon ? 0x061112 : 0x0A0F14);
     fx.paperColor = Srgb(celadon ? 0x0E2425 : 0x18212B);
+    if (depth) {
+        // 立体の空間感：舞台カメラからの奥行きで前景（地形・装置・人物、奥行き 0.7 マスまで）と奥（後ろの壁 0.85 と
+        // 窓の向こうの大広間）を分ける。奥は輪郭を付けず霧で沈め、物の周りの暗がりと、物の高さに応じた影を足す。
+        const auto c = static_cast<float>(cell);
+        fx.depthFocus = static_cast<float>(kStageCameraDistance);
+        fx.backgroundDepth = .78f * c;
+        fx.fogStrength = std::clamp(style.atmosphere, 0.0f, 1.0f);
+        fx.fogDepth = 5.0f * c;
+        // 霧は壁より明るい靄：奥の壁ほど明るく霞み、手前の柱と梁が暗い影絵として前に出る。
+        fx.fogColor = mode == ScreenStyleMode::Sketch ? Srgb(celadon ? 0x2A4442 : 0x333F4C) : Srgb(celadon ? 0x2C403F : 0x3A4652);
+        fx.occlusion = std::clamp(style.occlusion, 0.0f, 1.0f);
+        fx.occlusionRadius = 3.0f;   // 物のすぐ周りだけ（大きいと壁の染みに見える）
+        fx.occlusionDepth = .8f * c;
+        fx.depthLine = mode == ScreenStyleMode::Original ? std::clamp(style.inkLine, 0.0f, 1.0f) : 0.0f;
+        fx.depthLineGap = .15f * c;
+        fx.lightShadow = std::clamp(style.castLight, 0.0f, 1.0f);
+        // 影の光線：shadowOffset（右へ半マス・下へ 1 マス）進む間に、後ろの壁までの奥行き（0.85 マス）だけ手前へ上がる。
+        fx.lightSlope = .85f * c / std::hypot(fx.shadowOffsetX, fx.shadowOffsetY);
+        fx.lightReach = 24.0f;
+    }
     // 残影の菫色。この色相の鮮やかな物体を残影として横縞で描く（プレイヤーの琥珀・危険の赤とは色相で分かれる）。
     fx.accentColor = Srgb(0xA879F0);
     return fx;
@@ -296,31 +320,92 @@ void Screen3DStage::PlaceWindows(const std::vector<const StageRoom*>& rooms, con
     wide.valid = true;
 }
 
+void PackRoomsForEditor(std::vector<StageRoom>& rooms) {
+    constexpr int kGap = 2;          // 部屋の間（よその部屋の影や壁が写り込まない）
+    constexpr int kGroupGap = 8;     // 組の間
+    // 背の高い部屋から棚に並べる（同じ並びが毎フレーム同じになるよう、区域 ID でも並べる）。
+    std::vector<size_t> order(rooms.size());
+    for (size_t i = 0; i < order.size(); ++i) { order[i] = i; }
+    std::stable_sort(order.begin(), order.end(), [&](size_t a, size_t b) {
+        const auto& ra = rooms[a].Region(); const auto& rb = rooms[b].Region();
+        if (ra.rows != rb.rows) { return ra.rows > rb.rows; }
+        if (ra.cols != rb.cols) { return ra.cols > rb.cols; }
+        return rooms[a].regionId < rooms[b].regionId;
+    });
+    // 面積の釣り合う二つの組へ（大きい部屋から、面積の小さい組へ）。組ごとに別の窓で撮り、1 マスの texel を倍近くにする。
+    std::array<std::vector<size_t>, 2> groups;
+    std::array<double, 2> area{};
+    for (const size_t i : order) {
+        const auto& r = rooms[i].Region();
+        const size_t g = area[0] <= area[1] ? 0 : 1;
+        groups[g].push_back(i); area[g] += double(r.cols + kGap) * (r.rows + kGap);
+    }
+    int offset = 0;
+    for (size_t g = 0; g < groups.size(); ++g) {
+        if (groups[g].empty()) { continue; }
+        int widest = 0;
+        for (const size_t i : groups[g]) { widest = (std::max)(widest, rooms[i].Region().cols + kGap); }
+        // 棚の幅を変えて試し、縦横の長い方が一番短くなる幅で並べる。
+        const auto shelve = [&](int width, bool apply) {
+            int x = 0, y = 0, shelf = 0, right = 0;
+            for (const size_t i : groups[g]) {
+                const auto& r = rooms[i].Region();
+                if (x > 0 && x + r.cols + kGap > width) { y += shelf; x = 0; shelf = 0; }
+                if (apply) { rooms[i].x = offset + x; rooms[i].y = y; rooms[i].editorGroup = static_cast<int>(g); }
+                x += r.cols + kGap; shelf = (std::max)(shelf, r.rows + kGap); right = (std::max)(right, x);
+            }
+            return std::pair{right, y + shelf};
+        };
+        const int start = (std::max)(widest, static_cast<int>(std::sqrt(area[g])));
+        int best = start, bestSide = INT_MAX;
+        for (int width = start; width <= 2 * start + widest; ++width) {
+            const auto [w, h] = shelve(width, false);
+            if ((std::max)(w, h) < bestSide) { bestSide = (std::max)(w, h); best = width; }
+        }
+        offset += shelve(best, true).first + kGroupGap;
+    }
+}
+
 void Screen3DStage::PlaceEditorWindow(const std::vector<const StageRoom*>& rooms) {
     windows_ = {};
     if (rooms.empty()) { return; }
-    double left = rooms.front()->x, top = rooms.front()->y, right = left, bottom = top;
+    // 組ごとの範囲。二つ目の組は未配置用のカメラで撮る（鮮明のカメラと正投影の高さが同じ時だけ。窓の行数が舞台の縮尺を
+    // 共有するため）。使えなければ一枚の窓に全部を収める。
+    struct Box { double left = 0, top = 0, right = 0, bottom = 0; bool any = false; };
+    std::array<Box, 2> boxes{};
+    const auto& sharp = cameras_[static_cast<size_t>(ViewKind::Sharp)];
+    const auto& second = cameras_[static_cast<size_t>(ViewKind::Unplaced)];
+    const bool split = second.handle.IsValid() && std::abs(second.orthographicHeight - sharp.orthographicHeight) < 1e-3;
     for (const auto* room : rooms) {
-        left = (std::min)(left, double(room->x)); top = (std::min)(top, double(room->y));
-        right = (std::max)(right, double(room->x) + room->Region().cols);
-        bottom = (std::max)(bottom, double(room->y) + room->Region().rows);
+        auto& box = boxes[split && room->editorGroup == 1 ? 1 : 0];
+        const double l = room->x, t = room->y, r = room->x + room->Region().cols, b = room->y + room->Region().rows;
+        if (!box.any) { box = {l, t, r, b, true}; continue; }
+        box.left = (std::min)(box.left, l); box.top = (std::min)(box.top, t);
+        box.right = (std::max)(box.right, r); box.bottom = (std::max)(box.bottom, b);
     }
-    // 作者の並びと境界は保ち、舞台側の縮尺だけを調整する。実際のテレビやカメラ、地図は変えない。
-    // 全画面で共有する最大 2048^2 のキャプチャなので、テレビごとに描画パスを増やさない。
-    auto& window = windows_[static_cast<size_t>(ViewKind::Sharp)];
-    const double cols = (std::max)(1.0, right - left), rows = (std::max)(1.0, bottom - top);
-    const double density = (std::min)(double(kSharpTexelsPerCell),
-        double(HIKARI::kGameProjectSceneCaptureMaximumExtent) / (std::max)(cols, rows));
-    window.width = static_cast<uint32_t>(std::clamp(std::ceil(cols * density),
+    // 窓は全部同じ行数（舞台の縮尺が共通）。一番大きい辺が 2048 texel に収まる精細度（上限は鮮明と同じ）で撮る。
+    double rows = 1, side = 1;
+    for (const auto& box : boxes) if (box.any) {
+        rows = (std::max)(rows, box.bottom - box.top);
+        side = (std::max)({side, box.right - box.left, box.bottom - box.top});
+    }
+    const double maxExtent = HIKARI::kGameProjectSceneCaptureMaximumExtent - 8.0;
+    const double density = (std::min)(double(kSharpTexelsPerCell), maxExtent / side);
+    const auto height = static_cast<uint32_t>(std::clamp(std::ceil(rows * density),
         double(HIKARI::kGameProjectSceneCaptureMinimumExtent), double(HIKARI::kGameProjectSceneCaptureMaximumExtent)));
-    window.height = static_cast<uint32_t>(std::clamp(std::ceil(rows * density),
-        double(HIKARI::kGameProjectSceneCaptureMinimumExtent), double(HIKARI::kGameProjectSceneCaptureMaximumExtent)));
-    // 丸めで区域の端が窓の外へ落ちないよう、両軸を必ず覆う縦横比へ広げる。
-    window.rows = (std::max)(rows, cols * window.height / window.width);
-    window.cols = window.rows * window.width / window.height;
-    window.x = left; window.y = top; window.valid = true;
-    window.density = (std::max)(1, static_cast<int>(std::lround(window.height / window.rows)));
-    projection_.scale = cameras_[static_cast<size_t>(ViewKind::Sharp)].orthographicHeight / window.rows;
+    const double exact = height / rows;   // 丸めた後の 1 マスの texel（行数をちょうど rows にする）
+    for (size_t k = 0; k < boxes.size(); ++k) {
+        if (!boxes[k].any) { continue; }
+        auto& window = windows_[static_cast<size_t>(k == 0 ? ViewKind::Sharp : ViewKind::Unplaced)];
+        const double cols = (std::max)(1.0, boxes[k].right - boxes[k].left);
+        window.width = static_cast<uint32_t>(std::clamp(std::ceil(cols * exact),
+            double(HIKARI::kGameProjectSceneCaptureMinimumExtent), double(HIKARI::kGameProjectSceneCaptureMaximumExtent)));
+        window.height = height;
+        window.rows = rows; window.cols = window.width / exact;
+        window.x = boxes[k].left; window.y = boxes[k].top; window.valid = true;
+        window.density = (std::max)(1, static_cast<int>(std::lround(exact)));
+    }
+    projection_.scale = sharp.orthographicHeight / rows;
 }
 
 void Screen3DStage::Render(HIKARI::WorldView& world, const std::vector<StageRoom>& rooms, const StageFrame& frame,
@@ -357,6 +442,47 @@ void Screen3DStage::Render(HIKARI::WorldView& world, const std::vector<StageRoom
     ++frame_;
     if (frame.authoring) { seen_.clear(); focus_ = {}; PlaceEditorWindow(valid); }
     else { Inspect(world, valid, frame); ChooseFocus(frame); PlaceWindows(valid, frame, maxCols); }
+    // 視差：画面を見る角度の正接を 0.25 秒でなめらかに追う（見えていない画面は最後の角度のまま）。手持ちの揺れは残す。
+    hall_ = stage.hall && stage.depthView;
+    parallaxGain_ = std::clamp(static_cast<double>(stage.parallax), 0.0, 2.0);
+    {
+        const double dt = lastParallaxTime_ < 0 ? 0.0 : std::clamp(now - lastParallaxTime_, 0.0, .1);
+        lastParallaxTime_ = now;
+        const double follow = dt > 0 ? 1 - std::exp(-dt / .25) : 1.0;
+        // プレイヤーのいる部屋は、目がプレイヤーの後を少し追う（部屋の中央からの位置に比例して正接を足す）。外のカメラが
+        // 止まっていても、歩くと奥の大広間が窓に対してずれ、奥行きが見える。回された部屋は画面の上の位置で数える。
+        std::string playerRoom;
+        double followX = 0, followY = 0;
+        if (frame.simulated && frame.snapshot->playerPresent) {
+            const auto& body = frame.snapshot->presentationPlayer;
+            const double px = body.x + body.w * .5, py = body.y + body.h * .5;
+            for (const auto* room : valid) {
+                const auto& r = room->Region();
+                if (px < room->x || py < room->y || px >= room->x + r.cols || py >= room->y + r.rows) { continue; }
+                constexpr double kFollowX = .15, kFollowY = .08;   // 部屋の端での正接
+                const double fx = (px - (room->x + r.cols * .5)) / (r.cols * .5), fy = ((room->y + r.rows * .5) - py) / (r.rows * .5);
+                playerRoom = room->regionId;
+                followX = (room->flipped ? -fx : fx) * kFollowX; followY = (room->flipped ? -fy : fy) * kFollowY;
+                break;
+            }
+        }
+        for (const auto& [id, seen] : seen_) {
+            if (seen.view.coverage <= 0) { continue; }
+            constexpr double kMaxTan = .3;    // これ以上斜めでも奥の層は寄せない（窓の縁の外へ出ない範囲）
+            const bool here = id == playerRoom;
+            const double tx = std::clamp(seen.view.eyeX + (here ? followX : 0.0), -kMaxTan, kMaxTan);
+            const double ty = std::clamp(seen.view.eyeY + (here ? followY : 0.0), -kMaxTan, kMaxTan);
+            auto [it, fresh] = parallax_.try_emplace(id, std::array<double, 2>{tx, ty});
+            if (!fresh) { it->second[0] += (tx - it->second[0]) * follow; it->second[1] += (ty - it->second[1]) * follow; }
+        }
+        // 診断用（環境変数 TD2_PARALLAX_TRACE がある時だけ）：鮮明に撮る部屋の目の向きを 30 フレームごとに記録する。
+        static const bool trace = std::getenv("TD2_PARALLAX_TRACE") != nullptr;
+        if (trace && frame_ % 30 == 0) {
+            if (const auto it = parallax_.find(focus_[0]); it != parallax_.end()) {
+                std::fprintf(stderr, "[TD2 parallax-trace] n=%zu region=%s eye=%.3f,%.3f\n", frame_, focus_[0].c_str(), it->second[0], it->second[1]);
+            }
+        }
+    }
 
     // 3. テレビごとの窓（鮮明を優先）。一部屋だけを撮る窓（Play の鮮明二枚）にはその部屋だけを、残りは窓に収まる部屋を写す。
     // どの窓にも入らない部屋は描かない。
@@ -497,6 +623,11 @@ ScreenOnCamera ProjectScreen(const HIKARI::GameProjectCameraPose& pose, const HI
     out.facing = el > 1e-6 ? (normal.x * ex + normal.y * ey + normal.z * ez) / el : 0;
     out.depth = -(ex * basis.f[0] + ey * basis.f[1] + ez * basis.f[2]);
     if (out.facing <= .05 || out.depth <= .05) { return out; }
+    // 画面の右・上の向きに対する目の向きの正接（画面の奥の層を見る角度）。
+    const auto right = Rotate(tv.rotation, {1, 0, 0}, false), up = Rotate(tv.rotation, {0, 1, 0}, false);
+    const double along = normal.x * ex + normal.y * ey + normal.z * ez;
+    out.eyeX = (right.x * ex + right.y * ey + right.z * ez) / along;
+    out.eyeY = (up.x * ex + up.y * ey + up.z * ez) / along;
     const auto c = basis.ToView(center);
     out.centerX = c.first; out.centerY = c.second;
     // 四隅を画へ写し、画の枠（-1〜1）で切り取った多角形の面積を画の面積（4）で割る。
@@ -747,7 +878,7 @@ bool Screen3DStage::SyncCaptures(HIKARI::WorldView& world, const std::vector<Ass
             if (!captures.Update(view.handle, desc)) { status_ = "3D捕获更新失败"; return false; }
         }
         view.width = desc.width; view.height = desc.height; view.camera = desc.cameraObject;
-        auto look = StyleDesc(view.style, palette, view.style.brightness, window.density);
+        auto look = StyleDesc(view.style, palette, view.style.brightness, window.density, projection_.scale, projection_.oblique > 0);
         // 画面の閃光：明るさを一時的に上乗せする。描き方の組分け（SameStyle）には含めない。
         look.brightness = static_cast<float>(std::clamp(look.brightness * (1 + flash), 0.0, 4.0));
         if (!captures.SetStyle(view.handle, look)) { status_ = "屏幕风格提交失败，需要含SetStyle v2的新引擎"; return false; }
@@ -800,11 +931,12 @@ void Screen3DStage::SubmitParts(HIKARI::WorldView& world, const std::vector<cons
         else { ++failed_; }
     };
     // 世界の占有（マス）：舞台に並べた全部屋の地図と、実体のある Solid 装置。部屋の無い所は埋まり扱い。
+    // 隣り合いの判定は世界の位置（linkX, linkY）で行う（編集中は描く位置を詰めて並べ直している）。
     const auto solidAt = [&](int wx, int wy) {
         for (const auto* room : rooms) {
             const auto& r = room->Region();
-            if (wx >= room->x && wy >= room->y && wx < room->x + r.cols && wy < room->y + r.rows) {
-                const int lx = wx - room->x, ly = wy - room->y;
+            if (wx >= room->linkX && wy >= room->linkY && wx < room->linkX + r.cols && wy < room->linkY + r.rows) {
+                const int lx = wx - room->linkX, ly = wy - room->linkY;
                 return r.cells[CellIndex(r, room->flipped ? r.cols - 1 - lx : lx, room->flipped ? r.rows - 1 - ly : ly)] == '1';
             }
         }
@@ -826,7 +958,7 @@ void Screen3DStage::SubmitParts(HIKARI::WorldView& world, const std::vector<cons
     const auto roomAt = [&](int wx, int wy, const StageRoom* self) {
         return std::any_of(rooms.begin(), rooms.end(), [&](const StageRoom* room) {
             const auto& r = room->Region();
-            return room != self && wx >= room->x && wy >= room->y && wx < room->x + r.cols && wy < room->y + r.rows;
+            return room != self && wx >= room->linkX && wy >= room->linkY && wx < room->linkX + r.cols && wy < room->linkY + r.rows;
         });
     };
     std::map<std::string_view, const StageRoom*> byRegion;
@@ -841,7 +973,7 @@ void Screen3DStage::SubmitParts(HIKARI::WorldView& world, const std::vector<cons
         linked.assign(static_cast<size_t>(width * height), 1);
         // 絵の上のマス (i, j)（周り 1 マス込み）が、規則の世界のどのマスか。回された部屋は点対称に読む。
         const auto worldCell = [&](int i, int j) {
-            return room.flipped ? std::pair{room.x + r.cols - i, room.y + r.rows - j} : std::pair{room.x + i - 1, room.y + j - 1};
+            return room.flipped ? std::pair{room.linkX + r.cols - i, room.linkY + r.rows - j} : std::pair{room.linkX + i - 1, room.linkY + j - 1};
         };
         for (int j = 0; j < height; ++j) for (int i = 0; i < width; ++i) {
             const bool inside = i > 0 && j > 0 && i <= r.cols && j <= r.rows;
@@ -858,13 +990,19 @@ void Screen3DStage::SubmitParts(HIKARI::WorldView& world, const std::vector<cons
             for (int j = (std::max)(top, 0); j < (std::min)(bottom, height); ++j)
                 for (int i = (std::max)(left, 0); i < (std::min)(right, width); ++i) { occupancy[static_cast<size_t>(j * width + i)] = 1; }
         }
+        // 窓の上下：操作の札にかからない所へ寄せる。
+        const WindowSpan span = StagePartBuilder{projection_, palette, room.owner.value, frameParts_}.SpanAvoidingSigns(
+            snapshot.devices, room.regionId, room.y, r.rows);
+        windowSpans_[room.regionId] = span;
         auto& cache = roomParts_[room.regionId];
         if (cache.occupancy != occupancy || cache.linked != linked || cache.x != room.x || cache.y != room.y || cache.palette != palette ||
-            cache.scale != projection_.scale || cache.pitch != projection_.pitch || cache.yaw != projection_.yaw || cache.compact != !animate) {
-            cache = {occupancy, linked, room.x, room.y, palette, projection_.scale, projection_.pitch, projection_.yaw, !animate, {}};
+            cache.scale != projection_.scale || cache.pitch != projection_.pitch || cache.yaw != projection_.yaw || cache.compact != !animate ||
+            cache.hall != hall_ || !(cache.window == span)) {
+            cache = {occupancy, linked, room.x, room.y, palette, projection_.scale, projection_.pitch, projection_.yaw, !animate, hall_, span, {}};
             StagePartBuilder builder{projection_, palette, room.owner.value, cache.parts};
             builder.Compact(!animate);
-            builder.Backdrop(room.x, room.y, r.cols, r.rows);
+            builder.UseHall(hall_);
+            builder.Backdrop(room.x, room.y, r.cols, r.rows, span);
             builder.Terrain(room.x, room.y, r.cols, r.rows, occupancy);
             builder.Edges(room.x, room.y, r.cols, r.rows, occupancy, linked);
             failed_ += builder.Failed();
@@ -872,6 +1010,24 @@ void Screen3DStage::SubmitParts(HIKARI::WorldView& world, const std::vector<cons
         for (const auto& request : cache.parts) { submit(request); }
     }
     std::erase_if(roomParts_, [&](const auto& item) { return !byRegion.contains(item.first); });
+
+    // 窓の向こうの大広間：外のカメラが画面を見る角度（なめらかにした正接）だけ奥の層をずらす。編集中は出さない。
+    if (animate && hall_) {
+        for (const auto& item : shown) {
+            const auto& room = *item.room; const auto& r = room.Region();
+            const auto eye = parallax_.find(room.regionId);
+            double ex = eye != parallax_.end() ? eye->second[0] : 0.0, ey = eye != parallax_.end() ? eye->second[1] : 0.0;
+            // 診断用（環境変数 TD2_PARALLAX_FORCE="x,y" がある時だけ）：全部の画面を同じ角度で見たことにする（比較の撮影用）。
+            static const char* forced = std::getenv("TD2_PARALLAX_FORCE");
+            if (forced) { (void)std::sscanf(forced, "%lf,%lf", &ex, &ey); }
+            // 回されたテレビは画面の右・上が絵の左・下になる。
+            if (room.flipped) { ex = -ex; ey = -ey; }
+            StagePartBuilder builder{projection_, palette, room.owner.value, frameParts_};
+            builder.UseHall(true);
+            builder.Hall(room.regionId, room.x, room.y, r.cols, r.rows, windowSpans_[room.regionId], ex * parallaxGain_, ey * parallaxGain_);
+            failed_ += builder.Failed();
+        }
+    }
 
     // 装置と光線：描く部屋の装置だけ。状態で変わる部品は全部出し、表示だけを切り替える。
     // 通電・実体が変わった時刻は描かない部屋の装置も覚える（後で画面に入った時に古い変化を動かし直さない）。

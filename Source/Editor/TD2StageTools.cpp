@@ -1,4 +1,5 @@
 #include "TD2StageTools.h"
+#include "../Common/TD2Math.h"
 #include <cmath>
 
 namespace TD2::Editor {
@@ -97,7 +98,7 @@ bool PoseAtView(EditorWorkspaceHostContext& ctx, Pose& pose, std::string& error)
     pose.position = flat < 1e-3 ? std::array<double, 3>{eye[0], 0, eye[2]}
                                 : std::array<double, 3>{eye[0] + dir[0] / flat * horizontal, 0, eye[2] + dir[2] / flat * horizontal};
     // 画面（+Z）をカメラへ向ける。
-    pose.rotation = {0, std::round(std::atan2(eye[0] - pose.position[0], eye[2] - pose.position[2]) * 180 / 3.14159265358979 / 15) * 15, 0};
+    pose.rotation = {0, std::round(std::atan2(eye[0] - pose.position[0], eye[2] - pose.position[2]) * 180 / Math::kPi / 15) * 15, 0};
     return true;
 }
 }

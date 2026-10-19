@@ -14,6 +14,11 @@
 
 namespace TD2 {
 using PartRequest = HIKARI::GameProjectPresentationModelRequest;
+// 後ろの壁の窓の上下（部屋の上端・下端から窓の縁までのマス）。0 なら既定。操作の札を避けて窓を上か下へ寄せる時に使う。
+struct WindowSpan {
+    double top = 0, bottom = 0;
+    bool operator==(const WindowSpan&) const = default;
+};
 // 世界の外の退避点（世界のマス）。人物・残像・予告の輪の使わないモデルをここへ置く。
 inline constexpr double kParkX = -64, kParkY = -64;
 
@@ -30,13 +35,22 @@ public:
     void NoMirror() { mirror_ = false; }
     // 編集中（全部の部屋を一度に写す）は目盛りの線と、つながった口の鎧戸を出さない（描画物体の上限に収める）。
     void Compact(bool on) { compact_ = on; }
+    // 後ろの壁を窓にして、その向こうに大広間を描くか（立体で編集中でない時）。窓のある時は壁の目盛りを出さない。
+    void UseHall(bool on) { hall_ = on; }
     // 装置の小さな動き（硬貨の回転、丸鋸、輪の脈、キーの押し、光線の脈）に使う実時間（秒）。編集中は止める。
     void SetTime(double seconds) { time_ = seconds; }
     // leanPivot は傾きを釣り合わせる高さ（部品の下辺から、マス）。負なら部品の高さの中ほど。
     bool Add(std::string_view part, double x, double bottomY, double width = 1, double height = 1, double depth = 0,
              HIKARI::GameProjectQuaternion rotation = {}, double leanPivot = -1, bool visible = true);
     // 背景：闇の板と上から差す光の輪、1 マスの目盛り。(x, y) は部屋の左上の世界のマス。
-    void Backdrop(int x, int y, int cols, int rows);
+    // 編集中以外は、後ろの壁を窓の周りの帯にして窓枠を付ける（窓の向こうは Hall が毎フレーム描く）。
+    void Backdrop(int x, int y, int cols, int rows, WindowSpan span = {});
+    // 窓の向こうの大広間（奥の壁・灯の帯・柱・梁）。eyeX/Y は画面を見る角度の正接（右・上）で、奥の層ほど大きくずらす。
+    // 中身は区域 ID から決まる（部屋ごとに柱の位置などが違う）。
+    void Hall(std::string_view regionId, int x, int y, int cols, int rows, WindowSpan span, double eyeX, double eyeY);
+    // 部屋の窓の上下：既定の窓の高さにかかる操作の札があれば、札の上か下の広い方へ窓を寄せる（札が窓の縁にまたがらず、
+    // 壁に掛かって見える）。どちらも狭ければ窓を作らない。
+    WindowSpan SpanAvoidingSigns(const std::vector<Rules::DeviceSnapshot>& devices, std::string_view regionId, int roomY, int rows) const;
     // 地形。occupancy は部屋と周り 1 マスの占有（(cols + 2) × (rows + 2)。部屋の無い所は埋まり扱い）。
     void Terrain(int x, int y, int cols, int rows, const std::vector<char>& occupancy);
     // 部屋の外周の口のうち、外に部屋が無い（どこにもつながっていない）所に鎧戸を下ろす。occupancy は Terrain と同じ、
@@ -62,7 +76,7 @@ private:
     uint64_t owner_ = 0;
     std::vector<PartRequest>& out_;
     uint64_t semantic_ = 1, partIndex_ = 0;
-    bool mirror_ = false, compact_ = false;
+    bool mirror_ = false, compact_ = false, hall_ = false;
     double mirrorX_ = 0, mirrorY_ = 0, time_ = 0;
     size_t failed_ = 0;
 };

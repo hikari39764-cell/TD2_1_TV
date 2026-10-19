@@ -61,8 +61,9 @@ struct StageProjection {
         const double screenX = x * scale, screenY = -y * scale, z = depth * scale;
         const double worldY = (screenY + z * std::sin(pitch)) / std::cos(pitch);
         const double worldX = (screenX + worldY * std::sin(yaw) * std::sin(pitch) + z * std::sin(yaw) * std::cos(pitch)) / std::cos(yaw);
-        return {kStageCoordinate + static_cast<float>(worldX), kStageCoordinate + static_cast<float>(worldY),
-                kStageCoordinate + static_cast<float>(z)};
+        // 舞台は横と縦だけ世界から離す。奥行き（z）を大きな値へずらすと float の刻み（10000 で約 0.001）が部品どうしの
+        // 小さな前後の差より粗くなり、編集中の小さな縮尺では重なった面が入れ替わって描かれる。
+        return {kStageCoordinate + static_cast<float>(worldX), kStageCoordinate + static_cast<float>(worldY), static_cast<float>(z)};
     }
     // 俯角と側角を両方付けた時、縦の辺が 1 マスごとに右へずれる量（片方だけなら 0）。
     double Lean() const { return std::sin(yaw) * std::tan(pitch); }

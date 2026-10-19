@@ -113,8 +113,6 @@ public:
     ExplorationOutput Step(const InputState& input, double seconds);
     const RegionRuntime* FindRegion(std::string_view id) const;
     const std::map<std::string, RegionRuntime>& Regions() const noexcept { return regions_; }
-    const std::vector<RegionPlacement>& Placements() const noexcept { return placements_; }
-    const WorldDefinition& Definition() const noexcept { return world_; }
     const WorldState& State() const noexcept { return state_; }
     const std::string& ActiveRegion() const noexcept { return activeRegion_; }
     // 世界座標の表示状態。進めた後、最初に読まれた時に作る。

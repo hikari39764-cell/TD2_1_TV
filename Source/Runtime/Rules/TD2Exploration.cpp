@@ -1,4 +1,5 @@
 #include "TD2Exploration.h"
+#include "../../Common/TD2MachineText.h"
 #include <algorithm>
 #include <cmath>
 #include <utility>
@@ -156,7 +157,7 @@ std::string Exploration::Initialize(std::vector<RegionSource> sources, std::vect
         for (const auto& target : targets) {
             const bool exists = std::any_of(next.world_.devices.begin(), next.world_.devices.end(), [&](const DeviceDefinition& d) { return d.id == target; });
             if (exists) { kept.push_back(target); continue; }
-            const bool machine = target.starts_with("mech/") || target.starts_with("slide/") || target.starts_with("stack/") || target.starts_with("carousel/");
+            const bool machine = IsMachineTarget(target);
             disable("plate " + next.world_.devices[i].id + " targets missing " + (machine ? "machine " : "device ") + target);
             if (machine) { (void)receiver(target); kept.push_back(target); }
         }
@@ -222,7 +223,7 @@ std::string Exploration::RegionAt(const Rect& body) const {
 void Exploration::Record(StepOutput output, ExplorationOutput& out) {
     std::map<std::string, StepOutput> grouped;
     for (auto& event : output.events) {
-        if (event.subjectId.starts_with("mech/") || event.subjectId.starts_with("slide/")) continue;   // 機構の受け口は画面に出ない
+        if (IsMachineTarget(event.subjectId)) continue;   // 仕掛けの受け口は画面に出ない
         const auto owner = deviceOwners_.find(event.subjectId);
         std::string region = owner != deviceOwners_.end() ? owner->second : RegionAt({event.position.x, event.position.y, .625, .875});
         if (region.empty()) region = activeRegion_;
@@ -473,7 +474,7 @@ bool Exploration::MoveRegions(const std::vector<MechanismMove>& targets) {
     // 体や記録がどの部屋にいるかは、何も運ぶ前に一度だけ決める。先に運んだ体が、後で動く部屋の元の場所に
     // 入ってもう一度運ばれないように（入れ替わる二部屋で、乗っていた部屋ごと隣へ跳んでいた）。
     const auto ownerOf = [this](const Rect& r) { return RegionAt(r); };
-    const std::string playerIn = state_.playerPresent ? ownerOf(state_.player.rect) : std::string{};
+    const std::string playerIn = ownerOf(state_.player.rect);
     const std::string echoIn = state_.echo ? ownerOf(state_.echo->rect) : std::string{};
     const std::string pendingIn = state_.pendingEcho ? ownerOf(state_.pendingEcho->origin) : std::string{};
     const std::string dashIn = state_.dash ? ownerOf(state_.dash->contact) : std::string{};
@@ -499,7 +500,7 @@ bool Exploration::MoveRegions(const std::vector<MechanismMove>& targets) {
             b.vx = b.vy = b.walkVx = b.reboundTime = 0; b.reboundDirection = 0; b.facing = -b.facing;
             b.grounded = false; b.supportId.clear();
         };
-        if (state_.playerPresent && inside(playerIn)) carryBody(state_.player);
+        if (inside(playerIn)) carryBody(state_.player);
         if (state_.echo && inside(echoIn)) carryBody(*state_.echo);
         if (state_.pendingEcho && inside(pendingIn)) map(state_.pendingEcho->origin);
         if (state_.dash && inside(dashIn)) {

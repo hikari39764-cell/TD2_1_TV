@@ -1,114 +1,13 @@
 #include "TD2MachineEditor.h"
 #include "TD2DeviceEditor.h"
+#include "../Common/TD2Math.h"
 #include <algorithm>
 #include <cmath>
-#include <iomanip>
-#include <locale>
-#include <set>
-#include <sstream>
 
 namespace TD2::Editor {
 namespace {
-constexpr double kPi = 3.14159265358979323846;
-
-// ---- 文字列の欄（実行時の部品と同じ書式）
-std::string Lines(std::string text) { std::replace(text.begin(), text.end(), ';', '\n'); return text; }
-std::string Number(double v) {
-    if (std::abs(v) < 5e-5) { return "0"; }
-    std::ostringstream out; out.imbue(std::locale::classic()); out << std::fixed << std::setprecision(4) << v;
-    auto text = out.str();
-    while (!text.empty() && text.back() == '0') { text.pop_back(); }
-    if (!text.empty() && text.back() == '.') { text.pop_back(); }
-    return text;
-}
-std::vector<std::string> Names(std::string text) {
-    std::replace(text.begin(), text.end(), ',', '\n');
-    std::vector<std::string> names; std::istringstream lines(text); std::string line;
-    while (std::getline(lines, line)) { std::istringstream value(line); std::string id; if (value >> id) { names.push_back(id); } }
-    return names;
-}
-std::string JoinNames(const std::vector<std::string>& names) {
-    std::string out;
-    for (const auto& n : names) { if (!out.empty()) { out += ","; } out += n; }
-    return out;
-}
-std::vector<MachineRegionOffset> ParseOffsets(const std::string& text) {
-    std::vector<MachineRegionOffset> out;
-    std::istringstream lines(Lines(text)); std::string line;
-    while (std::getline(lines, line)) {
-        std::istringstream values(line); values.imbue(std::locale::classic());
-        MachineRegionOffset o; std::string first;
-        if (!(values >> o.regionId >> first)) { continue; }
-        if (first == "park") { o.park = true; out.push_back(o); continue; }
-        try { o.dx = std::stoi(first); } catch (...) { continue; }
-        values >> o.dy;
-        for (std::string option; values >> option;) {
-            if (option == "flip") { o.flip = true; } else if (option.size() > 1 && option[0] == '@') { o.anchor = option.substr(1); }
-        }
-        out.push_back(o);
-    }
-    return out;
-}
-std::string FormatOffsets(const std::vector<MachineRegionOffset>& offsets) {
-    std::string out;
-    for (const auto& o : offsets) {
-        if (!out.empty()) { out += "; "; }
-        if (o.park) { out += o.regionId + " park"; continue; }
-        out += o.regionId + " " + std::to_string(o.dx) + " " + std::to_string(o.dy);
-        if (o.flip) { out += " flip"; }
-        if (!o.anchor.empty()) { out += " @" + o.anchor; }
-    }
-    return out;
-}
-std::vector<MachineObjectDelta> ParseDeltas(const std::string& text) {
-    std::vector<MachineObjectDelta> out;
-    std::istringstream lines(Lines(text)); std::string line;
-    while (std::getline(lines, line)) {
-        std::istringstream values(line); values.imbue(std::locale::classic());
-        MachineObjectDelta d;
-        if (!(values >> d.object >> d.position[0] >> d.position[1] >> d.position[2] >> d.rotation[0] >> d.rotation[1] >> d.rotation[2])) { continue; }
-        std::vector<std::string> rest; for (std::string token; values >> token;) { rest.push_back(token); }
-        size_t i = 0;
-        if (rest.size() >= 3 && rest[0][0] != '@') {
-            try { for (int k = 0; k < 3; ++k) { d.pivot[static_cast<size_t>(k)] = std::stod(rest[static_cast<size_t>(k)]); } d.hasPivot = true; i = 3; } catch (...) {}
-        }
-        if (i < rest.size() && rest[i].size() > 1 && rest[i][0] == '@') { try { d.anchor = std::stoull(rest[i].substr(1)); } catch (...) {} }
-        out.push_back(d);
-    }
-    return out;
-}
-std::string FormatDeltas(const std::vector<MachineObjectDelta>& deltas) {
-    std::string out;
-    for (const auto& d : deltas) {
-        if (!out.empty()) { out += "; "; }
-        out += std::to_string(d.object);
-        for (const double v : d.position) { out += " " + Number(v); }
-        for (const double v : d.rotation) { out += " " + Number(v); }
-        if (d.hasPivot) { for (const double v : d.pivot) { out += " " + Number(v); } }
-        if (d.anchor) { out += " @" + std::to_string(d.anchor); }
-    }
-    return out;
-}
-std::string FormatSlots(const std::vector<std::pair<int, int>>& slots) {
-    std::string out;
-    for (const auto& [x, y] : slots) { if (!out.empty()) { out += "; "; } out += std::to_string(x) + " " + std::to_string(y); }
-    return out;
-}
-std::vector<std::pair<int, int>> ParseSlots(const std::string& text) {
-    std::vector<std::pair<int, int>> out; std::istringstream lines(Lines(text)); std::string line;
-    while (std::getline(lines, line)) { std::istringstream v(line); std::pair<int, int> p; if (v >> p.first >> p.second) { out.push_back(p); } }
-    return out;
-}
-std::string FormatNumbers(const std::vector<double>& numbers) {
-    std::string out;
-    for (const double v : numbers) { if (!out.empty()) { out += " "; } out += Number(v); }
-    return out;
-}
-std::vector<double> ParseNumbers(const std::string& text) {
-    std::vector<double> out; std::istringstream v(Lines(text)); v.imbue(std::locale::classic());
-    for (double x = 0; v >> x;) { out.push_back(x); }
-    return out;
-}
+using namespace MachineText;
+using Math::kPi;
 
 // ---- 部品の欄を読む
 std::string Text(const Json& fields, std::string_view id) { const auto* v = FieldValue(fields, id); return v && v->is_string() ? v->get<std::string>() : std::string{}; }
@@ -119,28 +18,22 @@ struct KindInfo { MachineKind kind; std::string_view type, idField; std::vector<
 const std::vector<KindInfo>& Kinds() {
     static const std::vector<KindInfo> kinds{
         {MachineKind::Mechanism, "TD2.Mechanism", "mechanismId", {"mechanismId", "toggle", "balance", "seconds", "dwell", "settle", "cameraLift", "cameraPull",
-            "regionOffsets", "objectDeltas", "regionOffsetsC", "objectDeltasC", "regionMoves", "objectMoves", "regionMovesC", "objectMovesC"}},
-        {MachineKind::Slide, "TD2.SlideRack", "rackId", {"rackId", "seconds", "members", "emptySlots", "slots"}},
-        {MachineKind::Stack, "TD2.StackColumn", "stackId", {"stackId", "pullSeconds", "dropSeconds", "resetSeconds", "members", "dockDistances", "slots", "docks"}},
-        {MachineKind::Carousel, "TD2.Carousel", "carouselId", {"carouselId", "seconds", "faces", "objects", "pivot", "stations"}},
+            "regionOffsets", "objectDeltas", "regionOffsetsC", "objectDeltasC"}},
+        {MachineKind::Slide, "TD2.SlideRack", "rackId", {"rackId", "seconds", "members", "emptySlots"}},
+        {MachineKind::Stack, "TD2.StackColumn", "stackId", {"stackId", "pullSeconds", "dropSeconds", "resetSeconds", "members", "dockDistances"}},
+        {MachineKind::Carousel, "TD2.Carousel", "carouselId", {"carouselId", "seconds", "faces", "objects"}},
     };
     return kinds;
 }
 const KindInfo& InfoOf(MachineKind kind) { return *std::find_if(Kinds().begin(), Kinds().end(), [kind](const auto& k) { return k.kind == kind; }); }
 
-// ---- 四元数（x, y, z, w）。度とエンジンの順 M = Rz·Ry·Rx。
-using Q = std::array<double, 4>;
-using V = std::array<double, 3>;
-Q Mul(const Q& a, const Q& b) {
-    return {a[3] * b[0] + a[0] * b[3] + a[1] * b[2] - a[2] * b[1], a[3] * b[1] - a[0] * b[2] + a[1] * b[3] + a[2] * b[0],
-            a[3] * b[2] + a[0] * b[1] - a[1] * b[0] + a[2] * b[3], a[3] * b[3] - a[0] * b[0] - a[1] * b[1] - a[2] * b[2]};
-}
-Q Conj(const Q& q) { return {-q[0], -q[1], -q[2], q[3]}; }
-V Rotate(const Q& q, const V& v) { const auto r = Mul(Mul(q, {v[0], v[1], v[2], 0}), Conj(q)); return {r[0], r[1], r[2]}; }
-Q FromEuler(const V& e) {
-    const auto axis = [](double degrees, int i) { const double h = degrees * kPi / 360; Q q{0, 0, 0, std::cos(h)}; q[static_cast<size_t>(i)] = std::sin(h); return q; };
-    return Mul(Mul(axis(e[2], 2), axis(e[1], 1)), axis(e[0], 0));
-}
+// ---- 姿勢の四元数（x, y, z, w）。度とエンジンの順 M = Rz·Ry·Rx。
+using Q = Math::Quat;
+using V = Math::Vec3;
+using Math::QConj;
+using Math::QMul;
+using Math::QRotate;
+// 作者が読みやすい角度へ戻す（同じ回転の二通りのうち X と Z が小さい方、小数 3 桁）。
 V ToEuler(const Q& q) {
     const double x = q[0], y = q[1], z = q[2], w = q[3];
     const double r00 = 1 - 2 * (y * y + z * z), r10 = 2 * (x * y + w * z), r20 = 2 * (x * z - w * y);
@@ -215,28 +108,27 @@ bool LoadMachines(EditorWorkspaceHostContext& ctx, std::vector<Machine>& machine
                 if (!described.ok) { error = described.error; return false; }
                 const auto fields = described.data.value("fields", Json::array());
                 Machine m; m.kind = info.kind; m.objectId = object.objectId; m.componentId = componentId; m.objectName = object.name;
+                std::string ignored;
                 m.id = Text(fields, info.idField);
                 switch (info.kind) {
                 case MachineKind::Mechanism:
                     m.toggle = Flag(fields, "toggle"); m.balance = Flag(fields, "balance");
                     m.seconds = Real(fields, "seconds", .8); m.dwell = Real(fields, "dwell", 0); m.settle = Real(fields, "settle", 0);
                     m.cameraLift = Real(fields, "cameraLift", 1.5); m.cameraPull = Real(fields, "cameraPull", 1);
-                    m.offsets = ParseOffsets(Text(fields, "regionOffsets")); m.offsetsC = ParseOffsets(Text(fields, "regionOffsetsC"));
-                    m.deltas = ParseDeltas(Text(fields, "objectDeltas")); m.deltasC = ParseDeltas(Text(fields, "objectDeltasC"));
-                    for (const auto* legacy : {"regionMoves", "objectMoves", "regionMovesC", "objectMovesC"}) { m.legacy |= !Text(fields, legacy).empty(); }
+                    // 読めない行は飛ばし、読めた分だけを編集に使う。
+                    (void)ParseOffsets(Text(fields, "regionOffsets"), m.offsets, ignored); (void)ParseOffsets(Text(fields, "regionOffsetsC"), m.offsetsC, ignored);
+                    (void)ParseDeltas(Text(fields, "objectDeltas"), m.deltas, ignored); (void)ParseDeltas(Text(fields, "objectDeltasC"), m.deltasC, ignored);
                     break;
                 case MachineKind::Slide:
-                    m.seconds = Real(fields, "seconds", .9); m.members = Names(Text(fields, "members"));
-                    m.emptySlots = ParseSlots(Text(fields, "emptySlots")); m.legacy = !Text(fields, "slots").empty();
+                    m.seconds = Real(fields, "seconds", .9); m.members = ParseNames(Text(fields, "members"));
+                    (void)ParseSlots(Text(fields, "emptySlots"), m.emptySlots, ignored);
                     break;
                 case MachineKind::Stack:
                     m.pullSeconds = Real(fields, "pullSeconds", .8); m.dropSeconds = Real(fields, "dropSeconds", .35); m.resetSeconds = Real(fields, "resetSeconds", 2);
-                    m.members = Names(Text(fields, "members")); m.dockDistances = ParseNumbers(Text(fields, "dockDistances"));
-                    m.legacy = !Text(fields, "slots").empty() || !Text(fields, "docks").empty();
+                    m.members = ParseNames(Text(fields, "members")); m.dockDistances = ParseNumbers(Text(fields, "dockDistances"));
                     break;
                 case MachineKind::Carousel:
-                    m.seconds = Real(fields, "seconds", 1.6); m.members = Names(Text(fields, "faces")); m.extraObjects = Text(fields, "objects");
-                    m.legacy = !Text(fields, "pivot").empty() || !Text(fields, "stations").empty();
+                    m.seconds = Real(fields, "seconds", 1.6); m.members = ParseNames(Text(fields, "faces")); m.extraObjects = Text(fields, "objects");
                     break;
                 }
                 machines.push_back(std::move(m));
@@ -249,7 +141,7 @@ bool LoadMachines(EditorWorkspaceHostContext& ctx, std::vector<Machine>& machine
 bool WriteMachine(EditorWorkspaceHostContext& ctx, const Machine& before, const Machine& after, std::string& error) {
     Json commands = Json::array();
     const auto set = [&](std::string_view id, const Json& oldValue, const Json& newValue) {
-        if (oldValue != newValue) { commands.push_back({{"objectId", after.objectId}, {"componentId", after.componentId}, {"propertyId", id}, {"value", newValue}}); }
+        if (oldValue != newValue) { commands.push_back(PropertyCommand(after.objectId, after.componentId, id, newValue)); }
     };
     set(InfoOf(after.kind).idField, before.id, after.id);
     switch (after.kind) {
@@ -261,30 +153,22 @@ bool WriteMachine(EditorWorkspaceHostContext& ctx, const Machine& before, const 
         set("regionOffsetsC", FormatOffsets(before.offsetsC), FormatOffsets(after.offsetsC));
         set("objectDeltas", FormatDeltas(before.deltas), FormatDeltas(after.deltas));
         set("objectDeltasC", FormatDeltas(before.deltasC), FormatDeltas(after.deltasC));
-        // 相対で書き直したら旧形式の行は消す（二重に動かさない）。
-        if (before.legacy && !after.legacy) { for (const auto* legacy : {"regionMoves", "objectMoves", "regionMovesC", "objectMovesC"}) { set(legacy, "x", ""); } }
         break;
     case MachineKind::Slide:
         set("seconds", before.seconds, after.seconds); set("members", JoinNames(before.members), JoinNames(after.members));
         set("emptySlots", FormatSlots(before.emptySlots), FormatSlots(after.emptySlots));
-        if (before.legacy && !after.legacy) { set("slots", "x", ""); }
         break;
     case MachineKind::Stack:
         set("pullSeconds", before.pullSeconds, after.pullSeconds); set("dropSeconds", before.dropSeconds, after.dropSeconds);
         set("resetSeconds", before.resetSeconds, after.resetSeconds); set("members", JoinNames(before.members), JoinNames(after.members));
         set("dockDistances", FormatNumbers(before.dockDistances), FormatNumbers(after.dockDistances));
-        if (before.legacy && !after.legacy) { set("slots", "x", ""); set("docks", "x", ""); }
         break;
     case MachineKind::Carousel:
         set("seconds", before.seconds, after.seconds); set("faces", JoinNames(before.members), JoinNames(after.members));
         set("objects", before.extraObjects, after.extraObjects);
-        if (before.legacy && !after.legacy) { set("pivot", "x", ""); set("stations", "x", ""); }
         break;
     }
-    if (commands.empty()) { return true; }
-    const auto written = Execute(ctx, "authoring.transaction", {{"commands", commands}});
-    if (!written.ok) { error = written.error; return false; }
-    return true;
+    return Transact(ctx, commands, error);
 }
 
 bool CreateMachine(EditorWorkspaceHostContext& ctx, MachineKind kind, uint64_t host, const std::string& id, std::string& error) {
@@ -301,9 +185,7 @@ bool CreateMachine(EditorWorkspaceHostContext& ctx, MachineKind kind, uint64_t h
     uint64_t componentId = 0;
     for (const auto& c : added.data.value("addedComponents", Json::array())) { if (c.value("type", "") == info.type) { componentId = ObjectId(c.value("componentId", Json{})); } }
     if (!componentId) { error = "机关组件创建失败"; return false; }
-    const auto named = Execute(ctx, "authoring.transaction", {{"commands", {{{"objectId", host}, {"componentId", componentId}, {"propertyId", info.idField}, {"value", id}}}}});
-    if (!named.ok) { error = named.error; return false; }
-    return true;
+    return Transact(ctx, Json::array({PropertyCommand(host, componentId, info.idField, id)}), error);
 }
 
 bool RemoveMachine(EditorWorkspaceHostContext& ctx, const Machine& machine, std::string& error) {
@@ -328,9 +210,8 @@ std::vector<std::string> CheckMachine(const Machine& m, const std::vector<Machin
         return it == input.placements.end() ? nullptr : &*it;
     };
     const auto placed = [&](const std::string& id) { const auto* p = placementOf(id); return p && p->worldPlaced; };
-    if (m.id.empty() || !StableAuthoringId(m.id)) { problems.push_back("ID 只能用英文字母、数字、点、短横线和下划线"); }
+    if (!IsStableId(m.id)) { problems.push_back("ID 只能用英文字母、数字、点、短横线和下划线"); }
     if (std::count_if(all.begin(), all.end(), [&](const Machine& o) { return o.kind == m.kind && o.id == m.id; }) > 1) { problems.push_back("同类机关里 ID 重复：" + m.id); }
-    if (m.legacy) { problems.push_back("还留着旧格式的绝对坐标；重新记录一次即可改成相对"); }
     switch (m.kind) {
     case MachineKind::Mechanism:
         if (m.offsets.empty() && m.deltas.empty()) { problems.push_back("状态B还没有内容：点电视加入区域偏移，或加入物体并摆状态B"); }
@@ -383,15 +264,15 @@ std::vector<std::string> CheckMachine(const Machine& m, const std::vector<Machin
 }
 
 Pose ApplyDelta(const Pose& a, const Pose& base, const MachineObjectDelta& d) {
-    const auto qa = FromEuler(a.rotation), qbase = FromEuler(base.rotation);
-    const auto qb = Mul(qbase, FromEuler(d.rotation));
-    const auto offset = Rotate(qbase, d.position);
+    const auto qa = Math::QFromEulerDeg(a.rotation), qbase = Math::QFromEulerDeg(base.rotation);
+    const auto qb = QMul(qbase, Math::QFromEulerDeg(d.rotation));
+    const auto offset = QRotate(qbase, d.position);
     Pose b = a;
     b.position = {base.position[0] + offset[0], base.position[1] + offset[1], base.position[2] + offset[2]};
     if (d.hasPivot) {
-        const auto c = Rotate(qbase, d.pivot);
+        const auto c = QRotate(qbase, d.pivot);
         const V center{base.position[0] + c[0], base.position[1] + c[1], base.position[2] + c[2]};
-        const auto turned = Rotate(Mul(qb, Conj(qa)), {a.position[0] - center[0], a.position[1] - center[1], a.position[2] - center[2]});
+        const auto turned = QRotate(QMul(qb, QConj(qa)), {a.position[0] - center[0], a.position[1] - center[1], a.position[2] - center[2]});
         b.position = {center[0] + turned[0], center[1] + turned[1], center[2] + turned[2]};
     }
     b.rotation = ToEuler(qb);
@@ -400,10 +281,10 @@ Pose ApplyDelta(const Pose& a, const Pose& base, const MachineObjectDelta& d) {
 
 MachineObjectDelta MakeDelta(const Pose&, const Pose& base, const Pose& b, const MachineObjectDelta& previous) {
     auto d = previous;
-    const auto inverse = Conj(FromEuler(base.rotation));
-    const auto p = Rotate(inverse, {b.position[0] - base.position[0], b.position[1] - base.position[1], b.position[2] - base.position[2]});
+    const auto inverse = QConj(Math::QFromEulerDeg(base.rotation));
+    const auto p = QRotate(inverse, {b.position[0] - base.position[0], b.position[1] - base.position[1], b.position[2] - base.position[2]});
     for (size_t i = 0; i < 3; ++i) { d.position[i] = std::round(p[i] * 10000) / 10000; }
-    d.rotation = ToEuler(Mul(inverse, FromEuler(b.rotation)));
+    d.rotation = ToEuler(QMul(inverse, Math::QFromEulerDeg(b.rotation)));
     return d;
 }
 }

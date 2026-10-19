@@ -1,4 +1,6 @@
 #include "TD2Rules.h"
+#include "../../Common/TD2MachineText.h"
+#include "../../Common/TD2Math.h"
 
 #include <algorithm>
 #include <cmath>
@@ -114,8 +116,7 @@ public:
                         "tile:" + std::to_string(int64_t(x) + originX) + ":" + std::to_string(int64_t(y) + originY)});
             }
         };
-        if (d.chunks.empty()) terrain(d.region, 0, 0);
-        else for (const auto& chunk : d.chunks) terrain(chunk.region, chunk.x, chunk.y);
+        for (const auto& chunk : d.chunks) terrain(chunk.region, chunk.x, chunk.y);
         for (size_t i = 0; i < d.boundaries.size(); ++i)
             if (Overlap(area, d.boundaries[i])) result.push_back({d.boundaries[i], "bound:world:" + std::to_string(i)});
         for (size_t i = 0; i < d.devices.size(); ++i) {
@@ -130,17 +131,13 @@ public:
                 result.push_back({rect, dev.id, oneWay, spike, dev.kind == DeviceKind::Spring, dev.direction});
         }
         if (!staticOnly && !noBodies && body && !s.echoOverlapGrace) {
-            const BodyState* other = echoBody ? (s.playerPresent ? &s.player : nullptr) : (s.echo ? &*s.echo : nullptr);
+            const BodyState* other = echoBody ? &s.player : (s.echo ? &*s.echo : nullptr);
             const std::string otherId = echoBody ? "player" : "echo";
             // 残影はプレイヤーにとって一方通行の床：上には乗れるが、横や下からは通り抜けられる（道を塞がない）。
             const bool oneWayBody = !echoBody;
             if (other && !other->dead && otherId != ignore && !(oneWayBody && fullOnly) &&
                 !Rider(other, *body, echoBody ? "echo" : "player"))
                 result.push_back({other->rect, otherId, oneWayBody});
-        }
-        if (!staticOnly && d.chunks.empty()) {
-            result.push_back({{-2, -100000, 2, 200000}, "bound:left"});
-            result.push_back({{double(d.region.cols), -100000, 2, 200000}, "bound:right"});
         }
         return result;
     }
@@ -253,7 +250,7 @@ public:
         if (wasGrounded || !b.grounded || speed < kSpringImpactMin) return;
         std::string support = b.supportId;
         for (int depth = 0; depth < 2; ++depth) {
-            const BodyState* carrier = support == "player" ? (s.playerPresent ? &s.player : nullptr)
+            const BodyState* carrier = support == "player" ? &s.player
                                      : support == "echo" ? (s.echo ? &*s.echo : nullptr) : nullptr;
             if (!carrier || carrier->dead || !carrier->grounded) break;
             support = carrier->supportId;
@@ -358,8 +355,7 @@ public:
         });
         std::vector<Rect> candidates;
         const int64_t first = int64_t(std::floor(origin.x + kEps)), last = int64_t(std::floor(origin.x + origin.w - kEps));
-        for (int64_t col = d.chunks.empty() ? std::max(int64_t(0), first) : first;
-             col <= (d.chunks.empty() ? std::min(int64_t(d.region.cols - 1), last) : last); ++col)
+        for (int64_t col = first; col <= last; ++col)
             candidates.push_back({double(col) + (1.0 - origin.w) / 2, origin.y, origin.w, origin.h});
         std::sort(candidates.begin(), candidates.end(), [&](const Rect& a, const Rect& b) {
             const double da = std::abs(a.x - origin.x), db = std::abs(b.x - origin.x);
@@ -374,7 +370,7 @@ public:
     }
     void CreateEcho(const Rect& origin, int facing) {
         s.echo = MakeBody({origin.x, origin.y}, true); s.echo->facing = facing;
-        s.echoOverlapGrace = s.playerPresent && !s.player.dead && Overlap(s.player.rect, s.echo->rect);
+        s.echoOverlapGrace = !s.player.dead && Overlap(s.player.rect, s.echo->rect);
         ResolveEchoSpikes(); Probe(*s.echo, true);
         Event(EventKind::EchoCreated, "echo", {}, s.echo->rect);
     }
@@ -412,7 +408,7 @@ public:
     // 交換：本体と残影の足元を入れ替える（大きさはそれぞれのまま。残影は本体より少し背が高い）。勢いは捨てる。
     // 入れ替えた先が塞がっている時は交換しない。
     void Swap() {
-        if (!s.echo || !s.playerPresent || s.player.dead) return;
+        if (!s.echo || s.player.dead) return;
         auto& p = s.player; auto& e = *s.echo;
         const Rect from = p.rect;
         const Rect playerTo{e.rect.x + (e.rect.w - p.rect.w) / 2, e.rect.y + e.rect.h - p.rect.h, p.rect.w, p.rect.h};
@@ -442,8 +438,8 @@ public:
         const Rect origin = EchoOrigin(source);
         const int facing = p.facing;
         const double intended = source.x + facing * 4.0;
-        double x = d.chunks.empty() ? std::clamp(intended, 0.0, double(d.region.cols) - p.rect.w) : intended;
-        bool bounced = x != intended;
+        double x = intended;
+        bool bounced = false;
         const Rect route = Sweep(source, {x, source.y, source.w, source.h});
         // 冲刺は壁を通り抜けない。経路で最初に当たる実体で止まり、そこで蹬墙（跳ね返り）になる。
         // 一方通行の床は横から当たらず、バネの踏み板は下の着地処理で上に乗せる。
@@ -519,7 +515,7 @@ public:
                 const double feet = r.y + r.h, bottom = dev.rect.y + dev.rect.h;
                 return OverlapX(r, dev.rect) && feet >= bottom - 7.0 / 32 && feet <= bottom + 2.0 / 32 && r.y < bottom;
             };
-            const bool pressed = (s.playerPresent && presses(s.player)) || (s.echo && presses(*s.echo)) || pending();
+            const bool pressed = presses(s.player) || (s.echo && presses(*s.echo)) || pending();
             if (state.pressed != pressed) Event(EventKind::PlateChanged, dev.id, pressed ? "pressed" : "released", dev.rect);
             // 切り替え式は踏み込んだ瞬間だけ入・切を反転し、離しても保つ。
             if (!dev.latch) state.active = pressed;
@@ -544,7 +540,7 @@ public:
                 if (s.echo && Overlap(s.echo->rect, dev.rect)) {
                     Event(EventKind::EchoRemoved, "echo", "door-crush", s.echo->rect); s.echo.reset(); s.echoOverlapGrace = false;
                 }
-                if (s.playerPresent && !s.player.dead && Overlap(s.player.rect, dev.rect)) death = "door-crush";
+                if (!s.player.dead && Overlap(s.player.rect, dev.rect)) death = "door-crush";
             }
         }
         return death;
@@ -590,7 +586,7 @@ public:
     std::string Hazard() const {
         if (SpikeAt(s.player.rect)) return "spikes";
         for (const auto& beam : s.beams) if (Overlap(s.player.rect, beam.rect)) return "laser";
-        if (d.chunks.empty() ? s.player.rect.y > d.region.rows + 2 : !InWorld(d, s.player.rect)) return "out-of-world";
+        if (!InWorld(d, s.player.rect)) return "out-of-world";
         return {};
     }
     std::optional<Vec2> CheckpointAnchor(const DeviceDefinition& checkpoint) const {
@@ -598,10 +594,6 @@ public:
         const Vec2 ideal{r.x + (r.w - kPlayerWidth) / 2, r.y + r.h - kPlayerHeight};
         int64_t left = int64_t(std::floor(r.x)) - 2, right = int64_t(std::floor(r.x + r.w - 1.0 / 32)) + 2;
         int64_t top = int64_t(std::floor(r.y)) - 1, bottom = int64_t(std::floor(r.y + r.h)) + 3;
-        if (d.chunks.empty()) {
-            left = std::max(int64_t(0), left); right = std::min(int64_t(d.region.cols - 1), right);
-            top = std::max(int64_t(0), top); bottom = std::min(int64_t(d.region.rows - 1), bottom);
-        }
         std::optional<Vec2> best;
         double score = std::numeric_limits<double>::max();
         for (int64_t y = top; y <= bottom; ++y) for (int64_t x = left; x <= right; ++x) {
@@ -626,7 +618,7 @@ public:
             if (dev.kind != DeviceKind::Spring) continue;
             state.cooldown = std::max(0.0, state.cooldown - kStep);
             std::vector<BodyState*> occupants;
-            if (s.playerPresent && !s.player.dead && s.player.grounded && s.player.supportId == dev.id) occupants.push_back(&s.player);
+            if (!s.player.dead && s.player.grounded && s.player.supportId == dev.id) occupants.push_back(&s.player);
             if (s.echo && !s.echo->dead && s.echo->grounded && s.echo->supportId == dev.id) occupants.push_back(&*s.echo);
             const double impact = state.impact;
             state.impact = 0;
@@ -655,13 +647,13 @@ public:
             const auto& dev = d.devices[i]; auto& state = s.devices[i];
             // 収集物は本体が触れた時だけ拾う。死亡やチェックポイントからの復帰では戻さない。
             if (dev.kind == DeviceKind::Collectible) {
-                if (!state.active && s.playerPresent && !s.player.dead && Overlap(s.player.rect, dev.rect)) {
+                if (!state.active && !s.player.dead && Overlap(s.player.rect, dev.rect)) {
                     state.active = true; Event(EventKind::CollectibleTaken, dev.id, {}, dev.rect);
                 }
                 continue;
             }
             if (dev.kind != DeviceKind::Checkpoint) continue;
-            const bool playerContact = s.playerPresent && !s.player.dead && Overlap(s.player.rect, dev.rect);
+            const bool playerContact = !s.player.dead && Overlap(s.player.rect, dev.rect);
             const bool echoContact = s.echo && Overlap(s.echo->rect, dev.rect);
             const bool playerEdge = playerContact && !state.playerContact;
             const bool echoEdge = echoContact && !state.echoContact;
@@ -692,13 +684,13 @@ public:
         // 保留中の残影も世界の一部。死亡からの復帰では残影と装置を初期化しない。
         s.dash.reset(); s.bounce.reset(); s.deathRemaining = 0; s.blinkBuffer = 0;
         s.pendingActionPressed = s.pendingActionReleased = false;
-        DetachHead(); s.playerPresent = true; s.player = MakeBody(s.checkpointId.empty() ? d.spawn : s.checkpointPosition);
+        DetachHead(); s.player = MakeBody(s.checkpointId.empty() ? d.spawn : s.checkpointPosition);
         s.echoOverlapGrace = s.echo && Overlap(s.player.rect, s.echo->rect);
         Probe(s.player); Switches(); Beams();
         Event(EventKind::PlayerRespawned, "player", s.checkpointId, s.player.rect);
     }
     void RemoveFallenEcho() {
-        if (s.echo && (d.chunks.empty() ? s.echo->rect.y > d.region.rows + 2 : !InWorld(d, s.echo->rect))) {
+        if (s.echo && !InWorld(d, s.echo->rect)) {
             Event(EventKind::EchoRemoved, "echo", "out-of-world", s.echo->rect);
             s.echo.reset(); s.echoOverlapGrace = false;
         }
@@ -706,17 +698,11 @@ public:
     void Tick(const InputState& input, bool actionPressed, bool actionReleased) {
         s.simulationTime += kStep; ++s.tick; ++out.simulationSteps;
         ResolveEchoSpikes();
-        if (!s.playerPresent) {
-            Pending(); Switches();
-            if (s.echo) Integrate(*s.echo, true);
-            RemoveFallenEcho(); Switches(); Beams(); Springs(); Sensors();
-            return;
-        }
         if (s.player.dead) {
             s.deathRemaining -= kStep; Pending(); Switches();
             if (s.echo) Integrate(*s.echo, true);
             RemoveFallenEcho(); Switches(); Beams(); Springs(); Sensors();
-            if (s.deathRemaining <= kEps && s.automaticRespawn) Respawn();
+            if (s.deathRemaining <= kEps) Respawn();
             return;
         }
         // スペース：残影がいない時はダッシュ。残影がいる時は短く離すと回収、kSwapHold 秒押し続けると交換（離すのを待たずに入れ替える）。
@@ -767,6 +753,20 @@ public:
 void FinishOutput(const WorldState& s, StepOutput& out) {
     out.tick = s.tick; out.simulationTime = s.simulationTime; out.realTime = s.realTime;
 }
+}
+
+std::string_view EventName(EventKind event) {
+    using E = EventKind;
+    switch (event) {
+    case E::Blink: return "Blink"; case E::Bounce: return "Bounce"; case E::BlinkRejected: return "BlinkRejected";
+    case E::EchoCreated: return "EchoCreated"; case E::EchoRecalled: return "EchoRecalled"; case E::EchoRemoved: return "EchoRemoved";
+    case E::EchoSpawnBlocked: return "EchoSpawnBlocked"; case E::PlateChanged: return "PlateChanged";
+    case E::DeviceChanged: return "DeviceChanged"; case E::CheckpointActivated: return "CheckpointActivated";
+    case E::PlayerDied: return "PlayerDied"; case E::PlayerRespawned: return "PlayerRespawned";
+    case E::SpringLaunched: return "SpringLaunched"; case E::CollectibleTaken: return "CollectibleTaken";
+    case E::EchoSwapped: return "EchoSwapped";
+    }
+    return "Unknown";
 }
 
 std::string ValidateWorld(const WorldDefinition& d) {
@@ -841,7 +841,7 @@ StepOutput StepRules(const WorldDefinition& d, WorldState& s, const InputState& 
 }
 WorldSnapshot BuildSnapshot(const WorldDefinition& d, const WorldState& s) {
     WorldSnapshot result;
-    result.regionId = d.region.regionId; result.playerPresent = s.playerPresent;
+    result.regionId = d.region.regionId;
     result.player = s.player; result.presentationPlayer = s.player.rect;
     result.echo = s.echo;
     if (s.pendingEcho) { result.pendingEcho = s.pendingEcho->origin; result.pendingEchoAge = s.pendingEcho->age; result.pendingEchoFacing = s.pendingEcho->facing; }
@@ -850,7 +850,7 @@ WorldSnapshot BuildSnapshot(const WorldDefinition& d, const WorldState& s) {
     result.tick = s.tick; result.deaths = s.deaths; result.recalls = s.recalls; result.swaps = s.swaps; result.simulationTime = s.simulationTime; result.realTime = s.realTime;
     // 表示位置だけを補間し、当たり判定とセンサーは確定した物理位置を使う。
     if (s.dash) {
-        const double t = std::clamp(s.dash->age / s.dash->duration, 0.0, 1.0), ease = t * t * (3 - 2 * t);
+        const double ease = Math::SmoothStep(s.dash->age / s.dash->duration);
         const auto& end = s.bounce ? s.bounce->contact : s.player.rect;
         result.presentationPlayer.x = s.dash->source.x + (end.x - s.dash->source.x) * ease;
         result.presentationPlayer.y = s.dash->source.y + (end.y - s.dash->source.y) * ease;
@@ -874,77 +874,14 @@ WorldSnapshot BuildSnapshot(const WorldDefinition& d, const WorldState& s) {
         snapshot.powered = dev.kind == DeviceKind::Plate ? state.active
                          : linked.contains(dev.id) && (dev.inverted ? !state.active : state.active);
         snapshot.variant = dev.variant; snapshot.latch = dev.latch;
-        snapshot.world = dev.kind == DeviceKind::Plate && std::any_of(dev.targets.begin(), dev.targets.end(), [](const std::string& t) {
-            return t.starts_with("mech/") || t.starts_with("slide/") || t.starts_with("stack/") || t.starts_with("carousel/");
-        });
+        snapshot.world = dev.kind == DeviceKind::Plate && std::any_of(dev.targets.begin(), dev.targets.end(), IsMachineTarget);
         result.devices.push_back(std::move(snapshot));
     }
     return result;
 }
-StepOutput ReturnToCheckpoint(const WorldDefinition& d, WorldState& s) {
-    StepOutput out; Simulation(d, s, out).Respawn(); FinishOutput(s, out); return out;
-}
-StepOutput RestartExploration(const WorldDefinition& d, WorldState& s) {
-    s = CreateWorldState(d); StepOutput out;
-    Simulation(d, s, out).Event(EventKind::ExplorationRestarted, "player", {}, s.player.rect);
-    FinishOutput(s, out); return out;
-}
-StepOutput StepBackgroundRules(const WorldDefinition& d, WorldState& s, uint32_t steps, double seconds) {
-    if (s.playerPresent) throw std::invalid_argument("background region must not contain the player");
-    StepOutput out; Simulation sim(d, s, out);
-    s.realTime += std::isfinite(seconds) ? std::clamp(seconds, 0.0, .25) : 0.0;
-    for (uint32_t i = 0; i < steps; ++i) sim.Tick({}, false, false);
-    FinishOutput(s, out); return out;
-}
-bool IsSafeArrival(const WorldDefinition& d, const WorldState& state, Vec2 position, const std::optional<Rect>& carriedEcho) {
-    // コピー上で到着まで試し、扉や光線の変化の後も安全かを確かめる。
-    WorldState probe = state; StepOutput out; Simulation sim(d, probe, out);
-    probe.playerPresent = true; probe.player = MakeBody(position); probe.echoOverlapGrace = false;
-    const auto& r = probe.player.rect;
-    if (!std::isfinite(r.x) || !std::isfinite(r.y) || r.x < 0 || r.y < 0 ||
-        r.x + r.w > d.region.cols || r.y + r.h > d.region.rows || !sim.Clear(r, &probe.player) || sim.SpikeAt(r)) return false;
-    if (carriedEcho) {
-        auto echo = MakeBody({carriedEcho->x, carriedEcho->y}, true);
-        if (carriedEcho->y < 0 || carriedEcho->y + carriedEcho->h > d.region.rows) return false;
-        if (!sim.Clear(*carriedEcho, &echo, true, {}, true)) return false;
-        if (probe.echo) return false;
-        echo.grounded = true; echo.supportId = "player"; probe.echo = echo;
-    }
-    sim.Probe(probe.player);
-    if (!sim.Switches().empty()) return false;
-    sim.Beams(); sim.Probe(probe.player);
-    return probe.player.grounded && sim.Clear(r, &probe.player) && sim.Hazard().empty() &&
-           (!carriedEcho || probe.echo.has_value());
-}
-StepOutput RemovePlayer(const WorldDefinition& d, WorldState& s) {
-    StepOutput out; Simulation sim(d, s, out);
-    sim.DetachHead(); s.playerPresent = false;
-    s.player = MakeBody({s.player.rect.x, s.player.rect.y}); s.player.dead = true;
-    s.dash.reset(); s.bounce.reset(); s.blinkBuffer = 0; s.deathRemaining = 0;
-    s.pendingActionPressed = s.pendingActionReleased = s.echoOverlapGrace = false;
-    sim.Switches(); sim.Beams(); sim.Sensors(); FinishOutput(s, out); return out;
-}
-StepOutput PlacePlayer(const WorldDefinition& d, WorldState& s, Vec2 position, int facing, bool respawning) {
-    StepOutput out; Simulation sim(d, s, out);
-    s.playerPresent = true; s.player = MakeBody(position); s.player.facing = facing < 0 ? -1 : 1;
-    s.deathRemaining = s.blinkBuffer = 0; s.dash.reset(); s.bounce.reset();
-    s.pendingActionPressed = s.pendingActionReleased = false;
-    s.echoOverlapGrace = s.echo && Overlap(s.player.rect, s.echo->rect);
-    sim.Probe(s.player); const auto crush = sim.Switches(); sim.Beams(); sim.Sensors();
-    if (respawning) sim.Event(EventKind::PlayerRespawned, "player", s.checkpointId, s.player.rect);
-    if (!crush.empty()) sim.Die(crush);
-    FinishOutput(s, out); return out;
-}
 StepOutput RemoveWorldEcho(const WorldDefinition& d, WorldState& s) {
     StepOutput out; Simulation sim(d, s, out);
     if (s.echo || s.pendingEcho) sim.ReplaceEcho();
-    const auto crush = sim.Switches(); sim.Beams();
-    if (!crush.empty()) sim.Die(crush);
-    FinishOutput(s, out); return out;
-}
-StepOutput RecallWorldEcho(const WorldDefinition& d, WorldState& s) {
-    StepOutput out; Simulation sim(d, s, out);
-    if (s.echo || s.pendingEcho) sim.Recall();
     const auto crush = sim.Switches(); sim.Beams();
     if (!crush.empty()) sim.Die(crush);
     FinishOutput(s, out); return out;

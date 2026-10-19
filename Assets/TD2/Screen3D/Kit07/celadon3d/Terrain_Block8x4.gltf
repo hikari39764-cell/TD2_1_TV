@@ -27,12 +27,12 @@
 			"extensions":{
 				"KHR_materials_unlit":{}
 			},
-			"name":"K07_celadon_graphite_dark",
+			"name":"K07_celadon_seam_soft",
 			"pbrMetallicRoughness":{
 				"baseColorFactor":[
-					0.027320891618728638,
-					0.05951123684644699,
-					0.05612849071621895,
+					0.08228270709514618,
+					0.13286831974983215,
+					0.11443537473678589,
 					1
 				],
 				"metallicFactor":0,
@@ -44,12 +44,12 @@
 			"extensions":{
 				"KHR_materials_unlit":{}
 			},
-			"name":"K07_celadon_panel_dark",
+			"name":"K07_celadon_panel_wall_dark",
 			"pbrMetallicRoughness":{
 				"baseColorFactor":[
-					0.23074005544185638,
-					0.34670406579971313,
-					0.31854677200317383,
+					0.1946178376674652,
+					0.2917706370353699,
+					0.26635560393333435,
 					1
 				],
 				"metallicFactor":0,
@@ -61,12 +61,12 @@
 			"extensions":{
 				"KHR_materials_unlit":{}
 			},
-			"name":"K07_celadon_panel",
+			"name":"K07_celadon_panel_wall_light",
 			"pbrMetallicRoughness":{
 				"baseColorFactor":[
-					0.5028864741325378,
-					0.6583748459815979,
-					0.6104955673217773,
+					0.637596845626831,
+					0.7454041838645935,
+					0.7083757519721985,
 					1
 				],
 				"metallicFactor":0,
@@ -78,12 +78,12 @@
 			"extensions":{
 				"KHR_materials_unlit":{}
 			},
-			"name":"K07_celadon_panel_light",
+			"name":"K07_celadon_panel_wall",
 			"pbrMetallicRoughness":{
 				"baseColorFactor":[
-					0.7758222222328186,
-					0.8713670969009399,
-					0.8307698965072632,
+					0.40724021196365356,
+					0.5394794940948486,
+					0.4969329833984375,
 					1
 				],
 				"metallicFactor":0,
@@ -136,13 +136,13 @@
 			"componentType":5126,
 			"count":3072,
 			"max":[
-				4.255000114440918,
-				4.255000114440918,
+				4.230000019073486,
+				4.230000019073486,
 				-0.07999998331069946
 			],
 			"min":[
-				-3.943000078201294,
-				0.056999992579221725,
+				-3.9179999828338623,
+				0.0819999948143959,
 				-0.699999988079071
 			],
 			"type":"VEC3"
@@ -162,15 +162,15 @@
 		{
 			"bufferView":3,
 			"componentType":5126,
-			"count":4420,
+			"count":1760,
 			"max":[
-				4.192500114440918,
-				4.192500114440918,
+				4.167500019073486,
+				4.167500019073486,
 				0
 			],
 			"min":[
-				-3.9124999046325684,
-				0.08749999850988388,
+				-3.887500047683716,
+				0.11249999701976776,
 				-0.699999988079071
 			],
 			"type":"VEC3"
@@ -178,69 +178,69 @@
 		{
 			"bufferView":4,
 			"componentType":5126,
-			"count":4420,
+			"count":1760,
 			"type":"VEC3"
 		},
 		{
 			"bufferView":5,
 			"componentType":5123,
-			"count":7104,
+			"count":2400,
 			"type":"SCALAR"
 		},
 		{
 			"bufferView":6,
 			"componentType":5126,
-			"count":1664,
+			"count":480,
 			"max":[
-				4.171566486358643,
-				4.192500114440918,
+				4.042500019073486,
+				4.167500019073486,
 				0
 			],
 			"min":[
-				-3.9124999046325684,
-				0.125,
-				-0.699999988079071
+				-3.887500047683716,
+				0.8125,
+				-0.574999988079071
 			],
 			"type":"VEC3"
 		},
 		{
 			"bufferView":7,
 			"componentType":5126,
-			"count":1664,
+			"count":480,
 			"type":"VEC3"
 		},
 		{
 			"bufferView":8,
 			"componentType":5123,
-			"count":3072,
+			"count":672,
 			"type":"SCALAR"
 		},
 		{
 			"bufferView":9,
 			"componentType":5126,
-			"count":1168,
+			"count":832,
 			"max":[
-				4.114375114440918,
-				4.192500114440918,
+				4.167500019073486,
+				4.167500019073486,
 				0
 			],
 			"min":[
-				-3.9124999046325684,
-				0.7730212807655334,
-				-0.637499988079071
+				-3.887500047683716,
+				0.1875,
+				-0.699999988079071
 			],
 			"type":"VEC3"
 		},
 		{
 			"bufferView":10,
 			"componentType":5126,
-			"count":1168,
+			"count":832,
 			"type":"VEC3"
 		},
 		{
 			"bufferView":11,
 			"componentType":5123,
-			"count":1728,
+			"count":1152,
 			"type":"SCALAR"
 		}
 	],
@@ -265,62 +265,62 @@
 		},
 		{
 			"buffer":0,
-			"byteLength":53040,
+			"byteLength":21120,
 			"byteOffset":82176,
 			"target":34962
 		},
 		{
 			"buffer":0,
-			"byteLength":53040,
-			"byteOffset":135216,
+			"byteLength":21120,
+			"byteOffset":103296,
 			"target":34962
 		},
 		{
 			"buffer":0,
-			"byteLength":14208,
-			"byteOffset":188256,
+			"byteLength":4800,
+			"byteOffset":124416,
 			"target":34963
 		},
 		{
 			"buffer":0,
-			"byteLength":19968,
-			"byteOffset":202464,
+			"byteLength":5760,
+			"byteOffset":129216,
 			"target":34962
 		},
 		{
 			"buffer":0,
-			"byteLength":19968,
-			"byteOffset":222432,
+			"byteLength":5760,
+			"byteOffset":134976,
 			"target":34962
 		},
 		{
 			"buffer":0,
-			"byteLength":6144,
-			"byteOffset":242400,
+			"byteLength":1344,
+			"byteOffset":140736,
 			"target":34963
 		},
 		{
 			"buffer":0,
-			"byteLength":14016,
-			"byteOffset":248544,
+			"byteLength":9984,
+			"byteOffset":142080,
 			"target":34962
 		},
 		{
 			"buffer":0,
-			"byteLength":14016,
-			"byteOffset":262560,
+			"byteLength":9984,
+			"byteOffset":152064,
 			"target":34962
 		},
 		{
 			"buffer":0,
-			"byteLength":3456,
-			"byteOffset":276576,
+			"byteLength":2304,
+			"byteOffset":162048,
 			"target":34963
 		}
 	],
 	"buffers":[
 		{
-			"byteLength":280032,
+			"byteLength":164352,
 			"uri":"Terrain_Block8x4.bin"
 		}
 	]

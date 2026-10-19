@@ -1,13 +1,23 @@
 #pragma once
+#include "../Common/TD2Math.h"
 #include "HIKARI/Project/ValueTypes.h"
 #include <algorithm>
 #include <cmath>
 
 namespace TD2 {
-// 機構で物体を動かすための小さな姿勢計算（縮尺は扱わない。動かす前後で同じ縮尺のまま）。
+// エンジンの型（単精度）での姿勢計算。仕掛けで物体を動かす時とカメラで使う（縮尺は扱わない）。
 using HIKARI::GameProjectFloat3;
 using HIKARI::GameProjectQuaternion;
 using HIKARI::GameProjectTransform;
+
+inline Math::Vec3 ToVec3(const GameProjectFloat3& v) { return {v.x, v.y, v.z}; }
+inline GameProjectFloat3 ToF3(const Math::Vec3& v) { return {static_cast<float>(v[0]), static_cast<float>(v[1]), static_cast<float>(v[2])}; }
+inline GameProjectFloat3 Sub(const GameProjectFloat3& a, const GameProjectFloat3& b) { return {a.x - b.x, a.y - b.y, a.z - b.z}; }
+// a + b·k
+inline GameProjectFloat3 Mad(const GameProjectFloat3& a, const GameProjectFloat3& b, float k) { return {a.x + b.x * k, a.y + b.y * k, a.z + b.z * k}; }
+inline GameProjectFloat3 Lerp(const GameProjectFloat3& a, const GameProjectFloat3& b, float t) {
+    return {a.x + (b.x - a.x) * t, a.y + (b.y - a.y) * t, a.z + (b.z - a.z) * t};
+}
 
 inline GameProjectQuaternion QMul(const GameProjectQuaternion& a, const GameProjectQuaternion& b) {
     return {a.w * b.x + a.x * b.w + a.y * b.z - a.z * b.y, a.w * b.y - a.x * b.z + a.y * b.w + a.z * b.x,
@@ -21,7 +31,7 @@ inline GameProjectFloat3 QRotate(const GameProjectQuaternion& q, const GameProje
 // エンジンの回転順（X → Y → Z、M = Rz·Ry·Rx）で度から四元数へ。
 inline GameProjectQuaternion QFromEulerDeg(float rx, float ry, float rz) {
     const auto axis = [](float degrees, int i) {
-        const float half = degrees * 3.14159265f / 360.f;
+        const float half = degrees * static_cast<float>(Math::kPi) / 360.f;
         GameProjectQuaternion q{0, 0, 0, std::cos(half)};
         (i == 0 ? q.x : i == 1 ? q.y : q.z) = std::sin(half);
         return q;

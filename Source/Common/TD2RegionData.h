@@ -29,6 +29,15 @@ struct RegionDefinition {
     bool operator==(const RegionDefinition&) const = default;
 };
 
+// 区域・装置・仕掛けの ID に使える文字列（1～95 文字の ASCII 英数字と . _ -）。
+inline bool IsStableId(std::string_view id) noexcept {
+    if (id.empty() || id.size() > 95) { return false; }
+    for (const char c : id) {
+        if (!((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '.' || c == '_' || c == '-')) { return false; }
+    }
+    return true;
+}
+
 struct RegionValidation {
     bool valid = false;
     std::string_view message{};
@@ -38,11 +47,8 @@ inline RegionValidation ValidateRegion(const RegionDefinition& region) noexcept 
     if (region.regionId.empty() || region.regionId.size() > 95) {
         return {false, "区域 ID 必须为 1～95 个字符"};
     }
-    for (const char c : region.regionId) {
-        if (!((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') ||
-              (c >= '0' && c <= '9') || c == '.' || c == '_' || c == '-')) {
-            return {false, "区域 ID 仅允许英文字母、数字、点、下划线和连字符"};
-        }
+    if (!IsStableId(region.regionId)) {
+        return {false, "区域 ID 仅允许英文字母、数字、点、下划线和连字符"};
     }
     if (region.cols <= 0 || region.rows <= 0 || region.tilePixels <= 0) {
         return {false, "行、列和格子像素必须为正整数"};
@@ -79,16 +85,6 @@ inline bool TryGetTile(const RegionDefinition& region, int col, int row, TileKin
     if (region.cells[index] == '0') { tile = TileKind::Empty; return true; }
     if (region.cells[index] == '1') { tile = TileKind::Solid; return true; }
     return false;
-}
-
-// 表示確認用の図形。衝突やルールには使わない。
-struct RegionColor {
-    float r, g, b, a = 1.0f;
-};
-
-inline constexpr RegionColor CellColor(char cell) noexcept {
-    // 暗いセットでもマスが読めるよう、色数は増やさず画面内の明度だけ上げる。
-    return cell == '1' ? RegionColor{0.60f, 0.84f, 0.77f} : RegionColor{0.22f, 0.30f, 0.33f};
 }
 
 }

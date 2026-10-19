@@ -30,9 +30,9 @@
 			"name":"K07_celadon_hero",
 			"pbrMetallicRoughness":{
 				"baseColorFactor":[
-					0.9130986332893372,
-					0.4793201684951782,
-					0.04666508734226227,
+					1,
+					0.38132601976394653,
+					0.05126945674419403,
 					1
 				],
 				"metallicFactor":0,
@@ -47,9 +47,9 @@
 			"name":"K07_celadon_hero_shadow",
 			"pbrMetallicRoughness":{
 				"baseColorFactor":[
-					0.48514994978904724,
-					0.18782077729701996,
-					0.013702083379030228,
+					0.6307571530342102,
+					0.1946178376674652,
+					0.01599629409611225,
 					1
 				],
 				"metallicFactor":0,
@@ -65,8 +65,8 @@
 			"pbrMetallicRoughness":{
 				"baseColorFactor":[
 					1,
-					0.7454041838645935,
-					0.1946178376674652,
+					0.6444796919822693,
+					0.20863686501979828,
 					1
 				],
 				"metallicFactor":0,

@@ -3,6 +3,7 @@
 #include "../Common/TD2RegionData.h"
 #include "HIKARI/Project/EditorWorkspace.h"
 #include <nlohmann/json.hpp>
+#include <functional>
 #include <string>
 #include <vector>
 
@@ -39,9 +40,6 @@ struct RegionSettings {
     std::string screenSlot = "TD2_Screen";
     // 明るさはテレビの画面材質だけに掛ける。
     float screenBrightness = 2.2f;
-    int screenMaterialIndex = -1;
-    std::string screenModelAssetGuid;
-    int outputWidth = 256, outputHeight = 192;
     float spawnX = 0.5f, spawnY = 0.5f;
     bool entryRegion = true;
     // 配置は整数のマスで表した世界原点。Scene の 3D Transform とは関係ない。
@@ -52,6 +50,14 @@ struct RegionSettings {
 };
 
 OperationResult Execute(EditorWorkspaceHostContext&, std::string_view operation, const Json& parameters);
+// 分頁する問い合わせ（scene.objects.query・asset.query など）を最後まで読む。visit が false を返したらそこで止める。
+// 分頁が進まない時は error に書いて false。
+bool QueryAll(EditorWorkspaceHostContext&, std::string_view operation, Json parameters, std::string_view listKey,
+              const std::function<bool(const Json&)>& visit, std::string& error);
+// 一つの属性を書き換える命令（authoring.transaction の commands の一件）。
+Json PropertyCommand(uint64_t objectId, uint64_t componentId, std::string_view propertyId, const Json& value);
+// 命令をまとめて一回の取り消し単位で書く。空なら何もしない。
+bool Transact(EditorWorkspaceHostContext&, const Json& commands, std::string& error);
 uint64_t ObjectId(const Json&);
 const Json* FieldValue(const Json&, std::string_view id);
 bool QueryObjects(EditorWorkspaceHostContext&, std::string_view componentType, std::vector<SceneItem>&, std::string& error);
@@ -61,12 +67,12 @@ bool CommitProperties(EditorWorkspaceHostContext&, const RegionTarget&, const Re
 void AppendRegionChanges(Json& commands, const RegionTarget&, const RegionSettings& before, const RegionSettings& after);
 uint64_t SelectedObject(EditorWorkspaceHostContext&, std::string& error);
 bool AddRegion(EditorWorkspaceHostContext&, uint64_t objectId, bool bindSelf, std::string& status);
-bool ResolveScreenMaterial(EditorWorkspaceHostContext&, RegionSettings&, std::string& diagnostic);
+// 画面の物体のモデルに、指定した材質スロットがあるか確かめる。無ければ作者向けの注意を返す。
+std::string ScreenSlotWarning(EditorWorkspaceHostContext&, const RegionSettings&);
 bool EditText(IEditorWorkspaceUi&, std::string_view id, std::string_view label, std::string& value);
 void EditInt(IEditorWorkspaceUi&, std::string_view id, std::string_view label, int& value, int minimum, int maximum);
 bool EditFloat(IEditorWorkspaceUi&, std::string_view id, std::string_view label, double& value,
                float minimum, float maximum);
 bool ResizeCells(const RegionDefinition& before, RegionDefinition& after);
-bool StableAuthoringId(std::string_view id);
 
 }
