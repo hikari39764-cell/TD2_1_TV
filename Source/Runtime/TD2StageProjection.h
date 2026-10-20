@@ -9,8 +9,8 @@
 namespace TD2 {
 inline constexpr double kPi = 3.14159265358979323846;
 inline constexpr float kStageCoordinate = 10000.0f;
-// 舞台カメラは注視点から 30 離れた正投影カメラ。角度は部品の傾きが目立たない範囲に抑える。
-inline constexpr double kStageCameraDistance = 30.0, kMaxStagePitchDegrees = 30.0, kMaxStageYawDegrees = 30.0;
+// 舞台カメラは注視点から 30 離れた正投影カメラ。
+inline constexpr double kStageCameraDistance = 30.0;
 
 using Vector3 = std::array<double, 3>;
 inline Vector3 Cross(const Vector3& a, const Vector3& b) {

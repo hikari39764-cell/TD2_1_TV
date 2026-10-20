@@ -1,0 +1,13 @@
+{
+  "displayName": "SM_TD2_TVStand_Material_Set",
+  "guid": "e46b9968b2286c618ce81efc1e786af5",
+  "importSettings": {
+    "runtimeLoader": "ModelMaterialBindingAsset",
+    "sourceAuthoritative": true
+  },
+  "importerId": "ModelMaterialBindingImporter",
+  "importerVersion": 1,
+  "metaVersion": 1,
+  "sourcePath": "Assets/Models/MaterialBindings/SM_TD2_TVStand_Material_Set.hmodelmaterial",
+  "type": "ModelMaterialBinding"
+}

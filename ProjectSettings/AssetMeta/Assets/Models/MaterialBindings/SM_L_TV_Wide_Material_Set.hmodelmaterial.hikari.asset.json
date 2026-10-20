@@ -1,0 +1,13 @@
+{
+  "displayName": "SM_L_TV_Wide_Material_Set",
+  "guid": "fdcd5007298a61d0bc3e67be9ab474d7",
+  "importSettings": {
+    "runtimeLoader": "ModelMaterialBindingAsset",
+    "sourceAuthoritative": true
+  },
+  "importerId": "ModelMaterialBindingImporter",
+  "importerVersion": 1,
+  "metaVersion": 1,
+  "sourcePath": "Assets/Models/MaterialBindings/SM_L_TV_Wide_Material_Set.hmodelmaterial",
+  "type": "ModelMaterialBinding"
+}

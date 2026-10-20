@@ -26,11 +26,14 @@
     "1 玩法",
     "1 玩法/关卡",
     "1 玩法/关卡/0 书桌",
+    "1 玩法/关卡/0 书桌/布景",
     "1 玩法/关卡/0 书桌/机位",
+    "1 玩法/关卡/0 书桌/机构",
     "1 玩法/关卡/0 书桌/电视",
     "1 玩法/关卡/1 货架",
     "1 玩法/关卡/1 货架/布景",
     "1 玩法/关卡/1 货架/机位",
+    "1 玩法/关卡/1 货架/机构",
     "1 玩法/关卡/1 货架/电视",
     "1 玩法/关卡/2 压板",
     "1 玩法/关卡/2 压板/布景",
@@ -10813,6 +10816,10 @@
             "depthRows": 4,
             "depthView": true,
             "enabled": true,
+            "farCameraObject": {
+              "$hikariRef": "SceneObject",
+              "id": 11421
+            },
             "hall": true,
             "lit": true,
             "mode": "素描",
@@ -11177,14 +11184,14 @@
       "sourcePrefabId": "",
       "transform": {
         "position": [
-          4.420000076293945,
-          1.2999999523162842,
-          5.800000190734863
+          4.456972122192383,
+          1.1002730131149292,
+          5.300214767456055
         ],
         "rotationEulerDeg": [
-          12.485158920288086,
-          -179.5907440185547,
-          0.0
+          -167.51478576660156,
+          -0.40925371646881104,
+          179.99989318847656
         ],
         "scale": [
           1.0,
@@ -11215,7 +11222,7 @@
             },
             "cells": "11111111111111000000000001100000000000110000000000010000000000001000000000000100000000000011111111111001",
             "cols": 13,
-            "devices": "space Decal 2 2 4 2 variant=space\nd2sa Spikes 3 6 2 1 dir=Up\nd2cp Checkpoint 1 6 1 1\nd2turn Plate 7 6 2 1 targets=mech/d3turn latch=1\nd2exit Decal 10 4 2 2 variant=exitDown\n",
+            "devices": "space Decal 2 2 4 2 variant=space\nd2sa Spikes 3 6 2 1\nd2cp Checkpoint 1 6 1 1\nd2turn Plate 7 6 2 1 targets=mech/d3turn latch=1\nd2exit Decal 10 4 2 2 variant=exitDown\n",
             "entryRegion": false,
             "outputHeight": 512,
             "outputWidth": 832,
@@ -12031,7 +12038,7 @@
             },
             "cells": "111111111111000000000001000000000001000000000001100000000000100000000000111111111111",
             "cols": 12,
-            "devices": "r2cp Checkpoint 0 5 1 1\nr2lift Plate 3 5 2 1 targets=mech/r2lift\nr2exit Decal 9 2 2 2 variant=exit\n",
+            "devices": "r2cp Checkpoint 0 5 1 1\nr2lift Plate 3 5 2 1 targets=mech/r2lift\n",
             "entryRegion": false,
             "outputHeight": 448,
             "outputWidth": 768,
@@ -12055,7 +12062,7 @@
             "tilePixels": 64,
             "worldPlaced": true,
             "worldX": 46,
-            "worldY": 6
+            "worldY": 5
           },
           "type": "TD2.Region"
         }
@@ -12156,7 +12163,7 @@
             },
             "cells": "111111111111100000000001100000000000100000000000000000011111000000011111111111111111",
             "cols": 12,
-            "devices": "r3cp Checkpoint 1 5 1 1\nr3lift Plate 5 5 2 1 targets=mech/r5lift\nr3exit Decal 9 1 2 2 variant=exit\n",
+            "devices": "r3cp Checkpoint 1 5 1 1\nr3lift Plate 5 5 2 1 targets=mech/r5lift\n",
             "entryRegion": false,
             "outputHeight": 448,
             "outputWidth": 768,
@@ -26878,6 +26885,384 @@
         "rotationEulerDeg": [
           0.0,
           0.0,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "components": [
+        {
+          "id": 1,
+          "properties": {
+            "assetId": "6f1d2c8e4b7a4e0f9c3a5d2b8e1f7a64",
+            "castShadow": false,
+            "receiveShadow": false,
+            "visible": true
+          },
+          "type": "ModelComponent"
+        },
+        {
+          "id": 2,
+          "properties": {
+            "autoPlay": true,
+            "clip": "Idle",
+            "clipId": 0,
+            "clipModelAssetId": "6f1d2c8e4b7a4e0f9c3a5d2b8e1f7a64",
+            "defaultBlendDurationSec": 0.2,
+            "finished": false,
+            "loop": true,
+            "playing": true,
+            "rootMotionEnabled": false,
+            "speed": 1.0,
+            "timeSec": 0.0
+          },
+          "type": "AnimatorComponent"
+        },
+        {
+          "id": 3,
+          "properties": {
+            "height": 1.4,
+            "role": "主角",
+            "turn": 10.0
+          },
+          "type": "TD2.StageActor"
+        }
+      ],
+      "editorFolder": "1 玩法/镜头与演出",
+      "editorLocked": false,
+      "editorVisible": true,
+      "enabled": true,
+      "id": 11415,
+      "name": "TD2 舞台人形 · 主角",
+      "parent": null,
+      "sourcePrefabId": "",
+      "transform": {
+        "position": [
+          9360.0,
+          8000.0,
+          0.0
+        ],
+        "rotationEulerDeg": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "components": [
+        {
+          "id": 1,
+          "properties": {
+            "assetId": "a3e9b5c1d7f24a6e8b0c4d2f6a9e1b37",
+            "castShadow": false,
+            "receiveShadow": false,
+            "visible": true
+          },
+          "type": "ModelComponent"
+        },
+        {
+          "id": 2,
+          "properties": {
+            "autoPlay": true,
+            "clip": "Echo",
+            "clipId": 0,
+            "clipModelAssetId": "a3e9b5c1d7f24a6e8b0c4d2f6a9e1b37",
+            "defaultBlendDurationSec": 0.2,
+            "finished": false,
+            "loop": true,
+            "playing": true,
+            "rootMotionEnabled": false,
+            "speed": 1.0,
+            "timeSec": 0.0
+          },
+          "type": "AnimatorComponent"
+        },
+        {
+          "id": 3,
+          "properties": {
+            "height": 1.4,
+            "role": "残影",
+            "turn": 10.0
+          },
+          "type": "TD2.StageActor"
+        }
+      ],
+      "editorFolder": "1 玩法/镜头与演出",
+      "editorLocked": false,
+      "editorVisible": true,
+      "enabled": true,
+      "id": 11416,
+      "name": "TD2 舞台人形 · 残影",
+      "parent": null,
+      "sourcePrefabId": "",
+      "transform": {
+        "position": [
+          9358.0,
+          8000.0,
+          0.0
+        ],
+        "rotationEulerDeg": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "components": [
+        {
+          "id": 1,
+          "properties": {
+            "assetId": "db48ed57876894d8627d10e5aaed7e52",
+            "castShadow": true,
+            "receiveShadow": true,
+            "visible": true
+          },
+          "type": "ModelComponent"
+        },
+        {
+          "id": 2,
+          "properties": {
+            "cameraAuto": "",
+            "cameraObject": {
+              "$hikariRef": "SceneObject",
+              "id": 11418
+            },
+            "cells": "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000011111111111",
+            "cols": 11,
+            "devices": "",
+            "entryRegion": false,
+            "regionId": "td2.region.11417",
+            "rows": 24,
+            "screenBrightness": 2.200000047683716,
+            "screenCenterX": 0.0,
+            "screenCenterY": 0.4000000059604645,
+            "screenCenterZ": 0.2800000011920929,
+            "screenHeight": 0.49000000953674316,
+            "screenObject": {
+              "$hikariRef": "SceneObject",
+              "id": 11417
+            },
+            "screenSlot": "TD2_Screen",
+            "screenWidth": 0.8399999737739563,
+            "spawnX": 1.1875,
+            "spawnY": 22.125,
+            "stageAnchor": "",
+            "tilePixels": 64,
+            "worldPlaced": false,
+            "worldX": -11,
+            "worldY": -17
+          },
+          "type": "TD2.Region"
+        }
+      ],
+      "editorLocked": false,
+      "editorVisible": true,
+      "enabled": true,
+      "id": 11417,
+      "name": "电视 竖屏",
+      "parent": null,
+      "sourcePrefabId": "",
+      "transform": {
+        "position": [
+          2.0169084072113037,
+          0.0,
+          3.0751290321350098
+        ],
+        "rotationEulerDeg": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "scale": [
+          0.44999998807907104,
+          0.44999998807907104,
+          0.44999998807907104
+        ]
+      }
+    },
+    {
+      "components": [
+        {
+          "id": 1,
+          "properties": {
+            "enabled": true,
+            "farClip": 2000.0,
+            "nearClip": 0.10000000149011612,
+            "verticalFovDegrees": 98.0
+          },
+          "type": "CameraComponent"
+        }
+      ],
+      "editorLocked": false,
+      "editorVisible": true,
+      "enabled": true,
+      "id": 11418,
+      "name": "区域机位 td2.region.11417",
+      "parent": null,
+      "sourcePrefabId": "",
+      "transform": {
+        "position": [
+          2.1640000343322754,
+          0.8869603872299194,
+          3.8614296913146973
+        ],
+        "rotationEulerDeg": [
+          179.98919677734375,
+          12.245016098022461,
+          177.53993225097656
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "components": [
+        {
+          "id": 1,
+          "properties": {
+            "balance": false,
+            "cameraLift": 1.5,
+            "cameraPull": 1.0,
+            "dwell": 0.0,
+            "mechanismId": "lift1",
+            "objectDeltas": "",
+            "objectDeltasC": "",
+            "parts": "",
+            "recipe": "",
+            "regionOffsets": "",
+            "regionOffsetsC": "",
+            "seconds": 0.800000011920929,
+            "settle": 0.0,
+            "toggle": false
+          },
+          "type": "TD2.Mechanism"
+        }
+      ],
+      "editorFolder": "1 玩法/关卡/1 货架/电视",
+      "editorLocked": false,
+      "editorVisible": true,
+      "enabled": true,
+      "id": 11419,
+      "name": "机构 lift1",
+      "parent": null,
+      "sourcePrefabId": "",
+      "transform": {
+        "position": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "rotationEulerDeg": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "components": [
+        {
+          "id": 1,
+          "properties": {
+            "assetId": "4385e0e8ee74d06c5da7f2a12f61ec22",
+            "castShadow": true,
+            "receiveShadow": true,
+            "visible": true
+          },
+          "type": "ModelComponent"
+        }
+      ],
+      "editorFolder": "1 玩法/关卡/1 货架/电视",
+      "editorLocked": false,
+      "editorVisible": true,
+      "enabled": true,
+      "id": 11420,
+      "name": "吊链 lift1",
+      "parent": null,
+      "sourcePrefabId": "",
+      "transform": {
+        "position": [
+          7.433300018310547,
+          0.9399999976158142,
+          1.6200000047683716
+        ],
+        "rotationEulerDeg": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          1.649999976158142,
+          1.0
+        ]
+      }
+    },
+    {
+      "components": [
+        {
+          "id": 1,
+          "properties": {
+            "depthOfField": {
+              "enabled": false
+            },
+            "enabled": true,
+            "farClip": 6000.0,
+            "motionBlur": {
+              "enabled": false
+            },
+            "nearClip": 1.0,
+            "orthographic": false,
+            "orthographicHeight": 10.0,
+            "pixelSnap": false,
+            "pixelsPerUnit": 64.0,
+            "verticalFovDegrees": 20.0
+          },
+          "type": "CameraComponent"
+        }
+      ],
+      "editorFolder": "1 玩法/镜头与演出",
+      "editorLocked": false,
+      "editorVisible": true,
+      "enabled": true,
+      "id": 11421,
+      "name": "TD2 舞台镜头 · 远处电视",
+      "parent": null,
+      "sourcePrefabId": "",
+      "transform": {
+        "position": [
+          10000.0,
+          10004.0,
+          10030.0
+        ],
+        "rotationEulerDeg": [
+          0.0,
+          180.0,
           0.0
         ],
         "scale": [

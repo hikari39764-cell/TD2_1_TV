@@ -5,6 +5,7 @@
 #include "TD2ScreenFx.h"
 #include "TD2ScreenModels.h"
 #include "TD2ScreenStyle.h"
+#include "TD2StagePuppet.h"
 #include "HIKARI/Project/SceneCaptureView.h"
 #include "HIKARI/Project/WorldView.h"
 #include <array>
@@ -80,10 +81,14 @@ public:
     const std::string& Status() const noexcept { return status_; }
 
 private:
-    // 舞台を撮る窓の種類。鮮明は操作中の部屋、周りは世界全体（大きすぎる時は周りの 3×3）、
-    // 未配置は編集中だけ世界の外に並べた作者の地図。
-    enum class ViewKind : int { Sharp = 0, Wide = 1, Unplaced = 2 };
-    static constexpr size_t kViewKinds = 3;
+    // 舞台を撮る窓の種類。鮮明は操作中の部屋、周りは世界全体（大きすぎる時は今の大区域の周り）、
+    // 未配置は編集中だけ世界の外に並べた作者の地図（Play では二台目の鮮明）、遠くはほかの窓に入らない写っているテレビ。
+    enum class ViewKind : int { Sharp = 0, Wide = 1, Unplaced = 2, Far = 3 };
+    static constexpr size_t kViewKinds = 4;
+    // 正投影カメラを持つ窓の種類（遠くは透視カメラだけ）。
+    static constexpr size_t kOrthoKinds = 3;
+    // 透視カメラの番号：主・副の鮮明と、遠く。
+    static constexpr size_t kFarLens = 2;
     // 窓は世界のマスの範囲（行数は正投影の高さで決まる）と、キャプチャの大きさ（texel）。
     struct Window {
         double x = 0, y = 0, cols = 0, rows = 0;
@@ -140,16 +145,21 @@ private:
     bool AcquireCameras(HIKARI::WorldView& world, const ScreenStyleSettings& stage);
     // 透視の窓の二台（主・副）。一台も使えなければ false（透視を使わない）。
     bool AcquireLensCameras(HIKARI::WorldView& world, const ScreenStyleSettings& stage);
+    // 遠くのテレビを撮る透視カメラ。無ければ false（遠くのテレビは今までどおり映らない）。
+    bool AcquireFarCamera(HIKARI::WorldView& world, const ScreenStyleSettings& stage);
     void RestoreCamera(HIKARI::WorldView& world, StageCamera& camera);
     void PlaceWindows(const std::vector<const StageRoom*>& rooms, const StageFrame& frame, int maxCols);
+    // 遠くの窓：鮮明・周りの窓に入らず画に写っているテレビ（目立つ順に kFarRooms 台まで）を一枚に収める。
+    void PlaceFar(const std::vector<const StageRoom*>& rooms, const StageFrame& frame);
     // 編集中は全テレビを一枚の舞台像へ収める。
     void PlaceEditorWindow(const std::vector<const StageRoom*>& rooms);
-    bool SyncCaptures(HIKARI::WorldView& world, const std::vector<Assigned>& screens, int palette, double flash);
+    bool SyncCaptures(HIKARI::WorldView& world, const std::vector<Assigned>& screens, double flash);
     // ゲームカメラから見た各部屋の画面（目立ち具合・向き・遮られた標本の数）。Play 中は毎フレーム測り直す。
     struct Seen { ScreenOnCamera view; int blocked = 0; };
     void Inspect(HIKARI::WorldView& world, const std::vector<const StageRoom*>& rooms, const StageFrame& frame);
-    // Play で鮮明に撮る二部屋を目立つ順に選ぶ。今の二部屋は、他の部屋が十分に大きく写るまで入れ替えない。
-    void ChooseFocus(const StageFrame& frame);
+    // Play で鮮明に撮る二部屋を、通り道のテレビ（今の大区域と世界地図で近い部屋）から目立つ順に選ぶ。
+    // 今の二部屋は、他の部屋が十分に大きく写るまで入れ替えない。
+    void ChooseFocus(const StageFrame& frame, const std::vector<const StageRoom*>& rooms);
     // 読みやすさの保護を掛ける画面（エンジンの上限 12）。保護の有無で色調が変わるので、入れ替えは控えめにする。
     void ChooseProtected(std::map<uint64_t, Binding>& next) const;
     void SubmitParts(HIKARI::WorldView& world, const std::vector<const StageRoom*>& rooms, const std::vector<Assigned>& shown,
@@ -179,7 +189,12 @@ private:
     };
     std::map<uint64_t, StageLightTrack> stageLights_;
     double stageLightTime_ = 0;
-    std::array<StageCamera, 2> lensCameras_{};
+    std::array<StageCamera, 3> lensCameras_{};
+    // 遠くの窓に入れるテレビ（区域 ID）と、今の大区域で写ったテレビの一番目立った時の値（大区域が替わるまで外さない）。
+    std::vector<std::string> farRooms_;
+    std::map<std::string, double, std::less<>> farBest_;
+    std::string farArea_;
+    Window farSticky_;                            // 使い続けている遠くの窓
     double parallaxGain_ = 1.0, lastParallaxTime_ = -1;
     std::map<std::string, std::array<double, 2>, std::less<>> parallax_;
     std::map<std::string, WindowSpan, std::less<>> windowSpans_;   // 区域 ID → 窓の上下（操作の札を避けた位置）
@@ -196,6 +211,7 @@ private:
     // 180° 回されている部屋の世界の範囲（左・上・右・下）。エフェクトを点対称に置くのに使う。
     std::vector<std::pair<std::string, std::array<double, 4>>> flippedRooms_;
     std::vector<PartRequest> frameParts_;          // このフレームの装置・人物・演出（毎フレーム作る）
+    StagePuppets puppets_;                         // Play で人物を演じる骨つきの人形
     // 装置ごとの通電・実体と、それが最後に変わった実時刻（扉・橋の出入りと通電灯の点灯を動かす）。
     struct DeviceMemory { bool powered = false, solid = false, ready = false, checkpoint = false; double changed = -1e9; };
     std::map<std::string, DeviceMemory> deviceMemory_;

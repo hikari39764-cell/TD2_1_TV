@@ -4,6 +4,7 @@
 #include "../../Common/TD2WorldLayout.h"
 #include <map>
 #include <set>
+#include <utility>
 
 namespace TD2::Rules {
 struct RegionSource { WorldDefinition definition; RegionPlacement placement; bool entry = false; };
@@ -123,6 +124,11 @@ public:
     bool StepBack(std::string_view region, int direction);
     // 残影を消す（大区域を出た時。前の箱庭の装置を押したまま残さない）。
     void ClearEcho();
+    // 試遊を途中の状態から始める：踏み方に関係なく切り替わる機構（切り替え式・自動往復）をその状態へ置く。
+    bool SetMechanismState(std::string_view id, int state);
+    // 外から呼ばれた ClearEcho と StepBack の記録（試遊の記録が受け取って消す）。
+    struct ExternalCall { std::string kind, region; int direction = 0; };
+    std::vector<ExternalCall> TakeCalls() { return std::exchange(calls_, {}); }
 private:
     void BuildBoundaries();
     void Record(StepOutput output, ExplorationOutput& out);
@@ -151,5 +157,6 @@ private:
     WorldSnapshot snapshot_;
     bool snapshotDirty_ = true;
     std::string activeRegion_;
+    std::vector<ExternalCall> calls_;
 };
 }

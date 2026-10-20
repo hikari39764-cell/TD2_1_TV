@@ -1,0 +1,15 @@
+{
+  "displayName": "HIKARI_ToonHard3Step",
+  "guid": "83f33b578160271f0b29fa2d34235b29",
+  "importSettings": {
+    "cookMaterial": true,
+    "outputFormat": "HMAT",
+    "shaderModel": "PBR",
+    "sourceFormat": ".material.json"
+  },
+  "importerId": "MaterialImporter",
+  "importerVersion": 8,
+  "metaVersion": 1,
+  "sourcePath": "Assets/Materials/Ramps/HIKARI_ToonHard3Step.material.json",
+  "type": "Material"
+}

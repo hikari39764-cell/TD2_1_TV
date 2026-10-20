@@ -46,9 +46,17 @@ public:
     void ActorScale(double scale) { actorScale_ = scale; }
     // 装置の小さな動き（硬貨の回転、丸鋸、輪の脈、キーの押し、光線の脈）に使う実時間（秒）。編集中は止める。
     void SetTime(double seconds) { time_ = seconds; }
+    // 焼いた静止の人物を使うか（骨つきの人形が立つ間は false にして退避点へ置く）。
+    void BakedActors(bool on) { bakedActors_ = on; }
     // leanPivot は傾きを釣り合わせる高さ（部品の下辺から、マス）。負なら部品の高さの中ほど。
     bool Add(std::string_view part, double x, double bottomY, double width = 1, double height = 1, double depth = 0,
              HIKARI::GameProjectQuaternion rotation = {}, double leanPivot = -1, bool visible = true);
+    // Add と同じ置き方（回された部屋の点対称・投影・傾きの釣り合い）で舞台の位置と向きだけを求める（縮尺は呼び手）。
+    // pivot は傾きを釣り合わせる高さ（マス）。
+    HIKARI::GameProjectTransform Place(double x, double bottomY, double depth, HIKARI::GameProjectQuaternion rotation, double pivot = 0) const;
+    // 1 マスの舞台上の長さと、写し方（斜投影のずれ）。
+    double StageScale() const { return projection_.scale; }
+    const StageProjection& Projection() const { return projection_; }
     // 背景：闇の板と上から差す光の輪、1 マスの目盛り。(x, y) は部屋の左上の世界のマス。
     // 編集中以外は、後ろの壁を窓の周りの帯にして窓枠を付ける（窓の向こうは Hall が毎フレーム描く）。
     void Backdrop(int x, int y, int cols, int rows, WindowSpan span = {});
@@ -92,7 +100,7 @@ private:
     double SolidFront() const { return solid_ ? (std::min)(playDepth_, SolidDepth() - .5) : 0.0; }
     // 明るい壁と窓・大広間・口の暗がりを描けるか（斜投影の組か、実体の地形）。
     bool Spatial() const { return projection_.oblique > 0 || solid_; }
-    bool mirror_ = false, compact_ = false, hall_ = false, solid_ = false;
+    bool mirror_ = false, compact_ = false, hall_ = false, solid_ = false, bakedActors_ = true;
     int depthRows_ = 0;
     // partDepth_ は Add の奥行きの倍率（実体の箱を部屋の奥まで伸ばす間だけ 1 以外）。
     double actorScale_ = 1, partDepth_ = 1, playDepth_ = 0;

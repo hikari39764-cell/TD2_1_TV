@@ -1,0 +1,13 @@
+{
+  "displayName": "SM_L_TV_Hub_Material_Set",
+  "guid": "fdf67b4fcb53d034da716da79ab5ab52",
+  "importSettings": {
+    "runtimeLoader": "ModelMaterialBindingAsset",
+    "sourceAuthoritative": true
+  },
+  "importerId": "ModelMaterialBindingImporter",
+  "importerVersion": 1,
+  "metaVersion": 1,
+  "sourcePath": "Assets/Models/MaterialBindings/SM_L_TV_Hub_Material_Set.hmodelmaterial",
+  "type": "ModelMaterialBinding"
+}

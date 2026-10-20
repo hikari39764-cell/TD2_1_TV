@@ -21,6 +21,13 @@ struct Machine {
     double seconds = .8, dwell = 0, settle = 0, cameraLift = 1.5, cameraPull = 1;
     std::vector<MachineRegionOffset> offsets, offsetsC;
     std::vector<MachineObjectDelta> deltas, deltasC;
+    // 編集器の配方と、配方が使う部品（物体・付いているテレビの区域・役目・一緒に動くか・配方が置いた物か）。
+    std::string recipe;
+    struct Part {
+        uint64_t object = 0; std::string region, role; bool moves = false, owned = true;
+        bool operator==(const Part&) const = default;
+    };
+    std::vector<Part> parts;
     // スロット棚（メンバー）・テレビの塔（下から上）・回転柱（時計回りの面）
     std::vector<std::string> members;
     std::vector<std::pair<int, int>> emptySlots;   // スロット棚：一番目のメンバーから見たずれ
@@ -37,6 +44,8 @@ struct Machine {
 };
 
 std::string_view MachineComponentType(MachineKind);
+std::string FormatParts(const std::vector<Machine::Part>&);
+std::vector<Machine::Part> ParseParts(std::string_view text);
 bool LoadMachines(EditorWorkspaceHostContext&, std::vector<Machine>&, std::string& error);
 // 変わった欄だけを一回の取り消しにまとめて書く。
 bool WriteMachine(EditorWorkspaceHostContext&, const Machine& before, const Machine& after, std::string& error);

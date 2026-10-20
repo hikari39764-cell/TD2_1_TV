@@ -1,6 +1,5 @@
 #pragma once
-// レベル編集ワークスペースの共有部分。シーンの作者データの写し（MapModel）と、
-// テレビ地図・世界地図の二つの見方に共通する欄の描き方（MapMode）。
+// レベル編集ワークスペースの共有部分。シーンの作者データの写し（MapModel）。
 #include "TD2MapCanvas.h"
 #include "TD2EditorChoices.h"
 #include "TD2CameraAuthoring.h"
@@ -22,8 +21,6 @@ namespace TD2::Editor::Level {
 inline constexpr uint32_t kPrimary = static_cast<uint32_t>(EditorWorkspacePointerButton::Primary);
 inline constexpr uint32_t kSecondary = static_cast<uint32_t>(EditorWorkspacePointerButton::Secondary);
 inline constexpr const char* kLevelWorkspace = "td2.level_editor";
-// 見方：-1 はテレビ地図、0〜3 は世界地図の配置・カメラ大区域・俯瞰カメラ・仕掛け。
-inline constexpr int kTelevisionView = -1;
 // 小数 2 桁までの短い表示。
 inline std::string ShortNumber(double v) {
     std::string s = std::to_string(std::round(v * 100) / 100);
@@ -85,12 +82,39 @@ public:
     }
     bool Dirty() const { const auto* item = Current(); return ready && item && draft != item->settings; }
     void Discard() { if (const auto* item = Current()) { draft = item->settings; devices.Load(draft.devices); } gesture = false; error.clear(); screenWarning.clear(); }
+    // ---- シーンの変化の目印。editor.state を一回だけ読み、文書（版・物体数・取り消し札・未保存）と選んだ物（ID と包囲箱）の変化を数える。
+    // 操作は一回ごとにログへ残るので、重い読み直しはこの数が変わった時だけにする（テレビ全部を毎秒読むとログが膨らむ）。
+    uint64_t documentPulse = 0, selectionPulse = 0, activeObject = 0;
+    std::string documentMark, selectionMark;
+    float pulseClock = 1;
+    uint64_t Pulses() const { return documentPulse + selectionPulse; }
+    void Pulse(EditorWorkspaceHostContext& ctx, bool force = false) {
+        pulseClock += ctx.unscaledDeltaSeconds;
+        if (!force && pulseClock < .3f) { return; }
+        pulseClock = 0;
+        const auto state = Execute(ctx, "editor.state", Json::object());
+        if (!state.ok) { return; }
+        const auto scene = state.data.value("scene", Json::object());
+        const auto selection = state.data.value("selection", Json::object());
+        if (scene.is_object()) { if (const auto d = scene.find("dirty"); d != scene.end() && d->is_boolean()) { sceneDirty = d->get<bool>(); } }
+        activeObject = selection.is_object() ? ObjectId(selection.value("activeObjectId", Json{})) : 0;
+        // 編集カメラは毎フレーム動くので目印に入れない。
+        auto document = scene.dump() + state.data.value("play", Json::object()).dump();
+        auto chosen = selection.dump();
+        if (document != documentMark) { documentMark = std::move(document); ++documentPulse; }
+        if (chosen != selectionMark) { selectionMark = std::move(chosen); ++selectionPulse; }
+    }
+    uint64_t polledPulse = 0;
     void Poll(EditorWorkspaceHostContext& ctx, bool force = false) {
         elapsed += ctx.unscaledDeltaSeconds;
         // 標準の Ctrl+Z / Ctrl+Y はシーンの履歴を直接動かすので、その後の数フレームは草稿を捨てて読み直す。
         if (historyFrames > 0) { --historyFrames; if (!gesture) { Discard(); force = true; machinesStale = true; } }
-        if (gesture || Dirty() || (!force && !refresh && elapsed < .75f)) { return; }
+        Pulse(ctx);
+        // 文書が変わった時だけ読み直す。目印に出ない変化（同じ札の続けての編集）は 30 秒ごとに拾う。
+        if (gesture || Dirty() || (!force && !refresh && polledPulse == documentPulse && elapsed < 30.f)) { return; }
         elapsed = 0; refresh = false;
+        // 自分の書き込みも目印に含めてから読む（直後にもう一度読み直さない）。
+        Pulse(ctx, true); polledPulse = documentPulse;
         std::vector<SceneItem> objects;
         if (!QueryObjects(ctx, kRegionComponentType, objects, error)) { return; }
         std::vector<RoomItem> fresh;
@@ -99,20 +123,15 @@ public:
             if (!ReadRegion(ctx, object.objectId, item.target, item.settings, error)) { return; }
             fresh.push_back(std::move(item));
         }
+        // 中身が変わった時だけ版を進める（版を見て読み直す布局などを、毎回の読み直しで動かさない）。
+        const bool same = fresh.size() == rooms.size() && std::equal(fresh.begin(), fresh.end(), rooms.begin(), [](const RoomItem& a, const RoomItem& b) {
+            return a.object.objectId == b.object.objectId && a.object.name == b.object.name && a.target == b.target && a.settings == b.settings;
+        });
         rooms = std::move(fresh);
-        ++revision;
+        if (!same) { ++revision; }
         if (!Current()) { selected = rooms.empty() ? 0 : rooms.front().object.objectId; }
         ready = Current() != nullptr;
         if (ready) { draft = Current()->settings; devices.Load(draft.devices); }
-        // 他のパネルが作るカメラ参照やプレビューの結びも保存状態に含める。
-        const auto state = Execute(ctx, "editor.state", Json::object());
-        if (state.ok) {
-            const auto scene = state.data.find("scene");
-            if (scene != state.data.end() && scene->is_object()) {
-                const auto dirty = scene->find("dirty");
-                if (dirty != scene->end() && dirty->is_boolean()) { sceneDirty = dirty->get<bool>(); }
-            }
-        }
     }
     bool Select(EditorWorkspaceHostContext& ctx, uint64_t objectId) {
         if (objectId == selected && ready) { return true; }
@@ -208,18 +227,14 @@ public:
         if (Commit(ctx)) { error.clear(); }
     }
     // ---- シーン（3D）の選択との同期。シーンでテレビを選ぶと地図もそのテレビを開き、地図で選ぶとシーンでもそのテレビを選ぶ。
-    uint64_t sceneSelection = 0;
-    float selectionClock = 1;
+    uint64_t sceneSelection = 0, followedPulse = 0;
     int historyFrames = 0;
     static uint64_t TelevisionObject(const RoomItem& room) { return room.settings.screenObject ? room.settings.screenObject : room.object.objectId; }
+    // 目印が新しく読んだ選択だけを見る（地図から選んだ直後に、古い選択へ戻さない）。
     void FollowScene(EditorWorkspaceHostContext& ctx) {
-        selectionClock += ctx.unscaledDeltaSeconds;
-        if (gesture || selectionClock < .25f) { return; }
-        selectionClock = 0;
-        const auto state = Execute(ctx, "editor.state", Json::object());
-        if (!state.ok) { return; }
-        const auto selection = state.data.value("selection", Json::object());
-        const uint64_t id = selection.is_object() ? ObjectId(selection.value("activeObjectId", Json{})) : 0;
+        if (gesture || followedPulse == selectionPulse) { return; }
+        followedPulse = selectionPulse;
+        const uint64_t id = activeObject;
         if (id == sceneSelection) { return; }
         sceneSelection = id;
         for (const auto& room : rooms) {
@@ -276,89 +291,4 @@ public:
     }
 };
 
-// レベル編集の二つの見方（テレビ地図・世界地図）の共通部分。左の欄（一覧と属性）と右の欄（地図）の中身を描く。
-class MapMode {
-public:
-    explicit MapMode(std::shared_ptr<MapModel> model) : model_(std::move(model)) {}
-    virtual ~MapMode() = default;
-    virtual void OnActivate(EditorWorkspaceHostContext& ctx) { model_->Poll(ctx, true); model_->machinesStale = true; }
-    virtual void OnDeactivate(EditorWorkspaceHostContext& ctx) { if (model_->gesture) { model_->Finish(ctx, true); } }
-    virtual bool IsDirty() const { return model_->Dirty(); }
-    EditorWorkspaceSaveResult Save(EditorWorkspaceHostContext& ctx) {
-        if (!ApplyDraft(ctx)) { return EditorWorkspaceSaveResult::Failed; }
-        const auto saved = Execute(ctx, "scene.save", Json::object());
-        if (!saved.ok) { model_->error = saved.error; return EditorWorkspaceSaveResult::Failed; }
-        model_->sceneDirty = false; model_->savedOnce = true; model_->error.clear();
-        return EditorWorkspaceSaveResult::Saved;
-    }
-    virtual void DiscardChanges(EditorWorkspaceHostContext&) { model_->Discard(); }
-    // 見方を変える前に草稿をシーンへ適用する。ディスクへの保存とは別。
-    virtual bool ApplyDraft(EditorWorkspaceHostContext& ctx) { return model_->Commit(ctx); }
-    // 一フレームの始まり（左右の欄を描く前）。
-    virtual void BeginFrame(EditorWorkspaceHostContext&) {}
-    virtual void DrawSide(EditorWorkspaceHostContext& ctx) = 0;   // 左：一覧と属性
-    virtual void DrawMap(EditorWorkspaceHostContext& ctx) = 0;    // 右：2D の地図
-    // 見方の切り替えを頼む（実際の切り替えは次のフレームの初め）。
-    std::function<void(int)> switcher;
-protected:
-    void SaveControls(EditorWorkspaceHostContext& ctx, std::string_view controlId = "td2.map.save") {
-        auto& ui = *ctx.ui;
-        // 作者が保存した時だけ Scene をディスクへ書く。ブラシやドラッグでは書かない。
-        if (ui.Button(controlId, "保存场景")) { Save(ctx); }
-        ui.SameLine(); ui.Text(IsDirty() ? "草稿未应用" : model_->sceneDirty ? "已应用 · 未保存" : model_->savedOnce ? "已保存" : "已载入");
-    }
-    // 左の欄の上：保存・取り消し・やり直し・草稿。
-    void HistoryToolbar(EditorWorkspaceHostContext& ctx) {
-        auto& ui = *ctx.ui;
-        SaveControls(ctx);
-        // 取り消し・やり直しの前に草稿を適用する。
-        if (ui.Button("td2.map.undo", "撤销")) { if (!IsDirty() || ApplyDraft(ctx)) { model_->History(ctx, false); } }
-        ui.SameLine();
-        if (ui.Button("td2.map.redo", "重做")) { if (!IsDirty() || ApplyDraft(ctx)) { model_->History(ctx, true); } }
-        ui.SameLine();
-        if (ui.Button("td2.map.refresh", "刷新")) { model_->Poll(ctx, true); model_->machinesStale = true; }
-        if (model_->Dirty() && !model_->gesture) {
-            ui.SameLine(); if (ui.Button("td2.map.apply", "应用")) { model_->Commit(ctx); }
-            ui.SameLine(); if (ui.Button("td2.map.discard", "撤回草稿")) { model_->Discard(); }
-        }
-        // 標準の Ctrl+Z / Ctrl+Y はエンジンがシーンの履歴へ送る。ここでは重ねて取り消さず、読み直しだけを頼む。
-        const auto interaction = ui.GetInteraction();
-        if (!interaction.editing && (interaction.undoPressed || interaction.redoPressed)) { model_->historyFrames = 3; model_->sceneDirty = true; }
-        if (!model_->error.empty()) { ui.Text("⚠ " + model_->error); }
-        ui.Separator();
-    }
-    // 右の欄の上：見方の切り替え。
-    // 欄が狭くても切れないよう、表の列に並べる。
-    void ModeBar(EditorWorkspaceHostContext& ctx, int current) {
-        auto& ui = *ctx.ui;
-        constexpr std::array<std::string_view, 5> names{"电视地图", "世界布局", "镜头大区域", "俯视镜头", "机关"};
-        if (!ui.BeginTable("td2.level.views", static_cast<uint32_t>(names.size()))) { return; }
-        ui.TableNextRow();
-        for (size_t i = 0; i < names.size(); ++i) {
-            const int view = static_cast<int>(i) - 1;
-            ui.TableNextColumn();
-            if (ui.Button("td2.level.view." + std::to_string(i), (view == current ? "● " : "") + std::string(names[i])) && view != current && switcher) { switcher(view); }
-        }
-        ui.EndTable();
-    }
-    // 地図の見方（合わせる・つかんで動かす）。中ボタンのドラッグとホイールはいつでも使える。
-    void ViewControls(EditorWorkspaceHostContext& ctx) {
-        auto& ui = *ctx.ui;
-        if (ui.Button("td2.map.fit", "适应")) { view_.fit = true; }
-        ui.SameLine();
-        if (ui.Button("td2.map.pan", hand_ ? "平移 ●" : "平移")) { hand_ = !hand_; }
-    }
-    void DrawThumbnail(IEditorWorkspaceUi& ui, const RoomItem& room, const EditorWorkspaceCanvasInput& canvas) {
-        const auto& settings = room.object.objectId == model_->selected && model_->ready ? model_->draft : room.settings;
-        MapCanvasView thumbnail;
-        thumbnail.tile = (std::min)((canvas.size.x - 12) / static_cast<float>(settings.region.cols), (canvas.size.y - 12) / static_cast<float>(settings.region.rows));
-        thumbnail.tile = (std::max)(.5f, thumbnail.tile);
-        thumbnail.origin = {(canvas.size.x - static_cast<float>(settings.region.cols) * thumbnail.tile) * .5f, (canvas.size.y - static_cast<float>(settings.region.rows) * thumbnail.tile) * .5f};
-        DrawRoomMap(ui, settings, thumbnail, false, false);
-        ui.CanvasRect({1, 1}, {canvas.size.x - 1, canvas.size.y - 1}, room.object.objectId == model_->selected ? EditorWorkspaceColor{.77f, .68f, .39f, 1} : EditorWorkspaceColor{.24f, .38f, .43f, 1});
-    }
-    std::shared_ptr<MapModel> model_;
-    MapCanvasView view_;
-    bool hand_ = false;
-};
 }

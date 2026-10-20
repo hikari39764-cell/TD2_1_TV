@@ -18,4 +18,9 @@ hikari_add_game_project(
 # Editor の JSON は公開 SDK 同梱のヘッダーだけを使い、Runtime へ依存を持ち込まない。
 if(TARGET HIKARI_GameProjectEditorModule)
     target_link_libraries(HIKARI_GameProjectEditorModule PRIVATE HIKARI::AuthoringJson)
+    # 解法の再生と検査に、エンジンに依存しない規則だけを同じソースから組み込む（実行時と同じ判定にする）。
+    target_sources(HIKARI_GameProjectEditorModule PRIVATE
+        Source/Runtime/Rules/TD2Rules.cpp
+        Source/Runtime/Rules/TD2Exploration.cpp
+        Source/Runtime/TD2RegionAuthoring.cpp)
 endif()

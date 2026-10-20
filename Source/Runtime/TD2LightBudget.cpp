@@ -25,7 +25,7 @@ void LightBudgetSystem::Update(HIKARI::WorldView& world, const HIKARI::FrameCont
     const bool hasControl = playing && world.GetCamera().GetControlPose(control);
     if (!playing) {
         // 編集中は何もしない。
-        lights_.clear(); status_ = "等待 Play"; return;
+        lights_.clear(); status_ = " Play待ち"; return;
     }
     size_t total = 0, off = 0;
     const HIKARI::ComponentTypeId types[]{HIKARI::MakeComponentTypeId(kLightCullComponentType)};

@@ -1,0 +1,117 @@
+{
+ "asset": {
+  "generator": "TD2 cable parts",
+  "version": "2.0"
+ },
+ "scene": 0,
+ "scenes": [
+  {
+   "name": "Scene",
+   "nodes": [
+    0
+   ]
+  }
+ ],
+ "nodes": [
+  {
+   "mesh": 0,
+   "name": "SM_TD2_CableJoint_Lit"
+  }
+ ],
+ "meshes": [
+  {
+   "name": "SM_TD2_CableJoint_Lit",
+   "primitives": [
+    {
+     "attributes": {
+      "POSITION": 0,
+      "NORMAL": 1
+     },
+     "indices": 2,
+     "material": 0
+    }
+   ]
+  }
+ ],
+ "materials": [
+  {
+   "name": "TD2P_signal_lit",
+   "pbrMetallicRoughness": {
+    "baseColorFactor": [
+     1.0,
+     0.3,
+     0.62,
+     1
+    ],
+    "metallicFactor": 0.0,
+    "roughnessFactor": 0.4
+   },
+   "emissiveFactor": [
+    1.0,
+    0.26,
+    0.6
+   ],
+   "extensions": {
+    "KHR_materials_emissive_strength": {
+     "emissiveStrength": 4.0
+    }
+   }
+  }
+ ],
+ "buffers": [
+  {
+   "uri": "SM_TD2_CableJoint_Lit.bin",
+   "byteLength": 1632
+  }
+ ],
+ "bufferViews": [
+  {
+   "buffer": 0,
+   "byteOffset": 0,
+   "byteLength": 576,
+   "target": 34962
+  },
+  {
+   "buffer": 0,
+   "byteOffset": 576,
+   "byteLength": 576,
+   "target": 34962
+  },
+  {
+   "buffer": 0,
+   "byteOffset": 1152,
+   "byteLength": 480,
+   "target": 34963
+  }
+ ],
+ "accessors": [
+  {
+   "bufferView": 0,
+   "componentType": 5126,
+   "count": 48,
+   "type": "VEC3",
+   "min": [
+    -0.02853169548885461,
+    -0.03,
+    -0.02853169548885461
+   ],
+   "max": [
+    0.02853169548885461,
+    0.03,
+    0.02853169548885461
+   ]
+  },
+  {
+   "bufferView": 1,
+   "componentType": 5126,
+   "count": 48,
+   "type": "VEC3"
+  },
+  {
+   "bufferView": 2,
+   "componentType": 5123,
+   "count": 240,
+   "type": "SCALAR"
+  }
+ ]
+}

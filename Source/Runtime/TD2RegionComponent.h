@@ -12,7 +12,7 @@ class RegionComponent final : public HIKARI::IGameComponent {
 public:
     void DescribeProperties(HIKARI::PropertyFields& fields) override {
         // 地図・仕掛け・世界の位置・カメラはレベル編集ワークスペースで直す。Inspector は名前と明るさだけを前に出し、残りは畳んでおく。
-        if (fields.IsInspecting()) { fields.Note("在「关卡编辑」工作区编辑这台电视的地图、机关、世界位置和机位。"); }
+        if (fields.IsInspecting()) { fields.Note("在「关卡编辑」工作区编辑这台电视的地图、装置、世界位置和机位。"); }
         fields.Text("regionId", "稳定区域 ID", region_.regionId);
         fields.Bool("entryRegion", "开始电视", entryRegion_);
         // 明るさは画面の材質だけに掛け、筐体は変えない。
@@ -32,6 +32,8 @@ public:
         fields.Bool("worldPlaced", "已布置到世界", worldPlaced_);
         fields.Int("worldX", "世界格 X", worldX_);
         fields.Int("worldY", "世界格 Y", worldY_);
+        // 3D で付けている地図の隣の区域。編集器が隣に合わせて置き直すのに使い、実行時は読まない。
+        fields.Text("stageAnchor", "3D 贴靠的区域（编辑器用）", stageAnchor_);
         DescribeLargeText(fields, "devices", "设备列表（每行一个）", devices_, 256u * 1024u);
         fields.SceneObject("screenObject", "屏幕模型对象", screen_.screenObject);
         fields.Text("screenSlot", "屏幕材质槽", screen_.screenSlot);
@@ -85,7 +87,7 @@ private:
     // 既定は未配置。古いシーンでもテレビを原点に重ねない。
     bool worldPlaced_ = false;
     int worldX_ = 0, worldY_ = 0;
-    std::string devices_;
+    std::string devices_, stageAnchor_;
     struct AuthoredCache {
         RegionDefinition region; std::string devices; float spawnX = -1, spawnY = -1; bool valid = false;
         Rules::WorldDefinition definition;

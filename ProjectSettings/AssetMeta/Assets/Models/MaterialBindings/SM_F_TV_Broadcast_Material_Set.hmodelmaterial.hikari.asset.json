@@ -1,0 +1,13 @@
+{
+  "displayName": "SM_F_TV_Broadcast_Material_Set",
+  "guid": "e720dfbf841c172134c2d861e0e59464",
+  "importSettings": {
+    "runtimeLoader": "ModelMaterialBindingAsset",
+    "sourceAuthoritative": true
+  },
+  "importerId": "ModelMaterialBindingImporter",
+  "importerVersion": 1,
+  "metaVersion": 1,
+  "sourcePath": "Assets/Models/MaterialBindings/SM_F_TV_Broadcast_Material_Set.hmodelmaterial",
+  "type": "ModelMaterialBinding"
+}

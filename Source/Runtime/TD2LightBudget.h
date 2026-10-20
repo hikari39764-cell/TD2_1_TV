@@ -16,9 +16,8 @@ inline constexpr std::string_view kLightBudgetSystemId = "TD2.LightBudget";
 class LightCullComponent final : public HIKARI::IGameComponent {
 public:
     void DescribeProperties(HIKARI::PropertyFields& fields) override {
-        fields.Bool("cull", "视野外自动关闭", cull_);
-        fields.Float("margin", "提前开启余量（米）", margin_, 0.0f, 20.0f);
-        fields.Note("仅在 Play 中生效：灯光照射范围不在游戏镜头视野内时暂时关闭，进入视野前提前打开；不改场景里的数值。");
+        fields.Bool("cull", "視線外に閉じる", cull_);
+        fields.Float("margin", "視線外に閉じる余量（米）", margin_, 0.0f, 20.0f);
     }
     bool Cull() const noexcept { return cull_; }
     float Margin() const noexcept { return margin_; }
@@ -35,6 +34,6 @@ private:
     // 光ごとの状態。連続フレーム数で判断し、視野の縁でのちらつきを防ぐ。
     struct Tracked { bool off = false; uint32_t outsideFrames = 0; };
     std::unordered_map<uint64_t, Tracked> lights_;
-    std::string status_ = "等待 Play";
+    std::string status_ = " Play待ち";
 };
 }

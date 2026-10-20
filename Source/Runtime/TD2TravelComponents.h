@@ -20,7 +20,6 @@ public:
         f.Float("seconds", "全速时长（秒）", seconds_, .4f, 10.f);
         f.Bool("keepAuthored", "保留手调（重新生成时不覆盖）", keepAuthored_);
         // 自動生成したキーの記録。今のキーと違えば手で直したとみなし、再生成で残す。
-        f.Text("autoHash", "自动生成记录（自动）", autoHash_);
     }
     RegionSequenceBinding Definition() const { return binding_; }
 private:

@@ -216,10 +216,10 @@
     "streakLength": 0.15000000596046448
   },
   "toneMapping": {
-    "contrast": 1.4249999523162842,
+    "contrast": 1.4299999475479126,
     "curve": "AgX",
     "gamma": 2.200000047683716,
-    "saturation": 0.6499999761581421,
+    "saturation": 0.6399999856948853,
     "whiteBalanceTemperature": 7631.0,
     "whiteBalanceTint": 0.0
   }

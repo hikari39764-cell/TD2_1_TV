@@ -70,16 +70,9 @@ bool StagePartBuilder::Add(std::string_view part, double x, double bottomY, doub
     std::memcpy(request.model.assetGuid, guid.data(), guid.size());
     // 俯角と側角を両方付けた時の傾きは部品の中ほどで釣り合わせ、マスの中心からのずれを上下に半分ずつにする。
     // 光線は中心が原点なのでずらさない。
-    double pivot = leanPivot >= 0 ? leanPivot : (part == "LaserBeam" ? 0.0 : height * .5);
-    if (mirror_) {
-        // 点対称に移すと部品は原点から下へ伸びるので、傾きの釣り合いも下向きに取る。
-        x = 2 * mirrorX_ - x; bottomY = 2 * mirrorY_ - bottomY; pivot = -pivot;
-        const auto half = RotateZ(kPi);
-        rotation = {half.w * rotation.x - half.z * rotation.y, half.w * rotation.y + half.z * rotation.x,
-                    half.w * rotation.z + half.z * rotation.w, half.w * rotation.w - half.z * rotation.z};
-    }
-    request.worldTransform.position = projection_.Point(x + projection_.Lean() * pivot, bottomY, depth);
-    request.worldTransform.rotation = rotation;
+    const double pivot = leanPivot >= 0 ? leanPivot : (part == "LaserBeam" ? 0.0 : height * .5);
+    request.worldTransform = Place(x, bottomY, depth, rotation, pivot);
+    rotation = request.worldTransform.rotation;
     const bool quarterTurn = std::abs(std::abs(rotation.z) - .70710678f) < .0001f && rotation.x == 0 && rotation.y == 0;
     // 正面の 1 マスが像でもちょうど 1 マスになるよう、俯角で縦、側角で横の縮みを補う。90°回した部品は軸を入れ替える。
     const double pitchCos = std::cos(projection_.pitch), yawCos = std::cos(projection_.yaw);
@@ -91,6 +84,21 @@ bool StagePartBuilder::Add(std::string_view part, double x, double bottomY, doub
     if (!visible) { request.worldTransform.position.y -= kHiddenDrop; }
     out_.push_back(request);
     return true;
+}
+
+HIKARI::GameProjectTransform StagePartBuilder::Place(double x, double bottomY, double depth, HIKARI::GameProjectQuaternion rotation,
+                                                    double pivot) const {
+    if (mirror_) {
+        // 点対称に移すと部品は原点から下へ伸びるので、傾きの釣り合いも下向きに取る。
+        x = 2 * mirrorX_ - x; bottomY = 2 * mirrorY_ - bottomY; pivot = -pivot;
+        const auto half = RotateZ(kPi);
+        rotation = {half.w * rotation.x - half.z * rotation.y, half.w * rotation.y + half.z * rotation.x,
+                    half.w * rotation.z + half.z * rotation.w, half.w * rotation.w - half.z * rotation.z};
+    }
+    HIKARI::GameProjectTransform pose{};
+    pose.position = projection_.Point(x + projection_.Lean() * pivot, bottomY, depth);
+    pose.rotation = rotation;
+    return pose;
 }
 
 double StagePartBuilder::WallDepth() const {
@@ -677,7 +685,8 @@ void StagePartBuilder::Actor(const Rules::BodyState& body, const Rules::Rect& r,
             : static_cast<size_t>(static_cast<int>(std::floor(time * 1.5)) % 2);
         current = pose + (left ? 9 : 0);
     }
-    const bool visible = shown && !body.dead;
+    // 骨つきの人形が立つ間も、焼いた形は全部出したまま退避点へ置く（出す組を変えるとシーンの作り直しになる）。
+    const bool visible = shown && !body.dead && bakedActors_;
     const auto& poses = echo ? std::span<const std::string_view>(kEchoPoses) : std::span<const std::string_view>(kPlayerPoses);
     const double depth = projection_.ActorDepth() + (echo ? -.05 : 0);
     for (size_t i = 0; i < poses.size(); ++i) {

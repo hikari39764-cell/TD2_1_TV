@@ -1,6 +1,7 @@
 #include "TD2DeviceEditor.h"
 #include "../Common/TD2DeviceText.h"
 #include <algorithm>
+#include <array>
 #include <cmath>
 #include <iomanip>
 #include <limits>
@@ -18,6 +19,20 @@ std::string DeviceDraft::Extra(std::string_view key) const {
 void DeviceDraft::SetExtra(std::string_view key, std::string_view value) {
     std::erase_if(extra, [key](const std::string& option) { return option.size() > key.size() && option.compare(0, key.size(), key) == 0 && option[key.size()] == '='; });
     if (!value.empty()) { extra.push_back(std::string(key) + "=" + std::string(value)); }
+}
+
+std::string_view DevicePrefix(std::string_view kind) {
+    constexpr std::array<std::pair<std::string_view, std::string_view>, 12> prefixes{{{"Solid", "block"}, {"OneWay", "oneway"}, {"Plate", "plate"},
+        {"Door", "door"}, {"Laser", "laser"}, {"Spikes", "spikes"}, {"Checkpoint", "cp"}, {"LockWall", "lock"}, {"Spring", "spring"},
+        {"Bridge", "bridge"}, {"Collectible", "gem"}, {"Decal", "decal"}}};
+    for (const auto& [k, prefix] : prefixes) { if (k == kind) { return prefix; } }
+    return "device";
+}
+
+std::string DeviceLetter(const DeviceDraft& d) {
+    const auto prefix = std::string(DevicePrefix(d.kind)) + "_";
+    if (d.id.size() > prefix.size() && d.id.compare(0, prefix.size(), prefix) == 0) { return d.id.substr(prefix.size()); }
+    return {};
 }
 
 TargetKind ClassifyTarget(std::string_view target) {
@@ -81,9 +96,13 @@ bool DeviceEditor::Add(std::string_view kind, int col, int row, int cols, int ro
     if (kind == "Door" || kind == "LockWall") { d.h = (std::min)(3, rows - row); }
     if (kind == "OneWay" || kind == "Bridge") { d.w = (std::min)(3, cols - col); }
     if (kind == "Laser") { d.direction = "Right"; }
-    unsigned suffix = 1;
-    do { d.id = "device_" + std::to_string(suffix++); }
-    while (std::any_of(devices_.begin(), devices_.end(), [&d](const auto& item) { return item.id == d.id; }));
+    // ID は種類の短い名前と英字（plate_A、door_B…）。表示名にも同じ英字を使い、他を消しても変わらない。
+    for (unsigned n = 0;; ++n) {
+        std::string letters;
+        for (unsigned k = n + 1; k > 0; k = (k - 1) / 26) { letters.insert(letters.begin(), static_cast<char>('A' + (k - 1) % 26)); }
+        d.id = std::string(DevicePrefix(kind)) + "_" + letters;
+        if (std::none_of(devices_.begin(), devices_.end(), [&d](const auto& item) { return item.id == d.id; })) { break; }
+    }
     devices_.push_back(std::move(d)); selected_ = static_cast<int>(devices_.size()) - 1;
     return true;
 }

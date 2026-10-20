@@ -1,0 +1,15 @@
+{
+  "displayName": "TD2F_LedAmber_Material",
+  "guid": "d655b1f3fd696f5579fea08861a07c51",
+  "importSettings": {
+    "cookMaterial": true,
+    "outputFormat": "HMAT",
+    "shaderModel": "PBR",
+    "sourceFormat": ".material.json"
+  },
+  "importerId": "MaterialImporter",
+  "importerVersion": 8,
+  "metaVersion": 1,
+  "sourcePath": "Assets/Materials/TD2F_LedAmber_Material.material.json",
+  "type": "Material"
+}

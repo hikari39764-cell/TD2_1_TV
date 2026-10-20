@@ -17,6 +17,10 @@ struct DeviceDraft {
 };
 // 圧力板の目標の種類：同じテレビの扉・レーザー・橋、別のテレビの装置（区域ID/装置ID）、画面の外の仕掛け（mech/・slide/・stack/・carousel/）。
 enum class TargetKind { Local, OtherRegion, Machine, Invalid };
+// 新しい装置の ID の頭（種類ごとの短い英語）。
+std::string_view DevicePrefix(std::string_view kind);
+// 「plate_A」なら「A」。古い名前の装置は空。
+std::string DeviceLetter(const DeviceDraft& d);
 TargetKind ClassifyTarget(std::string_view target);
 
 class DeviceEditor {

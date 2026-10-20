@@ -3,6 +3,7 @@
 #include "../Common/TD2Math.h"
 #include <algorithm>
 #include <cmath>
+#include <sstream>
 
 namespace TD2::Editor {
 namespace {
@@ -18,7 +19,7 @@ struct KindInfo { MachineKind kind; std::string_view type, idField; std::vector<
 const std::vector<KindInfo>& Kinds() {
     static const std::vector<KindInfo> kinds{
         {MachineKind::Mechanism, "TD2.Mechanism", "mechanismId", {"mechanismId", "toggle", "balance", "seconds", "dwell", "settle", "cameraLift", "cameraPull",
-            "regionOffsets", "objectDeltas", "regionOffsetsC", "objectDeltasC"}},
+            "regionOffsets", "objectDeltas", "regionOffsetsC", "objectDeltasC", "recipe", "parts"}},
         {MachineKind::Slide, "TD2.SlideRack", "rackId", {"rackId", "seconds", "members", "emptySlots"}},
         {MachineKind::Stack, "TD2.StackColumn", "stackId", {"stackId", "pullSeconds", "dropSeconds", "resetSeconds", "members", "dockDistances"}},
         {MachineKind::Carousel, "TD2.Carousel", "carouselId", {"carouselId", "seconds", "faces", "objects"}},
@@ -52,6 +53,29 @@ V ToEuler(const Q& q) {
 }
 
 std::string_view MachineComponentType(MachineKind kind) { return InfoOf(kind).type; }
+
+// 部品の欄：「物体ID 区域ID 役目 m|s|b」を「;」で区切る（m は配方が置いて一緒に動く、s は配方が置いて動かない、b は元からある物を一緒に動かす）。
+std::string FormatParts(const std::vector<Machine::Part>& parts) {
+    std::string text;
+    for (const auto& p : parts) {
+        if (!text.empty()) { text += "; "; }
+        text += std::to_string(p.object) + " " + p.region + " " + (p.role.empty() ? "part" : p.role) + (p.owned ? (p.moves ? " m" : " s") : " b");
+    }
+    return text;
+}
+
+std::vector<Machine::Part> ParseParts(std::string_view text) {
+    std::vector<Machine::Part> parts;
+    std::string line;
+    const auto flush = [&] {
+        std::istringstream in(line); Machine::Part p; std::string mode;
+        if (in >> p.object >> p.region >> p.role >> mode && p.object) { p.moves = mode != "s"; p.owned = mode != "b"; parts.push_back(p); }
+        line.clear();
+    };
+    for (const char c : text) { if (c == ';' || c == '\n') { flush(); } else { line += c; } }
+    flush();
+    return parts;
+}
 
 std::string Machine::KindLabel() const {
     switch (kind) {
@@ -118,6 +142,7 @@ bool LoadMachines(EditorWorkspaceHostContext& ctx, std::vector<Machine>& machine
                     // 読めない行は飛ばし、読めた分だけを編集に使う。
                     (void)ParseOffsets(Text(fields, "regionOffsets"), m.offsets, ignored); (void)ParseOffsets(Text(fields, "regionOffsetsC"), m.offsetsC, ignored);
                     (void)ParseDeltas(Text(fields, "objectDeltas"), m.deltas, ignored); (void)ParseDeltas(Text(fields, "objectDeltasC"), m.deltasC, ignored);
+                    m.recipe = Text(fields, "recipe"); m.parts = ParseParts(Text(fields, "parts"));
                     break;
                 case MachineKind::Slide:
                     m.seconds = Real(fields, "seconds", .9); m.members = ParseNames(Text(fields, "members"));
@@ -153,6 +178,8 @@ bool WriteMachine(EditorWorkspaceHostContext& ctx, const Machine& before, const 
         set("regionOffsetsC", FormatOffsets(before.offsetsC), FormatOffsets(after.offsetsC));
         set("objectDeltas", FormatDeltas(before.deltas), FormatDeltas(after.deltas));
         set("objectDeltasC", FormatDeltas(before.deltasC), FormatDeltas(after.deltasC));
+        set("recipe", before.recipe, after.recipe);
+        set("parts", FormatParts(before.parts), FormatParts(after.parts));
         break;
     case MachineKind::Slide:
         set("seconds", before.seconds, after.seconds); set("members", JoinNames(before.members), JoinNames(after.members));
@@ -259,7 +286,7 @@ std::vector<std::string> CheckMachine(const Machine& m, const std::vector<Machin
         }
         break;
     }
-    if (PlatesFor(m, input).empty() && m.dwell <= 0) { problems.push_back("还没有压板连到它（在电视地图里选压板，在「机关目标」里勾选）"); }
+    if (PlatesFor(m, input).empty() && m.dwell <= 0) { problems.push_back("还没有压板连到它（用「连线」把压板拖到它的图标）"); }
     return problems;
 }
 

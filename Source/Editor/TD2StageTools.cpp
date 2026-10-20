@@ -1,5 +1,7 @@
 #include "TD2StageTools.h"
 #include "../Common/TD2Math.h"
+#include <algorithm>
+#include <cctype>
 #include <cmath>
 
 namespace TD2::Editor {
@@ -11,13 +13,9 @@ std::array<double, 3> Vec(const Json& v, std::array<double, 3> fallback) {
 }
 }
 
-bool ReadStageObject(EditorWorkspaceHostContext& ctx, uint64_t objectId, StageObject& out, std::string& error) {
-    out = {};
-    const auto result = Execute(ctx, "scene.objects.query", {{"objectIds", Json::array({objectId})}, {"detail", true}});
-    if (!result.ok) { error = result.error; return false; }
-    const auto objects = result.data.value("objects", Json::array());
-    if (!objects.is_array() || objects.empty()) { error = "物体不存在：" + std::to_string(objectId); return false; }
-    const auto& o = objects.front();
+// scene.objects.query の詳しい一件を読む。
+static StageObject ParseStageObject(uint64_t objectId, const Json& o) {
+    StageObject out;
     out.objectId = objectId;
     out.name = o.value("name", "");
     out.parentId = ObjectId(o.value("parentId", Json{}));
@@ -32,11 +30,64 @@ bool ReadStageObject(EditorWorkspaceHostContext& ctx, uint64_t objectId, StageOb
         out.hi = Vec(o["worldBounds"].value("max", Json{}), {0, 0, 0});
         out.hasBounds = true;
     }
+    return out;
+}
+
+bool ReadStageObject(EditorWorkspaceHostContext& ctx, uint64_t objectId, StageObject& out, std::string& error) {
+    out = {};
+    const auto result = Execute(ctx, "scene.objects.query", {{"objectIds", Json::array({objectId})}, {"detail", true}});
+    if (!result.ok) { error = result.error; return false; }
+    const auto objects = result.data.value("objects", Json::array());
+    if (!objects.is_array() || objects.empty()) { error = "物体不存在：" + std::to_string(objectId); return false; }
+    out = ParseStageObject(objectId, objects.front());
     return true;
 }
 
+bool ReadStageObjects(EditorWorkspaceHostContext& ctx, const std::vector<uint64_t>& objectIds, std::map<uint64_t, StageObject>& out, std::string& error) {
+    out.clear();
+    // 一頁は 64 件まで。
+    for (size_t start = 0; start < objectIds.size(); start += 64) {
+        const size_t count = std::min<size_t>(64, objectIds.size() - start);
+        Json ids = Json::array();
+        for (size_t i = start; i < start + count; ++i) { ids.push_back(objectIds[i]); }
+        const auto result = Execute(ctx, "scene.objects.query", {{"objectIds", ids}, {"detail", true}, {"limit", static_cast<int>(count)}});
+        if (!result.ok) { error = result.error; return false; }
+        for (const auto& o : result.data.value("objects", Json::array())) {
+            if (const auto id = ObjectId(o.value("objectId", Json{}))) { out[id] = ParseStageObject(id, o); }
+        }
+    }
+    return true;
+}
+
+// 元パスの一部（"TD2Props/SM_X.gltf"）からモデル資産の GUID を引く。scene.create_object は導入後の成果物のパスで
+// 探すので、元パスのままでは見つからない。GUID は資産の設定に固定なので、一度引いた物は覚えておく。
+static std::string ModelAssetGuid(EditorWorkspaceHostContext& ctx, std::string_view path, std::string& error) {
+    static std::map<std::string, std::string, std::less<>> known;
+    if (const auto found = known.find(path); found != known.end()) { return found->second; }
+    const auto normalize = [](std::string text) {
+        for (auto& c : text) { c = c == '\\' ? '/' : static_cast<char>(std::tolower(static_cast<unsigned char>(c))); }
+        return text;
+    };
+    const auto wanted = normalize(std::string(path));
+    const auto file = wanted.substr(wanted.find_last_of('/') == std::string::npos ? 0 : wanted.find_last_of('/') + 1);
+    const auto result = Execute(ctx, "asset.query", {{"type", "Model"}, {"keyword", file}, {"limit", 128}});
+    if (!result.ok) { error = result.error; return {}; }
+    for (const auto& asset : result.data.value("assets", Json::array())) {
+        const auto source = normalize(asset.value("path", ""));
+        const auto guid = asset.value("guid", "");
+        if (!guid.empty() && source.size() >= wanted.size() && source.compare(source.size() - wanted.size(), wanted.size(), wanted) == 0) {
+            known.emplace(std::string(path), guid);
+            return guid;
+        }
+    }
+    error = "找不到模型资产：" + std::string(path);
+    return {};
+}
+
 uint64_t CreateStageModel(EditorWorkspaceHostContext& ctx, std::string_view path, std::string_view name, const Pose& pose, std::string& error) {
-    const auto created = Execute(ctx, "scene.create_object", {{"model", std::string(path)}, {"name", std::string(name)},
+    const auto guid = ModelAssetGuid(ctx, path, error);
+    if (guid.empty()) { return 0; }
+    const auto created = Execute(ctx, "scene.create_object", {{"model", guid}, {"name", std::string(name)},
         {"position", pose.position}, {"rotation", pose.rotation}, {"scale", pose.scale}});
     if (!created.ok) { error = created.error; return 0; }
     const auto id = ObjectId(created.data.value("objectId", Json{}));

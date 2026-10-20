@@ -1,0 +1,19 @@
+{
+  "effect": "engine.post.effect.manga",
+  "formatVersion": 1,
+  "name": "Manga",
+  "values": {
+    "inkColor": [
+      1.0,
+      1.0,
+      1.0,
+      0.0
+    ],
+    "strength": [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ]
+  }
+}

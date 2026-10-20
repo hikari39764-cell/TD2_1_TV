@@ -46,6 +46,8 @@ struct RegionSettings {
     bool worldPlaced = false;
     int worldX = 0, worldY = 0;
     std::string devices;
+    // 3D で付けている隣の区域（空なら自由に置いたテレビ）。編集器だけが使う。
+    std::string stageAnchor;
     bool operator==(const RegionSettings&) const = default;
 };
 

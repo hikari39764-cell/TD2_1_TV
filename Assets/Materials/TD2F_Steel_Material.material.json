@@ -69,8 +69,8 @@
           "type": "Float4",
           "value": [
             1.0,
-            0.5571428537368774,
-            0.0,
+            0.5427941679954529,
+            0.19999998807907104,
             1.0
           ]
         },
@@ -122,7 +122,7 @@
         "defaultValue": {
           "type": "Float3",
           "value": [
-            0.0,
+            1.2200000286102295,
             0.0,
             0.0,
             0.0
@@ -174,6 +174,24 @@
       },
       {
         "defaultValue": {
+          "type": "Float3",
+          "value": [
+            1.0,
+            1.0,
+            1.0,
+            0.0
+          ]
+        },
+        "displayName": "Lit Tint",
+        "exposed": true,
+        "group": "",
+        "id": "parameter.litTint",
+        "uiMaximum": 1.0,
+        "uiMinimum": 0.0,
+        "useUiRange": false
+      },
+      {
+        "defaultValue": {
           "type": "Float1",
           "value": [
             0.0,
@@ -186,6 +204,42 @@
         "exposed": true,
         "group": "",
         "id": "parameter.metallic",
+        "uiMaximum": 1.0,
+        "uiMinimum": 0.0,
+        "useUiRange": false
+      },
+      {
+        "defaultValue": {
+          "type": "Float1",
+          "value": [
+            0.699999988079071,
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "displayName": "Midtone Threshold",
+        "exposed": true,
+        "group": "",
+        "id": "parameter.midThreshold",
+        "uiMaximum": 1.0,
+        "uiMinimum": 0.0,
+        "useUiRange": false
+      },
+      {
+        "defaultValue": {
+          "type": "Float3",
+          "value": [
+            0.7200000286102295,
+            0.7799999713897705,
+            0.8799999952316284,
+            0.0
+          ]
+        },
+        "displayName": "Midtone Tint",
+        "exposed": true,
+        "group": "",
+        "id": "parameter.midTint",
         "uiMaximum": 1.0,
         "uiMinimum": 0.0,
         "useUiRange": false
@@ -228,6 +282,150 @@
       },
       {
         "defaultValue": {
+          "type": "Float3",
+          "value": [
+            0.02500000037252903,
+            0.029999999329447746,
+            0.04500000178813934,
+            0.0
+          ]
+        },
+        "displayName": "Outline Color",
+        "exposed": true,
+        "group": "",
+        "id": "parameter.outlineColor",
+        "uiMaximum": 1.0,
+        "uiMinimum": 0.0,
+        "useUiRange": false
+      },
+      {
+        "defaultValue": {
+          "type": "Float1",
+          "value": [
+            1.0,
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "displayName": "Outline Mode",
+        "exposed": true,
+        "group": "",
+        "id": "parameter.outlineMode",
+        "uiMaximum": 1.0,
+        "uiMinimum": 0.0,
+        "useUiRange": false
+      },
+      {
+        "defaultValue": {
+          "type": "Float1",
+          "value": [
+            1.0,
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "displayName": "Outline Thickness",
+        "exposed": true,
+        "group": "",
+        "id": "parameter.outlineThickness",
+        "uiMaximum": 1.0,
+        "uiMinimum": 0.0,
+        "useUiRange": false
+      },
+      {
+        "defaultValue": {
+          "type": "Float1",
+          "value": [
+            0.5,
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "displayName": "Secondary Ramp Blend",
+        "exposed": true,
+        "group": "",
+        "id": "parameter.rampBlend",
+        "uiMaximum": 1.0,
+        "uiMinimum": 0.0,
+        "useUiRange": false
+      },
+      {
+        "defaultValue": {
+          "type": "Float1",
+          "value": [
+            1.0,
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "displayName": "Ramp Influence",
+        "exposed": true,
+        "group": "",
+        "id": "parameter.rampIntensity",
+        "uiMaximum": 1.0,
+        "uiMinimum": 0.0,
+        "useUiRange": false
+      },
+      {
+        "defaultValue": {
+          "type": "Float4",
+          "value": [
+            1.0,
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "displayName": "Ramp Layer Weights",
+        "exposed": true,
+        "group": "",
+        "id": "parameter.rampLayerWeights",
+        "uiMaximum": 1.0,
+        "uiMinimum": 0.0,
+        "useUiRange": false
+      },
+      {
+        "defaultValue": {
+          "type": "Float1",
+          "value": [
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "displayName": "Ramp Mask Influence",
+        "exposed": true,
+        "group": "",
+        "id": "parameter.rampMaskInfluence",
+        "uiMaximum": 1.0,
+        "uiMinimum": 0.0,
+        "useUiRange": false
+      },
+      {
+        "defaultValue": {
+          "type": "Float1",
+          "value": [
+            0.5,
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "displayName": "Ramp Row",
+        "exposed": true,
+        "group": "",
+        "id": "parameter.rampRow",
+        "uiMaximum": 1.0,
+        "uiMinimum": 0.0,
+        "useUiRange": false
+      },
+      {
+        "defaultValue": {
           "type": "Float1",
           "value": [
             0.5,
@@ -240,6 +438,60 @@
         "exposed": true,
         "group": "",
         "id": "parameter.roughness",
+        "uiMaximum": 1.0,
+        "uiMinimum": 0.0,
+        "useUiRange": false
+      },
+      {
+        "defaultValue": {
+          "type": "Float1",
+          "value": [
+            0.02500000037252903,
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "displayName": "Shadow Softness",
+        "exposed": true,
+        "group": "",
+        "id": "parameter.shadowSoftness",
+        "uiMaximum": 1.0,
+        "uiMinimum": 0.0,
+        "useUiRange": false
+      },
+      {
+        "defaultValue": {
+          "type": "Float1",
+          "value": [
+            0.46000000834465027,
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "displayName": "Shadow Threshold",
+        "exposed": true,
+        "group": "",
+        "id": "parameter.shadowThreshold",
+        "uiMaximum": 1.0,
+        "uiMinimum": 0.0,
+        "useUiRange": false
+      },
+      {
+        "defaultValue": {
+          "type": "Float3",
+          "value": [
+            0.3799999952316284,
+            0.44999998807907104,
+            0.6200000047683716,
+            0.0
+          ]
+        },
+        "displayName": "Shadow Tint",
+        "exposed": true,
+        "group": "",
+        "id": "parameter.shadowTint",
         "uiMaximum": 1.0,
         "uiMinimum": 0.0,
         "useUiRange": false
@@ -320,6 +572,24 @@
         "defaultValue": {
           "type": "Float1",
           "value": [
+            1.0,
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "displayName": "Direct Light Gain",
+        "exposed": true,
+        "group": "",
+        "id": "parameter.toonDirectGain",
+        "uiMaximum": 1.0,
+        "uiMinimum": 0.0,
+        "useUiRange": false
+      },
+      {
+        "defaultValue": {
+          "type": "Float1",
+          "value": [
             0.0,
             0.0,
             0.0,
@@ -344,6 +614,24 @@
         "semantic": "BaseColor",
         "texCoord": 0,
         "type": "Texture2D",
+        "uvOffset": [
+          0.0,
+          0.0
+        ],
+        "uvRotation": 0.0,
+        "uvScale": [
+          1.0,
+          1.0
+        ]
+      },
+      {
+        "assetGuid": "da1772211ee7ec59c5515ecd88107f97",
+        "displayName": "Diffuse Ramp",
+        "enabled": true,
+        "id": "resource.diffuseRamp",
+        "semantic": "Ramp",
+        "texCoord": 0,
+        "type": "Ramp2D",
         "uvOffset": [
           0.0,
           0.0
@@ -427,6 +715,42 @@
         ]
       },
       {
+        "assetGuid": "4e2b724947092dee84976e825b5d46b6",
+        "displayName": "Quaternary Ramp",
+        "enabled": true,
+        "id": "resource.quaternaryRamp",
+        "semantic": "Ramp",
+        "texCoord": 0,
+        "type": "Ramp2D",
+        "uvOffset": [
+          0.0,
+          0.0
+        ],
+        "uvRotation": 0.0,
+        "uvScale": [
+          1.0,
+          1.0
+        ]
+      },
+      {
+        "assetGuid": "4e2b724947092dee84976e825b5d46b6",
+        "displayName": "Secondary Ramp",
+        "enabled": true,
+        "id": "resource.secondaryRamp",
+        "semantic": "Ramp",
+        "texCoord": 0,
+        "type": "Ramp2D",
+        "uvOffset": [
+          0.0,
+          0.0
+        ],
+        "uvRotation": 0.0,
+        "uvScale": [
+          1.0,
+          1.0
+        ]
+      },
+      {
         "assetGuid": "",
         "displayName": "Specular",
         "enabled": false,
@@ -461,6 +785,24 @@
           1.0,
           1.0
         ]
+      },
+      {
+        "assetGuid": "4e2b724947092dee84976e825b5d46b6",
+        "displayName": "Tertiary Ramp",
+        "enabled": true,
+        "id": "resource.tertiaryRamp",
+        "semantic": "Ramp",
+        "texCoord": 0,
+        "type": "Ramp2D",
+        "uvOffset": [
+          0.0,
+          0.0
+        ],
+        "uvRotation": 0.0,
+        "uvScale": [
+          1.0,
+          1.0
+        ]
       }
     ]
   },
@@ -470,8 +812,8 @@
     "baseColor": {
       "factor": [
         1.0,
-        0.5571428537368774,
-        0.0,
+        0.5427941679954529,
+        0.19999998807907104,
         1.0
       ],
       "texCoord": 0,
@@ -493,7 +835,7 @@
     },
     "emissive": {
       "factor": [
-        0.0,
+        1.2200000286102295,
         0.0,
         0.0
       ],

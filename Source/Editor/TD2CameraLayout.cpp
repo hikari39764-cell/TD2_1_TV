@@ -273,6 +273,7 @@ bool LoadLayout(EditorWorkspaceHostContext& ctx, LayoutSnapshot& snap, std::stri
         room.screenWidth = NumberField(fields, "screenWidth", .84); room.screenHeight = NumberField(fields, "screenHeight", .49);
         const uint64_t screen = ReferenceId(FieldValue(fields, "screenObject"));
         const uint64_t tv = screen ? screen : s.id;
+        room.tvObject = tv;
         if (const auto found = snap.transforms.find(tv); found != snap.transforms.end()) { room.tv = found->second; }
         if (room.cameraId) {
             if (const auto found = snap.transforms.find(room.cameraId); found != snap.transforms.end()) { room.camera = found->second; }
@@ -369,7 +370,7 @@ bool LoadLayout(EditorWorkspaceHostContext& ctx, LayoutSnapshot& snap, std::stri
         }
         if (sx * sz > 12 && s.lo[1] > 6) { ceiling = (std::min)(ceiling, s.lo[1]); continue; }
         if ((std::min)(sx, sz) < .06 || sy > 12 || sx * sz > 40) { continue; }
-        snap.obstacles.push_back({s.lo, s.hi, s.id});
+        snap.obstacles.push_back({s.lo, s.hi, s.id, s.name});
     }
     if (floor) { snap.hasHall = true; snap.hallLo = {floorLo[0] + .6, .25, floorLo[2] + .6}; snap.hallHi = {floorHi[0] - .6, ceiling - .3, floorHi[2] - .6}; }
     return true;

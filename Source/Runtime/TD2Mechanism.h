@@ -31,7 +31,7 @@ struct MechanismAuthoring {
 class MechanismComponent final : public HIKARI::IGameComponent {
 public:
     void DescribeProperties(HIKARI::PropertyFields& fields) override {
-        if (fields.IsInspecting()) { fields.Note("在「关卡编辑 › 机关」里编辑：点电视加入、拖虚线框设位置、在视口里摆状态B。"); }
+        if (fields.IsInspecting()) { fields.Note("在「关卡编辑」的机构工具里编辑：选配方、点电视，在地图上拖虚线框设动完的位置。"); }
         fields.Text("mechanismId", "机构 ID（压板写 mech/ID）", id_);
         fields.Bool("toggle", "每踩一次切换（关：踩住时才动）", toggle_);
         // 天平：mech/ID の板だけ踏まれると状態 1、mech/ID/r の板だけなら状態 -1、両方か無しで 0。
@@ -49,6 +49,9 @@ public:
         fields.Text("objectDeltas", "状态B的物体相对姿势（每行：物体ID dx dy dz rx ry rz [cx cy cz] [@锚点物体]）", objectDeltas_);
         fields.Text("regionOffsetsC", "天平另一侧的区域偏移（同上）", regionOffsetsC_);
         fields.Text("objectDeltasC", "天平另一侧的物体相对姿势（同上）", objectDeltasC_);
+        // 編集器の配方（lift・turn・balance・shuttle・flip、空は手作り）と、配方が置いた部品（物体ID 区域ID m|s を ; で区切る）。実行時は読まない。
+        fields.Text("recipe", "编辑器配方", recipe_);
+        fields.Text("parts", "配方零件（编辑器用）", parts_);
         if (fields.IsInspecting()) { fields.Note("状态A是场景里摆好的样子；状态B写成相对状态A的偏移，移动整组布景也不会坏。"); }
     }
 
@@ -65,7 +68,7 @@ public:
     }
 
 private:
-    std::string id_, regionOffsets_, objectDeltas_, regionOffsetsC_, objectDeltasC_;
+    std::string id_, regionOffsets_, objectDeltas_, regionOffsetsC_, objectDeltasC_, recipe_, parts_;
     bool toggle_ = false, balance_ = false;
     float seconds_ = 0.8f, dwell_ = 0.f, settle_ = 0.f, cameraLift_ = 1.5f, cameraPull_ = 1.0f;
 };
@@ -76,7 +79,7 @@ private:
 class SlideRackComponent final : public HIKARI::IGameComponent {
 public:
     void DescribeProperties(HIKARI::PropertyFields& fields) override {
-        if (fields.IsInspecting()) { fields.Note("在「关卡编辑 › 机关」里编辑：点电视加入成员，点空格子设空槽。"); }
+        if (fields.IsInspecting()) { fields.Note("在「关卡编辑」的机构工具里编辑：Shift+点电视加入成员，点空格子设空槽。"); }
         fields.Text("rackId", "货架 ID", id_);
         fields.Float("seconds", "滑动秒数", seconds_, .2f, 4.f);
         if (!fields.Section("原始数据（一般不用手改）")) { return; }
@@ -106,7 +109,7 @@ private:
 class StackColumnComponent final : public HIKARI::IGameComponent {
 public:
     void DescribeProperties(HIKARI::PropertyFields& fields) override {
-        if (fields.IsInspecting()) { fields.Note("在「关卡编辑 › 机关」里编辑：点电视加入，自动按自下而上排序。"); }
+        if (fields.IsInspecting()) { fields.Note("在「关卡编辑」的机构工具里编辑：Shift+点电视加入，自动按自下而上排序。"); }
         fields.Text("stackId", "电视塔 ID", id_);
         fields.Float("pullSeconds", "抽出秒数", pullSeconds_, .2f, 4.f);
         fields.Float("dropSeconds", "每层下落秒数", dropSeconds_, .1f, 2.f);
@@ -138,7 +141,7 @@ private:
 class CarouselComponent final : public HIKARI::IGameComponent {
 public:
     void DescribeProperties(HIKARI::PropertyFields& fields) override {
-        if (fields.IsInspecting()) { fields.Note("在「关卡编辑 › 机关」里编辑：点电视加入面，在左栏调顺序。"); }
+        if (fields.IsInspecting()) { fields.Note("在「关卡编辑」的机构工具里编辑：Shift+点电视加入面，在左栏调顺序。"); }
         fields.Text("carouselId", "转柱 ID", id_);
         fields.Float("seconds", "每转一面秒数", seconds_, .3f, 6.f);
         if (!fields.Section("原始数据（一般不用手改）")) { return; }

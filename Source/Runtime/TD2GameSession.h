@@ -3,6 +3,7 @@
 #include "Rules/TD2Exploration.h"
 #include "TD2CameraDirector.h"
 #include "TD2MachineViews.h"
+#include "../Common/TD2PlayRecord.h"
 #include "HIKARI/Project/GameProjectSession.h"
 #include "HIKARI/Project/FrameContext.h"
 #include <limits>
@@ -18,6 +19,8 @@ public:
     void OnGameStarted(HIKARI::WorldView&) override;
     void OnSceneEntered(HIKARI::WorldView& world) override;
     void OnSceneExiting(HIKARI::WorldView& world) override;
+    // Play を止めた時に試遊の記録を書き終える。
+    void OnGameStopped() override { FinishRecord(); }
     void Update(HIKARI::WorldView& world, const HIKARI::FrameContext& frame);
     const RegionRuntime* FindRegion(std::string_view id) const { return exploration_.FindRegion(id); }
     const std::string& ActiveRegion() const noexcept { return exploration_.ActiveRegion(); }
@@ -31,6 +34,7 @@ public:
 private:
     void SyncRegions(HIKARI::WorldView& world);
     void Trace(HIKARI::WorldView& world, uint64_t frame);
+    void FinishRecord();
 
     Rules::Exploration exploration_;
     RegionObjects regions_;
@@ -39,6 +43,13 @@ private:
     // エディタからの一回限りの入口。保存データには戻さない。
     uint64_t previewEntryObject_ = 0;
     std::optional<Rules::Vec2> previewSpawn_;
+    std::string previewEntryRegion_;
+    std::vector<std::pair<std::string, int>> previewStates_;
+    // 試遊の記録（止めた時に一時ディレクトリへ書く）。
+    PlayRecord record_;
+    bool recording_ = false, recordClosed_ = false;
+    uint32_t recordFrame_ = 0;
+    std::string recordRegion_;
     bool sceneActive_ = false, leftHeld_ = false, rightHeld_ = false;
     double traceSeconds_ = 0;
     uint64_t lastFrame_ = (std::numeric_limits<uint64_t>::max)();

@@ -16,7 +16,7 @@ using Vec3 = std::array<double, 3>;
 struct LayoutTransform { Vec3 position{}, rotation{}, scale{1, 1, 1}; };   // rotation は度（エンジンの X→Y→Z の順に回す）
 
 struct LayoutRoom {
-    uint64_t objectId = 0, componentId = 0;
+    uint64_t objectId = 0, componentId = 0, tvObject = 0;   // tvObject は画面の物体（テレビのモデル）
     std::string regionId, name;
     LayoutTransform tv;
     bool knownModel = false;                                  // テレビの型が表にある（画面寸法を自動で決められる）
@@ -50,7 +50,7 @@ struct LayoutEdge {
     bool keepAuthored = false;
 };
 
-struct LayoutBox { Vec3 lo{}, hi{}; uint64_t objectId = 0; };
+struct LayoutBox { Vec3 lo{}, hi{}; uint64_t objectId = 0; std::string name; };
 
 struct LayoutSnapshot {
     std::string sceneId;

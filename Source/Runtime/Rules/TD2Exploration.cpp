@@ -238,12 +238,14 @@ void Exploration::Record(StepOutput output, ExplorationOutput& out) {
 }
 
 void Exploration::ClearEcho() {
+    calls_.push_back({"clear", {}, 0});
     if (!state_.echo && !state_.pendingEcho) return;
     (void)RemoveWorldEcho(world_, state_);
     snapshotDirty_ = true;
 }
 
 bool Exploration::StepBack(std::string_view region, int direction) {
+    calls_.push_back({"back", std::string(region), direction});
     const auto* from = FindRegion(region);
     if (!from || direction == 0) return false;
     auto& body = state_.player;
@@ -322,6 +324,20 @@ void Exploration::UpdateMechanisms(double seconds) {
         BuildBoundaries();
         snapshotDirty_ = true;
     }
+}
+
+bool Exploration::SetMechanismState(std::string_view id, int state) {
+    for (auto& m : mechanisms_) {
+        if (m.source.id != id) continue;
+        if (!m.source.toggle && m.source.dwell <= 0) return false;
+        if (state < 0 && !m.source.balance) return false;
+        if (state != m.state && !MoveRegions(TargetsFor(m, state))) return false;
+        m.state = m.target = m.pending = state; m.progress = state; m.moving = false; m.rest = 0;
+        BuildBoundaries();
+        snapshotDirty_ = true;
+        return true;
+    }
+    return false;
 }
 
 std::vector<MechanismMove> Exploration::TargetsFor(const MechanismRuntime& m, int state) const {

@@ -53,14 +53,12 @@ class ScreenFxComponent final : public HIKARI::IGameComponent {
 public:
     const ScreenFxSettings& Settings() const noexcept { return settings_; }
     void DescribeProperties(HIKARI::PropertyFields& fields) override {
-        fields.Bool("enabled", "显示电视内特效", settings_.enabled);
-        fields.Float("scale", "整体大小", settings_.scale, .25f, 3);
-        fields.Float("shake", "画面震动倍率", settings_.shake, 0, 3);
-        fields.Float("flash", "画面闪光倍率", settings_.flash, 0, 3);
-        fields.Bool("smear", "瞬移残像", settings_.smear);
-        if (fields.IsInspecting()) {
-            fields.Note("每个游戏事件一个 VFX 资产（可换，也可在 VFX 工作区直接修改），并可单独调大小、震动、闪光。");
-        }
+        fields.Bool("enabled", "テレビのエフェクト", settings_.enabled);
+        fields.Float("scale", "全体の大きさ", settings_.scale, .25f, 3);
+        fields.Float("shake", "画面の振動", settings_.shake, 0, 3);
+        fields.Float("flash", "画面の閃光", settings_.flash, 0, 3);
+        fields.Bool("smear", "ダッシュ残像", settings_.smear);
+
         // スロットごとに折り畳む（Load/Save では常に中身を読み書きする）。
         for (size_t i = 0; i < kScreenFxSlotCount; ++i) {
             const auto& item = kScreenFxDefaults[i];
@@ -68,12 +66,12 @@ public:
             auto& entry = settings_.entries[i];
             if (fields.Section(label)) {
                 fields.Vfx("vfx" + name, "特效资产", entry.asset);
-                fields.Float("scale" + name, "大小", entry.scale, .25f, 3);
-                fields.Float("shake" + name, "画面震动（格）", entry.shake, 0, .5f);
-                fields.Float("flash" + name, "画面闪光", entry.flash, 0, 1.5f);
+                fields.Float("scale" + name, "大きさ", entry.scale, .25f, 3);
+                fields.Float("shake" + name, "画面の振動", entry.shake, 0, .5f);
+                fields.Float("flash" + name, "画面の閃光", entry.flash, 0, 1.5f);
             }
         }
-        if (fields.IsInspecting() && fields.Button("全部恢复默认特效")) { settings_ = ScreenFxSettings{}; }
+        if (fields.IsInspecting() && fields.Button("デフォルト")) { settings_ = ScreenFxSettings{}; }
     }
 
 private:

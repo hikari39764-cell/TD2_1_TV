@@ -11,6 +11,7 @@
 #include "TD2ScreenFx.h"
 #include "TD2ScreenStyle.h"
 #include "TD2StageLight.h"
+#include "TD2StageActor.h"
 #include <array>
 #include <chrono>
 #include <cstdint>
@@ -85,6 +86,10 @@ public:
             context.RegisterComponent<TD2::StageLightComponent>({
                 .typeName = TD2::kStageLightComponentType, .displayName = "TD2 舞台灯", .category = "TD2",
                 .description = "屏幕风格开「受光」时，Play 中按房间摆放照亮电视里的舞台",
+            }) &&
+            context.RegisterComponent<TD2::StageActorComponent>({
+                .typeName = TD2::kStageActorComponentType, .displayName = "TD2 舞台人形", .category = "TD2",
+                .description = "屏幕舞台里 Play 中代替烘好姿势的骨骼人形（主角或残影）",
             }) &&
             context.RegisterComponent<TD2::ScreenFxComponent>({
                 .typeName = TD2::kScreenFxComponentType, .displayName = "TD2 屏幕特效", .category = "TD2",

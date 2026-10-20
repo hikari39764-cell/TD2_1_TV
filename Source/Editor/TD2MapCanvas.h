@@ -5,7 +5,8 @@
 
 namespace TD2::Editor {
 
-// 表示座標だけを変換する。ズームとパンは配置を変えない。
+// 表示座標だけを変換する。ズームとパンは配置を変えない。広い世界地図も一画面に収まるよう、1 マス 0.25 画素まで縮める。
+inline constexpr float kMinTile = .25f;
 struct MapCanvasView {
     EditorWorkspacePoint origin{24, 36};
     float tile = 28;
@@ -21,7 +22,7 @@ struct MapCanvasView {
         lastSize = size;
     }
     void Fit(EditorWorkspacePoint size, float x, float y, float w, float h) {
-        tile = std::clamp((std::min)((size.x - 72) / (std::max)(1.0f, w), (size.y - 72) / (std::max)(1.0f, h)), 2.0f, 72.0f);
+        tile = std::clamp((std::min)((size.x - 48) / (std::max)(1.0f, w), (size.y - 48) / (std::max)(1.0f, h)), kMinTile, 72.0f);
         origin = {(size.x - w * tile) * .5f - x * tile, (size.y - h * tile) * .5f - y * tile}; fit = false; hasFit = true;
     }
     void Navigate(const EditorWorkspaceCanvasInput& input, bool hand, bool busy) {
@@ -37,7 +38,7 @@ struct MapCanvasView {
         }
         if (!busy && input.hovered && input.wheel != 0) {
             const auto p = World(input.pointer);
-            tile = std::clamp(tile * std::exp(input.wheel * .12f), 2.0f, 96.0f);
+            tile = std::clamp(tile * std::exp(input.wheel * .12f), kMinTile, 96.0f);
             origin = {input.pointer.x - p.x * tile, input.pointer.y - p.y * tile};
         }
     }
@@ -50,7 +51,10 @@ inline bool PointIn(EditorWorkspacePoint p, EditorWorkspacePoint a, EditorWorksp
 // 背景のマスはキャンバスの範囲だけ描く。
 inline void DrawCanvasGrid(IEditorWorkspaceUi& ui, const MapCanvasView& v, EditorWorkspacePoint size) {
     ui.CanvasFill({0, 0}, size, {.045f, .07f, .095f, 1});
-    const float spacing = v.tile * (v.tile < 8 ? 4.0f : 1.0f);
+    // 線の間が 12 画素以上になる刻み（1・4・16・64 マス）。縮めすぎた時は引かない。
+    float spacing = 0;
+    for (const float step : {1.0f, 4.0f, 16.0f, 64.0f}) { if (v.tile * step >= 12) { spacing = v.tile * step; break; } }
+    if (spacing <= 0) { return; }
     for (float x = std::fmod(v.origin.x, spacing); x < size.x; x += spacing) { ui.CanvasLine({x, 0}, {x, size.y}, {.12f, .17f, .20f, 1}); }
     for (float y = std::fmod(v.origin.y, spacing); y < size.y; y += spacing) { ui.CanvasLine({0, y}, {size.x, y}, {.12f, .17f, .20f, 1}); }
 }
@@ -124,7 +128,7 @@ inline void DrawDeviceGlyph(IEditorWorkspaceUi& ui, const DeviceDraft& d, const 
     }
 }
 
-inline void DrawRoomMap(IEditorWorkspaceUi& ui, const RegionSettings& s, const MapCanvasView& v, bool grid, bool links) {
+inline void DrawRoomMap(IEditorWorkspaceUi& ui, const RegionSettings& s, const MapCanvasView& v, bool grid, bool links, bool spawnFigure = true) {
     const auto valid = ValidateRegion(s.region);
     if (!valid.valid || s.region.cells.size() > 4096) { return; }
     ui.CanvasFill(v.Screen(0, 0), v.Screen(static_cast<float>(s.region.cols), static_cast<float>(s.region.rows)), {.075f, .12f, .15f, 1});
@@ -151,6 +155,7 @@ inline void DrawRoomMap(IEditorWorkspaceUi& ui, const RegionSettings& s, const M
         }
     }
     for (const auto& d : devices.Items()) { DrawDeviceGlyph(ui, d, v); }
+    if (!spawnFigure) { return; }
     // スポーン位置は人の記号で、.625 × .875 マスの矩形に収める。
     const auto spawn = [&](float x, float y) { return v.Screen(s.spawnX + x, s.spawnY + y); };
     constexpr EditorWorkspaceColor player{.88f, .94f, .98f, 1};

@@ -113,7 +113,7 @@ bool ReadRegion(EditorWorkspaceHostContext& context, uint64_t objectId, RegionTa
         {{"objectId", target.objectId}, {"componentId", target.componentId},
          {"propertyIds", {"regionId", "cols", "rows", "tilePixels", "cells", "screenObject",
                           "screenSlot", "spawnX", "spawnY", "entryRegion", "devices", "worldPlaced", "worldX", "worldY",
-                          "screenBrightness"}}});
+                          "screenBrightness", "stageAnchor"}}});
     if (!result.ok) { error = result.error; return false; }
     const auto fields = result.data.find("fields");
     if (fields == result.data.end() || !fields->is_array()) {
@@ -166,6 +166,8 @@ bool ReadRegion(EditorWorkspaceHostContext& context, uint64_t objectId, RegionTa
         if (!brightness->is_number() || !std::isfinite(brightness->get<float>())) { error = "component.describe: INVALID_RESULT: 屏幕亮度无效"; return false; }
         settings.screenBrightness = brightness->get<float>();
     }
+    settings.stageAnchor.clear();
+    if (const auto* anchor = FieldValue(*fields, "stageAnchor"); anchor && anchor->is_string()) { settings.stageAnchor = anchor->get<std::string>(); }
     return text("regionId", settings.region.regionId) && number("cols", settings.region.cols) &&
         number("rows", settings.region.rows) && number("tilePixels", settings.region.tilePixels) &&
         text("cells", settings.region.cells) && text("screenSlot", settings.screenSlot) && text("devices", settings.devices);
@@ -190,6 +192,7 @@ void AppendRegionChanges(Json& commands, const RegionTarget& target, const Regio
     add("worldPlaced", before.worldPlaced, after.worldPlaced);
     add("worldX", before.worldX, after.worldX);
     add("worldY", before.worldY, after.worldY);
+    add("stageAnchor", before.stageAnchor, after.stageAnchor);
 }
 
 bool CommitProperties(EditorWorkspaceHostContext& context, const RegionTarget& target,

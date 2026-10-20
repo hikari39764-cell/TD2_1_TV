@@ -1,0 +1,955 @@
+{
+  "domain": "Surface",
+  "featureRequests": [],
+  "graph": {
+    "edges": [
+      {
+        "id": "edge.standardPbr.surfaceOutput",
+        "sourceNodeId": "node.standardPbr",
+        "sourcePin": "Surface",
+        "targetNodeId": "node.surfaceOutput",
+        "targetPin": "Surface"
+      }
+    ],
+    "groups": [],
+    "nodes": [
+      {
+        "assetReference": "",
+        "displayName": "Principled PBR BSDF",
+        "functionInputs": [],
+        "functionOutputs": [],
+        "id": "node.standardPbr",
+        "kind": "PBRSurface",
+        "position": [
+          0.0,
+          0.0
+        ],
+        "properties": [],
+        "referenceId": "",
+        "value": {
+          "type": "Float1",
+          "value": [
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "valueType": "Surface"
+      },
+      {
+        "assetReference": "",
+        "displayName": "Surface Output",
+        "functionInputs": [],
+        "functionOutputs": [],
+        "id": "node.surfaceOutput",
+        "kind": "SurfaceOutput",
+        "position": [
+          360.0,
+          0.0
+        ],
+        "properties": [],
+        "referenceId": "",
+        "value": {
+          "type": "Float1",
+          "value": [
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "valueType": "Surface"
+      }
+    ],
+    "outputNodeId": "node.surfaceOutput",
+    "parameters": [
+      {
+        "defaultValue": {
+          "type": "Float4",
+          "value": [
+            0.6938717365264893,
+            0.32314321398735046,
+            0.045186202973127365,
+            1.0
+          ]
+        },
+        "displayName": "Base Color",
+        "exposed": true,
+        "group": "",
+        "id": "parameter.baseColor",
+        "uiMaximum": 1.0,
+        "uiMinimum": 0.0,
+        "useUiRange": false
+      },
+      {
+        "defaultValue": {
+          "type": "Float1",
+          "value": [
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "displayName": "Clear Coat",
+        "exposed": true,
+        "group": "",
+        "id": "parameter.clearCoat",
+        "uiMaximum": 1.0,
+        "uiMinimum": 0.0,
+        "useUiRange": false
+      },
+      {
+        "defaultValue": {
+          "type": "Float1",
+          "value": [
+            0.10000000149011612,
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "displayName": "Clear Coat Roughness",
+        "exposed": true,
+        "group": "",
+        "id": "parameter.clearCoatRoughness",
+        "uiMaximum": 1.0,
+        "uiMinimum": 0.0,
+        "useUiRange": false
+      },
+      {
+        "defaultValue": {
+          "type": "Float3",
+          "value": [
+            3.4693586826324463,
+            1.6157160997390747,
+            0.22593101859092712,
+            0.0
+          ]
+        },
+        "displayName": "Emissive",
+        "exposed": true,
+        "group": "",
+        "id": "parameter.emissive",
+        "uiMaximum": 1.0,
+        "uiMinimum": 0.0,
+        "useUiRange": false
+      },
+      {
+        "defaultValue": {
+          "type": "Float1",
+          "value": [
+            1.0,
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "displayName": "Emissive Strength",
+        "exposed": true,
+        "group": "",
+        "id": "parameter.emissiveStrength",
+        "uiMaximum": 1.0,
+        "uiMinimum": 0.0,
+        "useUiRange": false
+      },
+      {
+        "defaultValue": {
+          "type": "Float1",
+          "value": [
+            1.5,
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "displayName": "Index of Refraction",
+        "exposed": true,
+        "group": "",
+        "id": "parameter.ior",
+        "uiMaximum": 1.0,
+        "uiMinimum": 0.0,
+        "useUiRange": false
+      },
+      {
+        "defaultValue": {
+          "type": "Float3",
+          "value": [
+            1.0,
+            1.0,
+            1.0,
+            0.0
+          ]
+        },
+        "displayName": "Lit Tint",
+        "exposed": true,
+        "group": "",
+        "id": "parameter.litTint",
+        "uiMaximum": 1.0,
+        "uiMinimum": 0.0,
+        "useUiRange": false
+      },
+      {
+        "defaultValue": {
+          "type": "Float1",
+          "value": [
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "displayName": "Metallic",
+        "exposed": true,
+        "group": "",
+        "id": "parameter.metallic",
+        "uiMaximum": 1.0,
+        "uiMinimum": 0.0,
+        "useUiRange": false
+      },
+      {
+        "defaultValue": {
+          "type": "Float1",
+          "value": [
+            0.699999988079071,
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "displayName": "Midtone Threshold",
+        "exposed": true,
+        "group": "",
+        "id": "parameter.midThreshold",
+        "uiMaximum": 1.0,
+        "uiMinimum": 0.0,
+        "useUiRange": false
+      },
+      {
+        "defaultValue": {
+          "type": "Float3",
+          "value": [
+            0.7200000286102295,
+            0.7799999713897705,
+            0.8799999952316284,
+            0.0
+          ]
+        },
+        "displayName": "Midtone Tint",
+        "exposed": true,
+        "group": "",
+        "id": "parameter.midTint",
+        "uiMaximum": 1.0,
+        "uiMinimum": 0.0,
+        "useUiRange": false
+      },
+      {
+        "defaultValue": {
+          "type": "Float1",
+          "value": [
+            1.0,
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "displayName": "Normal Scale",
+        "exposed": true,
+        "group": "",
+        "id": "parameter.normalScale",
+        "uiMaximum": 1.0,
+        "uiMinimum": 0.0,
+        "useUiRange": false
+      },
+      {
+        "defaultValue": {
+          "type": "Float1",
+          "value": [
+            1.0,
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "displayName": "Occlusion Strength",
+        "exposed": true,
+        "group": "",
+        "id": "parameter.occlusionStrength",
+        "uiMaximum": 1.0,
+        "uiMinimum": 0.0,
+        "useUiRange": false
+      },
+      {
+        "defaultValue": {
+          "type": "Float3",
+          "value": [
+            0.02500000037252903,
+            0.029999999329447746,
+            0.04500000178813934,
+            0.0
+          ]
+        },
+        "displayName": "Outline Color",
+        "exposed": true,
+        "group": "",
+        "id": "parameter.outlineColor",
+        "uiMaximum": 1.0,
+        "uiMinimum": 0.0,
+        "useUiRange": false
+      },
+      {
+        "defaultValue": {
+          "type": "Float1",
+          "value": [
+            1.0,
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "displayName": "Outline Mode",
+        "exposed": true,
+        "group": "",
+        "id": "parameter.outlineMode",
+        "uiMaximum": 1.0,
+        "uiMinimum": 0.0,
+        "useUiRange": false
+      },
+      {
+        "defaultValue": {
+          "type": "Float1",
+          "value": [
+            1.0,
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "displayName": "Outline Thickness",
+        "exposed": true,
+        "group": "",
+        "id": "parameter.outlineThickness",
+        "uiMaximum": 1.0,
+        "uiMinimum": 0.0,
+        "useUiRange": false
+      },
+      {
+        "defaultValue": {
+          "type": "Float1",
+          "value": [
+            0.5,
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "displayName": "Secondary Ramp Blend",
+        "exposed": true,
+        "group": "",
+        "id": "parameter.rampBlend",
+        "uiMaximum": 1.0,
+        "uiMinimum": 0.0,
+        "useUiRange": false
+      },
+      {
+        "defaultValue": {
+          "type": "Float1",
+          "value": [
+            1.0,
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "displayName": "Ramp Influence",
+        "exposed": true,
+        "group": "",
+        "id": "parameter.rampIntensity",
+        "uiMaximum": 1.0,
+        "uiMinimum": 0.0,
+        "useUiRange": false
+      },
+      {
+        "defaultValue": {
+          "type": "Float4",
+          "value": [
+            1.0,
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "displayName": "Ramp Layer Weights",
+        "exposed": true,
+        "group": "",
+        "id": "parameter.rampLayerWeights",
+        "uiMaximum": 1.0,
+        "uiMinimum": 0.0,
+        "useUiRange": false
+      },
+      {
+        "defaultValue": {
+          "type": "Float1",
+          "value": [
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "displayName": "Ramp Mask Influence",
+        "exposed": true,
+        "group": "",
+        "id": "parameter.rampMaskInfluence",
+        "uiMaximum": 1.0,
+        "uiMinimum": 0.0,
+        "useUiRange": false
+      },
+      {
+        "defaultValue": {
+          "type": "Float1",
+          "value": [
+            0.5,
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "displayName": "Ramp Row",
+        "exposed": true,
+        "group": "",
+        "id": "parameter.rampRow",
+        "uiMaximum": 1.0,
+        "uiMinimum": 0.0,
+        "useUiRange": false
+      },
+      {
+        "defaultValue": {
+          "type": "Float1",
+          "value": [
+            0.4399999976158142,
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "displayName": "Roughness",
+        "exposed": true,
+        "group": "",
+        "id": "parameter.roughness",
+        "uiMaximum": 1.0,
+        "uiMinimum": 0.0,
+        "useUiRange": false
+      },
+      {
+        "defaultValue": {
+          "type": "Float1",
+          "value": [
+            0.02500000037252903,
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "displayName": "Shadow Softness",
+        "exposed": true,
+        "group": "",
+        "id": "parameter.shadowSoftness",
+        "uiMaximum": 1.0,
+        "uiMinimum": 0.0,
+        "useUiRange": false
+      },
+      {
+        "defaultValue": {
+          "type": "Float1",
+          "value": [
+            0.46000000834465027,
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "displayName": "Shadow Threshold",
+        "exposed": true,
+        "group": "",
+        "id": "parameter.shadowThreshold",
+        "uiMaximum": 1.0,
+        "uiMinimum": 0.0,
+        "useUiRange": false
+      },
+      {
+        "defaultValue": {
+          "type": "Float3",
+          "value": [
+            0.3799999952316284,
+            0.44999998807907104,
+            0.6200000047683716,
+            0.0
+          ]
+        },
+        "displayName": "Shadow Tint",
+        "exposed": true,
+        "group": "",
+        "id": "parameter.shadowTint",
+        "uiMaximum": 1.0,
+        "uiMinimum": 0.0,
+        "useUiRange": false
+      },
+      {
+        "defaultValue": {
+          "type": "Float1",
+          "value": [
+            1.0,
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "displayName": "Specular",
+        "exposed": true,
+        "group": "",
+        "id": "parameter.specular",
+        "uiMaximum": 1.0,
+        "uiMinimum": 0.0,
+        "useUiRange": false
+      },
+      {
+        "defaultValue": {
+          "type": "Float3",
+          "value": [
+            1.0,
+            1.0,
+            1.0,
+            0.0
+          ]
+        },
+        "displayName": "Specular Color",
+        "exposed": true,
+        "group": "",
+        "id": "parameter.specularColor",
+        "uiMaximum": 1.0,
+        "uiMinimum": 0.0,
+        "useUiRange": false
+      },
+      {
+        "defaultValue": {
+          "type": "Float1",
+          "value": [
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "displayName": "Subsurface",
+        "exposed": true,
+        "group": "",
+        "id": "parameter.subsurface",
+        "uiMaximum": 1.0,
+        "uiMinimum": 0.0,
+        "useUiRange": false
+      },
+      {
+        "defaultValue": {
+          "type": "Float1",
+          "value": [
+            0.019999999552965164,
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "displayName": "Subsurface Radius",
+        "exposed": true,
+        "group": "",
+        "id": "parameter.subsurfaceRadius",
+        "uiMaximum": 1.0,
+        "uiMinimum": 0.0,
+        "useUiRange": false
+      },
+      {
+        "defaultValue": {
+          "type": "Float1",
+          "value": [
+            1.0,
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "displayName": "Direct Light Gain",
+        "exposed": true,
+        "group": "",
+        "id": "parameter.toonDirectGain",
+        "uiMaximum": 1.0,
+        "uiMinimum": 0.0,
+        "useUiRange": false
+      },
+      {
+        "defaultValue": {
+          "type": "Float1",
+          "value": [
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "displayName": "Transmission",
+        "exposed": true,
+        "group": "",
+        "id": "parameter.transmission",
+        "uiMaximum": 1.0,
+        "uiMinimum": 0.0,
+        "useUiRange": false
+      }
+    ],
+    "resources": [
+      {
+        "assetGuid": "",
+        "displayName": "Base Color",
+        "enabled": false,
+        "id": "resource.baseColor",
+        "semantic": "BaseColor",
+        "texCoord": 0,
+        "type": "Texture2D",
+        "uvOffset": [
+          0.0,
+          0.0
+        ],
+        "uvRotation": 0.0,
+        "uvScale": [
+          1.0,
+          1.0
+        ]
+      },
+      {
+        "assetGuid": "f52558753eae235fcc9c021aa3451c26",
+        "displayName": "Diffuse Ramp",
+        "enabled": true,
+        "id": "resource.diffuseRamp",
+        "semantic": "Ramp",
+        "texCoord": 0,
+        "type": "Ramp2D",
+        "uvOffset": [
+          0.0,
+          0.0
+        ],
+        "uvRotation": 0.0,
+        "uvScale": [
+          1.0,
+          1.0
+        ]
+      },
+      {
+        "assetGuid": "",
+        "displayName": "Emissive",
+        "enabled": false,
+        "id": "resource.emissive",
+        "semantic": "Emissive",
+        "texCoord": 0,
+        "type": "Texture2D",
+        "uvOffset": [
+          0.0,
+          0.0
+        ],
+        "uvRotation": 0.0,
+        "uvScale": [
+          1.0,
+          1.0
+        ]
+      },
+      {
+        "assetGuid": "",
+        "displayName": "Metallic Roughness",
+        "enabled": false,
+        "id": "resource.metallicRoughness",
+        "semantic": "MetallicRoughness",
+        "texCoord": 0,
+        "type": "Texture2D",
+        "uvOffset": [
+          0.0,
+          0.0
+        ],
+        "uvRotation": 0.0,
+        "uvScale": [
+          1.0,
+          1.0
+        ]
+      },
+      {
+        "assetGuid": "",
+        "displayName": "Normal",
+        "enabled": false,
+        "id": "resource.normal",
+        "semantic": "Normal",
+        "texCoord": 0,
+        "type": "Texture2D",
+        "uvOffset": [
+          0.0,
+          0.0
+        ],
+        "uvRotation": 0.0,
+        "uvScale": [
+          1.0,
+          1.0
+        ]
+      },
+      {
+        "assetGuid": "",
+        "displayName": "Occlusion",
+        "enabled": false,
+        "id": "resource.occlusion",
+        "semantic": "Occlusion",
+        "texCoord": 0,
+        "type": "Texture2D",
+        "uvOffset": [
+          0.0,
+          0.0
+        ],
+        "uvRotation": 0.0,
+        "uvScale": [
+          1.0,
+          1.0
+        ]
+      },
+      {
+        "assetGuid": "4e2b724947092dee84976e825b5d46b6",
+        "displayName": "Quaternary Ramp",
+        "enabled": true,
+        "id": "resource.quaternaryRamp",
+        "semantic": "Ramp",
+        "texCoord": 0,
+        "type": "Ramp2D",
+        "uvOffset": [
+          0.0,
+          0.0
+        ],
+        "uvRotation": 0.0,
+        "uvScale": [
+          1.0,
+          1.0
+        ]
+      },
+      {
+        "assetGuid": "4e2b724947092dee84976e825b5d46b6",
+        "displayName": "Secondary Ramp",
+        "enabled": true,
+        "id": "resource.secondaryRamp",
+        "semantic": "Ramp",
+        "texCoord": 0,
+        "type": "Ramp2D",
+        "uvOffset": [
+          0.0,
+          0.0
+        ],
+        "uvRotation": 0.0,
+        "uvScale": [
+          1.0,
+          1.0
+        ]
+      },
+      {
+        "assetGuid": "",
+        "displayName": "Specular",
+        "enabled": false,
+        "id": "resource.specular",
+        "semantic": "Specular",
+        "texCoord": 0,
+        "type": "Texture2D",
+        "uvOffset": [
+          0.0,
+          0.0
+        ],
+        "uvRotation": 0.0,
+        "uvScale": [
+          1.0,
+          1.0
+        ]
+      },
+      {
+        "assetGuid": "",
+        "displayName": "Specular Color",
+        "enabled": false,
+        "id": "resource.specularColor",
+        "semantic": "SpecularColor",
+        "texCoord": 0,
+        "type": "Texture2D",
+        "uvOffset": [
+          0.0,
+          0.0
+        ],
+        "uvRotation": 0.0,
+        "uvScale": [
+          1.0,
+          1.0
+        ]
+      },
+      {
+        "assetGuid": "4e2b724947092dee84976e825b5d46b6",
+        "displayName": "Tertiary Ramp",
+        "enabled": true,
+        "id": "resource.tertiaryRamp",
+        "semantic": "Ramp",
+        "texCoord": 0,
+        "type": "Ramp2D",
+        "uvOffset": [
+          0.0,
+          0.0
+        ],
+        "uvRotation": 0.0,
+        "uvScale": [
+          1.0,
+          1.0
+        ]
+      }
+    ]
+  },
+  "kind": "Material",
+  "materialName": "TD2F_LedAmber Material",
+  "pbr": {
+    "baseColor": {
+      "factor": [
+        0.6938717365264893,
+        0.32314321398735046,
+        0.045186202973127365,
+        1.0
+      ],
+      "texCoord": 0,
+      "textureAssetGuid": "",
+      "useTexture": false,
+      "uvOffset": [
+        0.0,
+        0.0
+      ],
+      "uvRotation": 0.0,
+      "uvScale": [
+        1.0,
+        1.0
+      ]
+    },
+    "clearCoat": {
+      "factor": 0.0,
+      "roughness": 0.10000000149011612
+    },
+    "emissive": {
+      "factor": [
+        3.4693586826324463,
+        1.6157160997390747,
+        0.22593101859092712
+      ],
+      "strength": 1.0,
+      "texCoord": 0,
+      "textureAssetGuid": "",
+      "useTexture": false,
+      "uvOffset": [
+        0.0,
+        0.0
+      ],
+      "uvRotation": 0.0,
+      "uvScale": [
+        1.0,
+        1.0
+      ]
+    },
+    "metallicRoughness": {
+      "metallicFactor": 0.0,
+      "roughnessFactor": 0.4399999976158142,
+      "texCoord": 0,
+      "textureAssetGuid": "",
+      "useTexture": false,
+      "uvOffset": [
+        0.0,
+        0.0
+      ],
+      "uvRotation": 0.0,
+      "uvScale": [
+        1.0,
+        1.0
+      ]
+    },
+    "normal": {
+      "scale": 1.0,
+      "texCoord": 0,
+      "textureAssetGuid": "",
+      "useTexture": false,
+      "uvOffset": [
+        0.0,
+        0.0
+      ],
+      "uvRotation": 0.0,
+      "uvScale": [
+        1.0,
+        1.0
+      ]
+    },
+    "occlusion": {
+      "strength": 1.0,
+      "texCoord": 0,
+      "textureAssetGuid": "",
+      "useTexture": false,
+      "uvOffset": [
+        0.0,
+        0.0
+      ],
+      "uvRotation": 0.0,
+      "uvScale": [
+        1.0,
+        1.0
+      ]
+    },
+    "specular": {
+      "factor": 1.0,
+      "texCoord": 0,
+      "textureAssetGuid": "",
+      "useTexture": false,
+      "uvOffset": [
+        0.0,
+        0.0
+      ],
+      "uvRotation": 0.0,
+      "uvScale": [
+        1.0,
+        1.0
+      ]
+    },
+    "specularColor": {
+      "factor": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "texCoord": 0,
+      "textureAssetGuid": "",
+      "useTexture": false,
+      "uvOffset": [
+        0.0,
+        0.0
+      ],
+      "uvRotation": 0.0,
+      "uvScale": [
+        1.0,
+        1.0
+      ]
+    },
+    "subsurface": {
+      "factor": 0.0,
+      "radius": 0.019999999552965164
+    },
+    "transmission": {
+      "factor": 0.0,
+      "ior": 1.5
+    }
+  },
+  "profileAssetGuid": "",
+  "surface": {
+    "alphaCutoff": 0.5,
+    "alphaMode": "Opaque",
+    "alphaRepresentation": "Straight",
+    "doubleSided": false,
+    "unlit": false
+  },
+  "template": "StandardPBR",
+  "version": 7
+}
