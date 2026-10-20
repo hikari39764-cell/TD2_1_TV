@@ -9,8 +9,10 @@
 
 namespace TD2 {
 namespace {
-// 背景の壁はプレイ面より 0.85 マス奥。目盛りは壁のすぐ手前。
-constexpr double kBackdropDepth = -0.85, kGridDepth = -0.845;
+// 背景の壁はプレイ面より 0.85 マス奥（目盛りは壁のすぐ手前）。奥行きの格子がある時はその分さらに奥。
+constexpr double kBackdropDepth = -0.85;
+// 地形の部品の奥行き（マス）。奥行きの格子の一列はこの厚み（斜投影を焼いた部品は奥へ伸ばせないので、立方体にはしない）。
+constexpr double kTerrainDepth = 0.7;
 // 後ろの壁の窓：天井の下と左右に 1.5 マス、床の上に 2.5 マスの明るい壁を残す（床の上の壁に物の影と暗がりが落ち、
 // 部屋が実験舱の一室に見える）。窓の向こうの層は、目の向きの正接が最大（0.3）の時に部屋の縁を越えても、
 // 隣の部屋の壁の帯（1.5 マス以上）に隠れる範囲で作る。
@@ -82,7 +84,7 @@ bool StagePartBuilder::Add(std::string_view part, double x, double bottomY, doub
     // 正面の 1 マスが像でもちょうど 1 マスになるよう、俯角で縦、側角で横の縮みを補う。90°回した部品は軸を入れ替える。
     const double pitchCos = std::cos(projection_.pitch), yawCos = std::cos(projection_.yaw);
     request.worldTransform.scale = {static_cast<float>(width * projection_.scale / (quarterTurn ? pitchCos : yawCos)),
-        static_cast<float>(height * projection_.scale / (quarterTurn ? yawCos : pitchCos)), static_cast<float>(projection_.scale)};
+        static_cast<float>(height * projection_.scale / (quarterTurn ? yawCos : pitchCos)), static_cast<float>(projection_.scale * partDepth_)};
     // 陰影は部品に焼いてあり、キャプチャは灯も影も使わない。visible=0 にするとシーンの作り直しになるので、
     // 表示したまま舞台カメラに写らない所へ退ける。
     request.castShadow = 0; request.receiveShadow = 0; request.visible = 1;
@@ -91,52 +93,59 @@ bool StagePartBuilder::Add(std::string_view part, double x, double bottomY, doub
     return true;
 }
 
+double StagePartBuilder::WallDepth() const {
+    // 地形の一列の奥行き（実体の地形は 1 マスの立方体、ほかは部品の厚み）の分だけ、最後の列の奥 0.15 マスに置く。
+    const double row = solid_ ? 1.0 : kTerrainDepth;
+    return kBackdropDepth + kTerrainDepth - row * (depthRows_ + 1) + SolidFront();
+}
+
 void StagePartBuilder::Backdrop(int x, int y, int cols, int rows, WindowSpan span) {
     static constexpr std::array<std::string_view, 9> kGridH{"", "Backdrop_GridH1", "Backdrop_GridH2", "", "Backdrop_GridH4", "", "", "", "Backdrop_GridH8"};
     static constexpr std::array<std::string_view, 9> kGridV{"", "Backdrop_GridV1", "Backdrop_GridV2", "", "Backdrop_GridV4", "", "", "", "Backdrop_GridV8"};
     Begin("backdrop");
-    const double sx = projection_.ShiftX(kBackdropDepth), sy = projection_.ShiftY(kBackdropDepth);
+    const double wall = WallDepth(), grid = wall + .005;
+    const double sx = projection_.ShiftX(wall), sy = projection_.ShiftY(wall);
     WindowRect w{};
-    const bool wall = hall_ && projection_.oblique > 0;
-    const bool window = wall && WindowIn(x, y, cols, rows, span, w);
-    if (!wall) {
-        Add("Backdrop", x + cols * .5, y + rows, cols, rows, kBackdropDepth);
+    const bool bright = hall_ && Spatial();
+    const bool window = bright && WindowIn(x, y, cols, rows, span, w);
+    if (!bright) {
+        Add("Backdrop", x + cols * .5, y + rows, cols, rows, wall);
     } else if (compact_) {
         // 編集中（全部の部屋を一度に写す）は部品の数を抑え、明るい壁一枚と窓の形の闇だけ（大広間は描かない）。
         const double left = x - std::abs(sx), right = x + cols + .01, top = y - .01, bottom = y + rows + std::abs(sy);
-        Add("Wall_Panel", (left + right) * .5, bottom, right - left, bottom - top, kBackdropDepth);
-        if (window) { Add("Hall_Far", (w.left + w.right) * .5, w.bottom, w.right - w.left, w.bottom - w.top, kBackdropDepth + .002); }
+        Add("Wall_Panel", (left + right) * .5, bottom, right - left, bottom - top, wall);
+        if (window) { Add("Hall_Far", (w.left + w.right) * .5, w.bottom, w.right - w.left, w.bottom - w.top, wall + .002); }
     } else if (!window) {
         // 窓の取れない部屋は明るい壁だけ。
         const double left = x - std::abs(sx), right = x + cols + .01, top = y - .01, bottom = y + rows + std::abs(sy);
-        Add("Wall_Panel", (left + right) * .5, bottom, right - left, bottom - top, kBackdropDepth);
+        Add("Wall_Panel", (left + right) * .5, bottom, right - left, bottom - top, wall);
     } else {
         // 窓の周りの明るい壁の帯（斜投影の壁の奥行きの分だけ右上へずらし、左と下は隙間が出ないよう伸ばす）。
         const double left = x - std::abs(sx), right = x + cols + .01, top = y - .01, bottom = y + rows + std::abs(sy);
-        Add("Wall_Panel", (left + right) * .5, w.top, right - left, w.top - top, kBackdropDepth);
-        Add("Wall_Panel", (left + right) * .5, bottom, right - left, bottom - w.bottom, kBackdropDepth);
-        Add("Wall_Panel", (left + w.left) * .5, w.bottom, w.left - left, w.bottom - w.top, kBackdropDepth);
-        Add("Wall_Panel", (w.right + right) * .5, w.bottom, right - w.right, w.bottom - w.top, kBackdropDepth);
+        Add("Wall_Panel", (left + right) * .5, w.top, right - left, w.top - top, wall);
+        Add("Wall_Panel", (left + right) * .5, bottom, right - left, bottom - w.bottom, wall);
+        Add("Wall_Panel", (left + w.left) * .5, w.bottom, w.left - left, w.bottom - w.top, wall);
+        Add("Wall_Panel", (w.right + right) * .5, w.bottom, right - w.right, w.bottom - w.top, wall);
         // 窓の縦の縁：壁の厚みの棒（奥へ伸び、斜投影で左の側の面が窓の中に見える）。横の縁は付けない（敷居が足場に見える）。
-        Add("Window_FrameV", w.left - kFrameThickness * .5, w.bottom, 1, w.bottom - w.top, kBackdropDepth);
-        Add("Window_FrameV", w.right + kFrameThickness * .5, w.bottom, 1, w.bottom - w.top, kBackdropDepth);
+        Add("Window_FrameV", w.left - kFrameThickness * .5, w.bottom, 1, w.bottom - w.top, wall);
+        Add("Window_FrameV", w.right + kFrameThickness * .5, w.bottom, 1, w.bottom - w.top, wall);
     }
     // 立体の組では、奥の壁の目盛りを壁の奥行きの分だけ右上へずらす（地形の正面のマスと揃わず、壁が奥にあると読める）。
     // ずらした分の隙間が左と下に出ないよう、線を 1 マス長くする。
-    const double gx = projection_.ShiftX(kGridDepth), gy = projection_.ShiftY(kGridDepth);
+    const double gx = projection_.ShiftX(grid), gy = projection_.ShiftY(grid);
     const bool shifted = projection_.oblique > 0;
     // 目盛りは窓の無い昔の暗い壁だけ（明るい壁と窓の部屋では、大広間の柱と光の細窓が奥行きの手掛かりになる）。
-    for (int row = 0, left = compact_ || wall ? 0 : rows + 1; left > 0;) {
+    for (int row = 0, left = compact_ || bright ? 0 : rows + 1; left > 0;) {
         const int n = BundleOf(left);
         // 横線の束は下端から上へ n 本。最初の線が row + n - 1 に来るよう下端を合わせる。
-        if (shifted) { Add(kGridH[static_cast<size_t>(n)], x + cols * .5 - .5 + gx, y + row + n - 1 + gy, cols + 1, 1, kGridDepth); }
-        else { Add(kGridH[static_cast<size_t>(n)], x + cols * .5, y + row + n - 1, cols, 1, kGridDepth); }
+        if (shifted) { Add(kGridH[static_cast<size_t>(n)], x + cols * .5 - .5 + gx, y + row + n - 1 + gy, cols + 1, 1, grid); }
+        else { Add(kGridH[static_cast<size_t>(n)], x + cols * .5, y + row + n - 1, cols, 1, grid); }
         row += n; left -= n;
     }
-    for (int col = 0, left = compact_ || wall ? 0 : cols + 1; left > 0;) {
+    for (int col = 0, left = compact_ || bright ? 0 : cols + 1; left > 0;) {
         const int n = BundleOf(left);
-        if (shifted) { Add(kGridV[static_cast<size_t>(n)], x + col + gx, y + rows + 1 + gy, 1, rows + 1, kGridDepth); }
-        else { Add(kGridV[static_cast<size_t>(n)], x + col, y + rows, 1, rows, kGridDepth); }
+        if (shifted) { Add(kGridV[static_cast<size_t>(n)], x + col + gx, y + rows + 1 + gy, 1, rows + 1, grid); }
+        else { Add(kGridV[static_cast<size_t>(n)], x + col, y + rows, 1, rows, grid); }
         col += n; left -= n;
     }
     // 俯角と側角を両方付けると背景板の角がずれて隙間ができるので、Backdrop の下の真っ暗な帯を縦に伸ばした板を
@@ -153,7 +162,7 @@ void StagePartBuilder::Backdrop(int x, int y, int cols, int rows, WindowSpan spa
 // 躯体は大きい塊（8×4 から 1×1）から順に当てはめる。
 void StagePartBuilder::Hall(std::string_view regionId, int x, int y, int cols, int rows, WindowSpan span, double eyeX, double eyeY) {
     WindowRect w{};
-    if (!hall_ || compact_ || projection_.oblique <= 0 || !WindowIn(x, y, cols, rows, span, w)) { return; }
+    if (!hall_ || compact_ || !Spatial() || !WindowIn(x, y, cols, rows, span, w)) { return; }
     // 区域 ID から部屋ごとの並びを決める（同じ部屋は毎回同じ）。
     uint64_t seed = 1469598103934665603ull;
     for (const unsigned char c : regionId) { seed = (seed ^ c) * 1099511628211ull; }
@@ -163,10 +172,12 @@ void StagePartBuilder::Hall(std::string_view regionId, int x, int y, int cols, i
     // 奥行き depth の層のずれ（目の向きの視差だけ。正面から見ると層は窓にそろい、斜めから見るほど奥の層が大きくずれる）。
     // 目が右にあると奥の層は右へ、目が上にあると上へずれて見える（箱の反対側の内側が見える向き）。y は下が正。
     const auto at = [&](double depth) { const double d = -depth; return std::pair{d * eyeX, -d * eyeY}; };
+    // 奥行きの格子の分だけ層を奥へ下げる（視差のずれは元の奥行きのまま。窓のはみ出しの範囲に収まる）。
+    const double back = WallDepth() - kBackdropDepth;
     Begin("hall");
     {   // 奥の壁（一色の闇。霧で奥ほど明るく霞む）
         const auto [ox, oy] = at(kHallFarDepth);
-        Add("Hall_Far", (wl + wr) * .5 + ox, wb + oy, wr - wl, wb - wt, kHallFarDepth);
+        Add("Hall_Far", (wl + wr) * .5 + ox, wb + oy, wr - wl, wb - wt, kHallFarDepth + back);
     }
     // 柱：窓の幅 4.5 マスに一本ほど、間隔を乱す（等間隔の縦縞は格子に見える。部品の数は幅だけで決まる）。
     // 光の細窓一本は最初の二本の柱の間の、片方に寄った所（柱の真後ろに隠れない）。
@@ -176,11 +187,11 @@ void StagePartBuilder::Hall(std::string_view regionId, int x, int y, int cols, i
     {
         const auto [lx, ly] = at(kHallSlitDepth);
         const double t = columns[0] + (columns[1] - columns[0]) * (random() < .5 ? .35 : .65);
-        Add("Hall_Slit", w.left + (w.right - w.left) * t + lx, wb + ly, 1, wb - wt, kHallSlitDepth);
+        Add("Hall_Slit", w.left + (w.right - w.left) * t + lx, wb + ly, 1, wb - wt, kHallSlitDepth + back);
     }
     {
         const auto [cx, cy] = at(kHallColumnDepth);
-        for (const double t : columns) { Add("Hall_Column", w.left + (w.right - w.left) * t + cx, wb + cy, 1, wb - wt, kHallColumnDepth); }
+        for (const double t : columns) { Add("Hall_Column", w.left + (w.right - w.left) * t + cx, wb + cy, 1, wb - wt, kHallColumnDepth + back); }
     }
 }
 
@@ -208,6 +219,40 @@ void StagePartBuilder::Terrain(int x, int y, int cols, int rows, const std::vect
     const auto at = [&](int col, int row) {
         return occupancy[static_cast<size_t>((row + 1) * (cols + 2) + col + 1)] != 0;
     };
+    if (solid_) {
+        // 実体の地形：固い所を大きい長方形から順に箱一つにまとめ、部屋の奥まで伸ばす。立てる所（上が空いた横の連なり）には
+        // 明るい天板を重ね、手前に石墨の縁を付ける（縁は奥へ伸ばさない）。正面は玩法の面より SolidFront() だけ手前。
+        const double depth = SolidDepth(), front = SolidFront();
+        std::vector<char> taken(static_cast<size_t>(cols * rows), 0);
+        const auto open = [&](int col, int row) { return col < cols && row < rows && at(col, row) && !taken[static_cast<size_t>(row * cols + col)]; };
+        for (int row = 0; row < rows; ++row) for (int col = 0; col < cols; ++col) {
+            if (!open(col, row)) { continue; }
+            int w = 1, h = 1;
+            while (open(col + w, row)) { ++w; }
+            for (bool grow = true; grow && row + h < rows;) {
+                for (int i = 0; i < w && grow; ++i) { grow = open(col + i, row + h); }
+                if (grow) { ++h; }
+            }
+            for (int j = 0; j < h; ++j) for (int i = 0; i < w; ++i) { taken[static_cast<size_t>((row + j) * cols + col + i)] = 1; }
+            Begin("solid/" + std::to_string(col) + "/" + std::to_string(row));
+            partDepth_ = depth;
+            Add("Solid_Block", x + col + w * .5, y + row + h, w, h, front);
+            partDepth_ = 1;
+        }
+        for (int row = 0; row < rows; ++row) for (int col = 0; col < cols;) {
+            if (!at(col, row) || at(col, row - 1)) { ++col; continue; }
+            int length = 0;
+            while (col + length < cols && at(col + length, row) && !at(col + length, row - 1)) { ++length; }
+            Begin("solidTop/" + std::to_string(col) + "/" + std::to_string(row));
+            partDepth_ = depth;
+            Add("Solid_Cap", x + col + length * .5, y + row + 1, length, 1, front);
+            partDepth_ = 1;
+            Add("Solid_Nose", x + col + length * .5, y + row + 1, length, 1, front);
+            col += length;
+        }
+        SolidSeams(x, y, cols, rows, occupancy);
+        return;
+    }
     std::vector<char> used(static_cast<size_t>(cols * rows), 0);
     const auto index = [cols](int col, int row) { return static_cast<size_t>(row * cols + col); };
     const auto top = [&](int col, int row) { return at(col, row) && !at(col, row - 1); };
@@ -243,6 +288,94 @@ void StagePartBuilder::Terrain(int x, int y, int cols, int rows, const std::vect
             break;
         }
     }
+    // 奥行きの格子：手前の一列の後ろに同じ形の塊を並べる。天板の縁は付けない（奥の列が段や足場に見えないように）。
+    // 斜投影の組は部品に焼いた傾きと同じだけずらし、列の間に隙間を作らない。継ぎ目が奥行きの目盛りになる。
+    for (int k = 1; k <= depthRows_; ++k) {
+        const double depth = -kTerrainDepth * k, sx = projection_.ShiftX(depth), sy = projection_.ShiftY(depth);
+        std::vector<char> taken(static_cast<size_t>(cols * rows), 0);
+        const auto open = [&](int col, int row) { return col < cols && row < rows && at(col, row) && !taken[index(col, row)]; };
+        for (int row = 0; row < rows; ++row) for (int col = 0; col < cols; ++col) {
+            if (!open(col, row)) { continue; }
+            for (const auto& [w, h] : kBlocks) {
+                bool fits = true;
+                for (int j = 0; j < h && fits; ++j) for (int i = 0; i < w && fits; ++i) { fits = open(col + i, row + j); }
+                if (!fits) { continue; }
+                for (int j = 0; j < h; ++j) for (int i = 0; i < w; ++i) { taken[index(col + i, row + j)] = 1; }
+                Begin("deep/" + std::to_string(k) + "/" + std::to_string(col) + "/" + std::to_string(row));
+                Add("Terrain_Block" + std::to_string(w) + "x" + std::to_string(h), x + col + w * .5 + sx, y + row + h + sy, 1, 1, depth);
+                break;
+            }
+        }
+    }
+}
+
+void StagePartBuilder::SolidSeams(int x, int y, int cols, int rows, const std::vector<char>& occupancy) {
+    // 実体の面の目地：見える面のマスの境に細い棒を置く（奥へ伸びる線が透視の中心へ集まり、奥行きの目盛りになる）。
+    // 部屋の境の線は左と上の部屋の側だけが引く（隣の部屋と二重にならない）。
+    const auto solid = [&](int col, int row) { return occupancy[static_cast<size_t>((row + 1) * (cols + 2) + col + 1)] != 0; };
+    const int depth = depthRows_ + 1;
+    const double front = SolidFront();
+    const auto rodZ = [&](double px, double py) {
+        partDepth_ = depth;
+        Add("Solid_RodZ", px, py, 1, 1, front);
+        partDepth_ = 1;
+    };
+    Begin("seams");
+    // 天板（上が空き）と下面（下が空き）：奥へ伸びる線をマスの境に、横の線を奥行き 1 マスごとに。
+    for (int side = 0; side < 2; ++side) {
+        const int dy = side == 0 ? -1 : 1;
+        const auto face = [&](int col, int row) { return solid(col, row) && !solid(col, row + dy); };
+        for (int row = 0; row < rows; ++row) {
+            const double py = y + row + (side == 0 ? 0 : 1);
+            for (int col = 0; col < cols; ++col) {
+                if (face(col, row) && face(col - 1, row)) { rodZ(x + col, py); }
+            }
+            for (int col = 0; col < cols;) {
+                if (!face(col, row)) { ++col; continue; }
+                int length = 0;
+                while (col + length < cols && face(col + length, row)) { ++length; }
+                for (int k = 1; k < depth; ++k) { Add("Solid_RodX", x + col + length * .5, py, length, 1, front - k); }
+                col += length;
+            }
+        }
+    }
+    // 正面：固いマスどうしの縦と横の境。
+    for (int col = 0; col < cols; ++col) {
+        for (int row = 0; row < rows;) {
+            if (!(solid(col, row) && solid(col - 1, row))) { ++row; continue; }
+            int length = 0;
+            while (row + length < rows && solid(col, row + length) && solid(col - 1, row + length)) { ++length; }
+            Add("Solid_RodY", x + col, y + row + length, 1, length, front);
+            row += length;
+        }
+    }
+    for (int row = 0; row < rows; ++row) {
+        for (int col = 0; col < cols;) {
+            if (!(solid(col, row) && solid(col, row - 1))) { ++col; continue; }
+            int length = 0;
+            while (col + length < cols && solid(col + length, row) && solid(col + length, row - 1)) { ++length; }
+            Add("Solid_RodX", x + col + length * .5, y + row, length, 1, front);
+            col += length;
+        }
+    }
+    // 左右の側面（横が空き）：奥へ伸びる線を縦のマスの境に、縦の線を奥行き 1 マスごとに。
+    for (int side = 0; side < 2; ++side) {
+        const int dx = side == 0 ? -1 : 1;
+        const auto face = [&](int col, int row) { return solid(col, row) && !solid(col + dx, row); };
+        for (int col = 0; col < cols; ++col) {
+            const double px = x + col + (side == 0 ? 0 : 1);
+            for (int row = 0; row < rows; ++row) {
+                if (face(col, row) && face(col, row - 1)) { rodZ(px, y + row); }
+            }
+            for (int row = 0; row < rows;) {
+                if (!face(col, row)) { ++row; continue; }
+                int length = 0;
+                while (row + length < rows && face(col, row + length)) { ++length; }
+                for (int k = 1; k < depth; ++k) { Add("Solid_RodY", px, y + row + length, 1, length, front - k); }
+                row += length;
+            }
+        }
+    }
 }
 
 void StagePartBuilder::Lamp(double x, double bottomY, bool lit, double since, bool world) {
@@ -272,10 +405,10 @@ void StagePartBuilder::Edges(int x, int y, int cols, int rows, const std::vector
     // 口がつながっている間は退避して隠す（機構で部屋が動くたびに部品の数が変わらないように）。
     Begin("edges");
     // 明るい壁の部屋では、口のマスの後ろの壁を外へ向かって暗くする（口が通り道に見える）。編集中は部品を増やさない。
-    const bool opening = hall_ && !compact_ && projection_.oblique > 0;
-    const double wx = projection_.ShiftX(kBackdropDepth), wy = projection_.ShiftY(kBackdropDepth);
+    const bool opening = hall_ && !compact_ && Spatial();
+    const double wall = WallDepth(), wx = projection_.ShiftX(wall), wy = projection_.ShiftY(wall);
     const auto recess = [&](double cx, double cy, double turn) {
-        if (opening) { Add("Wall_Opening", cx + wx, cy + wy, 1, 1, kBackdropDepth + .001, RotateZ(turn), 0); }
+        if (opening) { Add("Wall_Opening", cx + wx, cy + wy, 1, 1, wall + .001, RotateZ(turn), 0); }
     };
     for (int row = 0; row < rows; ++row) {
         if (open(0, row)) recess(x + .5, y + row + .5, 0.0);
@@ -285,8 +418,12 @@ void StagePartBuilder::Edges(int x, int y, int cols, int rows, const std::vector
         if (open(col, 0)) recess(x + col + .5, y + .5, -kPi * .5);
         if (open(col, rows - 1)) recess(x + col + .5, y + rows - .5, kPi * .5);
     }
+    // 実体の地形では鎧戸を正面から部屋の奥まで伸ばす（口を奥行きごと塞ぐ。部品は奥行き -0.15〜-0.5 の板）。
+    const double shutterDepth = solid_ ? SolidDepth() / .35 : 1.0, shutterAt = solid_ ? SolidFront() + .15 * shutterDepth : .05;
     const auto shutter = [&](double sx, double sy, HIKARI::GameProjectQuaternion rotation, bool closed) {
-        if (closed || !compact_) Add("Edge_Shutter", sx, sy, 1, 1, .05, rotation, 0, closed);
+        partDepth_ = shutterDepth;
+        if (closed || !compact_) Add("Edge_Shutter", sx, sy, 1, 1, shutterAt, rotation, 0, closed);
+        partDepth_ = 1;
     };
     for (int row = 0; row < rows; ++row) {
         if (open(0, row)) shutter(x + .15, y + row + .5, {}, !linked[index(-1, row)]);
@@ -294,7 +431,9 @@ void StagePartBuilder::Edges(int x, int y, int cols, int rows, const std::vector
     }
     // 上下の口は横向きの形（回すと立体の組の斜めの向きまで回ってしまう）。
     const auto across = [&](double sx, double sy, bool closed) {
-        if (closed || !compact_) Add("Edge_ShutterH", sx, sy, 1, 1, .05, {}, 0, closed);
+        partDepth_ = shutterDepth;
+        if (closed || !compact_) Add("Edge_ShutterH", sx, sy, 1, 1, shutterAt, {}, 0, closed);
+        partDepth_ = 1;
     };
     for (int col = 0; col < cols; ++col) {
         if (open(col, 0)) across(x + col + .5, y + .15, !linked[index(col, -1)]);
@@ -459,6 +598,19 @@ void StagePartBuilder::Device(const Rules::DeviceSnapshot& d, bool checkpoint, d
     // 立体では背景として描かれ、輪郭も影も付かない（跳べる足場に見えない）。
     // 地形の 1 マスより小さく見える kSignSize マスの大きさで描く。
     case Rules::DeviceKind::Decal: {
+        // 作者が置く前景：玩法の面より depth マス手前の暗い塊（fore）か、上から垂れる線（foreCable）。
+        // 実体の地形（受光と透視の窓）の時だけ描く。平らな画面では手前に浮いた物の意味が無い。
+        if (d.variant == "fore" || d.variant == "foreCable") {
+            const double depth = std::clamp(d.depth, .25, 6.0);
+            if (d.variant == "fore") {
+                partDepth_ = .8;
+                Add("Fore_Block", x, bottom, r.w, r.h, depth, {}, -1, solid_);
+                partDepth_ = 1;
+            } else {
+                Add("Solid_RodY", x, bottom, 1.6, r.h, depth, {}, 0, solid_);
+            }
+            break;
+        }
         constexpr double kWall = kSignWall;
         // 立体の組では壁の目盛りと同じだけ右上へずらす（壁に貼った絵として読める）。
         const double cx = x + projection_.ShiftX(kWall), cy = r.y + r.h * .5 + .5 * kSignSize + projection_.ShiftY(kWall);   // キーの絵を矩形の縦の中ほどへ
@@ -530,7 +682,10 @@ void StagePartBuilder::Actor(const Rules::BodyState& body, const Rules::Rect& r,
     const double depth = projection_.ActorDepth() + (echo ? -.05 : 0);
     for (size_t i = 0; i < poses.size(); ++i) {
         // 使う一体だけを人物の位置へ。ほかは退避点に留め、人物が動いても触らない。
-        if (visible && i == current) { Add(poses[i], r.x + r.w * .5, r.y + r.h, r.h, r.h * std::clamp(grow, .01, 1.0), depth); }
+        if (visible && i == current) {
+            const double size = r.h * actorScale_;
+            Add(poses[i], r.x + r.w * .5, r.y + r.h, size, size * std::clamp(grow, .01, 1.0), depth);
+        }
         else { Add(poses[i], kParkX, kParkY, 1, 1, depth, {}, -1, false); }
     }
 }

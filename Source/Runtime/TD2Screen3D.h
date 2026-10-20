@@ -91,6 +91,9 @@ private:
         uint32_t width = 0, height = 0;
         bool valid = false;
         std::string regionId;   // 一部屋だけを撮る窓（Play の鮮明）の部屋
+        // 透視の窓：使う透視カメラ（-1 なら正投影）と、目から正面の面までの距離（舞台の長さ）。
+        int lens = -1;
+        double distance = 0;
         bool Contains(double left, double top, double right, double bottom) const {
             constexpr double e = 1e-6;
             return valid && left >= x - e && top >= y - e && right <= x + cols + e && bottom <= y + rows + e;
@@ -102,6 +105,7 @@ private:
         HIKARI::GameProjectObjectHandle handle{};
         HIKARI::GameProjectTransform original{};
         double orthographicHeight = 0;
+        double verticalFov = 0;   // 透視カメラの縦の画角（ラジアン）
     };
     struct View {
         ViewKind kind = ViewKind::Sharp;
@@ -124,6 +128,8 @@ private:
         int x = 0, y = 0, palette = -1;
         double scale = 0, pitch = 0, yaw = 0;
         bool compact = false, hall = false;
+        int depthRows = 0;
+        double playDepth = 0;
         WindowSpan window;
         std::vector<PartRequest> parts;
     };
@@ -132,6 +138,8 @@ private:
     struct ActiveFx { uint64_t eventId = 0; HIKARI::GameProjectVfxPlaybackHandle handle; };
 
     bool AcquireCameras(HIKARI::WorldView& world, const ScreenStyleSettings& stage);
+    // 透視の窓の二台（主・副）。一台も使えなければ false（透視を使わない）。
+    bool AcquireLensCameras(HIKARI::WorldView& world, const ScreenStyleSettings& stage);
     void RestoreCamera(HIKARI::WorldView& world, StageCamera& camera);
     void PlaceWindows(const std::vector<const StageRoom*>& rooms, const StageFrame& frame, int maxCols);
     // 編集中は全テレビを一枚の舞台像へ収める。
@@ -153,6 +161,25 @@ private:
     std::array<Window, kViewKinds> windows_{};
     // 窓の向こうの大広間：使うか、視差の強さ、部屋ごとのなめらかにした目の向きの正接（区域 ID → 右・上）。
     bool hall_ = true;
+    // 奥行きの格子の列数（0 で無し）、透視の窓、受光（Play だけ）。
+    int depthRows_ = 0;
+    bool perspective_ = false, lit_ = false, solid_ = false;
+    double actorScale_ = 1;
+    double playDepth_ = 0;
+    // 舞台の灯：写っている部屋へ役ごとに一つずつ置き、使わない灯は消す。灯の物体 → 点けているか。
+    void SyncStageLights(HIKARI::WorldView& world, const std::vector<Assigned>& shown, double now);
+    void ReleaseStageLights(HIKARI::WorldView& world);
+    // 舞台灯ごと：今照らしている部屋（room）と次に照らす部屋（target）、明るさの重み、作者の強さ。
+    struct StageLightTrack {
+        HIKARI::GameProjectObjectHandle handle{};
+        std::string room, target;
+        double weight = 0;
+        float base = 0, sent = -1;
+        bool known = false, enabled = false, shadows = false, shadowOff = false;
+    };
+    std::map<uint64_t, StageLightTrack> stageLights_;
+    double stageLightTime_ = 0;
+    std::array<StageCamera, 2> lensCameras_{};
     double parallaxGain_ = 1.0, lastParallaxTime_ = -1;
     std::map<std::string, std::array<double, 2>, std::less<>> parallax_;
     std::map<std::string, WindowSpan, std::less<>> windowSpans_;   // 区域 ID → 窓の上下（操作の札を避けた位置）

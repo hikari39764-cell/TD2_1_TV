@@ -317,7 +317,7 @@ private:
             }
             if (d->kind == "Laser") { EditFloat(ui, "td2.television.device.range", "射程", d->range, .125f, 128); }
             if (d->kind == "Spring") { DrawSpring(ui, *d); }
-            if (d->kind == "Decal") { DrawDecal(ui, *d); }
+            if (d->kind == "Decal") { DrawDecal(ui, *d, s.region); }
             if (d->kind == "Laser" || d->kind == "Door" || d->kind == "Bridge") { ui.Checkbox("td2.television.device.invert", "反向激活", &d->inverted); }
             if (d->kind == "Plate") {
                 ui.Checkbox("td2.television.device.latch", "踩一下切换（关：踩住时才通电）", &d->latch);
@@ -423,10 +423,11 @@ private:
         if (EditFloat(ui, "td2.television.device.delay", "站上去多久发射（秒）", delay, .05f, 3)) { d.SetExtra("delay", std::abs(delay - .85) < 1e-6 ? "" : ShortNumber(delay)); }
         if (EditFloat(ui, "td2.television.device.cooldown", "发射后冷却（秒）", cooldown, 3, 30)) { d.SetExtra("cooldown", std::abs(cooldown - 3) < 1e-6 ? "" : ShortNumber(cooldown)); }
     }
-    // 貼り絵の図案：按键の説明と出口の矢印。
-    static void DrawDecal(IEditorWorkspaceUi& ui, DeviceDraft& d) {
-        constexpr std::array<std::pair<std::string_view, std::string_view>, 7> variants{{{"ad", "A / D 移动"}, {"space", "空格"}, {"spaceHold", "长按空格"},
-            {"exit", "出口 →"}, {"exitLeft", "出口 ←"}, {"exitUp", "出口 ↑"}, {"exitDown", "出口 ↓"}}};
+    // 貼り絵の図案：按键の説明と出口の矢印、前景（実体の地形の時に玩法の面より手前に出る暗い塊・垂れた線）。
+    static void DrawDecal(IEditorWorkspaceUi& ui, DeviceDraft& d, const RegionDefinition& region) {
+        constexpr std::array<std::pair<std::string_view, std::string_view>, 9> variants{{{"ad", "A / D 移动"}, {"space", "空格"}, {"spaceHold", "长按空格"},
+            {"exit", "出口 →"}, {"exitLeft", "出口 ←"}, {"exitUp", "出口 ↑"}, {"exitDown", "出口 ↓"},
+            {"fore", "前景块"}, {"foreCable", "前景线缆"}}};
         ui.Text("图案");
         const auto current = d.Extra("variant");
         for (size_t i = 0; i < variants.size(); ++i) {
@@ -434,6 +435,19 @@ private:
                 d.SetExtra("variant", variants[i].first);
             }
         }
+        if (current != "fore" && current != "foreCable") { return; }
+        // 前景：人物の立つ面から手前への距離（既定 1 は書き出さない）と、遊べるマスの前に置いた時の注意（置くのは止めない）。
+        double depth = 1.0;
+        try { if (const auto text = d.Extra("depth"); !text.empty()) { depth = std::stod(text); } } catch (...) {}
+        if (EditFloat(ui, "td2.television.device.depth", "在角色前方多远（格）", depth, .25f, 6)) {
+            d.SetExtra("depth", std::abs(depth - 1.0) < 1e-6 ? "" : ShortNumber(depth));
+        }
+        bool covers = false;
+        for (int row = static_cast<int>(std::floor(d.y)); row < static_cast<int>(std::ceil(d.y + d.h)) && !covers; ++row)
+            for (int col = static_cast<int>(std::floor(d.x)); col < static_cast<int>(std::ceil(d.x + d.w)) && !covers; ++col)
+                covers = row >= 0 && col >= 0 && row < region.rows && col < region.cols && region.cells[CellIndex(region, col, row)] != '1';
+        ui.Text("只在实体地形（受光 + 透视窗口）时显示；越近越大，也越会遮挡后面。");
+        if (covers) { ui.Text("提示：盖住了可以走的格子，可能挡住角色或机关。"); }
     }
     // 圧力板の、別のテレビの装置と画面の外の仕掛けへの接続。今の接続の一覧（見つからない目標は印を付ける）も出す。
     void DrawExternalTargets(EditorWorkspaceHostContext& ctx, const std::string& plateId) {

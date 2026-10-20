@@ -37,6 +37,13 @@ public:
     void Compact(bool on) { compact_ = on; }
     // 後ろの壁を窓にして、その向こうに大広間を描くか（立体で編集中でない時）。窓のある時は壁の目盛りを出さない。
     void UseHall(bool on) { hall_ = on; }
+    // 奥行きの格子：地形を手前の一列の奥へ rows 列延ばす（0 で無し）。後ろの壁・窓・大広間は最後の列の奥へ下がる。
+    void DepthRows(int rows) { depthRows_ = rows; }
+    // 実体の地形（受光の組を透視で撮る時）：塊を目地の無い箱にし、奥行き 1 マスの列で部屋の奥まで伸ばす。
+    // 後ろの壁の窓と大広間も、斜投影でなくてもこの時は描く。
+    void Solid(bool on, double playDepth = 0) { solid_ = on; playDepth_ = playDepth; }
+    // 人物の見た目の大きさ（判定の矩形の高さに掛ける。足元は動かさない）。
+    void ActorScale(double scale) { actorScale_ = scale; }
     // 装置の小さな動き（硬貨の回転、丸鋸、輪の脈、キーの押し、光線の脈）に使う実時間（秒）。編集中は止める。
     void SetTime(double seconds) { time_ = seconds; }
     // leanPivot は傾きを釣り合わせる高さ（部品の下辺から、マス）。負なら部品の高さの中ほど。
@@ -76,7 +83,19 @@ private:
     uint64_t owner_ = 0;
     std::vector<PartRequest>& out_;
     uint64_t semantic_ = 1, partIndex_ = 0;
-    bool mirror_ = false, compact_ = false, hall_ = false;
+    // 実体の地形の面の目地（Terrain から呼ぶ。並びは Terrain と同じ）。
+    void SolidSeams(int x, int y, int cols, int rows, const std::vector<char>& occupancy);
+    // 後ろの壁の奥行き（マス）。奥行きの格子の分だけ奥へ下がる。
+    double WallDepth() const;
+    // 実体の地形の奥行き（マス）と、その正面が玩法の面より手前に出る量（人物は部屋の奥行きの中ほどに立つ）。
+    double SolidDepth() const { return depthRows_ + 1.0; }
+    double SolidFront() const { return solid_ ? (std::min)(playDepth_, SolidDepth() - .5) : 0.0; }
+    // 明るい壁と窓・大広間・口の暗がりを描けるか（斜投影の組か、実体の地形）。
+    bool Spatial() const { return projection_.oblique > 0 || solid_; }
+    bool mirror_ = false, compact_ = false, hall_ = false, solid_ = false;
+    int depthRows_ = 0;
+    // partDepth_ は Add の奥行きの倍率（実体の箱を部屋の奥まで伸ばす間だけ 1 以外）。
+    double actorScale_ = 1, partDepth_ = 1, playDepth_ = 0;
     double mirrorX_ = 0, mirrorY_ = 0, time_ = 0;
     size_t failed_ = 0;
 };

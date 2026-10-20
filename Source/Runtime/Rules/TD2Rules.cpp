@@ -130,15 +130,8 @@ public:
             if ((IsSolid(i) || (spike && echoBody)) && Overlap(area, rect))
                 result.push_back({rect, dev.id, oneWay, spike, dev.kind == DeviceKind::Spring, dev.direction});
         }
-        if (!staticOnly && !noBodies && body && !s.echoOverlapGrace) {
-            const BodyState* other = echoBody ? &s.player : (s.echo ? &*s.echo : nullptr);
-            const std::string otherId = echoBody ? "player" : "echo";
-            // 残影はプレイヤーにとって一方通行の床：上には乗れるが、横や下からは通り抜けられる（道を塞がない）。
-            const bool oneWayBody = !echoBody;
-            if (other && !other->dead && otherId != ignore && !(oneWayBody && fullOnly) &&
-                !Rider(other, *body, echoBody ? "echo" : "player"))
-                result.push_back({other->rect, otherId, oneWayBody});
-        }
+        // 残影とプレイヤーは互いに当たらない（自分の残影は通り抜ける。乗ることも押すこともない）。
+        (void)body; (void)noBodies;
         return result;
     }
     bool Clear(const Rect& rect, const BodyState* body = nullptr, bool echoBody = false,
@@ -369,7 +362,7 @@ public:
         return origin;
     }
     void CreateEcho(const Rect& origin, int facing) {
-        s.echo = MakeBody({origin.x, origin.y}, true); s.echo->facing = facing;
+        s.echo = MakeBody({origin.x, origin.y}, true); s.echo->facing = facing; ++s.echoes;
         s.echoOverlapGrace = !s.player.dead && Overlap(s.player.rect, s.echo->rect);
         ResolveEchoSpikes(); Probe(*s.echo, true);
         Event(EventKind::EchoCreated, "echo", {}, s.echo->rect);
@@ -390,11 +383,11 @@ public:
     double HorizontalVelocity() const {
         return s.player.walkVx + s.player.reboundDirection * 7.5 * std::clamp(s.player.reboundTime / .14, 0.0, 1.0);
     }
-    void Recall() {
+    // 冲刺が決まった時に前の残影を引き取る（新しい残影は冲刺の出発点に出る）。
+    void RetireEcho() {
+        if (!s.echo && !s.pendingEcho) return;
         const Rect source = s.echo ? s.echo->rect : s.pendingEcho->origin;
         s.echo.reset(); s.pendingEcho.reset(); s.echoOverlapGrace = false;
-        s.dash.reset(); s.bounce.reset(); s.blinkBuffer = 0;
-        if (s.player.supportId == "echo") Probe(s.player);
         ++s.recalls;
         Event(EventKind::EchoRecalled, "echo", {}, source);
     }
@@ -425,7 +418,7 @@ public:
         Event(EventKind::EchoSwapped, "player", {}, from);
     }
     bool ConsumeBlink() {
-        if (s.blinkBuffer <= 0 || !s.player.grounded || s.echo || s.pendingEcho) return false;
+        if (s.blinkBuffer <= 0 || !s.player.grounded) return false;
         Probe(s.player);
         if (!s.player.grounded) return false;
         s.blinkBuffer = 0;
@@ -479,6 +472,7 @@ public:
             Event(EventKind::BlinkRejected, "player", "destination-occupied", p.rect); return false;
         }
         s.bounce.reset(); s.dash.reset();
+        RetireEcho();
         const double distance = std::abs(x - source.x);
         if (distance > 1.0 / 32) s.dash = DashState{source, contact, facing, 0, .14 * (.5 + .5 * std::min(1.0, distance / 4.0))};
         p.rect = contact; p.vy = 0; p.vx = p.walkVx;
@@ -705,7 +699,9 @@ public:
             if (s.deathRemaining <= kEps) Respawn();
             return;
         }
-        // スペース：残影がいない時はダッシュ。残影がいる時は短く離すと回収、kSwapHold 秒押し続けると交換（離すのを待たずに入れ替える）。
+        // スペース：点按は常に冲刺（前の残影は自動で引き取られ、出発点に新しい残影が出る）。
+        // 残影がいる時だけ、kSwapHold 秒押し続けると交換（離すのを待たずに入れ替える）。点按か長押しかは離すまで分からないので、
+        // 残影がいる時の冲刺は離した時に出る。
         const bool hasEcho = s.echo || s.pendingEcho;
         if (actionPressed && hasEcho) { s.actionArmed = true; s.actionHold = 0; }
         else if (actionPressed) s.blinkBuffer = .12;
@@ -714,11 +710,11 @@ public:
             if (s.blinkBuffer == 0) Event(EventKind::BlinkRejected, "player", "support-required", s.player.rect);
         }
         if (s.actionArmed) {
-            if (!hasEcho) s.actionArmed = false;
+            if (!hasEcho) { s.actionArmed = false; s.blinkBuffer = .12; }
             else if (input.action.held && !actionReleased) {
                 s.actionHold += kStep;
                 if (s.actionHold + 1e-9 >= kSwapHold) { s.actionArmed = false; if (s.echo) Swap(); }
-            } else { s.actionArmed = false; Recall(); }
+            } else { s.actionArmed = false; s.blinkBuffer = .12; }
         }
         Pending();
         auto& p = s.player;
@@ -847,7 +843,8 @@ WorldSnapshot BuildSnapshot(const WorldDefinition& d, const WorldState& s) {
     if (s.pendingEcho) { result.pendingEcho = s.pendingEcho->origin; result.pendingEchoAge = s.pendingEcho->age; result.pendingEchoFacing = s.pendingEcho->facing; }
     result.beams = s.beams; result.checkpointId = s.checkpointId;
     result.dashing = s.dash.has_value(); result.bouncing = s.bounce.has_value();
-    result.tick = s.tick; result.deaths = s.deaths; result.recalls = s.recalls; result.swaps = s.swaps; result.simulationTime = s.simulationTime; result.realTime = s.realTime;
+    result.tick = s.tick; result.deaths = s.deaths; result.recalls = s.recalls; result.swaps = s.swaps; result.echoes = s.echoes;
+    result.simulationTime = s.simulationTime; result.realTime = s.realTime;
     // 表示位置だけを補間し、当たり判定とセンサーは確定した物理位置を使う。
     if (s.dash) {
         const double ease = Math::SmoothStep(s.dash->age / s.dash->duration);
@@ -873,7 +870,7 @@ WorldSnapshot BuildSnapshot(const WorldDefinition& d, const WorldState& s) {
         }
         snapshot.powered = dev.kind == DeviceKind::Plate ? state.active
                          : linked.contains(dev.id) && (dev.inverted ? !state.active : state.active);
-        snapshot.variant = dev.variant; snapshot.latch = dev.latch;
+        snapshot.variant = dev.variant; snapshot.latch = dev.latch; snapshot.depth = dev.depth;
         snapshot.world = dev.kind == DeviceKind::Plate && std::any_of(dev.targets.begin(), dev.targets.end(), IsMachineTarget);
         result.devices.push_back(std::move(snapshot));
     }

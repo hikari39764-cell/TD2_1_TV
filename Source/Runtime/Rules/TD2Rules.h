@@ -32,9 +32,11 @@ struct DeviceDefinition {
     double range = 20.0;
     // Spring：基礎の打ち上げ速度（マス/秒）、溜める秒数、発射後の冷却秒数（3〜30）。
     double power = 22.5, delay = 0.85, cooldown = 3.0;
-    // Decal：図案の種類（ad / space / spaceHold）と不透明度。
+    // Decal：図案の種類（ad / space / spaceHold、前景の fore / foreCable）と不透明度。
     std::string variant;
     double opacity = 0.8;
+    // Decal の前景：玩法の面（人物の立つ面）より手前の距離（マス）。見た目だけで判定には使わない。
+    double depth = 1.0;
 };
 // 配置済みテレビだけを疎な地形として保持する。origin は整数マスの世界座標。
 struct TerrainChunk { RegionDefinition region; int x = 0, y = 0; };
@@ -100,6 +102,7 @@ struct WorldState {
     // 残影を回収した回数（表示用。回収時にプレイヤー側のエフェクトを一度出す）。
     uint64_t recalls = 0;
     uint64_t swaps = 0;   // 交換の回数（表示用）
+    uint64_t echoes = 0;  // 残影を出した回数（表示用。冲刺で前の残影と入れ替わった時も新しい残影の光を出す）
     // 固定ステップの無いフレームでも入力の押下を持ち越し、次のステップで使う。
     bool pendingActionPressed = false, pendingActionReleased = false;
     // 残影がいる時のスペース：押してからの秒数。短く離せば回収、押し続ければ交換。
@@ -126,6 +129,7 @@ struct DeviceSnapshot {
     std::string variant;
     bool latch = false;   // 切り替え式の圧力板
     bool world = false;   // 画面の外のテレビ（機構・スロット棚）を動かす圧力板。画面の中だけの圧力板と色と形を分ける
+    double depth = 1.0;   // Decal の前景の手前への距離（マス）
 };
 struct WorldSnapshot {
     std::string regionId;
@@ -141,7 +145,7 @@ struct WorldSnapshot {
     std::vector<BeamState> beams;
     std::string checkpointId;
     bool dashing = false, bouncing = false;
-    uint64_t tick = 0, deaths = 0, recalls = 0, swaps = 0;
+    uint64_t tick = 0, deaths = 0, recalls = 0, swaps = 0, echoes = 0;
     double simulationTime = 0.0, realTime = 0.0;
 };
 

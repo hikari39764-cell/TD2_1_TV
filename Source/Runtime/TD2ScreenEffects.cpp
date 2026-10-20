@@ -20,9 +20,11 @@ void ScreenEffects::Observe(const Rules::WorldSnapshot& s) {
         if (s.deaths > p.deaths || (!p.player.dead && s.player.dead)) { add(ScreenEffectKind::Death, p.presentationPlayer, .36); }
         if (!s.player.dead && p.player.dead) { add(ScreenEffectKind::Respawn, s.presentationPlayer, .35); }
         // 跳ね返りの残影は予告の開始時に生成エフェクトを出す（出現時には重ねない）。
+        // 冲刺で前の残影と入れ替わった時（数が増えた）も、新しい残影の光と前の残影の消える光を出す。
+        const bool replaced = s.echoes > p.echoes && p.echo;
         if (s.pendingEcho && !p.pendingEcho) { add(ScreenEffectKind::EchoCreate, *s.pendingEcho, .28); }
-        if (s.echo && !p.echo && !p.pendingEcho) { add(ScreenEffectKind::EchoCreate, s.echo->rect, .28); }
-        if (p.echo && !s.echo) { add(ScreenEffectKind::EchoRecall, p.echo->rect, .22, {}, true); }
+        if (s.echo && ((!p.echo && !p.pendingEcho) || replaced)) { add(ScreenEffectKind::EchoCreate, s.echo->rect, .28); }
+        if (p.echo && (!s.echo || replaced)) { add(ScreenEffectKind::EchoRecall, p.echo->rect, .22, {}, true); }
         // 交換：入れ替わった本体に復活の光、元の場所へ移った残影に生成の光。
         if (s.swaps > p.swaps) {
             add(ScreenEffectKind::Respawn, s.presentationPlayer, .3);

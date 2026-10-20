@@ -18,8 +18,11 @@ constexpr uint32_t kOffDelayFrames = 20;
 }
 
 void LightBudgetSystem::Update(HIKARI::WorldView& world, const HIKARI::FrameContext&) {
-    HIKARI::GameProjectCameraPose pose{};
+    // 描いた姿勢は一フレーム前のもの。切り替え（硬い切り）の直後に新しい視野の光が一フレーム消えて見えないよう、
+    // 操作中の姿勢の視野も合わせて見る。
+    HIKARI::GameProjectCameraPose pose{}, control{};
     const bool playing = world.GetRuntimeSession().IsPlayActive() && world.GetCamera().GetRenderedPose(pose);
+    const bool hasControl = playing && world.GetCamera().GetControlPose(control);
     if (!playing) {
         // 編集中は何もしない。
         lights_.clear(); status_ = "等待 Play"; return;
@@ -36,7 +39,9 @@ void LightBudgetSystem::Update(HIKARI::WorldView& world, const HIKARI::FrameCont
             auto& tracked = lights_[object.GetHandle().value];
             // 作者が消した光は対象外。ここで消した光だけ点け直す。
             if (!state.enabled && !tracked.off) { return; }
-            const bool visible = !cull.Cull() || SphereInView(pose, transform.position, state.range + cull.Margin(), kViewMarginDegrees);
+            const double radius = state.range + cull.Margin();
+            const bool visible = !cull.Cull() || SphereInView(pose, transform.position, radius, kViewMarginDegrees) ||
+                                 (hasControl && SphereInView(control, transform.position, radius, kViewMarginDegrees));
             tracked.outsideFrames = visible ? 0 : tracked.outsideFrames + 1;
             const bool wantOff = !visible && tracked.outsideFrames >= kOffDelayFrames;
             if (wantOff != tracked.off) {

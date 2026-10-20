@@ -30,6 +30,21 @@ struct ScreenStyleSettings {
     // 奥の層をずらす強さ（1 で角度どおり）。テレビが奥行きのある箱に見える。
     bool hall = true;
     float parallax = 1.0f;
+    // 受光（共有設定だけが効き、Play の時だけ）：陰影を焼いていない受光の組に替え、舞台の灯（TD2.StageLight）で照らす。
+    bool lit = false;
+    // 実体の地形で人物が立つ奥行き（部屋の正面から奥へのマス数）。手前の地形が自然な前景になる。
+    float playDepth = 1.5f;
+    // 人物（プレイヤーと残影）の見た目の大きさ。判定は変えない。
+    float actorScale = 1.35f;
+    // 奥行きの格子（共有設定だけが効き、Play の時だけ）：地形を奥へ depthRows 列延ばし、後ろの壁をその奥へ下げる。
+    // 判定は手前の一列のまま。
+    bool depthGrid = false;
+    int depthRows = 4;
+    // 透視の窓（共有設定だけが効き、Play の時だけ）：目立つ二台を透視カメラで撮り、外のカメラが画面を見る角度に合わせて
+    // 目の位置を動かす。視差の強さは parallax。透視カメラは窓ごとに別の物体（画角で透視の強さが決まる）。
+    bool perspective = false;
+    uint64_t perspectiveCameraObject = 0;
+    uint64_t perspectiveCamera2Object = 0;
     // 画面内のカメラ（共有設定だけが効く）。俯角で上面、側角で側面が見える。判定は変えない。
     float pitch = 7.0f;           // 俯角（度、0〜30）
     float yaw = 0.0f;             // 側角（度、-30〜30、正は右から見る）
@@ -63,6 +78,14 @@ public:
         fields.Float("inkLine", "原版描边", settings_.inkLine, 0, 1);
         fields.Bool("hall", "后墙窗口与窗外大厅", settings_.hall);
         fields.Float("parallax", "视差（随外部镜头角度移动深处）", settings_.parallax, 0, 2);
+        fields.Bool("lit", "受光（Play 时部件受舞台灯照明；与透视窗口同开时为实体地形）", settings_.lit);
+        fields.Float("actorScale", "角色显示大小（判定不变）", settings_.actorScale, .8f, 2.0f);
+        fields.Float("playDepth", "角色所在纵深（格，从房间正面往里，实体地形时）", settings_.playDepth, 0, 4);
+        fields.Bool("depthGrid", "纵深格子（Play 时地形向里延伸）", settings_.depthGrid);
+        fields.Int("depthRows", "纵深格数", settings_.depthRows, 1, 8);
+        fields.Bool("perspective", "透视窗口（Play 时清晰的两台随外部视角真透视）", settings_.perspective);
+        fields.SceneObject("perspectiveCameraObject", "透视舞台镜头（主，画角决定透视强度）", settings_.perspectiveCameraObject);
+        fields.SceneObject("perspectiveCamera2Object", "透视舞台镜头（副）", settings_.perspectiveCamera2Object);
         // 画面内のカメラ。表示だけを変え、判定は変えない。
         fields.Float("pitch", "镜头俯角（看到顶面）", settings_.pitch, 0, 30);
         fields.Float("yaw", "镜头侧角（正值从右侧看）", settings_.yaw, -30, 30);
@@ -72,7 +95,8 @@ public:
         fields.SceneObject("unplacedCameraObject", "舞台正交镜头（Play 时第二台清晰电视，高度同主镜头；编辑时未布置的地图）", settings_.unplacedCameraObject);
         fields.Note("挂在舞台镜头上是全部电视的设置；挂在某台电视的区域对象上只改那一台的风格（配色、立体和镜头角度以舞台镜头为准）。"
                     "打开「立体」时不使用俯角和侧角。俯角和侧角同时较大时，竖墙会出现轻微错位。"
-                    "远景雾、遮蔽、投影、描边、窗外大厅和视差只在「立体」时生效。");
+                    "远景雾、遮蔽、投影、描边、窗外大厅和视差只在「立体」时生效。"
+                    "「纵深格子」「透视窗口」只在 Play 时生效；透视窗口的视差强度用「视差」。");
     }
 private:
     ScreenStyleSettings settings_;

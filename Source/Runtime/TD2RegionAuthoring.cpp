@@ -29,6 +29,7 @@ bool ParseDevices(std::string_view text, std::vector<Rules::DeviceDefinition>& d
             else if (key == "delay") { device.delay = number; }
             else if (key == "cooldown") { device.cooldown = number; }
             else if (key == "opacity") { device.opacity = number; }
+            else if (key == "depth") { device.depth = number; }
             else if (key == "variant") { device.variant = value; }
         }
         devices.push_back(std::move(device));
