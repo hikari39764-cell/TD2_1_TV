@@ -62,7 +62,7 @@ void ScreenPresentationSystem::Update(HIKARI::WorldView& world, const HIKARI::Fr
                 globalStyle = settings; globalStyle.captureCameraObject = camera.GetSceneObjectId();
             }
         });
-    if (!styles.Succeeded()) { status_ = "3D风格组件查询失败"; stage_.Release(world); ReportStatus(); return; }
+    if (!styles.Succeeded()) { status_ = "3D の描き方の部品を読めない"; stage_.Release(world); ReportStatus(); return; }
     // エフェクト設定は最初の一つだけ使う。無ければ既定値。
     ScreenFxSettings fx; bool foundFx = false;
     const HIKARI::ComponentTypeId fxTypes[]{HIKARI::MakeComponentTypeId(kScreenFxComponentType)};
@@ -107,7 +107,7 @@ void ScreenPresentationSystem::Update(HIKARI::WorldView& world, const HIKARI::Fr
             rooms_.push_back(std::move(room));
             authored.push_back({definition.devices, definition.spawn, region.IsEntryRegion()});
         });
-    if (!regions.Succeeded()) { status_ = "区域3D数据查询失败"; stage_.Release(world); ReportStatus(); return; }
+    if (!regions.Succeeded()) { status_ = "区域の 3D データを読めない"; stage_.Release(world); ReportStatus(); return; }
 
     StageFrame stage;
     stage.authoring = !playing;

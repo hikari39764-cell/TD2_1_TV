@@ -8,21 +8,21 @@
 namespace TD2::Editor {
 // 装置の種類（並びと名前は TD2DeviceText.h）と、エディタでの表示名。
 inline constexpr const auto& kEditorDeviceKinds = kDeviceKindNames;
-inline constexpr std::array<std::string_view, 12> kEditorDeviceLabels{"▧ 实体块", "━ 单向平台", "▰ 压板", "▥ 门", "→ 激光", "▲ 尖刺", "⚑ 存档点", "▣ 锁墙",
-                                                                      "⤒ 弹簧", "═ 伸缩桥", "◆ 收集物", "✎ 教程贴画"};
+inline constexpr std::array<std::string_view, 12> kEditorDeviceLabels{"▧ ブロック", "━ 片側床", "▰ 圧力板", "▥ 扉", "→ レーザー", "▲ トゲ", "⚑ チェックポイント", "▣ ロック壁",
+                                                                      "⤒ バネ", "═ 伸びる橋", "◆ 収集物", "✎ 説明の貼り紙"};
 
 inline std::string DeviceLabel(std::string_view kind) {
     const auto it = std::find(kEditorDeviceKinds.begin(), kEditorDeviceKinds.end(), kind);
     return it == kEditorDeviceKinds.end() ? std::string(kind) : std::string(kEditorDeviceLabels[static_cast<size_t>(it - kEditorDeviceKinds.begin())]);
 }
 
-// 記号を除いた種類の名前（「压板」）。
+// 記号を除いた種類の名前（「圧力板」）。
 inline std::string DeviceKindName(std::string_view kind) {
     const auto label = DeviceLabel(kind);
     const auto space = label.find(' ');
     return space == std::string::npos ? label : label.substr(space + 1);
 }
-// 作者に見せる装置の名前：「压板 A」。古い ID の装置は ID を添える。
+// 作者に見せる装置の名前：「圧力板 A」。古い ID の装置は ID を添える。
 inline std::string DeviceName(const DeviceDraft& d) {
     const auto letter = DeviceLetter(d);
     return DeviceKindName(d.kind) + " " + (letter.empty() ? d.id : letter);
@@ -53,7 +53,7 @@ struct EditorChoice { std::string id, label; bool selected = false; };
 
 // 候補を全部並べる（ページ送りなし）。長い一覧は検索欄で絞る。
 inline int DrawChoices(IEditorWorkspaceUi& ui, const std::vector<EditorChoice>& choices) {
-    if (choices.empty()) { ui.Text("没有可选项"); return -1; }
+    if (choices.empty()) { ui.Text("選べるものがありません"); return -1; }
     int chosen = -1;
     for (size_t i = 0; i < choices.size(); ++i) {
         if (ui.Selectable(choices[i].id, ShortChoiceLabel(choices[i].label, 24), choices[i].selected)) { chosen = static_cast<int>(i); }

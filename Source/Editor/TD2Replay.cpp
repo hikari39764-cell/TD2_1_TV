@@ -99,7 +99,7 @@ std::string BuildExploration(const std::vector<ReplayRoom>& rooms, const std::ve
 SolutionResult ReplaySolution(const std::vector<ReplayRoom>& rooms, const std::vector<Machine>& machines, const PlayRecord& record) {
     SolutionResult result;
     Rules::Exploration world;
-    if (const auto error = BuildExploration(rooms, machines, record, world); !error.empty()) { result.detail = "无法开始：" + error; return result; }
+    if (const auto error = BuildExploration(rooms, machines, record, world); !error.empty()) { result.detail = "始められません：" + error; return result; }
     const auto nameOf = [&rooms](const std::string& id) {
         for (const auto& r : rooms) { if (r.settings.region.regionId == id) { return r.name; } }
         return id;
@@ -145,19 +145,19 @@ SolutionResult ReplaySolution(const std::vector<ReplayRoom>& rooms, const std::v
         // 記録より多く死んだら、その時点で通れなくなっている。
         const auto recordedDeaths = static_cast<uint64_t>(std::count_if(record.deaths.begin(), record.deaths.end(), [frame](const auto& d) { return d.frame <= frame; }));
         if (world.State().deaths > recordedDeaths) {
-            result.detail = Seconds(time) + "在「" + nameOf(world.ActiveRegion()) + "」死亡";
+            result.detail = Seconds(time) + "に「" + nameOf(world.ActiveRegion()) + "」で死亡";
             result.regionId = world.ActiveRegion();
             return result;
         }
     }
     if (nextMark < record.regions.size()) {
         const auto& missed = record.regions[nextMark];
-        result.detail = "没能到「" + nameOf(missed.region) + "」（停在「" + nameOf(world.ActiveRegion()) + "」）";
+        result.detail = "「" + nameOf(missed.region) + "」に着けません（「" + nameOf(world.ActiveRegion()) + "」で止まった）";
         result.regionId = world.ActiveRegion();
         return result;
     }
     if (!record.endRegion.empty() && world.ActiveRegion() != record.endRegion) {
-        result.detail = "最后停在「" + nameOf(world.ActiveRegion()) + "」，应在「" + nameOf(record.endRegion) + "」";
+        result.detail = "最後に「" + nameOf(world.ActiveRegion()) + "」で止まりました（記録では「" + nameOf(record.endRegion) + "」）";
         result.regionId = world.ActiveRegion();
         return result;
     }

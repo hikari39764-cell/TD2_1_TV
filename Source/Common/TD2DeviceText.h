@@ -38,7 +38,7 @@ inline bool Number(std::string_view text, double& value) {
     return parsed.ec == std::errc{} && parsed.ptr == text.data() + text.size() && std::isfinite(value);
 }
 
-// 読めない行があれば「设备第 N 行：…」を error に書いて false を返す。
+// 読めない行があれば「装置の N 行目：…」を error に書いて false を返す。
 inline bool Parse(std::string_view text, std::vector<DeviceLine>& out, std::string& error) {
     out.clear(); error.clear();
     std::istringstream lines{std::string(text)};
@@ -51,34 +51,34 @@ inline bool Parse(std::string_view text, std::vector<DeviceLine>& out, std::stri
         DeviceLine device;
         if (!(values >> device.id)) { continue; }
         const auto fail = [&error, lineNumber](std::string_view message) {
-            error = "设备第 " + std::to_string(lineNumber) + " 行：" + std::string(message);
+            error = "装置の " + std::to_string(lineNumber) + " 行目：" + std::string(message);
             return false;
         };
         if (!(values >> device.kind >> device.x >> device.y >> device.w >> device.h) || IndexOf(kDeviceKindNames, device.kind) < 0) {
-            return fail("需要 id kind x y w h；类型使用规则枚举名称");
+            return fail("id kind x y w h が要ります（kind はルールの種類名）");
         }
         for (std::string option; values >> option;) {
             const size_t equals = option.find('=');
-            if (equals == std::string::npos) { return fail("可选项使用 key=value"); }
+            if (equals == std::string::npos) { return fail("追加の項目は key=value で書きます"); }
             std::string key = option.substr(0, equals), value = option.substr(equals + 1);
             double number = 0;
             if (key == "targets") {
-                if (value.empty() || value.back() == ',') { return fail("连接目标 ID 不能为空"); }
+                if (value.empty() || value.back() == ',') { return fail("つなぎ先の ID が空です"); }
                 std::istringstream ids(value);
                 for (std::string id; std::getline(ids, id, ',');) {
-                    if (id.empty()) { return fail("连接目标 ID 不能为空"); }
+                    if (id.empty()) { return fail("つなぎ先の ID が空です"); }
                     device.targets.push_back(id);
                 }
                 continue;
             }
             if (key == "dir") {
-                if (IndexOf(kDirectionNames, value) < 0) { return fail("dir 使用 Up/Down/Left/Right"); }
+                if (IndexOf(kDirectionNames, value) < 0) { return fail("dir は Up/Down/Left/Right"); }
             } else if (key == "invert" || key == "latch") {
-                if (value != "0" && value != "1") { return fail(key + " 使用 0 或 1"); }
+                if (value != "0" && value != "1") { return fail(key + " は 0 か 1"); }
             } else if (key == "range" || key == "power" || key == "delay" || key == "cooldown" || key == "opacity" || key == "depth") {
-                if (!Number(value, number)) { return fail(key + " 必须为有限数字"); }
+                if (!Number(value, number)) { return fail(key + " は有限の数にしてください"); }
             } else if (key != "variant") {
-                return fail("未知可选字段：" + key);
+                return fail("知らない項目：" + key);
             }
             device.options.emplace_back(std::move(key), std::move(value));
         }

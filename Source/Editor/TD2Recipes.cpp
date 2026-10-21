@@ -55,7 +55,7 @@ std::optional<MachineObjectDelta> TvDelta(const Machine& m, const LayoutSnapshot
     return d ? std::optional<MachineObjectDelta>(*d) : std::nullopt;
 }
 
-// 状態での吊り台の上がり（m）。卷扬箱の高さに使う。
+// 状態での吊り台の上がり（m）。巻き上げ箱の高さに使う。
 double Rise(const Machine& m, const LayoutSnapshot& layout, const std::string& region) {
     double rise = 0;
     for (const int state : {1, -1}) { if (const auto d = TvDelta(m, layout, region, state)) { rise = (std::max)(rise, d->position[1]); } }
@@ -65,14 +65,14 @@ double Rise(const Machine& m, const LayoutSnapshot& layout, const std::string& r
 
 const std::vector<RecipeInfo>& RecipeList() {
     static const std::vector<RecipeInfo> recipes{
-        {RecipeKind::Lift, "lift", "升降台", 1},
-        {RecipeKind::Turn, "turn", "转台", 1},
-        {RecipeKind::Balance, "balance", "滑轮天平", 2},
-        {RecipeKind::Shuttle, "shuttle", "往复", 1},
-        {RecipeKind::Flip, "flip", "倒挂翻转", 1},
-        {RecipeKind::Slide, "slide", "滑块货架", 1},
-        {RecipeKind::Stack, "stack", "电视塔", 1},
-        {RecipeKind::Carousel, "carousel", "转柱", 1},
+        {RecipeKind::Lift, "lift", "昇降台", 1},
+        {RecipeKind::Turn, "turn", "転台", 1},
+        {RecipeKind::Balance, "balance", "滑車の天秤", 2},
+        {RecipeKind::Shuttle, "shuttle", "往復", 1},
+        {RecipeKind::Flip, "flip", "逆さ吊り", 1},
+        {RecipeKind::Slide, "slide", "スライド棚", 1},
+        {RecipeKind::Stack, "stack", "テレビの塔", 1},
+        {RecipeKind::Carousel, "carousel", "回転柱", 1},
     };
     return recipes;
 }
@@ -91,13 +91,13 @@ RecipeKind RecipeOf(const Machine& m) {
 std::string RecipeLabel(const Machine& m) {
     const auto kind = RecipeOf(m);
     for (const auto& r : RecipeList()) { if (r.kind == kind) { return std::string(r.label); } }
-    return "机构";
+    return "仕掛け";
 }
 
 std::string PlateTargetFor(const Machine& m, const std::string& plateRegion, const std::string& plateId, const std::string& devicesText) {
     switch (m.kind) {
     case MachineKind::Mechanism:
-        // 天平：踏んだテレビが沈む側（状態 B で下がるなら mech/ID、上がるなら mech/ID/r）。
+        // 天秤：踏んだテレビが沈む側（状態 B で下がるなら mech/ID、上がるなら mech/ID/r）。
         if (m.balance) {
             for (const auto& o : m.offsets) { if (o.regionId == plateRegion) { return o.dy < 0 ? "mech/" + m.id + "/r" : "mech/" + m.id; } }
         }
@@ -140,7 +140,7 @@ void InitRecipe(Machine& m, RecipeKind kind, const std::vector<std::string>& reg
         m.seconds = 1.4; m.dwell = 2.5;
         MachineRegionOffset o; o.regionId = regions.front(); o.park = true;
         m.offsets = {o};
-        // テレビが載っている台（推车など）があれば一緒に動かす。
+        // テレビが載っている台（カートなど）があれば一緒に動かす。
         if (first) {
             for (const auto& box : layout.obstacles) {
                 const auto& p = first->tv.position;
@@ -165,13 +165,13 @@ void InitRecipe(Machine& m, RecipeKind kind, const std::vector<std::string>& reg
 void RebuildMotion(Machine& m, const LayoutSnapshot& layout) {
     const auto kind = RecipeOf(m);
     if (m.kind != MachineKind::Mechanism || kind == RecipeKind::Custom) { return; }
-    double balanceAmount = -1;   // 天平は状態 B で決めた量を状態 C にも使う（両側が同じだけ動く）
+    double balanceAmount = -1;   // 天秤は状態 B で決めた量を状態 C にも使う（両側が同じだけ動く）
     for (const int state : {1, -1}) {
         if (state < 0 && !m.balance) { m.deltasC.clear(); continue; }
         const auto& offsets = state < 0 ? m.offsetsC : m.offsets;
         auto& deltas = state < 0 ? m.deltasC : m.deltas;
         const auto old = deltas;
-        // 配方が受け持たない物体（作者が足したもの）の行は残す。
+        // レシピが受け持たない物体（作者が足したもの）の行は残す。
         std::vector<MachineObjectDelta> next;
         for (const auto& d : old) { if (!Managed(m, layout, d.object)) { next.push_back(d); } }
         // 隣に揃える時の相手：この状態で動かないテレビ。
@@ -214,7 +214,7 @@ void RebuildMotion(Machine& m, const LayoutSnapshot& layout) {
             d.object = room->tvObject; d.anchor = 0;
             items.push_back({room, d, aligned, o.dy});
         }
-        // 天平は二台が同じだけ逆に動く（隣に揃えられた方の量を使う）。
+        // 天秤は二台が同じだけ逆に動く（隣に揃えられた方の量を使う）。
         if (kind == RecipeKind::Balance && items.size() == 2) {
             double amount = balanceAmount;
             if (amount < 0) {
@@ -265,10 +265,10 @@ std::vector<RecipePart> PlanParts(const Machine& m, const LayoutSnapshot& layout
             const double box = top + Rise(m, layout, o.regionId) + .9;
             for (const double side : {-1.0, 1.0}) {
                 auto chain = Offset(tv, side * w / 3, Height(*room), 0); chain.scale = {1, std::round((box + .75 - top) * 1000) / 1000, 1};
-                add("吊链", o.regionId, "chain", chain, true);
+                add("吊りチェーン", o.regionId, "chain", chain, true);
             }
             auto winch = Offset(tv, 0, box - tv.position[1], 0); winch.scale = {std::round(.45 * std::clamp(w / 1.08, .5, 2.0) * 1000) / 1000, 1.2, 1};
-            add("卷扬箱", o.regionId, "box", winch, false);
+            add("巻き上げ箱", o.regionId, "box", winch, false);
         }
     }
     if (kind == RecipeKind::Balance && m.offsets.size() == 2) {
@@ -279,14 +279,14 @@ std::vector<RecipePart> PlanParts(const Machine& m, const LayoutSnapshot& layout
                 const Pose tv = PoseOf(room->tv);
                 for (const double side : {-1.0, 1.0}) {
                     auto chain = Offset(tv, side * Width(*room) / 3, Height(*room), 0); chain.scale = {1, std::round((beamY + .2 - TopOf(*room)) * 1000) / 1000, 1};
-                    add("吊链", room->regionId, "chain", chain, true);
+                    add("吊りチェーン", room->regionId, "chain", chain, true);
                 }
             }
             Pose beam = PoseOf(a->tv);
             beam.position = {(a->tv.position[0] + b->tv.position[0]) * .5, beamY, (a->tv.position[2] + b->tv.position[2]) * .5};
             const double span = std::hypot(a->tv.position[0] - b->tv.position[0], a->tv.position[2] - b->tv.position[2]) + .6;
             beam.scale = {std::round(span / 1.94 * 1000) / 1000, .42, .9};
-            add("天平梁", a->regionId, "beam", beam, false);
+            add("天秤の梁", a->regionId, "beam", beam, false);
         }
     }
     for (const auto& o : m.offsets) {
@@ -297,20 +297,20 @@ std::vector<RecipePart> PlanParts(const Machine& m, const LayoutSnapshot& layout
         if (kind == RecipeKind::Turn && !has(o.regionId, "plate")) {
             auto base = tv; base.position[1] = tv.position[1] - .195 * k; base.rotation = {0, tv.rotation[1], 0}; base.scale = {k, k, k};
             auto plate = base; plate.position[1] = tv.position[1] - .035 * k;
-            add("转台底座", o.regionId, "base", base, false);
-            add("转台转盘", o.regionId, "plate", plate, true);
+            add("転台の土台", o.regionId, "base", base, false);
+            add("転台の盤", o.regionId, "plate", plate, true);
         }
         if (kind == RecipeKind::Shuttle && !has(o.regionId, "rail")) {
             auto rail = tv; rail.position[1] = 0; rail.rotation = {0, tv.rotation[1], 0}; rail.scale = {1, 1, 1};
-            add("滑轨", o.regionId, "rail", rail, false);
+            add("レール", o.regionId, "rail", rail, false);
         }
         if (kind == RecipeKind::Flip && !has(o.regionId, "disk")) {
             const double s = std::abs(room->tv.scale[1]), depth = room->body[2] * std::abs(room->tv.scale[2]);
             const double q = std::clamp(Height(*room) / 1.0, .6, 1.4);
             auto disk = Offset(tv, room->screenCenter[0] * s, room->screenCenter[1] * s, -(depth * .5 + .06)); disk.scale = {q, q, q};
             auto mount = Offset(disk, 0, .15 * q - 3.3 * q, -.17 * q); mount.scale = {q, q, q};
-            add("倒立转盘", o.regionId, "disk", disk, true);
-            add("倒立支柱", o.regionId, "mount", mount, false);
+            add("逆さ転台の盤", o.regionId, "disk", disk, true);
+            add("逆さ転台の支柱", o.regionId, "mount", mount, false);
         }
     }
     return out;
@@ -324,7 +324,7 @@ std::vector<std::pair<uint64_t, Pose>> AdjustParts(const Machine& m, const Layou
         const auto t = layout.transforms.find(id);
         return t == layout.transforms.end() ? std::nullopt : std::optional<Pose>(PoseOf(t->second));
     };
-    // 卷扬箱・天平梁は、テレビが一番上がった時の上端より上に保つ。鎖はその高さまで伸ばす。
+    // 巻き上げ箱・天秤の梁は、テレビが一番上がった時の上端より上に保つ。鎖はその高さまで伸ばす。
     double required = 0;
     for (const auto& o : m.offsets) {
         if (const auto* room = layout.Room(o.regionId)) { required = (std::max)(required, TopOf(*room) + Rise(m, layout, o.regionId) + (kind == RecipeKind::Lift ? .9 : .6)); }

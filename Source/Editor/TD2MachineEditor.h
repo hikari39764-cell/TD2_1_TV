@@ -22,7 +22,7 @@ struct Machine {
     double seconds = .8, dwell = 0, settle = 0, cameraLift = 1.5, cameraPull = 1;
     std::vector<MachineRegionOffset> offsets, offsetsC;
     std::vector<MachineObjectDelta> deltas, deltasC;
-    // 編集器の配方と、配方が使う部品（物体・付いているテレビの区域・役目・一緒に動くか・配方が置いた物か）。
+    // 編集器のレシピと、レシピが使う部品（物体・付いているテレビの区域・役目・一緒に動くか・レシピが置いた物か）。
     std::string recipe;
     struct Part {
         uint64_t object = 0; std::string region, role; bool moves = false, owned = true;

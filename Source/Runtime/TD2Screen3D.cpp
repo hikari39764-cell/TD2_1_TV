@@ -151,7 +151,7 @@ bool Screen3DStage::Release(HIKARI::WorldView& world) {
     submitted_.clear(); roomParts_.clear(); bound_.clear(); deviceMemory_.clear();
     const auto captures = world.GetSceneCapture();
     for (auto it = views_.begin(); it != views_.end();) {
-        if (!captures.Destroy(it->handle)) { status_ = "3D捕获释放失败，保留句柄重试"; return false; }
+        if (!captures.Destroy(it->handle)) { status_ = "3D キャプチャを解放できない（次のフレームで再試行）"; return false; }
         it = views_.erase(it);
     }
     for (auto& camera : cameras_) { RestoreCamera(world, camera); }
@@ -174,12 +174,12 @@ bool Screen3DStage::AcquireCameras(HIKARI::WorldView& world, const ScreenStyleSe
         for (size_t other = 0; other < kind; ++other) { usable = usable && cameras_[other].sceneId != ids[kind]; }
         if (!usable) {
             RestoreCamera(world, camera);
-            if (kind == static_cast<size_t>(ViewKind::Sharp)) { Release(world); status_ = "请指定独立正交舞台镜头（farClip>31）"; return false; }
+            if (kind == static_cast<size_t>(ViewKind::Sharp)) { Release(world); status_ = "専用の正投影の舞台カメラが要る（farClip>31）"; return false; }
             continue;
         }
         if (camera.sceneId != ids[kind] || camera.handle != object.GetHandle()) {
             RestoreCamera(world, camera);
-            if (!object.GetWorldTransform(camera.original)) { status_ = "无法读取舞台镜头"; return false; }
+            if (!object.GetWorldTransform(camera.original)) { status_ = "舞台カメラを読めない"; return false; }
             camera.sceneId = ids[kind]; camera.handle = object.GetHandle();
         }
         camera.orthographicHeight = lens.orthographicHeight;
@@ -367,7 +367,7 @@ void Screen3DStage::Render(HIKARI::WorldView& world, const std::vector<StageRoom
         valid.push_back(&room);
         if (room.placed) { maxCols = (std::max)(maxCols, room.Region().cols); maxRows = (std::max)(maxRows, room.Region().rows); }
     }
-    if (valid.empty() || !frame.snapshot) { Release(world); status_ = "3D显示已关闭或没有有效区域"; return; }
+    if (valid.empty() || !frame.snapshot) { Release(world); status_ = "3D 表示がオフか、有効な区域が無い"; return; }
     flippedRooms_.clear();
     for (const auto* room : valid) if (room->flipped) {
         flippedRooms_.push_back({room->regionId, {double(room->x), double(room->y), double(room->x + room->Region().cols), double(room->y + room->Region().rows)}});
@@ -509,7 +509,7 @@ void Screen3DStage::Render(HIKARI::WorldView& world, const std::vector<StageRoom
         pose.position.z += static_cast<float>(right[2] * shakeX + up[2] * shakeY);
         const auto& owner = window.lens >= 0 ? lensCameras_[static_cast<size_t>(window.lens)] : cameras_[kind];
         if (const auto camera = world.FindObject(owner.handle); !camera.IsValid() || !camera.SetWorldTransform(pose).Accepted()) {
-            status_ = "独立舞台镜头位置提交失败"; return;
+            status_ = "舞台カメラの位置を送れない"; return;
         }
     }
 
@@ -622,7 +622,7 @@ void Screen3DStage::TraceFrame() {
 
 bool Screen3DStage::SyncCaptures(HIKARI::WorldView& world, const std::vector<Assigned>& screens, double flash) {
     const auto captures = world.GetSceneCapture();
-    if (!captures.IsValid()) { status_ = "SceneCapture不可用"; return false; }
+    if (!captures.IsValid()) { status_ = "SceneCapture が使えない"; return false; }
     // 窓と描き方（画面の明るさ込み）の組ごとにキャプチャを一つ作る（鮮明から順に、エンジンの上限まで）。
     std::vector<View> wanted;
     std::vector<int> viewOf(screens.size(), -1);
@@ -653,7 +653,7 @@ bool Screen3DStage::SyncCaptures(HIKARI::WorldView& world, const std::vector<Ass
     }
     for (size_t j = 0; j < views_.size(); ++j) {
         if (reused[j]) { continue; }
-        if (!captures.Destroy(views_[j].handle)) { status_ = "退役3D捕获释放失败"; return false; }
+        if (!captures.Destroy(views_[j].handle)) { status_ = "使わない 3D キャプチャを解放できない"; return false; }
         std::erase_if(bound_, [&](const auto& item) { return item.second.capture.value == views_[j].handle.value; });
     }
     views_ = std::move(wanted);
@@ -668,10 +668,10 @@ bool Screen3DStage::SyncCaptures(HIKARI::WorldView& world, const std::vector<Ass
                                                           HIKARI::GameProjectSceneCaptureFlag::RenderVfx);
         if (!view.handle.IsValid()) {
             view.handle = captures.Create(desc);
-            if (!view.handle.IsValid()) { status_ = "3D捕获创建失败（最多4个）"; return false; }
+            if (!view.handle.IsValid()) { status_ = "3D キャプチャを作れない（最大 4）"; return false; }
         } else if (view.width != desc.width || view.height != desc.height || view.camera != desc.cameraObject) {
             // 大きさかカメラが変わった時だけ更新する（毎フレーム更新すると GPU 側の再検証が走る）。
-            if (!captures.Update(view.handle, desc)) { status_ = "3D捕获更新失败"; return false; }
+            if (!captures.Update(view.handle, desc)) { status_ = "3D キャプチャを更新できない"; return false; }
         }
         view.width = desc.width; view.height = desc.height; view.camera = desc.cameraObject;
         const bool noise = introStatic_ && view.kind == ViewKind::Far;
@@ -679,7 +679,7 @@ bool Screen3DStage::SyncCaptures(HIKARI::WorldView& world, const std::vector<Ass
                               window.lens >= 0 ? window.distance : kStageCameraDistance, !noise && solid_);
         // 画面の閃光：明るさを一時的に上乗せする。描き方の組分け（SameStyle）には含めない。
         look.brightness = static_cast<float>(std::clamp(look.brightness * (1 + flash), 0.0, 4.0));
-        if (!captures.SetStyle(view.handle, look)) { status_ = "屏幕风格提交失败，需要含SetStyle v2的新引擎"; return false; }
+        if (!captures.SetStyle(view.handle, look)) { status_ = "画面の描き方を送れない（SetStyle v2 のエンジンが要る）"; return false; }
     }
 
     // 画面の割り当て：変わった画面だけやり直す（同じ物体・材質スロットなら、別のキャプチャへ移る時もエンジンが差し替える）。
@@ -715,7 +715,7 @@ bool Screen3DStage::SyncCaptures(HIKARI::WorldView& world, const std::vector<Ass
         std::memcpy(desc.materialSlotName, binding.slot.c_str(), binding.slot.size() + 1);
         desc.flags = binding.protect ? HIKARI::GameProjectSceneCaptureMaterialBindingFlags(HIKARI::GameProjectSceneCaptureMaterialBindingFlag::ProtectReadability)
                                      : HIKARI::GameProjectSceneCaptureMaterialBindingFlags(HIKARI::GameProjectSceneCaptureMaterialBindingFlag::None);
-        if (!captures.BindMaterialRegion(desc)) { status_ = "屏幕3D绑定失败：" + binding.slot; bound_ = std::move(next); return false; }
+        if (!captures.BindMaterialRegion(desc)) { status_ = "画面の 3D 結び付けに失敗：" + binding.slot; bound_ = std::move(next); return false; }
     }
     bound_ = std::move(next);
     return true;

@@ -146,14 +146,14 @@ public:
         return result;
     }
     std::string Validate(const RegionSettings& s) const {
-        if (!std::isfinite(s.screenBrightness) || s.screenBrightness < .5f || s.screenBrightness > 4.0f) { return "屏幕亮度范围为 0.5～4"; }
+        if (!std::isfinite(s.screenBrightness) || s.screenBrightness < .5f || s.screenBrightness > 4.0f) { return "画面の明るさは 0.5～4"; }
         const auto region = ValidateRegion(s.region);
         if (!region.valid) { return std::string(region.message); }
-        if (s.region.cols > 64 || s.region.rows > 64 || s.region.cells.size() > 4096) { return "电视地图最多 64 × 64 格"; }
+        if (s.region.cols > 64 || s.region.rows > 64 || s.region.cells.size() > 4096) { return "テレビの地図は 64 × 64 マスまで"; }
         DeviceEditor d; d.Load(s.devices);
         if (const auto problem = d.Validate(s.region.cols, s.region.rows); !problem.empty()) { return problem; }
         if (!std::isfinite(s.spawnX) || !std::isfinite(s.spawnY) || s.spawnX < 0 || s.spawnY < 0 ||
-            s.spawnX + .625f > static_cast<float>(s.region.cols) || s.spawnY + .875f > static_cast<float>(s.region.rows)) { return "出生位置超出电视地图"; }
+            s.spawnX + .625f > static_cast<float>(s.region.cols) || s.spawnY + .875f > static_cast<float>(s.region.rows)) { return "スポーン位置が地図の外です"; }
         const auto layout = Layout(&s);
         const auto valid = ValidateWorldLayout(layout);
         return valid.valid ? std::string{} : valid.message + "：" + valid.regionA + " / " + valid.regionB;
@@ -165,7 +165,7 @@ public:
         if (const auto problem = Validate(draft); !problem.empty()) { error = problem; return false; }
         RegionTarget target; RegionSettings fresh;
         if (!ReadRegion(ctx, selected, target, fresh, error)) { return false; }
-        if (target != item->target || fresh != item->settings) { error = "地图已被其他编辑更新；请撤回草稿并刷新"; return false; }
+        if (target != item->target || fresh != item->settings) { error = "地図がほかの編集で変わりました。下書きを戻して読み直してください"; return false; }
         Json changes = Json::array(); AppendRegionChanges(changes, target, fresh, draft);
         std::vector<RoomItem*> otherEntries;
         // 開始テレビの変更も同じ取り消しに含め、開始区域を二つ残さない。
@@ -173,7 +173,7 @@ public:
             if (other.object.objectId == selected || !other.settings.entryRegion) { continue; }
             RegionTarget otherTarget; RegionSettings otherFresh;
             if (!ReadRegion(ctx, other.object.objectId, otherTarget, otherFresh, error)) { return false; }
-            if (otherTarget != other.target || otherFresh != other.settings) { error = "开始电视已被其他编辑更新"; return false; }
+            if (otherTarget != other.target || otherFresh != other.settings) { error = "開始テレビがほかの編集で変わりました"; return false; }
             changes.push_back(PropertyCommand(otherTarget.objectId, otherTarget.componentId, "entryRegion", false));
             otherEntries.push_back(&other);
         }
@@ -182,13 +182,13 @@ public:
         for (auto* other : otherEntries) {
             RegionTarget observedTarget; RegionSettings observed;
             if (!ReadRegion(ctx, other->object.objectId, observedTarget, observed, error)) { return false; }
-            if (observedTarget != other->target || observed.entryRegion) { error = "开始电视写入回读不一致"; return false; }
+            if (observedTarget != other->target || observed.entryRegion) { error = "開始テレビの書き込みを確認できません"; return false; }
             other->settings = observed;
         }
         RegionSettings confirmed; RegionTarget confirmedTarget;
         if (!ReadRegion(ctx, selected, confirmedTarget, confirmed, error)) { return false; }
         item->settings = confirmed; item->target = confirmedTarget;
-        if (confirmedTarget != target || confirmed != draft) { error = "地图写入回读不一致；草稿保留"; return false; }
+        if (confirmedTarget != target || confirmed != draft) { error = "地図の書き込みを確認できません（下書きは残しています）"; return false; }
         draft = confirmed; devices.Load(draft.devices); error.clear(); refresh = true;
         return true;
     }
@@ -201,7 +201,7 @@ public:
     }
     void History(EditorWorkspaceHostContext& ctx, bool redo) {
         if (gesture) { return; }
-        if (Dirty()) { error = "先应用或撤回当前草稿"; return; }
+        if (Dirty()) { error = "先に今の下書きを反映するか戻してください"; return; }
         const auto result = Execute(ctx, redo ? "scene.redo" : "scene.undo", Json::object());
         if (!result.ok) { error = result.error; return; }
         sceneDirty = true;
@@ -209,7 +209,7 @@ public:
     }
     void Create(EditorWorkspaceHostContext& ctx) {
         if (Dirty() && !Commit(ctx)) { return; }
-        const auto created = Execute(ctx, "scene.create_empty_object", {{"name", "电视地图"}});
+        const auto created = Execute(ctx, "scene.create_empty_object", {{"name", "テレビの地図"}});
         if (!created.ok) { error = created.error; return; }
         sceneDirty = true;
         const auto id = ObjectId(created.data.value("objectId", Json{}));
@@ -250,7 +250,7 @@ public:
         screenWarning = ScreenSlotWarning(ctx, draft);
         const auto previous = draft.region;
         draft.region.cols = model.cols; draft.region.rows = model.rows;
-        if (!ResizeCells(previous, draft.region)) { draft.region = previous; error = "格子尺寸设置失败"; return false; }
+        if (!ResizeCells(previous, draft.region)) { draft.region = previous; error = "マスの大きさを変えられません"; return false; }
         std::fill(draft.region.cells.begin(), draft.region.cells.end(), '0');
         for (int x = 0; x < model.cols; ++x) { draft.region.cells[CellIndex(draft.region, x, model.rows - 1)] = '1'; }
         draft.spawnX = 1.1875f; draft.spawnY = static_cast<float>(model.rows) - 1.875f;
@@ -265,15 +265,15 @@ public:
             }
         }
         if (!Commit(ctx)) { return false; }
-        error = draft.worldPlaced || !beside ? std::string{} : "已建好；世界地图上旁边没有空位，请从列表把它拖进世界";
+        error = draft.worldPlaced || !beside ? std::string{} : "作りました。世界地図の隣に空きが無いので、一覧から世界へドラッグしてください";
         return true;
     }
     void Publish(EditorWorkspaceHostContext& ctx) {
         std::string message = !error.empty() ? error : screenWarning;
         if (message.empty() && !rooms.empty()) {
             const auto entries = std::count_if(rooms.begin(), rooms.end(), [](const auto& r) { return r.settings.worldPlaced && r.settings.entryRegion; });
-            if (entries == 0) { message = "请在世界地图放置开始电视"; }
-            else if (entries > 1) { message = "世界地图需要唯一的开始电视"; }
+            if (entries == 0) { message = "世界地図に開始テレビを置いてください"; }
+            else if (entries > 1) { message = "開始テレビは世界地図に一台だけ"; }
         }
         if (message == published) { return; }
         ctx.commands->PublishStatus(message.empty() ? EditorWorkspaceStatusSeverity::Info : EditorWorkspaceStatusSeverity::Warning, message);

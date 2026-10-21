@@ -175,7 +175,7 @@ void MachineViews::UpdateMechanisms(const Frame& frame, Writes& writes) {
         const double progress = runtimes[i].progress;
         if (progress == view.written) continue;
         view.written = progress;
-        // 両端でゆっくり止まる。転台は四元数で回し、吊り台は直線で運ぶ。天平の状態 -1 側は c へ向かう。
+        // 両端でゆっくり止まる。転台は四元数で回し、吊り台は直線で運ぶ。天秤の状態 -1 側は c へ向かう。
         const bool sideC = progress < 0;
         const float e = Math::SmoothStep(static_cast<float>(std::abs(progress)));
         std::vector<HIKARI::GameProjectTransform> poses;

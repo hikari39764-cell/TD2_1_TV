@@ -36,7 +36,7 @@ double Noise(uint32_t seed, double t, double frequency) {
     const double f = x - std::floor(x), s = f * f * (3 - 2 * f);
     return Hash(seed, i) * (1 - s) + Hash(seed, i + 1) * s;
 }
-// タイトルの点灯（点・線・開く）と消灯（閉じる・線・点）にかかる秒。标题卡の範囲からこれを引いた残りが映っている時間。
+// タイトルの点灯（点・線・開く）と消灯（閉じる・線・点）にかかる秒。タイトルカードの範囲からこれを引いた残りが映っている時間。
 constexpr double kTitleOnSeconds = .42, kTitleOffSeconds = .36;
 // 画面に飛び込んで切れてから灯とテレビを戻すまで（暗転の中で戻し、戻る瞬間を見せない）。
 constexpr float kRestoreAfterBlack = .06f;
@@ -243,7 +243,7 @@ void IntroDirector::Preview(HIKARI::WorldView& world) {
         if (phase_ == Phase::Preview) { Restore(world); playback_ = {}; phase_ = Phase::None; }
         return;
     }
-    // 時間轴で事件段や镜头を直すとプレビューが流し直される（新しい handle）。その時は元へ戻してから読み直す。
+    // タイムラインでイベントの区間やカメラを直すとプレビューが流し直される（新しい handle）。その時は元へ戻してから読み直す。
     if (phase_ != Phase::Preview || !(preview.handle == playback_)) {
         if (phase_ == Phase::Preview) { Restore(world); }
         Prepare(world, preview.handle);
@@ -286,7 +286,7 @@ void IntroDirector::DriveDepthOfField(HIKARI::WorldView& world) {
 
 void IntroDirector::DriveLetterbox(HIKARI::WorldView& world, double t) const {
     if (!(settings_.letterbox > 0)) { return; }
-    // 黑边の範囲の始めから 1 秒で入り、終わりまでの 0.8 秒で退く（なめらかに）。
+    // 黒帯の範囲の始めから 1 秒で入り、終わりまでの 0.8 秒で退く（なめらかに）。
     const auto ease = [](double x) { x = std::clamp(x, 0.0, 1.0); return x * x * (3 - 2 * x); };
     const double amount = ease((t - screens_.letterboxIn) / 1.0) * (1 - ease((t - (screens_.letterboxOut - .8)) / .8));
     if (amount <= 0) { return; }
@@ -295,7 +295,7 @@ void IntroDirector::DriveLetterbox(HIKARI::WorldView& world, double t) const {
     if (world.GetCamera().TryGetViewSnapshot(view) && view.uiLogicalWidth > 0 && view.uiLogicalHeight > 0) {
         width = static_cast<float>(view.uiLogicalWidth); height = static_cast<float>(view.uiLogicalHeight);
     }
-    // 帯の太さは 16:9 の画面で letterbox の比になる割合に揃える（編集器の縦長な游戏视图でも帯が太くなりすぎない）。
+    // 帯の太さは 16:9 の画面で letterbox の比になる割合に揃える（編集器の縦長なゲームビューでも帯が太くなりすぎない）。
     const double bar = height * (std::max)(0.0, 1.0 - 16.0 / 9.0 / settings_.letterbox) * .5 * amount;
     if (bar < .5) { return; }
     HIKARI::GameProjectUiSpriteRequest request{};
@@ -434,7 +434,7 @@ void IntroDirector::DriveLights(HIKARI::WorldView& world, double t) {
             if (own < .15) { v *= .4; }
             // 稲妻の直前と最中は全部落とし、窓から差す光だけにする。
             for (const float flash : s.lightning) { if (t > flash - .25 && t < flash + .3) { v = 0; } }
-            // 全灭：全部の灯が一度に切れる。白い画面の間は、画面に照らされたように弱く灯り、近くのテレビと同じ拍で消える。
+            // 全消灯：全部の灯が一度に切れる。白い画面の間は、画面に照らされたように弱く灯り、近くのテレビと同じ拍で消える。
             if (t >= s.blackoutStart) { v = t >= s.whiteStart && t < lamp.off ? .22 : 0; }
             // 電気が戻る：手元の灯から遠くへ順に、何度か頼りなく瞬いてから点く。
             if (t >= s.blackTime) {

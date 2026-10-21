@@ -383,7 +383,7 @@ public:
     double HorizontalVelocity() const {
         return s.player.walkVx + s.player.reboundDirection * 7.5 * std::clamp(s.player.reboundTime / .14, 0.0, 1.0);
     }
-    // 冲刺が決まった時に前の残影を引き取る（新しい残影は冲刺の出発点に出る）。
+    // ダッシュが決まった時に前の残影を引き取る（新しい残影はダッシュの出発点に出る）。
     void RetireEcho() {
         if (!s.echo && !s.pendingEcho) return;
         const Rect source = s.echo ? s.echo->rect : s.pendingEcho->origin;
@@ -434,7 +434,7 @@ public:
         double x = intended;
         bool bounced = false;
         const Rect route = Sweep(source, {x, source.y, source.w, source.h});
-        // 冲刺は壁を通り抜けない。経路で最初に当たる実体で止まり、そこで蹬墙（跳ね返り）になる。
+        // ダッシュは壁を通り抜けない。経路で最初に当たる実体で止まり、そこで壁蹴り（跳ね返り）になる。
         // 一方通行の床は横から当たらず、バネの踏み板は下の着地処理で上に乗せる。
         for (const auto& c : Colliders(route, nullptr, false, {}, true, true)) {
             if (c.spring || !Overlap(route, c.rect)) continue;
@@ -502,7 +502,7 @@ public:
                 return !b.dead && OverlapX(b.rect, dev.rect) && feet >= bottom - 7.0 / 32 &&
                        feet <= bottom + 2.0 / 32 && b.rect.y < bottom && b.vy >= -kEps;
             };
-            // 蹬墙の冲刺で残影が出るまでの間も、出発点の板は押されたままにする（離して押し直すと二回分の入力になる）。
+            // 壁蹴りのダッシュで残影が出るまでの間も、出発点の板は押されたままにする（離して押し直すと二回分の入力になる）。
             const auto pending = [&] {
                 if (!s.pendingEcho) return false;
                 const Rect& r = s.pendingEcho->origin;
@@ -699,9 +699,9 @@ public:
             if (s.deathRemaining <= kEps) Respawn();
             return;
         }
-        // スペース：点按は常に冲刺（前の残影は自動で引き取られ、出発点に新しい残影が出る）。
+        // スペース：点按は常にダッシュ（前の残影は自動で引き取られ、出発点に新しい残影が出る）。
         // 残影がいる時だけ、kSwapHold 秒押し続けると交換（離すのを待たずに入れ替える）。点按か長押しかは離すまで分からないので、
-        // 残影がいる時の冲刺は離した時に出る。
+        // 残影がいる時のダッシュは離した時に出る。
         const bool hasEcho = s.echo || s.pendingEcho;
         if (actionPressed && hasEcho) { s.actionArmed = true; s.actionHold = 0; }
         else if (actionPressed) s.blinkBuffer = .12;

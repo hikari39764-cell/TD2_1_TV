@@ -86,9 +86,9 @@ inline WorldGridRect WorldBounds(const RegionPlacement& region) noexcept {
 
 inline WorldLayoutValidation ValidateRegionPlacement(const RegionPlacement& region) {
     if (!IsStableId(region.regionId))
-        return {false, "区域 ID 必须为 1–95 个 ASCII 字母、数字、点、短横线或下划线", region.regionId, {}};
+        return {false, "区域 ID は ASCII の英数字・点・ハイフン・下線で 1～95 文字", region.regionId, {}};
     if (region.cols <= 0 || region.rows <= 0)
-        return {false, "电视地图的整数行列必须为正", region.regionId, {}};
+        return {false, "テレビの地図の行と列は正の整数", region.regionId, {}};
     return {true, {}, {}, {}};
 }
 
@@ -103,10 +103,10 @@ inline WorldLayoutValidation ValidateWorldLayout(std::span<const RegionPlacement
         if (auto validation = ValidateRegionPlacement(regions[i]); !validation.valid) return validation;
         for (std::size_t j = 0; j < i; ++j) {
             if (regions[i].regionId == regions[j].regionId)
-                return {false, "区域 ID 重复；布置不能复制同一房间身份", regions[j].regionId, regions[i].regionId};
+                return {false, "区域 ID が重なっています", regions[j].regionId, regions[i].regionId};
             if (regions[i].worldPlaced && regions[j].worldPlaced &&
                 WorldRectsOverlap(WorldBounds(regions[i]), WorldBounds(regions[j])))
-                return {false, "已布置电视地图发生面积重叠", regions[j].regionId, regions[i].regionId};
+                return {false, "置いたテレビの地図が重なっています", regions[j].regionId, regions[i].regionId};
         }
     }
     return {true, {}, {}, {}};
@@ -162,15 +162,15 @@ inline bool SameRegionPair(const RegionSequenceBinding& a, const RegionSequenceB
 inline WorldLayoutValidation ValidateRegionSequenceBinding(const RegionSequenceBinding& binding) {
     if (!IsStableId(binding.regionA) || !IsStableId(binding.regionB) ||
         binding.regionA == binding.regionB)
-        return {false, "Sequence 绑定需要两个不同的有效区域 ID", binding.regionA, binding.regionB};
+        return {false, "演出の結び付けには二つの違う区域 ID が要ります", binding.regionA, binding.regionB};
     if (!binding.sequenceAssetGuid.empty() &&
         (binding.sequenceAssetGuid.size() != 32 ||
          !std::all_of(binding.sequenceAssetGuid.begin(), binding.sequenceAssetGuid.end(), WorldLayoutDetail::HexDigit)))
-        return {false, "Sequence 引用必须是已有资产的 32 位 GUID", binding.regionA, binding.regionB};
+        return {false, "演出は資産の 32 桁の GUID で指定します", binding.regionA, binding.regionB};
     if (binding.sequenceSlotName.size() > 63 || binding.sequenceSlotName.find('\0') != std::string::npos)
-        return {false, "Sequence 槽名不得超过 63 个 UTF-8 字节或包含空字符", binding.regionA, binding.regionB};
+        return {false, "演出のスロット名は UTF-8 で 63 バイトまで、空文字を含めない", binding.regionA, binding.regionB};
     if (binding.sequenceSlotName.empty() != (binding.cameraObject == 0))
-        return {false, "可选 Sequence 槽名与摄像机对象必须同时指定或同时留空", binding.regionA, binding.regionB};
+        return {false, "演出のスロット名とカメラは両方指定するか、両方空にします", binding.regionA, binding.regionB};
     return {true, {}, {}, {}};
 }
 

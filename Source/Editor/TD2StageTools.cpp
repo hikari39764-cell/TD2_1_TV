@@ -38,7 +38,7 @@ bool ReadStageObject(EditorWorkspaceHostContext& ctx, uint64_t objectId, StageOb
     const auto result = Execute(ctx, "scene.objects.query", {{"objectIds", Json::array({objectId})}, {"detail", true}});
     if (!result.ok) { error = result.error; return false; }
     const auto objects = result.data.value("objects", Json::array());
-    if (!objects.is_array() || objects.empty()) { error = "物体不存在：" + std::to_string(objectId); return false; }
+    if (!objects.is_array() || objects.empty()) { error = "物体がありません：" + std::to_string(objectId); return false; }
     out = ParseStageObject(objectId, objects.front());
     return true;
 }
@@ -80,7 +80,7 @@ static std::string ModelAssetGuid(EditorWorkspaceHostContext& ctx, std::string_v
             return guid;
         }
     }
-    error = "找不到模型资产：" + std::string(path);
+    error = "モデルの資産が見つかりません：" + std::string(path);
     return {};
 }
 
@@ -91,7 +91,7 @@ uint64_t CreateStageModel(EditorWorkspaceHostContext& ctx, std::string_view path
         {"position", pose.position}, {"rotation", pose.rotation}, {"scale", pose.scale}});
     if (!created.ok) { error = created.error; return 0; }
     const auto id = ObjectId(created.data.value("objectId", Json{}));
-    if (!id) { error = "创建模型后没有返回物体 ID"; }
+    if (!id) { error = "モデルを作りましたが物体 ID が返りません"; }
     return id;
 }
 

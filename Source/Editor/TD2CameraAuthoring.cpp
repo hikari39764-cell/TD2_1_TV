@@ -2,7 +2,7 @@
 
 namespace TD2::Editor {
 bool OpenTransitionCamera(EditorWorkspaceHostContext& ctx, const RegionSequenceBinding& binding, std::string& error) {
-    if (binding.sequenceAssetGuid.empty()) { error = "请先绑定切换演出。"; return false; }
+    if (binding.sequenceAssetGuid.empty()) { error = "先に切り替えの演出を結び付けてください"; return false; }
     const auto opened = Execute(ctx, "authoring.session.open", {{"workspace", "cinematics"}, {"assetGuid", binding.sequenceAssetGuid}});
     if (!opened.ok) { error = opened.error; return false; }
     const auto session = opened.data.value("sessionId", "");
@@ -33,13 +33,13 @@ bool OpenRegionCamera(EditorWorkspaceHostContext& ctx, const std::string& region
             const auto* reference = FieldValue(fields, "cameraObject");
             const uint64_t camera = !reference ? 0 : reference->is_object() && reference->value("$hikariRef", "") == "SceneObject"
                 ? ObjectId(reference->value("id", Json{})) : ObjectId(*reference);
-            if (!camera) { error = "该区域尚未指定共享机位，请在区域属性中选择摄像机。"; return false; }
+            if (!camera) { error = "この区域にはカメラがありません。区域のプロパティでカメラを選んでください"; return false; }
             const auto reveal = Execute(ctx, "gameplay_camera.reveal", {{"cameraId", camera}});
             error = reveal.ok ? "" : reveal.error;
             return reveal.ok;
         }
     }
-    error = "未找到区域。";
+    error = "区域が見つかりません";
     return false;
 }
 }

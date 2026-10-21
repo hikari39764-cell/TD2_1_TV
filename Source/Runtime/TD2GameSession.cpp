@@ -50,7 +50,7 @@ void GameSession::FinishRecord() {
     const auto& state = exploration_.State();
     record_.endRegion = exploration_.ActiveRegion();
     record_.endX = state.player.rect.x; record_.endY = state.player.rect.y; record_.endDeaths = state.deaths;
-    (void)WritePlayRecord(LastPlayPath(), record_);
+    (void)AppendPlayRecord(LastPlayPath(), record_, recordCursor_, true);
 }
 
 void GameSession::SyncRegions(HIKARI::WorldView& world) {
@@ -123,7 +123,7 @@ void GameSession::Update(HIKARI::WorldView& world, const HIKARI::FrameContext& f
     double remaining = camera_.HoldsWorld() ? 0 : frameSeconds;
     camera_.AdvanceClock(frameSeconds);
     if (!camera_.Initialized()) camera_.Initialize(world, exploration_, regions_);
-    // オープニングの演出：最初の Play のフレームで始め（「从这屏开始」の試遊は除く）、終わるまで規則を進めない。
+    // オープニングの演出：最初の Play のフレームで始め（「この画面から」の試遊は除く）、終わるまで規則を進めない。
     // スペースは演出を始めるだけで、ダッシュにはならない。カメラは演出が動かし、焦点だけは画面に合わせて追う。
     if (!introChecked_) { introChecked_ = true; (void)intro_.Begin(world, previewSpawn_.has_value() || previewEntryObject_ != 0 || TestEntryRegion()); }
     if (intro_.Update(world, buttons.action.pressed)) {
@@ -132,7 +132,7 @@ void GameSession::Update(HIKARI::WorldView& world, const HIKARI::FrameContext& f
     }
     // 試遊の記録：このフレームの秒とボタン（空格は押した・離した瞬間も）、世界が止まっていたか。
     if (!recording_ && !recordClosed_) {
-        record_ = {}; recording_ = true; recordFrame_ = 0;
+        record_ = {}; recordCursor_ = {}; recording_ = true; recordFrame_ = 0;
         // 入口は実際に始めた区域と区域内の位置で残す（作者が開始テレビを変えても解法は同じ所から再生する）。
         record_.states = previewStates_;
         recordRegion_ = exploration_.ActiveRegion(); record_.entryRegion = recordRegion_;
@@ -177,13 +177,9 @@ void GameSession::Update(HIKARI::WorldView& world, const HIKARI::FrameContext& f
     takeCalls();
     if (recording_ && exploration_.ActiveRegion() != recordRegion_) { recordRegion_ = exploration_.ActiveRegion(); record_.regions.push_back({recordFrame_, recordRegion_}); }
     ++recordFrame_;
-    // 終わりの呼び出しが来ない止め方でも残るよう、時々書いておく。
-    // 長い試遊は 20 分で記録を締める（書き出しが重くならないよう、5 分を過ぎたら書く間隔も広げる）。
+    // 終わりの呼び出しが来ない止め方でも残るよう、10 秒ごとに続きを書き足す。長い試遊は 20 分で記録を締める。
     if (recording_ && recordFrame_ >= 72000) { FinishRecord(); }
-    else if (recording_ && recordFrame_ % (recordFrame_ < 18000 ? 600 : 3600) == 0) {
-        auto copy = record_; copy.endRegion = exploration_.ActiveRegion(); copy.endX = exploration_.State().player.rect.x; copy.endY = exploration_.State().player.rect.y; copy.endDeaths = exploration_.State().deaths;
-        (void)WritePlayRecord(LastPlayPath(), copy);
-    }
+    else if (recording_ && recordFrame_ % 600 == 0) { (void)AppendPlayRecord(LastPlayPath(), record_, recordCursor_, false); }
     traceSeconds_ += std::max(0.0, double(frame.gameDt));
     Trace(world, frame.frameIndex);
 }

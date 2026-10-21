@@ -65,7 +65,7 @@ public:
             const std::string name(item.name), label(item.label);
             auto& entry = settings_.entries[i];
             if (fields.Section(label)) {
-                fields.Vfx("vfx" + name, "特效资产", entry.asset);
+                fields.Vfx("vfx" + name, "エフェクト", entry.asset);
                 fields.Float("scale" + name, "大きさ", entry.scale, .25f, 3);
                 fields.Float("shake" + name, "画面の振動", entry.shake, 0, .5f);
                 fields.Float("flash" + name, "画面の閃光", entry.flash, 0, 1.5f);

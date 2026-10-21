@@ -74,7 +74,7 @@ void LevelEditor::DrawMap(EditorWorkspaceHostContext& ctx) {
     if (input.size.x > 0 && input.size.y > 0) {
         if (tool_ == Tool::Camera && plan_) { EnsureLayout(ctx); DrawPlan(ctx, input); ui.EndCanvas(); return; }
         RefreshChapters(ctx);
-        // 開いた時は今のテレビの章に合わせる（世界全体は「适应」）。大きさが変わった時も同じ範囲に合わせ直す。
+        // 開いた時は今のテレビの章に合わせる（世界全体は「全体」）。大きさが変わった時も同じ範囲に合わせ直す。
         if (view_.fit && (!model_.gesture || !view_.hasFit)) { if (!fitChapter_ || !FitChapter(input.size)) { FitAll(input.size); } }
         view_.Navigate(input, false, drag_ != Drag::None);
         DrawCanvasGrid(ui, view_, input.size);
@@ -294,7 +294,7 @@ void LevelEditor::DrawHover(IEditorWorkspaceUi& ui, const EditorWorkspaceCanvasI
         if (hit >= 0) {
             const auto& device = d.Items()[static_cast<size_t>(hit)];
             text += " · " + DeviceName(device);
-            if (device.kind == "Plate") { text += device.latch ? "（踩一下切换）" : "（踩住）"; if (!device.targets.empty()) { text += " → " + std::to_string(device.targets.size()); } }
+            if (device.kind == "Plate") { text += device.latch ? "（踏むと切り替え）" : "（踏んでいる間）"; if (!device.targets.empty()) { text += " → " + std::to_string(device.targets.size()); } }
         }
     }
     if (tool_ == Tool::Machine || tool_ == Tool::Link) {
@@ -468,7 +468,7 @@ void LevelEditor::PressStage(EditorWorkspaceHostContext& ctx, const EditorWorksp
     if (SelectRoom(ctx, room->object.objectId)) { focus_ = Focus::Room; model_.devices.Select(-1); }
 }
 
-// 連線：板を押して、門・激光・桥か仕掛けの印の上で離す。押して離すだけなら、次に押した所が相手になる。
+// 連線：板を押して、扉・レーザー・橋か仕掛けの印の上で離す。押して離すだけなら、次に押した所が相手になる。
 void LevelEditor::PressLink(EditorWorkspaceHostContext& ctx, EditorWorkspacePoint p) {
     auto* room = RoomAt(p);
     if (link_.device.empty()) {
@@ -632,7 +632,7 @@ bool LevelEditor::FinishGroupMove(EditorWorkspaceHostContext& ctx) {
         layout.push_back(placement);
     }
     groupDx_ = groupDy_ = 0;
-    if (const auto valid = ValidateWorldLayout(layout); !valid.valid) { model_.error = "不能放在这里：" + valid.message; return false; }
+    if (const auto valid = ValidateWorldLayout(layout); !valid.valid) { model_.error = "ここには置けません：" + valid.message; return false; }
     if (!Transact(ctx, commands, model_.error)) { return false; }
     model_.error.clear(); MarkSceneChanged(); model_.refresh = true; model_.Poll(ctx, true);
     return true;
@@ -705,7 +705,7 @@ void LevelEditor::DrawSpawnPicker(EditorWorkspaceHostContext& ctx, const EditorW
         ctx.ui->CanvasRect(a, b, color, 2);
         ctx.ui->CanvasCircle(view_.Screen(point.x, point.y - .7f), view_.tile * .13f, color, 2);
         if (input.pressedButtons & kPrimary) {
-            if (!clear) { model_.error = "这里放不下角色"; return; }
+            if (!clear) { model_.error = "ここには人物が入りません"; return; }
             StartPreview(ctx, room.object.objectId, spawn);
         }
         return;
@@ -717,7 +717,7 @@ void LevelEditor::PlaceTelevision(EditorWorkspaceHostContext& ctx, const Televis
     if (model_.Dirty() && !model_.Commit(ctx)) { return; }
     RegionPlacement ghost{"td2.ghost", m.cols, m.rows, true, worldX, worldY};
     auto layout = model_.Layout(); layout.push_back(ghost);
-    if (!ValidateWorldLayout(layout).valid) { model_.error = "这里和别的电视重叠"; return; }
+    if (!ValidateWorldLayout(layout).valid) { model_.error = "ほかのテレビと重なります"; return; }
     // 地図で隣になるテレビ（共有する辺が一番長いもの）。3D ではその横に置く。
     const RoomItem* neighbor = nullptr; int64_t best = 0;
     for (const auto& room : model_.rooms) {
@@ -733,7 +733,7 @@ void LevelEditor::PlaceTelevision(EditorWorkspaceHostContext& ctx, const Televis
     if (hasAnchor) { pose = PoseBeside(anchor, m.width * m.scale, m.height * m.scale, 1); }
     else if (!PoseAtView(ctx, pose, model_.error)) { return; }
     pose.scale = {m.scale, m.scale, m.scale};
-    const std::string name = "电视 " + std::string(m.label);
+    const std::string name = "テレビ " + std::string(m.label);
     const uint64_t id = CreateStageModel(ctx, m.path, name, pose, model_.error);
     if (!id) { return; }
     MarkSceneChanged();
@@ -747,6 +747,6 @@ void LevelEditor::PlaceTelevision(EditorWorkspaceHostContext& ctx, const Televis
     SetUpNewRoom(ctx, region, besideRegion);
     if (Execute(ctx, "scene.object.select", {{"objectId", id}}).ok) { model_.sceneSelection = id; }
     focus_ = Focus::Room; placeModel_ = -1;
-    SetNote("已新建「" + name + "」");
+    SetNote("「" + name + "」を作りました");
 }
 }

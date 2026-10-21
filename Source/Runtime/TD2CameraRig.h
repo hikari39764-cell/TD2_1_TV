@@ -33,29 +33,26 @@ class CameraAreaComponent final : public HIKARI::IGameComponent {
 public:
     const CameraAreaSettings& Settings() const noexcept { return settings_; }
     void DescribeProperties(HIKARI::PropertyFields& f) override {
-        f.Text("regions", "包含的区域（逗号分隔）", settings_.regions);
-        f.Float("followX", "横向跟随", settings_.followX, 0, 1);
-        f.Float("followY", "纵向跟随", settings_.followY, 0, 1);
-        f.Float("rangeX", "横向范围（米）", settings_.rangeX, 0, 3);
-        f.Float("rangeY", "纵向范围（米）", settings_.rangeY, 0, 3);
-        f.Float("aimFollow", "视线跟随", settings_.aimFollow, 0, 1);
-        f.Float("maxYaw", "视线左右上限（度）", settings_.maxYaw, 0, 25);
-        f.Float("maxPitch", "视线上下上限（度）", settings_.maxPitch, 0, 25);
-        f.Float("lookCarry", "视线随机位平移", settings_.lookCarry, 0, 1);
-        f.Float("lookAhead", "前瞻（秒）", settings_.lookAhead, 0, 1.5f);
-        f.Float("regionSeconds", "区域机位切换平滑（秒）", settings_.regionSeconds, .1f, 3);
-        f.Float("positionSeconds", "机位平滑（秒）", settings_.positionSeconds, .05f, 3);
-        f.Float("aimSeconds", "视线平滑（秒）", settings_.aimSeconds, .05f, 3);
-        f.Float("breathe", "呼吸幅度（米）", settings_.breathe, 0, .2f);
-        f.Float("breatheAngle", "呼吸角度（度）", settings_.breatheAngle, 0, 3);
-        f.Float("handheld", "手持晃动强度", settings_.handheld, 0, 3);
-        f.Float("bank", "横移倾斜（度/米每秒）", settings_.bank, 0, 6);
-        f.Float("frameFill", "机位：屏幕占画面高度", settings_.frameFill, .15f, .8f);
-        f.Float("orbitDegrees", "机位：向出口侧斜拍角度（度）", settings_.orbitDegrees, 0, 40);
-        f.Float("cameraLift", "机位：高于屏幕（米）", settings_.cameraLift, -1, 2);
-        if (f.IsInspecting()) {
-            f.Note("同一大区域内换区域时，镜头在各区域机位之间平滑移动；只有跨大区域才播放区域演出。");
-        }
+        f.Text("regions", "区域", settings_.regions);
+        f.Float("followX", "横の追従", settings_.followX, 0, 1);
+        f.Float("followY", "縦の追従", settings_.followY, 0, 1);
+        f.Float("rangeX", "横の範囲", settings_.rangeX, 0, 3);
+        f.Float("rangeY", "縦の範囲", settings_.rangeY, 0, 3);
+        f.Float("aimFollow", "視線の追従", settings_.aimFollow, 0, 1);
+        f.Float("maxYaw", "視線の左右の上限", settings_.maxYaw, 0, 25);
+        f.Float("maxPitch", "視線の上下の上限", settings_.maxPitch, 0, 25);
+        f.Float("lookCarry", "視線の平行移動", settings_.lookCarry, 0, 1);
+        f.Float("lookAhead", "先読み", settings_.lookAhead, 0, 1.5f);
+        f.Float("regionSeconds", "区域を移る時のなめらかさ", settings_.regionSeconds, .1f, 3);
+        f.Float("positionSeconds", "位置のなめらかさ", settings_.positionSeconds, .05f, 3);
+        f.Float("aimSeconds", "視線のなめらかさ", settings_.aimSeconds, .05f, 3);
+        f.Float("breathe", "呼吸の幅", settings_.breathe, 0, .2f);
+        f.Float("breatheAngle", "呼吸の角度", settings_.breatheAngle, 0, 3);
+        f.Float("handheld", "手持ちの揺れ", settings_.handheld, 0, 3);
+        f.Float("bank", "横移動の傾き", settings_.bank, 0, 6);
+        f.Float("frameFill", "画面が占める高さ", settings_.frameFill, .15f, .8f);
+        f.Float("orbitDegrees", "出口側への角度", settings_.orbitDegrees, 0, 40);
+        f.Float("cameraLift", "画面より上の高さ", settings_.cameraLift, -1, 2);
     }
 
 private:

@@ -61,7 +61,7 @@ void DeviceEditor::Load(std::string_view text) {
     devices_.clear(); selected_ = -1; error_.clear();
     // 読めない行があれば、その前までを表示し、編集はさせない（原文を場景に残す）。
     std::vector<DeviceLine> lines;
-    if (!DeviceText::Parse(text, lines, error_)) { error_ += "；原文保留，未覆盖场景。"; }
+    if (!DeviceText::Parse(text, lines, error_)) { error_ += "（元の文は残し、シーンは書き換えていません）"; }
     for (auto& line : lines) {
         DeviceDraft device;
         device.id = std::move(line.id); device.kind = std::move(line.kind);
@@ -160,22 +160,22 @@ std::string DeviceEditor::Validate(int cols, int rows) const {
     if (!IsLoaded()) { return error_; }
     std::set<std::string> ids;
     for (const auto& device : devices_) {
-        if (!IsStableId(device.id) || !ids.insert(device.id).second) { return "机关 ID 须唯一，仅使用 ASCII 字母、数字、点、短横线和下划线。"; }
+        if (!IsStableId(device.id) || !ids.insert(device.id).second) { return "装置 ID は重ねず、ASCII の英数字・点・ハイフン・下線だけにしてください"; }
         if (!std::isfinite(device.x) || !std::isfinite(device.y) || !std::isfinite(device.w) || !std::isfinite(device.h) ||
             device.x < 0 || device.y < 0 || device.w <= 0 || device.h <= 0 || device.x + device.w > cols || device.y + device.h > rows) {
-            return device.id + " 的矩形必须完整位于区块内。";
+            return device.id + " の範囲が区域からはみ出しています";
         }
-        if (!std::isfinite(device.range) || device.range <= 0) { return device.id + " 的射程须大于零。"; }
+        if (!std::isfinite(device.range) || device.range <= 0) { return device.id + " の射程は 0 より大きくしてください"; }
     }
     // 同じテレビの目標は扉・レーザー・橋であること。別のテレビの装置と仕掛けは書式だけ確かめる（あるかどうかは世界地図で示す）。
     for (const auto& device : devices_) for (const auto& target : device.targets) {
-        if (device.kind != "Plate") { return device.id + " 不是压板，不能连接目标。"; }
+        if (device.kind != "Plate") { return device.id + " は圧力板ではないので、つなげません"; }
         const auto kind = ClassifyTarget(target);
-        if (kind == TargetKind::Invalid) { return device.id + " 的连接目标格式无效：" + target; }
+        if (kind == TargetKind::Invalid) { return device.id + " のつなぎ先の書き方が無効です：" + target; }
         if (kind != TargetKind::Local) { continue; }
         const auto item = std::find_if(devices_.begin(), devices_.end(), [&target](const auto& value) { return value.id == target; });
         if (item == devices_.end() || (item->kind != "Door" && item->kind != "Laser" && item->kind != "Bridge")) {
-            return device.id + " 的本屏连接必须指向门、激光或伸缩桥。";
+            return device.id + " は同じ画面の扉・レーザー・伸びる橋にだけつなげます";
         }
     }
     return {};

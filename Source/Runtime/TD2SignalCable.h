@@ -11,10 +11,10 @@ inline constexpr std::string_view kSignalCableComponentType = "TD2.SignalCable";
 class SignalCableComponent final : public HIKARI::IGameComponent {
 public:
     void DescribeProperties(HIKARI::PropertyFields& fields) override {
-        fields.Text("plate", "连接的压板（区域ID/装置ID）", plate_);
-        fields.Text("litModel", "通电时的模型 GUID", litModel_);
+        fields.Text("plate", "つなぐ圧力板", plate_);
+        fields.Text("litModel", "通電時のモデル", litModel_);
         // 編集器が自動で引いた線の行き先（引き直しで消す組を見分ける）。実行時は読まない。
-        fields.Text("target", "连到的机构（编辑器用）", target_);
+        fields.Text("target", "つながる仕掛け", target_);
     }
     const std::string& Plate() const noexcept { return plate_; }
     const std::string& LitModel() const noexcept { return litModel_; }

@@ -18,6 +18,6 @@ struct CablePiece { Pose pose; bool joint = false; };
 std::vector<CablePiece> CablePieces(const std::vector<Vec3>& points);
 // テレビの後ろの足元（線の端）。
 Vec3 CableEnd(const LayoutRoom& room);
-// 仕掛けの線の行き先：配方の動かない部品（卷扬箱・转台底座・滑轨…）、無ければ動くテレビの後ろ。
+// 仕掛けの線の行き先：レシピの動かない部品（巻き上げ箱・転台の土台・レール…）、無ければ動くテレビの後ろ。
 std::optional<Vec3> MachineCableEnd(const Machine& m, const LayoutSnapshot& layout);
 }

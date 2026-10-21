@@ -21,26 +21,26 @@ void LevelEditor::StartPreview(EditorWorkspaceHostContext& ctx, uint64_t room, P
     const auto started = Execute(ctx, "play.preview", {{"spawnPointId", EncodePreviewSpawn(spawn)}, {"userData", room}});
     if (started.ok) { pickingStart_ = false; model_.error.clear(); }
     else {
-        model_.error = started.error.find("SCENE_NOT_SAVED") != std::string::npos ? "先保存场景再试玩" : started.error;
+        model_.error = started.error.find("SCENE_NOT_SAVED") != std::string::npos ? "試遊の前にシーンを保存してください" : started.error;
     }
 }
 
 // 試遊を選んでいる間の左の欄：始める時の仕掛けの状態（切り替え式と自動往復だけ）。
 void LevelEditor::DrawPlayInspector(EditorWorkspaceHostContext& ctx) {
     auto& ui = *ctx.ui;
-    ui.Text("点地图上的位置开始试玩 · 右键取消");
+    ui.Text("地図の上の位置をクリックして試遊 · 右クリックで取り消し");
     RefreshMachines(ctx);
     bool any = false;
     for (const auto& m : model_.machines) {
         if (m.kind != MachineKind::Mechanism || (!m.toggle && m.dwell <= 0)) { continue; }
-        if (!any) { ui.Separator(); ui.Text("开始时机构的状态"); any = true; }
+        if (!any) { ui.Separator(); ui.Text("開始時の仕掛けの状態"); any = true; }
         int& state = previewStates_[m.id];
         ui.Text(RecipeLabel(m) + " " + ShortChoiceLabel(m.id, 10));
         ui.SameLine(); if (ui.Button("td2.play.state.a." + m.id, state == 0 ? "● A" : "A")) { state = 0; }
         ui.SameLine(); if (ui.Button("td2.play.state.b." + m.id, state == 1 ? "● B" : "B")) { state = 1; }
         if (m.balance) { ui.SameLine(); if (ui.Button("td2.play.state.c." + m.id, state == -1 ? "● C" : "C")) { state = -1; } }
     }
-    if (ui.Button("td2.play.cancel", "取消")) { pickingStart_ = false; }
+    if (ui.Button("td2.play.cancel", "取り消し")) { pickingStart_ = false; }
 }
 
 // 試遊が終わると記録が一時ディレクトリに書かれる。新しい記録が来たら、解法として残すか尋ねる。
@@ -55,6 +55,9 @@ void LevelEditor::PollRecording(EditorWorkspaceHostContext& ctx) {
     if (error) { return; }
     if (!recordingSeen_) { recordingTime_ = time; recordingSeen_ = true; return; }   // 開いた時に残っていた古い記録は出さない
     if (time == recordingTime_) { return; }
+    // 試遊の途中（終わりの行がまだ無い）は読まない（10 秒ごとの書き足しのたびに長い記録を読み直していた）。
+    // 書き足しが 15 秒止まった記録は、終わりの呼び出しが来なかった止め方として読む。
+    if (!PlayRecordFinished(path) && std::filesystem::file_time_type::clock::now() - time < std::chrono::seconds(15)) { return; }
     recordingTime_ = time;
     lastRecord_ = ReadPlayRecord(path);
 }
@@ -65,7 +68,7 @@ void LevelEditor::RunSolutions(EditorWorkspaceHostContext& ctx) {
     solutions_.clear();
     std::error_code error;
     const auto folder = SolutionFolder(ctx.projectRootUtf8 ? ctx.projectRootUtf8 : "");
-    if (!std::filesystem::exists(folder, error)) { SetNote("还没有解法：试玩后在左栏「存为解法」"); return; }
+    if (!std::filesystem::exists(folder, error)) { SetNote("解法がまだありません：試遊の後、左の欄の「解法として保存」で残せます"); return; }
     const auto rooms = ReplayRooms(model_.rooms, model_.selected, model_.ready, model_.draft);
     std::vector<std::filesystem::path> files;
     for (const auto& entry : std::filesystem::directory_iterator(folder, error)) { if (entry.path().extension() == ".td2play") { files.push_back(entry.path()); } }
@@ -74,7 +77,7 @@ void LevelEditor::RunSolutions(EditorWorkspaceHostContext& ctx) {
         const auto record = ReadPlayRecord(file);
         SolutionResult result;
         if (record) { result = ReplaySolution(rooms, model_.machines, *record); }
-        else { result.detail = "读不了"; }
+        else { result.detail = "読めません"; }
         result.file = file.u8string().empty() ? std::string{} : std::string(reinterpret_cast<const char*>(file.u8string().c_str()));
         // 名前：始めた区域 → 最後の区域。
         const auto stem = file.stem().u8string();
@@ -88,7 +91,7 @@ void LevelEditor::RunSolutions(EditorWorkspaceHostContext& ctx) {
     solutionsStale_ = false; solutionsRevision_ = model_.revision;
     size_t passed = 0;
     for (const auto& s : solutions_) { passed += s.passed ? 1 : 0; }
-    SetNote("解法回放：" + std::to_string(passed) + " / " + std::to_string(solutions_.size()) + " 通过");
+    SetNote("解法の再生：" + std::to_string(passed) + " / " + std::to_string(solutions_.size()) + " 通過");
 }
 
 void LevelEditor::RefreshCheck(EditorWorkspaceHostContext& ctx) {
@@ -117,7 +120,7 @@ void LevelEditor::JumpToIssue(EditorWorkspaceHostContext& ctx, size_t index) {
     }
 }
 
-// 刚才的试玩を解法として残す（プロジェクトの設定の下、リポジトリに入る）。
+// 今の試遊を解法として残す（プロジェクトの設定の下、リポジトリに入る）。
 void LevelEditor::SaveRecording(EditorWorkspaceHostContext& ctx) {
     if (!lastRecord_) { return; }
     std::error_code error;
@@ -125,7 +128,7 @@ void LevelEditor::SaveRecording(EditorWorkspaceHostContext& ctx) {
     std::filesystem::create_directories(folder, error);
     const auto stamp = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now().time_since_epoch()).count();
     const auto file = folder / ("solution_" + std::to_string(stamp) + ".td2play");
-    if (!WritePlayRecord(file, *lastRecord_)) { model_.error = "解法写入失败"; return; }
+    if (!WritePlayRecord(file, *lastRecord_)) { model_.error = "解法を書き込めません"; return; }
     lastRecord_.reset();
     RunSolutions(ctx);
 }
@@ -147,7 +150,7 @@ void LevelEditor::DrawIssues(IEditorWorkspaceUi& ui) {
         ui.CanvasCircle(at, 7, color, 2);
         ui.CanvasText({at.x - 2, at.y - 8}, color, "!");
     }
-    // 回放で通れなかった解法の、プレイヤーの道筋。
+    // 再生で通れなかった解法の、プレイヤーの道筋。
     if (pathIndex_ >= 0 && pathIndex_ < static_cast<int>(solutions_.size())) {
         const auto& path = solutions_[static_cast<size_t>(pathIndex_)].path;
         for (size_t i = 1; i < path.size(); ++i) {

@@ -255,8 +255,8 @@ private:
     float checkInputClock_ = 10;
     uint64_t checkInputPulse_ = 0;
     std::optional<Machine> pendingMachine_;
-    int recipe_ = -1;                 // 選んだ配方（次に押したテレビで作る）
-    std::string recipeFirst_;         // 二台を選ぶ配方の一台目
+    int recipe_ = -1;                 // 選んだレシピ（次に押したテレビで作る）
+    std::string recipeFirst_;         // 二台を選ぶレシピの一台目
 
     // 検査・解法
     std::vector<LevelIssue> issues_;
@@ -264,7 +264,7 @@ private:
     float checkClock_ = 10;
     std::vector<SolutionResult> solutions_;
     bool solutionsStale_ = true;
-    uint64_t solutionsRevision_ = 0;     // 回放した時の区域の読み直し回数（変わったら結果は古い）
+    uint64_t solutionsRevision_ = 0;     // 再生した時の区域の読み直し回数（変わったら結果は古い）
     std::optional<PlayRecord> lastRecord_;
     std::filesystem::file_time_type recordingTime_{};
     bool recordingSeen_ = false;

@@ -1429,6 +1429,96 @@
                 {
                   "customTangents": 0,
                   "far": 500.0,
+                  "fov": 60.51827,
+                  "inFovTangent": 0.0,
+                  "inTangent": [
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  "interpolation": "spline",
+                  "near": 0.01,
+                  "outFovTangent": 0.0,
+                  "outTangent": [
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  "position": [
+                    3.0104165,
+                    1.2755672,
+                    4.6988444
+                  ],
+                  "reference": 0,
+                  "rotation": [
+                    0.0005825598,
+                    0.9984948,
+                    0.053337526,
+                    -0.012763956
+                  ],
+                  "time": 13.333333
+                },
+                {
+                  "curveSettings": [
+                    {
+                      "inWeight": 0.33333334,
+                      "interpolation": 0,
+                      "outWeight": 0.33333334,
+                      "tangent": "bezier"
+                    },
+                    {
+                      "inWeight": 0.33333334,
+                      "interpolation": 0,
+                      "outWeight": 0.33333334,
+                      "tangent": "bezier"
+                    },
+                    {
+                      "inWeight": 0.33333334,
+                      "interpolation": 0,
+                      "outWeight": 0.33333334,
+                      "tangent": "bezier"
+                    },
+                    {
+                      "inWeight": 0.33333334,
+                      "interpolation": 0,
+                      "outWeight": 0.33333334,
+                      "tangent": "bezier"
+                    }
+                  ],
+                  "customTangents": 15,
+                  "far": 500.0,
+                  "fov": 58.55645,
+                  "inFovTangent": -2.186259,
+                  "inTangent": [
+                    -0.00020154062,
+                    -0.0075325086,
+                    -0.32847312
+                  ],
+                  "interpolation": "spline",
+                  "near": 0.01,
+                  "outFovTangent": -2.186259,
+                  "outTangent": [
+                    -0.00020154062,
+                    -0.0075325086,
+                    -0.32847312
+                  ],
+                  "position": [
+                    3.0110319,
+                    1.2711871,
+                    4.83446
+                  ],
+                  "reference": 0,
+                  "rotation": [
+                    0.0006620242,
+                    0.99824727,
+                    0.05671919,
+                    -0.016879933
+                  ],
+                  "time": 14.366667
+                },
+                {
+                  "customTangents": 0,
+                  "far": 500.0,
                   "fov": 56.0,
                   "inFovTangent": 0.0,
                   "inTangent": [
@@ -1451,30 +1541,56 @@
                   ],
                   "reference": 0,
                   "rotation": [
-                    0.000609,
-                    0.999239,
-                    0.034894,
-                    -0.017442
+                    0.00060899975,
+                    0.99923867,
+                    0.03489399,
+                    -0.017441994
                   ],
-                  "time": 15.4
+                  "time": 16.016666
                 },
                 {
-                  "customTangents": 0,
+                  "curveSettings": [
+                    {
+                      "inWeight": 0.33333334,
+                      "interpolation": 0,
+                      "outWeight": 0.33333334,
+                      "tangent": "bezier"
+                    },
+                    {
+                      "inWeight": 0.33333334,
+                      "interpolation": 0,
+                      "outWeight": 0.33333334,
+                      "tangent": "bezier"
+                    },
+                    {
+                      "inWeight": 0.33333334,
+                      "interpolation": 0,
+                      "outWeight": 0.33333334,
+                      "tangent": "bezier"
+                    },
+                    {
+                      "inWeight": 0.33333334,
+                      "interpolation": 0,
+                      "outWeight": 0.33333334,
+                      "tangent": "bezier"
+                    }
+                  ],
+                  "customTangents": 15,
                   "far": 500.0,
                   "fov": 50.0,
-                  "inFovTangent": 0.0,
+                  "inFovTangent": -3.6363623,
                   "inTangent": [
-                    0.0,
-                    0.0,
-                    0.0
+                    -0.0045454483,
+                    -0.024999967,
+                    -0.022727244
                   ],
                   "interpolation": "spline",
                   "near": 0.01,
-                  "outFovTangent": 0.0,
+                  "outFovTangent": -3.6363623,
                   "outTangent": [
-                    0.0,
-                    0.0,
-                    0.0
+                    -0.0045454483,
+                    -0.024999967,
+                    -0.022727244
                   ],
                   "position": [
                     3.0,
@@ -1484,8 +1600,8 @@
                   "reference": 0,
                   "rotation": [
                     0.0,
-                    0.99209,
-                    -0.125525,
+                    0.99209046,
+                    -0.12552506,
                     0.0
                   ],
                   "time": 16.6
@@ -2305,7 +2421,7 @@
                   "duration": 0.3,
                   "enabled": true,
                   "fadeIn": 0.01,
-                  "fadeOut": 0.32,
+                  "fadeOut": 0.3,
                   "frequency": 14,
                   "id": 9,
                   "kind": 7,
@@ -2360,13 +2476,13 @@
           {
             "durationSeconds": 0.1,
             "id": 1,
-            "name": "标题消失",
+            "name": "タイトル消去",
             "startSeconds": 0.6
           },
           {
             "durationSeconds": 32.6,
             "id": 2,
-            "name": "黑边",
+            "name": "黒帯",
             "startSeconds": 0.6
           },
           {
@@ -2378,103 +2494,103 @@
           {
             "durationSeconds": 0.1,
             "id": 4,
-            "name": "闪电",
+            "name": "稲妻",
             "startSeconds": 6.0
           },
           {
             "durationSeconds": 0.1,
             "id": 5,
-            "name": "闪电",
+            "name": "稲妻",
             "startSeconds": 6.15
           },
           {
             "durationSeconds": 0.1,
             "id": 6,
-            "name": "闪电",
+            "name": "稲妻",
             "startSeconds": 7.75
           },
           {
             "durationSeconds": 0.1,
             "id": 7,
-            "name": "闪电",
+            "name": "稲妻",
             "startSeconds": 9.2
           },
           {
             "durationSeconds": 0.1,
             "id": 8,
-            "name": "闪电",
+            "name": "稲妻",
             "startSeconds": 9.32
           },
           {
             "durationSeconds": 0.1,
             "id": 9,
-            "name": "闪电",
+            "name": "稲妻",
             "startSeconds": 10.25
           },
           {
             "durationSeconds": 3.0,
             "id": 10,
-            "name": "雪花扩散",
+            "name": "砂嵐拡散",
             "startSeconds": 6.0
           },
           {
             "durationSeconds": 0.1,
             "id": 11,
-            "name": "断电",
+            "name": "停電",
             "startSeconds": 10.6
           },
           {
             "durationSeconds": 0.1,
             "id": 12,
-            "name": "白屏",
+            "name": "白画面",
             "startSeconds": 11.4
           },
           {
             "durationSeconds": 2.8,
             "id": 13,
-            "name": "逐批熄灭",
+            "name": "順に消灯",
             "startSeconds": 12.6
           },
           {
             "durationSeconds": 2.2,
             "id": 14,
-            "name": "凝视",
+            "name": "凝視",
             "startSeconds": 15.4
           },
           {
             "durationSeconds": 1.28,
             "id": 15,
-            "name": "吸入",
+            "name": "吸い込み",
             "startSeconds": 18.35
           },
           {
             "durationSeconds": 2.58,
             "id": 16,
-            "name": "标题卡",
+            "name": "タイトルカード",
             "startSeconds": 20.63
           },
           {
             "durationSeconds": 0.1,
             "id": 17,
-            "name": "揭示",
+            "name": "遠景",
             "startSeconds": 23.4
           },
           {
             "durationSeconds": 2.5,
             "id": 18,
-            "name": "来电",
+            "name": "復電",
             "startSeconds": 24.9
           },
           {
             "durationSeconds": 2.0,
             "id": 19,
-            "name": "对信号",
+            "name": "信号合わせ",
             "startSeconds": 28.6
           },
           {
             "durationSeconds": 0.1,
             "id": 20,
-            "name": "登场",
+            "name": "登場",
             "startSeconds": 31.0
           }
         ],

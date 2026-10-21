@@ -12,42 +12,37 @@ class RegionComponent final : public HIKARI::IGameComponent {
 public:
     void DescribeProperties(HIKARI::PropertyFields& fields) override {
         // 地図・仕掛け・世界の位置・カメラはレベル編集ワークスペースで直す。Inspector は名前と明るさだけを前に出し、残りは畳んでおく。
-        if (fields.IsInspecting()) { fields.Note("在「关卡编辑」工作区编辑这台电视的地图、装置、世界位置和机位。"); }
-        fields.Text("regionId", "稳定区域 ID", region_.regionId);
-        fields.Bool("entryRegion", "开始电视", entryRegion_);
+        fields.Text("regionId", "区域 ID", region_.regionId);
+        fields.Bool("entryRegion", "開始テレビ", entryRegion_);
         // 明るさは画面の材質だけに掛け、筐体は変えない。
-        fields.Float("screenBrightness", "屏幕亮度", screen_.brightness, .5f, 4.0f);
-        if (!fields.Section("原始数据（一般不用手改）")) { return; }
+        fields.Float("screenBrightness", "画面の明るさ", screen_.brightness, .5f, 4.0f);
+        if (!fields.Section("元データ")) { return; }
         // 縦穴などの縦長の画面に合わせ、一台 128 マスまで受け付ける。
-        fields.Int("cols", "整数列数", region_.cols, 1, 128);
-        fields.Int("rows", "整数行数", region_.rows, 1, 128);
-        fields.Int("tilePixels", "每格逻辑像素", region_.tilePixels, 1, 1024);
-        DescribeLargeText(fields, "cells", "格数据（行优先，0/1）", region_.cells, 128u * 128u);
-        fields.Float("spawnX", "出生点左上 X（格）", spawnX_, 0.0f, 64.0f);
-        fields.Float("spawnY", "出生点左上 Y（格）", spawnY_, 0.0f, 64.0f);
-        fields.SceneObject("cameraObject", "区域共享机位", cameraObject_);
+        fields.Int("cols", "列", region_.cols, 1, 128);
+        fields.Int("rows", "行", region_.rows, 1, 128);
+        fields.Int("tilePixels", "1 マスの画素", region_.tilePixels, 1, 1024);
+        DescribeLargeText(fields, "cells", "マス", region_.cells, 128u * 128u);
+        fields.Float("spawnX", "スポーン X", spawnX_, 0.0f, 64.0f);
+        fields.Float("spawnY", "スポーン Y", spawnY_, 0.0f, 64.0f);
+        fields.SceneObject("cameraObject", "区域カメラ", cameraObject_);
         // エディタが自動で置いたカメラの姿勢（"x y z rx ry rz"）。今の姿勢と違えば手で調整したとみなし、
         // 再生成で上書きしない。空なら作者が置いたカメラ。
-        fields.Text("cameraAuto", "机位自动记录（自动）", cameraAuto_);
-        fields.Bool("worldPlaced", "已布置到世界", worldPlaced_);
-        fields.Int("worldX", "世界格 X", worldX_);
-        fields.Int("worldY", "世界格 Y", worldY_);
+        fields.Text("cameraAuto", "カメラの自動記録", cameraAuto_);
+        fields.Bool("worldPlaced", "世界に配置", worldPlaced_);
+        fields.Int("worldX", "世界 X", worldX_);
+        fields.Int("worldY", "世界 Y", worldY_);
         // 3D で付けている地図の隣の区域。編集器が隣に合わせて置き直すのに使い、実行時は読まない。
-        fields.Text("stageAnchor", "3D 贴靠的区域（编辑器用）", stageAnchor_);
-        DescribeLargeText(fields, "devices", "设备列表（每行一个）", devices_, 256u * 1024u);
-        fields.SceneObject("screenObject", "屏幕模型对象", screen_.screenObject);
-        fields.Text("screenSlot", "屏幕材质槽", screen_.screenSlot);
+        fields.Text("stageAnchor", "3D の付け先", stageAnchor_);
+        DescribeLargeText(fields, "devices", "装置", devices_, 256u * 1024u);
+        fields.SceneObject("screenObject", "画面のモデル", screen_.screenObject);
+        fields.Text("screenSlot", "画面の材質スロット", screen_.screenSlot);
         // テレビのローカルでの画面の中心と大きさ（m、縮尺前）。カメラの焦点などに使う。
         // テレビのモデルから自動で入る。既定値は一番多い型。
-        fields.Float("screenCenterX", "屏幕中心 X（局部）", screenGeometry_.centerX, -2, 2);
-        fields.Float("screenCenterY", "屏幕中心 Y（局部）", screenGeometry_.centerY, -2, 4);
-        fields.Float("screenCenterZ", "屏幕中心 Z（局部）", screenGeometry_.centerZ, -2, 2);
-        fields.Float("screenWidth", "屏幕宽（局部）", screenGeometry_.width, .05f, 8);
-        fields.Float("screenHeight", "屏幕高（局部）", screenGeometry_.height, .05f, 8);
-        fields.Note("格数据与电视缩放无关。修改行列后，明确重建测试网格；不要自动覆盖原数据。");
-        fields.Note("多个区域须使用不同的稳定 ID；真实3D风格由 TD2.ScreenStyle 配置。");
-        fields.Note("设备：id kind x y w h；可选 targets=id,区域ID/id dir=Up/Down/Left/Right range=n invert=0/1 latch=0/1 "
-                    "power=格每秒 delay=秒 cooldown=秒 variant=ad/space/spaceHold opacity=0~1。");
+        fields.Float("screenCenterX", "画面の中心 X", screenGeometry_.centerX, -2, 2);
+        fields.Float("screenCenterY", "画面の中心 Y", screenGeometry_.centerY, -2, 4);
+        fields.Float("screenCenterZ", "画面の中心 Z", screenGeometry_.centerZ, -2, 2);
+        fields.Float("screenWidth", "画面の幅", screenGeometry_.width, .05f, 8);
+        fields.Float("screenHeight", "画面の高さ", screenGeometry_.height, .05f, 8);
     }
 
     bool BuildDefinition(Rules::WorldDefinition& definition, std::string& error) const;

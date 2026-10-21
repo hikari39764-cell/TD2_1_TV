@@ -62,28 +62,28 @@ std::vector<LevelIssue> CheckLevel(const std::vector<CheckRoom>& rooms, const st
         statePlacements.push_back({o.regionId, {o.regionId, s.region.cols, s.region.rows, true, base->settings.worldX + o.dx, base->settings.worldY + o.dy}});
     }
     const int entries = static_cast<int>(std::count_if(rooms.begin(), rooms.end(), [](const auto& r) { return r.settings.worldPlaced && r.settings.entryRegion; }));
-    if (entries == 0 && !rooms.empty()) { add(IssueLevel::Error, "还没有开始电视", {}); }
-    if (entries > 1) { add(IssueLevel::Error, "有 " + std::to_string(entries) + " 台开始电视", {}); }
+    if (entries == 0 && !rooms.empty()) { add(IssueLevel::Error, "開始テレビがありません", {}); }
+    if (entries > 1) { add(IssueLevel::Error, "開始テレビが " + std::to_string(entries) + " 台あります", {}); }
     for (const auto& room : rooms) {
         const auto& s = room.settings;
         if (!s.worldPlaced) { continue; }
         const auto& id = s.region.regionId;
         if (s.region.cells.size() != static_cast<size_t>(s.region.cols) * static_cast<size_t>(s.region.rows)) { continue; }
         DeviceEditor devices; devices.Load(s.devices);
-        if (!devices.IsLoaded()) { add(IssueLevel::Error, room.name + "：装置数据读不了", id); continue; }
+        if (!devices.IsLoaded()) { add(IssueLevel::Error, room.name + "：装置のデータを読めません", id); continue; }
         std::vector<Box> beams, spikes;
         for (const auto& d : devices.Items()) {
             if (d.kind == "Laser") { beams.push_back(Beam(s, d)); }
             if (d.kind == "Spikes") { spikes.push_back({d.x, d.y, d.w, d.h}); }
         }
-        // 立つ所（存档点と开始位置）が壁・光路・尖刺の上にないか。
+        // 立つ所（チェックポイントと開始位置）が壁・光路・トゲの上にないか。
         const auto checkStand = [&](const Box& b, const std::string& what) {
-            if (InWall(s, b)) { add(IssueLevel::Error, room.name + "：" + what + "在墙里", id, b.x, b.y); return; }
-            if (std::any_of(spikes.begin(), spikes.end(), [&](const Box& k) { return Overlap(k, b); })) { add(IssueLevel::Error, room.name + "：" + what + "在尖刺上", id, b.x, b.y); return; }
-            if (std::any_of(beams.begin(), beams.end(), [&](const Box& k) { return Overlap(k, b); })) { add(IssueLevel::Warning, room.name + "：" + what + "在激光光路上", id, b.x, b.y); }
+            if (InWall(s, b)) { add(IssueLevel::Error, room.name + "：" + what + "が壁の中", id, b.x, b.y); return; }
+            if (std::any_of(spikes.begin(), spikes.end(), [&](const Box& k) { return Overlap(k, b); })) { add(IssueLevel::Error, room.name + "：" + what + "がトゲの上", id, b.x, b.y); return; }
+            if (std::any_of(beams.begin(), beams.end(), [&](const Box& k) { return Overlap(k, b); })) { add(IssueLevel::Warning, room.name + "：" + what + "がレーザーの通り道", id, b.x, b.y); }
         };
-        if (s.entryRegion) { checkStand({s.spawnX, s.spawnY, .625, .875}, "开始位置"); }
-        // 存档点：実行時と同じく、近くの床の上で一番近い立てる所へ復活する。立てる所が無ければ使えない。
+        if (s.entryRegion) { checkStand({s.spawnX, s.spawnY, .625, .875}, "開始位置"); }
+        // チェックポイント：実行時と同じく、近くの床の上で一番近い立てる所へ復活する。立てる所が無ければ使えない。
         const auto anchor = [&](const DeviceDraft& d) -> std::optional<Box> {
             const double ix = d.x + (d.w - .625) * .5, iy = d.y + d.h - .875;
             std::optional<Box> best; double score = 1e9;
@@ -100,11 +100,11 @@ std::vector<LevelIssue> CheckLevel(const std::vector<CheckRoom>& rooms, const st
         for (const auto& d : devices.Items()) {
             if (d.kind == "Checkpoint") {
                 const auto at = anchor(d);
-                if (!at) { add(IssueLevel::Error, room.name + "：" + DeviceName(d) + " 附近没有能站的地方", id, d.x, d.y); }
-                else if (std::any_of(beams.begin(), beams.end(), [&](const Box& k) { return Overlap(k, *at); })) { add(IssueLevel::Warning, room.name + "：" + DeviceName(d) + " 在激光光路上", id, d.x, d.y); }
+                if (!at) { add(IssueLevel::Error, room.name + "：" + DeviceName(d) + " の近くに立てる場所がありません", id, d.x, d.y); }
+                else if (std::any_of(beams.begin(), beams.end(), [&](const Box& k) { return Overlap(k, *at); })) { add(IssueLevel::Warning, room.name + "：" + DeviceName(d) + " がレーザーの通り道", id, d.x, d.y); }
             }
             if (d.kind != "Plate") { continue; }
-            if (d.targets.empty()) { add(IssueLevel::Warning, room.name + "：" + DeviceName(d) + " 没连东西", id, d.x, d.y); continue; }
+            if (d.targets.empty()) { add(IssueLevel::Warning, room.name + "：" + DeviceName(d) + " がどこにもつながっていません", id, d.x, d.y); continue; }
             for (const auto& target : d.targets) {
                 const auto kind = ClassifyTarget(target);
                 bool found = false;
@@ -115,13 +115,13 @@ std::vector<LevelIssue> CheckLevel(const std::vector<CheckRoom>& rooms, const st
                     if (const auto* other = roomOf(target.substr(0, slash))) {
                         DeviceEditor od; od.Load(other->settings.devices);
                         found = std::any_of(od.Items().begin(), od.Items().end(), [&](const auto& t) { return t.id == target.substr(slash + 1); });
-                        if (found) { add(IssueLevel::Warning, room.name + "：" + DeviceName(d) + " 管的是别的屏的装置", id, d.x, d.y); }
+                        if (found) { add(IssueLevel::Warning, room.name + "：" + DeviceName(d) + " はほかの画面の装置につながっています", id, d.x, d.y); }
                     }
                 } else if (kind == TargetKind::Machine) { found = receivers.contains(target); }
-                if (!found) { add(IssueLevel::Error, room.name + "：" + DeviceName(d) + " 连的目标不存在", id, d.x, d.y); }
+                if (!found) { add(IssueLevel::Error, room.name + "：" + DeviceName(d) + " のつなぎ先がありません", id, d.x, d.y); }
             }
         }
-        // 外周の口：地図で何ともつながっていない辺の空いたマス（実行時は閉じた闸门になる）。
+        // 外周の口：地図で何ともつながっていない辺の空いたマス（実行時は閉じた扉になる）。
         // 仕掛けで動くテレビは別の状態でつながるので見ない。隣が仕掛けで寄って来る口も、その状態の位置で見る。
         if (!members.contains(id)) {
             const auto covered = [&](WorldSide side, int along) {
@@ -134,7 +134,7 @@ std::vector<LevelIssue> CheckLevel(const std::vector<CheckRoom>& rooms, const st
                 }
                 return false;
             };
-            const std::array<std::pair<WorldSide, std::string_view>, 4> sides{{{WorldSide::Left, "左边"}, {WorldSide::Right, "右边"}, {WorldSide::Top, "上边"}, {WorldSide::Bottom, "下边"}}};
+            const std::array<std::pair<WorldSide, std::string_view>, 4> sides{{{WorldSide::Left, "左"}, {WorldSide::Right, "右"}, {WorldSide::Top, "上"}, {WorldSide::Bottom, "下"}}};
             for (const auto& [side, label] : sides) {
                 const bool vertical = side == WorldSide::Left || side == WorldSide::Right;
                 const int count = vertical ? s.region.rows : s.region.cols;
@@ -142,12 +142,12 @@ std::vector<LevelIssue> CheckLevel(const std::vector<CheckRoom>& rooms, const st
                     const int x = side == WorldSide::Left ? 0 : side == WorldSide::Right ? s.region.cols - 1 : i;
                     const int y = side == WorldSide::Top ? 0 : side == WorldSide::Bottom ? s.region.rows - 1 : i;
                     if (SolidCell(s, x, y) || covered(side, i)) { continue; }
-                    add(IssueLevel::Warning, room.name + "：" + std::string(label) + "的口没接电视（会显示闸门）", id, x, y);
+                    add(IssueLevel::Warning, room.name + "：" + std::string(label) + "の口がテレビにつながっていません（扉が閉まって見える）", id, x, y);
                     break;
                 }
             }
         }
-        if (layout && layout->AreaOf(id) == nullptr) { add(IssueLevel::Warning, room.name + "：不在任何镜头区", id); }
+        if (layout && layout->AreaOf(id) == nullptr) { add(IssueLevel::Warning, room.name + "：どの大区域にも入っていません", id); }
     }
     for (const auto& m : machines) {
         MachineCheckInput input;
@@ -160,7 +160,7 @@ std::vector<LevelIssue> CheckLevel(const std::vector<CheckRoom>& rooms, const st
         const auto regions = m.Regions();
         for (const auto& problem : CheckMachine(m, machines, input)) {
             if (!layout && problem.find("物体") != std::string::npos) { continue; }
-            add(problem.find("还没有压板") != std::string::npos ? IssueLevel::Warning : IssueLevel::Error, m.id + "：" + problem, regions.empty() ? std::string{} : regions.front());
+            add(problem.find("圧力板がまだありません") != std::string::npos ? IssueLevel::Warning : IssueLevel::Error, m.id + "：" + problem, regions.empty() ? std::string{} : regions.front());
         }
     }
     // 重いものを先に。

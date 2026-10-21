@@ -39,22 +39,53 @@ inline std::filesystem::path PlayFolder() {
 inline std::filesystem::path LastPlayPath() { return PlayFolder() / "last_play.td2play"; }
 inline std::filesystem::path PreviewStatesPath() { return PlayFolder() / "preview_states.txt"; }
 
-inline bool WritePlayRecord(const std::filesystem::path& path, const PlayRecord& r) {
-    std::ofstream out(path, std::ios::binary | std::ios::trunc);
+// どこまで書いたか（種類ごとの行の数）。started が false なら先頭から書き直す。
+struct PlayRecordCursor { size_t frames = 0, calls = 0, regions = 0, deaths = 0; bool started = false; };
+
+// 記録の続きだけを書き足す。試遊の途中は少しずつ書き、長い試遊でも一度に重くならない（20 分の記録を毎回
+// 全部書くと 50 ms 止まっていた）。読み手は種類ごとに行の順で読むので、書き足しても全部を書いたのと同じ記録になる。
+// finish で終わりの行を書く。編集器は終わりの行を見てから読む。
+inline bool AppendPlayRecord(const std::filesystem::path& path, const PlayRecord& r, PlayRecordCursor& at, bool finish) {
+    std::ofstream out(path, std::ios::binary | (at.started ? std::ios::app : std::ios::trunc));
     if (!out) { return false; }
     out.imbue(std::locale::classic());
     out.precision(9);
-    out << "td2play 1\n";
-    out << "entry " << (r.entryRegion.empty() ? "-" : r.entryRegion);
-    if (r.spawn) { out << ' ' << r.spawn->first << ' ' << r.spawn->second; }
-    out << '\n';
-    for (const auto& [id, state] : r.states) { out << "state " << id << ' ' << state << '\n'; }
-    for (const auto& f : r.frames) { out << "f " << f.seconds << ' ' << static_cast<int>(f.flags) << '\n'; }
-    for (const auto& c : r.calls) { out << "call " << c.frame << ' ' << c.slice << ' ' << c.kind << ' ' << (c.region.empty() ? "-" : c.region) << ' ' << c.direction << '\n'; }
-    for (const auto& m : r.regions) { out << "region " << m.frame << ' ' << m.region << '\n'; }
-    for (const auto& m : r.deaths) { out << "death " << m.frame << ' ' << m.region << '\n'; }
-    out << "end " << (r.endRegion.empty() ? "-" : r.endRegion) << ' ' << r.endX << ' ' << r.endY << ' ' << r.endDeaths << '\n';
-    return static_cast<bool>(out);
+    if (!at.started) {
+        out << "td2play 1\n";
+        out << "entry " << (r.entryRegion.empty() ? "-" : r.entryRegion);
+        if (r.spawn) { out << ' ' << r.spawn->first << ' ' << r.spawn->second; }
+        out << '\n';
+        for (const auto& [id, state] : r.states) { out << "state " << id << ' ' << state << '\n'; }
+    }
+    for (size_t i = at.frames; i < r.frames.size(); ++i) { out << "f " << r.frames[i].seconds << ' ' << static_cast<int>(r.frames[i].flags) << '\n'; }
+    for (size_t i = at.calls; i < r.calls.size(); ++i) {
+        const auto& c = r.calls[i];
+        out << "call " << c.frame << ' ' << c.slice << ' ' << c.kind << ' ' << (c.region.empty() ? "-" : c.region) << ' ' << c.direction << '\n';
+    }
+    for (size_t i = at.regions; i < r.regions.size(); ++i) { out << "region " << r.regions[i].frame << ' ' << r.regions[i].region << '\n'; }
+    for (size_t i = at.deaths; i < r.deaths.size(); ++i) { out << "death " << r.deaths[i].frame << ' ' << r.deaths[i].region << '\n'; }
+    if (finish) { out << "end " << (r.endRegion.empty() ? "-" : r.endRegion) << ' ' << r.endX << ' ' << r.endY << ' ' << r.endDeaths << '\n'; }
+    if (!out) { return false; }
+    at = {r.frames.size(), r.calls.size(), r.regions.size(), r.deaths.size(), true};
+    return true;
+}
+
+inline bool WritePlayRecord(const std::filesystem::path& path, const PlayRecord& r) {
+    PlayRecordCursor at;
+    return AppendPlayRecord(path, r, at, true);
+}
+
+// 最後の行が終わりの行か（書き終わった記録か）。試遊の途中の記録を読み直さないための、末尾だけの確認。
+inline bool PlayRecordFinished(const std::filesystem::path& path) {
+    std::ifstream in(path, std::ios::binary | std::ios::ate);
+    if (!in) { return false; }
+    const std::streamoff size = in.tellg();
+    const std::streamoff tail = size < 256 ? size : 256;
+    std::string text(static_cast<size_t>(tail), '\0');
+    in.seekg(size - tail);
+    if (!in.read(text.data(), tail) || text.empty() || text.back() != '\n') { return false; }
+    const auto begin = text.find_last_of('\n', text.size() - 2);
+    return text.compare(begin == std::string::npos ? 0 : begin + 1, 4, "end ") == 0;
 }
 
 inline std::optional<PlayRecord> ReadPlayRecord(const std::filesystem::path& path) {

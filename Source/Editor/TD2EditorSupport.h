@@ -22,7 +22,7 @@ struct OperationResult final : IEditorOperationResultSink {
         ok = succeeded;
         if (!ok) { error = std::string(code) + ": " + std::string(message); return; }
         data = Json::parse(dataJson, nullptr, false);
-        if (!data.is_object()) { ok = false; error = "INVALID_RESULT: 操作未返回有效 JSON 对象"; }
+        if (!data.is_object()) { ok = false; error = "INVALID_RESULT: 操作が JSON のオブジェクトを返しません"; }
     }
 };
 

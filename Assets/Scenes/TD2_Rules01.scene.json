@@ -10817,13 +10817,17 @@
             "depthRows": 4,
             "depthView": true,
             "enabled": true,
+            "farCamera2Object": {
+              "$hikariRef": "SceneObject",
+              "id": 6078
+            },
             "farCameraObject": {
               "$hikariRef": "SceneObject",
               "id": 11421
             },
             "hall": true,
             "lit": true,
-            "mode": "素描",
+            "mode": "スケッチ",
             "outline": 1.0,
             "palette": "青瓷",
             "perspective": true,
@@ -10840,10 +10844,6 @@
             "unplacedCameraObject": {
               "$hikariRef": "SceneObject",
               "id": 6079
-            },
-            "farCamera2Object": {
-              "$hikariRef": "SceneObject",
-              "id": 6078
             }
           },
           "type": "TD2.ScreenStyle"
@@ -25283,7 +25283,7 @@
             "offsetX": -0.6,
             "offsetY": 3.0,
             "offsetZ": 5.0,
-            "role": "主光"
+            "role": "キー"
           },
           "type": "TD2.StageLight"
         }
@@ -25350,7 +25350,7 @@
             "offsetX": -0.6,
             "offsetY": 3.0,
             "offsetZ": 5.0,
-            "role": "主光"
+            "role": "キー"
           },
           "type": "TD2.StageLight"
         }
@@ -25417,7 +25417,7 @@
             "offsetX": -0.6,
             "offsetY": 3.0,
             "offsetZ": 5.0,
-            "role": "主光"
+            "role": "キー"
           },
           "type": "TD2.StageLight"
         }
@@ -25484,7 +25484,7 @@
             "offsetX": -0.6,
             "offsetY": 3.0,
             "offsetZ": 5.0,
-            "role": "主光"
+            "role": "キー"
           },
           "type": "TD2.StageLight"
         }
@@ -25551,7 +25551,7 @@
             "offsetX": 0.9,
             "offsetY": 0.0,
             "offsetZ": 9.0,
-            "role": "补光"
+            "role": "フィル"
           },
           "type": "TD2.StageLight"
         }
@@ -25618,7 +25618,7 @@
             "offsetX": 0.9,
             "offsetY": 0.0,
             "offsetZ": 9.0,
-            "role": "补光"
+            "role": "フィル"
           },
           "type": "TD2.StageLight"
         }
@@ -25685,7 +25685,7 @@
             "offsetX": 0.9,
             "offsetY": 0.0,
             "offsetZ": 9.0,
-            "role": "补光"
+            "role": "フィル"
           },
           "type": "TD2.StageLight"
         }
@@ -25752,7 +25752,7 @@
             "offsetX": 0.9,
             "offsetY": 0.0,
             "offsetZ": 9.0,
-            "role": "补光"
+            "role": "フィル"
           },
           "type": "TD2.StageLight"
         }
@@ -25819,7 +25819,7 @@
             "offsetX": 0.1,
             "offsetY": 0.95,
             "offsetZ": -3.5,
-            "role": "背光"
+            "role": "バック"
           },
           "type": "TD2.StageLight"
         }
@@ -25886,7 +25886,7 @@
             "offsetX": 0.1,
             "offsetY": 0.95,
             "offsetZ": -3.5,
-            "role": "背光"
+            "role": "バック"
           },
           "type": "TD2.StageLight"
         }
@@ -25953,7 +25953,7 @@
             "offsetX": 0.1,
             "offsetY": 0.95,
             "offsetZ": -3.5,
-            "role": "背光"
+            "role": "バック"
           },
           "type": "TD2.StageLight"
         }
@@ -26020,7 +26020,7 @@
             "offsetX": 0.1,
             "offsetY": 0.95,
             "offsetZ": -3.5,
-            "role": "背光"
+            "role": "バック"
           },
           "type": "TD2.StageLight"
         }
@@ -26928,7 +26928,7 @@
           "id": 3,
           "properties": {
             "height": 1.4,
-            "role": "主角",
+            "role": "プレイヤー",
             "turn": 10.0
           },
           "type": "TD2.StageActor"

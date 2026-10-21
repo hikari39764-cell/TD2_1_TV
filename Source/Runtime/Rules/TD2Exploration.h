@@ -14,24 +14,24 @@ struct RegionRuntime {
     RegionPlacement placement;
     bool flipped = false;   // 機構で 180° 回され、地図が上下左右に入れ替わっている（definition は作者のまま）
 };
-// 画面の外の機構（転台・吊り台・天平など）。状態 0 は作者の配置、状態 1 は moves、状態 -1 は movesC の位置。
+// 画面の外の機構（転台・吊り台・天秤など）。状態 0 は作者の配置、状態 1 は moves、状態 -1 は movesC の位置。
 // 圧力板の通電で切り替え、動いている間は動く部屋をどこともつながない（中の時間は進む）。
 // flip は部屋を 180° 回した向き（地図の上下左右が入れ替わる）。
 struct MechanismMove { std::string regionId; int worldX = 0, worldY = 0; bool flip = false; };
 struct MechanismSource {
     std::string id;
     bool toggle = false;      // false：踏んでいる間だけ状態 1（離すと戻る）、true：踏むたびに切り替え
-    bool balance = false;     // 天平：受け口は mech/ID と mech/ID/r。片方だけ踏まれるとその側へ傾き（1 / -1）、両方か無しで 0
+    bool balance = false;     // 天秤：受け口は mech/ID と mech/ID/r。片方だけ踏まれるとその側へ傾き（1 / -1）、両方か無しで 0
     double seconds = 1.5;     // 状態の間を動く秒数
     double dwell = 0.0;       // 0 より大きければ圧力板に関係なく自動で往復し、両端でこの秒数だけ止まる
-    double settle = 0.0;      // 踏み続け式・天平：踏まれ方がこの秒数変わらなかった時だけ動き出す（走り抜けでは動かない）
+    double settle = 0.0;      // 踏み続け式・天秤：踏まれ方がこの秒数変わらなかった時だけ動き出す（走り抜けでは動かない）
     std::vector<MechanismMove> moves;    // 状態 1
-    std::vector<MechanismMove> movesC;   // 状態 -1（天平だけ）
+    std::vector<MechanismMove> movesC;   // 状態 -1（天秤だけ）
 };
 struct MechanismRuntime {
     MechanismSource source;
     std::vector<MechanismMove> origins;   // 状態 0 の位置（moves と movesC の部屋すべて）
-    size_t device = 0, deviceR = 0;       // 圧力板の受け口（世界の装置の番号。deviceR は天平の右）
+    size_t device = 0, deviceR = 0;       // 圧力板の受け口（世界の装置の番号。deviceR は天秤の右）
     int target = 0, state = 0;            // 向かっている状態と確定した状態
     bool powered = false, moving = false;
     double progress = 0.0;                // 今の状態（-1〜1。動いている間は途中の値）

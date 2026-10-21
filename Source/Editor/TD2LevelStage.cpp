@@ -29,9 +29,9 @@ void LevelEditor::AttachRoom(EditorWorkspaceHostContext& ctx, const std::string&
         }
     }
     const auto* neighbor = layout_.Room(chosen);
-    if (!neighbor) { SetNote("地图上没有相邻的电视"); return; }
+    if (!neighbor) { SetNote("地図の上で隣り合うテレビがありません"); return; }
     const auto pose = AttachedPose(BoxOf(*room), Editor::PlacementOf(*room), BoxOf(*neighbor), Editor::PlacementOf(*neighbor));
-    if (!pose) { SetNote("地图上不相邻"); return; }
+    if (!pose) { SetNote("地図の上で隣り合っていません"); return; }
     const uint64_t tv = room->tvObject;
     if (!SetStagePose(ctx, tv, *pose, model_.error)) { return; }
     // 付けた時の両方の姿勢を覚える（この後に相手が動けば、その分だけ付いて行く）。
@@ -47,7 +47,7 @@ void LevelEditor::AttachRoom(EditorWorkspaceHostContext& ctx, const std::string&
     }
     MarkSceneChanged();
     Generate(ctx, true, false, {}, regionId, nullptr, false);
-    SetNote("3D 已贴到「" + ShortChoiceLabel(RoomName(chosen), 10) + "」旁并重新生成机位");
+    SetNote("3D で「" + ShortChoiceLabel(RoomName(chosen), 10) + "」の隣に付け、カメラ位置を作り直しました");
 }
 
 // 付けた相手のテレビが 3D で動いたら、付いているテレビも同じだけ動かす。付いているテレビを作者が動かしたら外す。
@@ -99,7 +99,7 @@ void LevelEditor::FollowAnchors(EditorWorkspaceHostContext& ctx) {
                 if (MapModel::TelevisionObject(room) != id) { continue; }
                 if (room.object.objectId == model_.selected && model_.ready) { model_.draft.stageAnchor.clear(); model_.Commit(ctx); }
                 else if (Transact(ctx, Json::array({PropertyCommand(room.target.objectId, room.target.componentId, "stageAnchor", std::string{})}), model_.error)) { model_.refresh = true; }
-                SetNote("「" + ShortChoiceLabel(room.object.name, 10) + "」已在 3D 里移动，改为自由摆放");
+                SetNote("「" + ShortChoiceLabel(room.object.name, 10) + "」を 3D で動かしたので、自由配置にしました");
                 break;
             }
             continue;
@@ -147,7 +147,7 @@ void LevelEditor::RouteCables(EditorWorkspaceHostContext& ctx, const std::string
     int made = 0;
     for (const auto& piece : CablePieces(points)) {
         const auto path = piece.joint ? kCableJointPath : kCableSegmentPath;
-        const uint64_t id = CreateStageModel(ctx, path, piece.joint ? "信号线接头" : "信号线", piece.pose, model_.error);
+        const uint64_t id = CreateStageModel(ctx, path, piece.joint ? "信号線の継ぎ目" : "信号線", piece.pose, model_.error);
         if (!id) { break; }
         JoinFolderOf(ctx, id, room->tvObject);
         const auto added = Execute(ctx, "component.add", {{"objectId", id}, {"componentType", kSignalCableType}});

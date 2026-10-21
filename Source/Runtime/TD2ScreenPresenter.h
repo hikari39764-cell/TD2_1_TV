@@ -24,7 +24,7 @@ private:
     std::vector<StageRoom> rooms_;
     // 編集中の舞台の状態（装置と、スポーン位置に立つプレイヤー）。
     Rules::WorldSnapshot authored_;
-    std::string status_ = "等待区域3D呈现";
+    std::string status_ = "区域の 3D 表示を待っている";
     std::string loggedStatus_;
     // 性能記録：直近 240 フレームの間隔と描画の CPU 時間（4 秒ごとにログへ出す）。
     std::vector<float> frameMs_, renderMs_, gameMs_;

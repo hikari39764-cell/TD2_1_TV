@@ -36,13 +36,13 @@ bool QueryAll(EditorWorkspaceHostContext& context, std::string_view operation, J
         if (!page.ok) { error = page.error; return false; }
         const auto entries = page.data.find(listKey);
         if (entries == page.data.end() || !entries->is_array()) {
-            error = std::string(operation) + ": INVALID_RESULT: " + std::string(listKey) + " 数组缺失"; return false;
+            error = std::string(operation) + ": INVALID_RESULT: " + std::string(listKey) + " の配列がありません"; return false;
         }
         for (const auto& entry : *entries) { if (!visit(entry)) { return false; } }
         const auto next = page.data.find("nextOffset");
         if (next == page.data.end()) { return true; }
         const uint64_t nextOffset = ObjectId(*next);
-        if (nextOffset <= offset || entries->empty()) { error = std::string(operation) + ": INVALID_RESULT: 分页没有前进"; return false; }
+        if (nextOffset <= offset || entries->empty()) { error = std::string(operation) + ": INVALID_RESULT: ページが進みません"; return false; }
         offset = nextOffset;
     }
 }
@@ -67,7 +67,7 @@ bool QueryObjects(EditorWorkspaceHostContext& context, std::string_view componen
     return QueryAll(context, "scene.objects.query", parameters, "objects", [&objects, &error](const Json& object) {
         if (!object.is_object() || !object.contains("objectId") || !object.contains("name") ||
             ObjectId(object["objectId"]) == 0 || !object["name"].is_string()) {
-            error = "scene.objects.query: INVALID_RESULT: 对象身份或名称缺失"; return false;
+            error = "scene.objects.query: INVALID_RESULT: 物体の ID か名前がありません"; return false;
         }
         objects.push_back({ObjectId(object["objectId"]), object["name"].get<std::string>()});
         return true;
@@ -91,7 +91,7 @@ bool ResolveRegion(EditorWorkspaceHostContext& context, uint64_t objectId, Regio
     const auto components = result.data.find("components");
     const uint64_t componentId = components == result.data.end() ? 0 : RegionComponentId(*components);
     if (componentId == 0) {
-        error = "component.instances.query: 此对象没有 TD2 电视区块，请使用添加按钮"; return false;
+        error = "component.instances.query: この物体に TD2 テレビの区域がありません。追加ボタンを使ってください"; return false;
     }
     target = {objectId, componentId};
     return true;
@@ -117,12 +117,12 @@ bool ReadRegion(EditorWorkspaceHostContext& context, uint64_t objectId, RegionTa
     if (!result.ok) { error = result.error; return false; }
     const auto fields = result.data.find("fields");
     if (fields == result.data.end() || !fields->is_array()) {
-        error = "component.describe: INVALID_RESULT: fields 数组缺失"; return false;
+        error = "component.describe: INVALID_RESULT: fields の配列がありません"; return false;
     }
     const auto text = [&fields, &error](std::string_view id, std::string& value) {
         const auto* field = FieldValue(*fields, id);
         if (field == nullptr || !field->is_string()) {
-            error = "component.describe: INVALID_RESULT: 字符串字段 " + std::string(id) + " 缺失"; return false;
+            error = "component.describe: INVALID_RESULT: 文字列の項目 " + std::string(id) + " がありません"; return false;
         }
         value = field->get<std::string>();
         return true;
@@ -131,14 +131,14 @@ bool ReadRegion(EditorWorkspaceHostContext& context, uint64_t objectId, RegionTa
         const auto* field = FieldValue(*fields, id);
         if (field == nullptr || !field->is_number_integer() || *field < 1 ||
             *field > (std::numeric_limits<int>::max)()) {
-            error = "component.describe: INVALID_RESULT: 正整数字段 " + std::string(id) + " 缺失"; return false;
+            error = "component.describe: INVALID_RESULT: 正の整数の項目 " + std::string(id) + " がありません"; return false;
         }
         value = field->get<int>();
         return true;
     };
     const auto* screen = FieldValue(*fields, "screenObject");
     if (screen == nullptr || !screen->is_number_integer() || *screen < 0) {
-        error = "component.describe: INVALID_RESULT: screenObject 场景引用无效"; return false;
+        error = "component.describe: INVALID_RESULT: screenObject の参照が無効です"; return false;
     }
     settings.screenObject = ObjectId(*screen);
     const auto* spawnX = FieldValue(*fields, "spawnX");
@@ -146,7 +146,7 @@ bool ReadRegion(EditorWorkspaceHostContext& context, uint64_t objectId, RegionTa
     const auto* entry = FieldValue(*fields, "entryRegion");
     if (spawnX == nullptr || !spawnX->is_number() || spawnY == nullptr || !spawnY->is_number() ||
         entry == nullptr || !entry->is_boolean()) {
-        error = "component.describe: INVALID_RESULT: 出生点或初始区块字段缺失"; return false;
+        error = "component.describe: INVALID_RESULT: スポーン位置か開始区域の項目がありません"; return false;
     }
     settings.spawnX = spawnX->get<float>();
     settings.spawnY = spawnY->get<float>();
@@ -157,13 +157,13 @@ bool ReadRegion(EditorWorkspaceHostContext& context, uint64_t objectId, RegionTa
     if (!placed || !placed->is_boolean() || !worldX || !worldX->is_number_integer() || !worldY || !worldY->is_number_integer() ||
         *worldX < (std::numeric_limits<int>::min)() || *worldX > (std::numeric_limits<int>::max)() ||
         *worldY < (std::numeric_limits<int>::min)() || *worldY > (std::numeric_limits<int>::max)()) {
-        error = "component.describe: INVALID_RESULT: Stage04 世界布局字段缺失或无效"; return false;
+        error = "component.describe: INVALID_RESULT: 世界の配置の項目が無いか無効です"; return false;
     }
     settings.worldPlaced = placed->get<bool>(); settings.worldX = worldX->get<int>(); settings.worldY = worldY->get<int>();
     // 古い Scene に無い項目は既定値で読む。型が違う時はエラーにする。
     settings.screenBrightness = 2.2f;
     if (const auto* brightness = FieldValue(*fields, "screenBrightness")) {
-        if (!brightness->is_number() || !std::isfinite(brightness->get<float>())) { error = "component.describe: INVALID_RESULT: 屏幕亮度无效"; return false; }
+        if (!brightness->is_number() || !std::isfinite(brightness->get<float>())) { error = "component.describe: INVALID_RESULT: 画面の明るさが無効です"; return false; }
         settings.screenBrightness = brightness->get<float>();
     }
     settings.stageAnchor.clear();
@@ -197,7 +197,7 @@ void AppendRegionChanges(Json& commands, const RegionTarget& target, const Regio
 
 std::string ScreenSlotWarning(EditorWorkspaceHostContext& context, const RegionSettings& settings) {
     if (!settings.screenObject) { return {}; }
-    if (settings.screenSlot.empty()) { return "请指定屏幕材质槽名称"; }
+    if (settings.screenSlot.empty()) { return "画面の材質スロット名を指定してください"; }
     const auto result = Execute(context, "scene.objects.query", {{"objectIds", {settings.screenObject}}, {"detail", true}});
     if (!result.ok) { return result.error; }
     for (const auto& object : result.data.value("objects", Json::array())) {
@@ -209,9 +209,9 @@ std::string ScreenSlotWarning(EditorWorkspaceHostContext& context, const RegionS
         for (const auto& slot : model->value("materialSlots", Json::array())) {
             if (slot.is_object() && slot.value("name", "") == settings.screenSlot) { return {}; }
         }
-        return "找不到屏幕材质槽：" + settings.screenSlot;
+        return "画面の材質スロットが見つかりません：" + settings.screenSlot;
     }
-    return "屏幕对象没有可确认的模型";
+    return "画面の物体のモデルを確認できません";
 }
 
 bool AddRegion(EditorWorkspaceHostContext& context, uint64_t objectId, bool bindSelf, std::string& status) {
@@ -219,14 +219,14 @@ bool AddRegion(EditorWorkspaceHostContext& context, uint64_t objectId, bool bind
     if (!instances.ok) { status = instances.error; return false; }
     const auto components = instances.data.find("components");
     if (components == instances.data.end() || !components->is_array()) {
-        status = "component.instances.query: INVALID_RESULT: components 数组缺失"; return false;
+        status = "component.instances.query: INVALID_RESULT: components の配列がありません"; return false;
     }
     if (RegionComponentId(*components) != 0) { return true; }
     const auto result = Execute(context, "component.add", {{"objectId", objectId}, {"componentType", kRegionComponentType}});
     if (!result.ok) { status = result.error; return false; }
     const auto added = result.data.find("addedComponents");
     const uint64_t componentId = added == result.data.end() ? 0 : RegionComponentId(*added);
-    if (componentId == 0) { status = "component.add: INVALID_RESULT: 新区块组件身份缺失"; return false; }
+    if (componentId == 0) { status = "component.add: INVALID_RESULT: 新しい区域の部品の ID がありません"; return false; }
     // 新しい ID は Scene の Object ID から作る。既存の ID は変えない。
     Json commands = Json::array({PropertyCommand(objectId, componentId, "regionId", "td2.region." + std::to_string(objectId))});
     // 最初の地図だけを開始区域にする。
@@ -245,7 +245,7 @@ bool AddRegion(EditorWorkspaceHostContext& context, uint64_t objectId, bool bind
         commands.push_back(PropertyCommand(objectId, componentId, "screenSlot", "TD2_Screen"));
     }
     if (std::string error; !Transact(context, commands, error)) {
-        status = "区块组件已添加；初始化配置失败：" + error; return false;
+        status = "区域の部品は追加しましたが、初期設定に失敗しました：" + error; return false;
     }
     return true;
 }

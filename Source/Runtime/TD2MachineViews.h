@@ -33,7 +33,7 @@ private:
     // 区域 ID → 作者が置いた配置（相対で書いた仕掛けを絶対へ直す基準）。
     using Placements = std::map<std::string, RegionPlacement, std::less<>>;
 
-    // 機構で動かす物体の状態 0・1・-1（天平のもう一方）の姿勢。pivot はその点を中心に回す。
+    // 機構で動かす物体の状態 0・1・-1（天秤のもう一方）の姿勢。pivot はその点を中心に回す。
     struct MechanismObject { Handle handle{}; Transform a{}, b{}, c{}; bool pivot = false; HIKARI::GameProjectFloat3 center{}; };
     // 動くテレビに付いて行く区域カメラ。turn は大きく回る転台（途中で向こう側へ切り替える）、reach はテレビまでの距離。
     struct MechanismAttachment { Handle handle{}; size_t parent = 0; Transform relative{}; bool turn = false; float reach = 0; };

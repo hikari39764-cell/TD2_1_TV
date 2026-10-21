@@ -51,13 +51,13 @@ void LevelEditor::DrawPalette(EditorWorkspaceHostContext& ctx) {
     switch (tool_) {
     case Tool::Select: DrawTelevisionShelf(ctx); break;
     case Tool::Terrain: {
-        ui.Text("笔刷");
+        ui.Text("ブラシ");
         for (int size = 1; size <= 4; ++size) {
             ui.SameLine();
             if (ui.Button("td2.palette.brush." + std::to_string(size), (brushSize_ == size ? "● " : "") + std::to_string(size))) { brushSize_ = size; }
         }
         ui.SameLine(); ui.Checkbox("td2.palette.rectangle", "矩形", &rectanglePaint_);
-        ui.Text("左键画 · 右键擦");
+        ui.Text("左クリックで描く · 右クリックで消す");
         break;
     }
     case Tool::Device: {
@@ -75,7 +75,7 @@ void LevelEditor::DrawPalette(EditorWorkspaceHostContext& ctx) {
         }
         break;
     }
-    case Tool::Link: ui.Text("从压板拖到门、激光、桥或机构 · 再连一次断开"); break;
+    case Tool::Link: ui.Text("圧力板から扉・レーザー・橋・仕掛けへドラッグ · もう一度つなぐと外す"); break;
     case Tool::Machine: DrawMachineShelf(ctx); break;
     case Tool::Camera: DrawCameraShelf(ctx); break;
     case Tool::Stage: DrawTelevisionShelf(ctx); DrawPropShelf(ctx); break;
@@ -134,12 +134,12 @@ void LevelEditor::PlaceProp(EditorWorkspaceHostContext& ctx, const StageProp& pr
     if (under) {
         JoinFolderOf(ctx, id, tv.objectId);
         stand_ = id; standTelevision_ = tv.objectId; standFrames_ = 240;
-        SetNote("已在「" + ShortChoiceLabel(tv.name, 12) + "」下面放「" + std::string(prop.label) + "」");
+        SetNote("「" + ShortChoiceLabel(tv.name, 12) + "」の下に「" + std::string(prop.label) + "」を置きました");
     } else {
         if (current) { JoinFolderOf(ctx, id, MapModel::TelevisionObject(*current)); }
         if (Execute(ctx, "scene.object.select", {{"objectId", id}}).ok) { model_.sceneSelection = id; }
         focus_ = Focus::Object;
-        SetNote("已放「" + std::string(prop.label) + "」：在视口里用 W / E 摆好");
+        SetNote("「" + std::string(prop.label) + "」を置きました：ビューポートで W / E で合わせてください");
     }
 }
 
@@ -149,7 +149,7 @@ void LevelEditor::FinishStand(EditorWorkspaceHostContext& ctx) {
     std::string error;
     if (!ReadStageObject(ctx, stand_, stand, error) || !ReadStageObject(ctx, standTelevision_, tv, error)) { stand_ = 0; model_.error = error; return; }
     if (!stand.hasBounds) {
-        if (--standFrames_ <= 0) { stand_ = 0; model_.error = "读不到台的高度：请在视口里把电视移到台面上"; }
+        if (--standFrames_ <= 0) { stand_ = 0; model_.error = "台の高さを読めません：ビューポートでテレビを台の上へ動かしてください"; }
         return;
     }
     tv.pose.position[1] = stand.hi[1];
@@ -160,6 +160,6 @@ void LevelEditor::FinishStand(EditorWorkspaceHostContext& ctx) {
     for (const auto& room : model_.rooms) {
         if (MapModel::TelevisionObject(room) == television) { const std::string region = room.settings.region.regionId; Generate(ctx, true, false, {}, region, nullptr, false); break; }
     }
-    SetNote("电视已放到台面上并重新生成机位");
+    SetNote("テレビを台の上に置き、カメラ位置を作り直しました");
 }
 }

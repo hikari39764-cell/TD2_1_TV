@@ -24,7 +24,7 @@ inline constexpr double kParkX = -64, kParkY = -64;
 
 class StagePartBuilder {
 public:
-    // kit は部品の組（0 白舱、1 青瓷、2・3 はその立体の組）。
+    // kit は部品の組（0 白の実験室、1 青瓷、2・3 はその立体の組）。
     StagePartBuilder(const StageProjection& projection, int kit, uint64_t owner, std::vector<PartRequest>& out)
         : projection_(projection), palette_(kit), owner_(owner), out_(out) {}
     // 意味名ごとに ID の系列を固定する（マスや装置が増減しても別の部品の ID を使い回さない）。

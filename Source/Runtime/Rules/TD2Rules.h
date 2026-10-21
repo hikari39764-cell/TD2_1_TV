@@ -102,7 +102,7 @@ struct WorldState {
     // 残影を回収した回数（表示用。回収時にプレイヤー側のエフェクトを一度出す）。
     uint64_t recalls = 0;
     uint64_t swaps = 0;   // 交換の回数（表示用）
-    uint64_t echoes = 0;  // 残影を出した回数（表示用。冲刺で前の残影と入れ替わった時も新しい残影の光を出す）
+    uint64_t echoes = 0;  // 残影を出した回数（表示用。ダッシュで前の残影と入れ替わった時も新しい残影の光を出す）
     // 固定ステップの無いフレームでも入力の押下を持ち越し、次のステップで使う。
     bool pendingActionPressed = false, pendingActionReleased = false;
     // 残影がいる時のスペース：押してからの秒数。短く離せば回収、押し続ければ交換。

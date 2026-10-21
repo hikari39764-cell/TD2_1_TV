@@ -52,7 +52,7 @@ V ToEuler(const Q& q) {
 }
 }
 
-// 部品の欄：「物体ID 区域ID 役目 m|s|b」を「;」で区切る（m は配方が置いて一緒に動く、s は配方が置いて動かない、b は元からある物を一緒に動かす）。
+// 部品の欄：「物体ID 区域ID 役目 m|s|b」を「;」で区切る（m はレシピが置いて一緒に動く、s はレシピが置いて動かない、b は元からある物を一緒に動かす）。
 std::string FormatParts(const std::vector<Machine::Part>& parts) {
     std::string text;
     for (const auto& p : parts) {
@@ -77,10 +77,10 @@ std::vector<Machine::Part> ParseParts(std::string_view text) {
 
 std::string Machine::KindLabel() const {
     switch (kind) {
-    case MachineKind::Mechanism: return "机构";
-    case MachineKind::Slide: return "滑块货架";
-    case MachineKind::Stack: return "电视塔";
-    case MachineKind::Carousel: return "转柱";
+    case MachineKind::Mechanism: return "仕掛け";
+    case MachineKind::Slide: return "スライド棚";
+    case MachineKind::Stack: return "テレビの塔";
+    case MachineKind::Carousel: return "回転柱";
     }
     return {};
 }
@@ -90,18 +90,18 @@ std::vector<std::pair<std::string, std::string>> Machine::Receivers() const {
     switch (kind) {
     case MachineKind::Mechanism:
         out.push_back({"mech/" + id, KindLabel() + " " + id});
-        if (balance) { out.push_back({"mech/" + id + "/r", KindLabel() + " " + id + "（另一侧）"}); }
+        if (balance) { out.push_back({"mech/" + id + "/r", KindLabel() + " " + id + "（逆側）"}); }
         break;
     case MachineKind::Slide:
-        for (const auto& m : members) { out.push_back({"slide/" + m, "货架 " + id + "：滑动 " + m}); }
+        for (const auto& m : members) { out.push_back({"slide/" + m, "棚 " + id + "：" + m + " を滑らす"}); }
         break;
     case MachineKind::Stack:
-        out.push_back({"stack/" + id + "/pull", "电视塔 " + id + "：抽出最下面"});
-        out.push_back({"stack/" + id + "/reset", "电视塔 " + id + "：复位"});
+        out.push_back({"stack/" + id + "/pull", "テレビの塔 " + id + "：一番下を抜く"});
+        out.push_back({"stack/" + id + "/reset", "テレビの塔 " + id + "：戻す"});
         break;
     case MachineKind::Carousel:
-        out.push_back({"carousel/" + id + "/cw", "转柱 " + id + "：顺时针"});
-        out.push_back({"carousel/" + id + "/ccw", "转柱 " + id + "：逆时针"});
+        out.push_back({"carousel/" + id + "/cw", "回転柱 " + id + "：時計回り"});
+        out.push_back({"carousel/" + id + "/ccw", "回転柱 " + id + "：反時計回り"});
         break;
     }
     return out;
@@ -203,13 +203,13 @@ bool CreateMachine(EditorWorkspaceHostContext& ctx, MachineKind kind, uint64_t h
         const auto created = Execute(ctx, "scene.create_empty_object", {{"name", label.KindLabel() + " " + id}});
         if (!created.ok) { error = created.error; return false; }
         host = ObjectId(created.data.value("objectId", Json{}));
-        if (!host) { error = "机关对象创建失败"; return false; }
+        if (!host) { error = "仕掛けの物体を作れません"; return false; }
     }
     const auto added = Execute(ctx, "component.add", {{"objectId", host}, {"componentType", info.type}});
     if (!added.ok) { error = added.error; return false; }
     uint64_t componentId = 0;
     for (const auto& c : added.data.value("addedComponents", Json::array())) { if (c.value("type", "") == info.type) { componentId = ObjectId(c.value("componentId", Json{})); } }
-    if (!componentId) { error = "机关组件创建失败"; return false; }
+    if (!componentId) { error = "仕掛けの部品を作れません"; return false; }
     return Transact(ctx, Json::array({PropertyCommand(host, componentId, info.idField, id)}), error);
 }
 
@@ -235,25 +235,25 @@ std::vector<std::string> CheckMachine(const Machine& m, const std::vector<Machin
         return it == input.placements.end() ? nullptr : &*it;
     };
     const auto placed = [&](const std::string& id) { const auto* p = placementOf(id); return p && p->worldPlaced; };
-    if (!IsStableId(m.id)) { problems.push_back("ID 只能用英文字母、数字、点、短横线和下划线"); }
-    if (std::count_if(all.begin(), all.end(), [&](const Machine& o) { return o.kind == m.kind && o.id == m.id; }) > 1) { problems.push_back("同类机关里 ID 重复：" + m.id); }
+    if (!IsStableId(m.id)) { problems.push_back("ID は英数字・点・ハイフン・下線だけ"); }
+    if (std::count_if(all.begin(), all.end(), [&](const Machine& o) { return o.kind == m.kind && o.id == m.id; }) > 1) { problems.push_back("同じ種類の仕掛けで ID が重なっています：" + m.id); }
     switch (m.kind) {
     case MachineKind::Mechanism:
-        if (m.offsets.empty() && m.deltas.empty()) { problems.push_back("状态B还没有内容：点电视加入区域偏移，或加入物体并摆状态B"); }
+        if (m.offsets.empty() && m.deltas.empty()) { problems.push_back("状態 B が空です：テレビをクリックして区域のずれを加えるか、物体を加えて状態 B を作ってください"); }
         for (const auto* list : {&m.offsets, &m.offsetsC}) for (const auto& o : *list) {
-            if (!placed(o.regionId)) { problems.push_back("区域没有放进世界：" + o.regionId); }
-            if (!o.anchor.empty() && !placed(o.anchor)) { problems.push_back("锚点区域没有放进世界：" + o.anchor); }
+            if (!placed(o.regionId)) { problems.push_back("区域が世界にありません：" + o.regionId); }
+            if (!o.anchor.empty() && !placed(o.anchor)) { problems.push_back("基準の区域が世界にありません：" + o.anchor); }
         }
-        if (m.balance && m.offsetsC.empty() && m.deltasC.empty()) { problems.push_back("天平还没有另一侧（状态C）的内容"); }
+        if (m.balance && m.offsetsC.empty() && m.deltasC.empty()) { problems.push_back("天秤の逆側（状態 C）が空です"); }
         for (const auto* list : {&m.deltas, &m.deltasC}) for (const auto& d : *list) {
-            if (std::find(input.sceneObjects.begin(), input.sceneObjects.end(), d.object) == input.sceneObjects.end()) { problems.push_back("物体不存在：" + std::to_string(d.object)); }
-            if (d.anchor && std::find(input.sceneObjects.begin(), input.sceneObjects.end(), d.anchor) == input.sceneObjects.end()) { problems.push_back("锚点物体不存在：" + std::to_string(d.anchor)); }
+            if (std::find(input.sceneObjects.begin(), input.sceneObjects.end(), d.object) == input.sceneObjects.end()) { problems.push_back("物体がありません：" + std::to_string(d.object)); }
+            if (d.anchor && std::find(input.sceneObjects.begin(), input.sceneObjects.end(), d.anchor) == input.sceneObjects.end()) { problems.push_back("基準の物体がありません：" + std::to_string(d.anchor)); }
         }
         break;
     case MachineKind::Slide: {
-        if (m.members.size() < 1) { problems.push_back("还没有成员：点电视加入"); break; }
-        for (const auto& id : m.members) { if (!placed(id)) { problems.push_back("成员没有放进世界：" + id); } }
-        if (m.emptySlots.empty()) { problems.push_back("需要至少一个空槽：点地图上空着的格子"); }
+        if (m.members.size() < 1) { problems.push_back("メンバーがいません：テレビをクリックして加える"); break; }
+        for (const auto& id : m.members) { if (!placed(id)) { problems.push_back("メンバーが世界にありません：" + id); } }
+        if (m.emptySlots.empty()) { problems.push_back("空きスロットが要ります：地図の空いたマスをクリック"); }
         // 空きスロットの 3D の置き場は、メンバーの並び（同じ行・同じ列）から求める。求められない向きがあれば知らせる。
         const auto* o = placementOf(m.members.front());
         bool hasU = false, hasV = false;
@@ -266,25 +266,25 @@ std::vector<std::string> CheckMachine(const Machine& m, const std::vector<Machin
             if (p->worldX != o->worldX && p->worldY != o->worldY) { if (hasU) { hasV = true; } else if (hasV) { hasU = true; } }
         }
         for (const auto& [ex, ey] : m.emptySlots) {
-            if ((ex && !hasU) || (ey && !hasV)) { problems.push_back("空槽的 3D 位置推不出来：成员需要在同一行或同一列上排开"); break; }
+            if ((ex && !hasU) || (ey && !hasV)) { problems.push_back("空きスロットの 3D 位置を求められません：メンバーを同じ行か列に並べてください"); break; }
         }
         break;
     }
     case MachineKind::Stack:
-        if (m.members.size() < 2) { problems.push_back("电视塔至少要两台电视（自下而上）"); }
-        for (const auto& id : m.members) { if (!placed(id)) { problems.push_back("成员没有放进世界：" + id); } }
-        if (m.dockDistances.empty()) { problems.push_back("需要至少一个抽出距离"); }
-        if (m.dockDistances.size() + 1 < m.members.size()) { problems.push_back("抽出距离少于可以抽出的层数；多出的抽板只会晃一下"); }
+        if (m.members.size() < 2) { problems.push_back("テレビの塔には二台以上のテレビが要ります（下から）"); }
+        for (const auto& id : m.members) { if (!placed(id)) { problems.push_back("メンバーが世界にありません：" + id); } }
+        if (m.dockDistances.empty()) { problems.push_back("抜く距離が要ります"); }
+        if (m.dockDistances.size() + 1 < m.members.size()) { problems.push_back("抜く距離が段数より少ないので、多い分は揺れるだけです"); }
         break;
     case MachineKind::Carousel:
-        if (m.members.size() < 2) { problems.push_back("转柱至少要两个面"); }
-        for (const auto& id : m.members) { if (!placementOf(id)) { problems.push_back("面不是电视地图：" + id); } }
+        if (m.members.size() < 2) { problems.push_back("回転柱には二つ以上の面が要ります"); }
+        for (const auto& id : m.members) { if (!placementOf(id)) { problems.push_back("面がテレビの地図ではありません：" + id); } }
         if (const auto has = input.objectHasModel.find(m.objectId); has != input.objectHasModel.end() && !has->second) {
-            problems.push_back("组件所在的物体没有模型；请把转柱组件放在柱子上（柱子的位置就是转轴）");
+            problems.push_back("部品の付いた物体にモデルがありません：回転柱の部品は柱に付けてください（柱の位置が回転軸）");
         }
         break;
     }
-    if (PlatesFor(m, input).empty() && m.dwell <= 0) { problems.push_back("还没有压板连到它（用「连线」把压板拖到它的图标）"); }
+    if (PlatesFor(m, input).empty() && m.dwell <= 0) { problems.push_back("圧力板がまだありません（「配線」で圧力板からアイコンへドラッグ）"); }
     return problems;
 }
 

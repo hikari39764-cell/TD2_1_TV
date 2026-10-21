@@ -86,7 +86,7 @@ public:
 
 private:
     // 舞台を撮る窓の種類。Play ではどれも透視の窓で、外のカメラが画面を見る角度へ目を寄せる（テレビが窓を移っても角度と
-    // 細かさが跳ばない）：鮮明は操作中の部屋、大区域は同じ镜头大区域と世界地図で近い残りの部屋の組、遠く・遠く2 は背景に
+    // 細かさが跳ばない）：鮮明は操作中の部屋、大区域は同じカメラの大区域と世界地図で近い残りの部屋の組、遠く・遠く2 は背景に
     // 写るほかのテレビを地図で近いものどうしに分けた二組。編集中は鮮明と大区域の二枚を正投影で撮る（詰めて並べた地図の二組）。
     enum class ViewKind : int { Sharp = 0, Area = 1, Far = 2, Far2 = 3 };
     static constexpr size_t kViewKinds = 4;
@@ -258,7 +258,7 @@ private:
     size_t fxRejected_ = 0;
     // 演出：最後に起きた揺れ・閃光の強さと開始時刻（実時間）。減衰は Render で計算する。
     double shakeAmplitude_ = 0, shakeStart_ = -1, flashAmount_ = 0, flashStart_ = -1;
-    std::string status_ = "等待3D舞台镜头与模型";
+    std::string status_ = "3D の舞台カメラとモデルを待っている";
     // 診断用（環境変数 TD2_SCREEN_TRACE がある時だけ）：窓・保護・割り当てが変わったフレームを記録する。
     void TraceFrame();
     size_t traceFrame_ = 0; std::string traceLast_; std::map<uint64_t, HIKARI::GameProjectSceneCaptureSourceRect> traceRects_;

@@ -28,26 +28,9 @@ using M3 = std::array<std::array<double, 3>, 3>;
 Vec3 Flat(const Vec3& a) { return Normalize({a[0], 0, a[2]}); }
 constexpr Vec3 kUp{0, 1, 0};
 
-// エンジンの回転順：M = Rz·Ry·Rx（X → Y → Z）。カメラもテレビもローカル +Z を向く。
-M3 Rotation(const Vec3& euler) {
-    const auto r = [](int axis, double deg) {
-        const double a = deg * kPi / 180, c = std::cos(a), s = std::sin(a);
-        if (axis == 0) return M3{{{1, 0, 0}, {0, c, -s}, {0, s, c}}};
-        if (axis == 1) return M3{{{c, 0, s}, {0, 1, 0}, {-s, 0, c}}};
-        return M3{{{c, -s, 0}, {s, c, 0}, {0, 0, 1}}};
-    };
-    const auto mul = [](const M3& a, const M3& b) {
-        M3 m{};
-        for (int i = 0; i < 3; ++i) for (int j = 0; j < 3; ++j) for (int k = 0; k < 3; ++k) { m[i][j] += a[i][k] * b[k][j]; }
-        return m;
-    };
-    return mul(mul(r(2, euler[2]), r(1, euler[1])), r(0, euler[0]));
-}
-Vec3 Apply(const M3& m, const Vec3& v) {
-    return {m[0][0] * v[0] + m[0][1] * v[1] + m[0][2] * v[2], m[1][0] * v[0] + m[1][1] * v[1] + m[1][2] * v[2],
-            m[2][0] * v[0] + m[2][1] * v[1] + m[2][2] * v[2]};
-}
-Vec3 RotateY(const Vec3& v, double deg) { return Math::QRotate(Math::QFromEulerDeg({0, deg, 0}), v); }
+// エンジンの回転順（Rz·Ry·Rx）で、度の回転を v に掛ける。カメラもテレビもローカル +Z を向く。
+Vec3 Rotate(const Vec3& euler, const Vec3& v) { return Math::QRotate(Math::QFromEulerDeg(euler), v); }
+Vec3 RotateY(const Vec3& v, double deg) { return Rotate({0, deg, 0}, v); }
 // カメラの回転行列（列 = ローカル X（画の左）・Y（上）・Z（前））。roll は前の軸まわりの傾き（度）。
 M3 LookMatrix(const Vec3& eye, const Vec3& look, double roll = 0) {
     const auto f = Normalize(Sub(look, eye));
@@ -84,15 +67,14 @@ std::array<double, 4> QuatFrom(const M3& m) {
 double Round(double v, double step = 1e-4) { return std::round(v / step) * step; }
 
 // ---- テレビの形 ----
-M3 TvMatrix(const LayoutRoom& r) { return Rotation(r.tv.rotation); }
 Vec3 TvLocal(const LayoutRoom& r, const Vec3& local) {
-    return Add(r.tv.position, Apply(TvMatrix(r), {local[0] * r.tv.scale[0], local[1] * r.tv.scale[1], local[2] * r.tv.scale[2]}));
+    return Add(r.tv.position, Rotate(r.tv.rotation, {local[0] * r.tv.scale[0], local[1] * r.tv.scale[1], local[2] * r.tv.scale[2]}));
 }
 // 画面の点（u: 左 0 → 右 1、v: 上 0 → 下 1）。
 Vec3 ScreenPoint(const LayoutRoom& r, double u = .5, double v = .5) {
     return TvLocal(r, {r.screenCenter[0] + (u - .5) * r.screenWidth, r.screenCenter[1] + (.5 - v) * r.screenHeight, r.screenCenter[2]});
 }
-Vec3 TvAxis(const LayoutRoom& r, int axis) { return Normalize(Apply(TvMatrix(r), {axis == 0 ? 1.0 : 0, axis == 1 ? 1.0 : 0, axis == 2 ? 1.0 : 0})); }
+Vec3 TvAxis(const LayoutRoom& r, int axis) { return Normalize(Rotate(r.tv.rotation, {axis == 0 ? 1.0 : 0, axis == 1 ? 1.0 : 0, axis == 2 ? 1.0 : 0})); }
 LayoutBox TvBox(const LayoutRoom& r) {
     LayoutBox box{{1e9, 1e9, 1e9}, {-1e9, -1e9, -1e9}, r.objectId};
     for (const double x : {-r.body[0] / 2, r.body[0] / 2}) for (const double y : {0.0, r.body[1]}) for (const double z : {-r.body[2] / 2, r.body[2] / 2}) {
@@ -416,7 +398,7 @@ CameraPose RegionCamera(const LayoutSnapshot& snap, const LayoutRoom& room) {
 }
 
 CameraPose CurrentCameraPose(const LayoutRoom& room) {
-    const auto forward = Normalize(Apply(Rotation(room.camera.rotation), {0, 0, 1}));
+    const auto forward = Normalize(Rotate(room.camera.rotation, {0, 0, 1}));
     const double depth = (std::max)(.5, Dot(Sub(ScreenPoint(room), room.camera.position), forward));
     return {room.camera.position, Add(room.camera.position, forward, depth)};
 }
@@ -435,13 +417,13 @@ bool CameraEdited(const LayoutRoom& room) {
 // ---- 切り替えの経路 ----
 const std::vector<TravelStyle>& TravelStyles() {
     static const std::vector<TravelStyle> styles{
-        {"auto", "自动", "按两台电视的朝向与高度自动选择"},
-        {"reveal", "穿过揭示", "擦过出口电视，升高俯瞰目标一侧，再降下"},
-        {"arc", "外弧俯瞰", "绕角外侧升高，从上方看两面"},
-        {"low", "贴地仰视", "沉到地面绕角，仰望柱角"},
-        {"pull", "大幅后拉", "大幅后退，用长焦看角，再绕入"},
-        {"hug", "贴角倾斜", "贴着角快速转过，画面向转弯方向倾斜"},
-        {"direct", "直接平移", "简单的弧线移动"},
+        {"auto", "自動", "二台のテレビの向きと高さで選ぶ"},
+        {"reveal", "すり抜け", "出口のテレビをかすめ、上がって行き先を見下ろしてから下りる"},
+        {"arc", "外回り", "角の外を上がり、上から両面を見る"},
+        {"low", "低い回り込み", "床まで下りて角を回り、柱の角を見上げる"},
+        {"pull", "大きく引く", "大きく下がり、望遠で角を見てから回り込む"},
+        {"hug", "角すれすれ", "角すれすれを速く回り、曲がる方へ傾く"},
+        {"direct", "まっすぐ", "単純な弧で動く"},
     };
     return styles;
 }
@@ -524,7 +506,7 @@ TravelPlan PlanTravel(const LayoutSnapshot& snap, const LayoutEdge& edge, const 
     TravelPlan plan;
     const auto* a = snap.Room(edge.a); const auto* b = snap.Room(edge.b);
     const auto ca = cameras.find(edge.a), cb = cameras.find(edge.b);
-    if (!a || !b || ca == cameras.end() || cb == cameras.end()) { plan.problem = "缺少区域或机位"; return plan; }
+    if (!a || !b || ca == cameras.end() || cb == cameras.end()) { plan.problem = "区域かカメラがありません"; return plan; }
     plan.style = ResolveStyle(snap, edge);
     std::vector<LayoutBox> boxes = snap.obstacles;
     for (const auto& room : snap.rooms) { boxes.push_back(TvBox(room)); }
@@ -534,14 +516,14 @@ TravelPlan PlanTravel(const LayoutSnapshot& snap, const LayoutEdge& edge, const 
             const auto k = SampleTravel(keys, i / 60.0);
             if (problem.empty() && snap.hasHall) {
                 const LayoutBox hall{snap.hallLo, snap.hallHi, 0};
-                if (!Inside(k.eye, hall, 0)) { problem = "镜头会穿出大厅"; }
+                if (!Inside(k.eye, hall, 0)) { problem = "カメラが大広間の外へ出ます"; }
             }
             if (problem.empty()) {
-                for (const auto& box : boxes) { if (Inside(k.eye, box, .12)) { problem = "镜头会穿过物体 " + std::to_string(box.objectId); break; } }
+                for (const auto& box : boxes) { if (Inside(k.eye, box, .12)) { problem = "カメラが物体を通り抜けます " + std::to_string(box.objectId); break; } }
             }
             worst = (std::min)(worst, (std::max)(ScreenShare(*a, k), ScreenShare(*b, k)));
         }
-        if (problem.empty() && worst < kMinShare) { problem = "途中两台屏幕都离开画面"; }
+        if (problem.empty() && worst < kMinShare) { problem = "途中で両方の画面が画から外れます"; }
         return worst;
     };
     // 何かを通り抜けるか画面が外れるなら、少しずつ外へ広げる（引きの時は横へ振る向きも試す）。
@@ -638,9 +620,9 @@ Json BuildSequence(const LayoutEdge& edge, const TravelPlan& plan, uint64_t came
     Json base = key(plan.keys.front(), 0); base.erase("time"); base["fov"] = kFov;
     (void)edge;
     return Json{
-        {"bindings", {{{"id", 1}, {"name", "游戏摄像机"}, {"required", true}, {"slotName", "Camera"}, {"targetKind", "slot"}},
-                      {{"id", 2}, {"name", "区域机位 起点"}, {"required", true}, {"sceneObjectId", cameraA}, {"targetKind", "sceneObject"}},
-                      {{"id", 3}, {"name", "区域机位 终点"}, {"required", true}, {"sceneObjectId", cameraB}, {"targetKind", "sceneObject"}}}},
+        {"bindings", {{{"id", 1}, {"name", "ゲームカメラ"}, {"required", true}, {"slotName", "Camera"}, {"targetKind", "slot"}},
+                      {{"id", 2}, {"name", "区域カメラ 始点"}, {"required", true}, {"sceneObjectId", cameraA}, {"targetKind", "sceneObject"}},
+                      {{"id", 3}, {"name", "区域カメラ 終点"}, {"required", true}, {"sceneObjectId", cameraB}, {"targetKind", "sceneObject"}}}},
         {"durationSeconds", 1.0}, {"id", 1}, {"name", name}, {"screenEffects", Json::array()},
         {"tracks", {{{"clips", {{{"camera", {{"aimWeight", {{"keys", Json::array()}, {"value", 1.0}}}, {"anchor", 0}, {"base", base}, {"keys", keys},
                                             {"lookAt", 0}, {"motion", Json::array()}, {"name", "Shot"}, {"pivotDistance", 5.0},
@@ -683,13 +665,13 @@ bool GenerateCameras(EditorWorkspaceHostContext& ctx, LayoutSnapshot& snap, std:
     bool created = false;
     for (auto& room : snap.rooms) {
         if (!room.placed || room.cameraId || !InScope(snap, room.regionId, areaName) || (!onlyRegion.empty() && room.regionId != onlyRegion)) { continue; }
-        const auto object = Execute(ctx, "scene.create_empty_object", {{"name", "区域机位 " + room.regionId}});
+        const auto object = Execute(ctx, "scene.create_empty_object", {{"name", "区域カメラ " + room.regionId}});
         if (!object.ok) { error = object.error; return false; }
         const auto id = ObjectId(object.data.value("objectId", Json{}));
         const auto added = Execute(ctx, "component.add", {{"objectId", id}, {"componentType", "CameraComponent"}});
         if (!added.ok) { error = added.error; return false; }
         if (!Transact(ctx, Json::array({PropertyCommand(room.objectId, room.componentId, "cameraObject", id)}), error)) { return false; }
-        report.notes.push_back(room.regionId + "：新建机位");
+        report.notes.push_back(room.regionId + "：カメラを作りました");
         created = true;
     }
     if (created && !LoadLayout(ctx, snap, error)) { return false; }
@@ -728,20 +710,20 @@ bool GenerateTravels(EditorWorkspaceHostContext& ctx, LayoutSnapshot& snap, std:
         if (!onlyEdge && !areaName.empty() && !InScope(snap, edge.a, areaName) && !InScope(snap, edge.b, areaName)) { continue; }
         // 縦の辺（落下・跳躍）は大区域の外でも自動で流れるので、手動の演出は横の辺だけに作る。
         const auto* a = snap.Room(edge.a); const auto* b = snap.Room(edge.b);
-        if (!a || !b || !a->cameraId || !b->cameraId) { report.notes.push_back(edge.a + " ↔ " + edge.b + "：缺少机位"); ++report.failed; continue; }
+        if (!a || !b || !a->cameraId || !b->cameraId) { report.notes.push_back(edge.a + " ↔ " + edge.b + "：カメラがありません"); ++report.failed; continue; }
         // 作者が直した演出は残す（保留、または自動の記録と今のキーが違う）。記録が無い・読めない演出も、
         // 作者の物として残す（上書きは自動に戻す時だけ）。
         if (!force && !edge.sequenceGuid.empty()) {
             if (edge.keepAuthored) { ++report.kept; continue; }
             Json keys; std::string readError;
             if (!ReadSequenceKeys(ctx, edge.sequenceGuid, keys, readError)) {
-                report.notes.push_back(edge.a + " ↔ " + edge.b + "：读取演出失败，保留（" + readError + "）"); ++report.kept; continue;
+                report.notes.push_back(edge.a + " ↔ " + edge.b + "：演出を読めないので残しました（" + readError + "）"); ++report.kept; continue;
             }
             if (edge.autoHash.empty()) {
-                report.notes.push_back(edge.a + " ↔ " + edge.b + "：没有自动生成记录，按手做演出保留"); ++report.kept; continue;
+                report.notes.push_back(edge.a + " ↔ " + edge.b + "：自動生成の記録が無いので、手作りとして残しました"); ++report.kept; continue;
             }
             if (!KeysMatch(edge.autoHash, keys)) {
-                report.notes.push_back(edge.a + " ↔ " + edge.b + "：已手调，保留"); ++report.kept; continue;
+                report.notes.push_back(edge.a + " ↔ " + edge.b + "：手直し済みなので残しました"); ++report.kept; continue;
             }
         }
         const auto plan = PlanTravel(snap, edge, cameras);
@@ -752,7 +734,7 @@ bool GenerateTravels(EditorWorkspaceHostContext& ctx, LayoutSnapshot& snap, std:
         std::string guid = edge.sequenceGuid;
         const auto opened = guid.empty() ? Execute(ctx, "cinematics.new_asset", Json::object()) : Execute(ctx, "cinematics.open_asset", {{"assetGuid", guid}});
         if (!opened.ok) {
-            error = opened.error.find("PENDING_CONFIRMATION") != std::string::npos ? "演出工作区有未保存的修改，请先保存或撤销后再生成" : opened.error;
+            error = opened.error.find("PENDING_CONFIRMATION") != std::string::npos ? "演出ワークスペースに保存していない変更があります。保存か元に戻してから作ってください" : opened.error;
             return false;
         }
         const auto replaced = Execute(ctx, "cinematics.edit", {{"command", {{"action", "replace_sequence"}, {"value", sequence}}}});
@@ -762,14 +744,14 @@ bool GenerateTravels(EditorWorkspaceHostContext& ctx, LayoutSnapshot& snap, std:
         if (guid.empty()) {
             const auto named = Execute(ctx, "cinematics.edit", {{"command", {{"action", "rename"}, {"value", name}}}});
             if (named.ok) { guid = named.data.value("assetGuid", ""); (void)Execute(ctx, "cinematics.save", Json::object()); }
-            if (guid.empty()) { error = "新演出已保存，但未取得资产 GUID"; return false; }
+            if (guid.empty()) { error = "新しい演出を保存しましたが、資産の GUID を取れません"; return false; }
         }
         Json keys; std::string readError;
         const auto hash = ReadSequenceKeys(ctx, guid, keys, readError) ? KeySignature(keys) : KeySignature(SequenceKeys(sequence));
         // 境界の記録：無ければ作り、演出・速さ・自動の記録を書く。
         uint64_t object = edge.bindingObject, component = edge.bindingComponent;
         if (!object) {
-            const auto created = Execute(ctx, "scene.create_empty_object", {{"name", "切换 " + name}});
+            const auto created = Execute(ctx, "scene.create_empty_object", {{"name", "切り替え " + name}});
             if (!created.ok) { error = created.error; return false; }
             object = ObjectId(created.data.value("objectId", Json{}));
             const auto added = Execute(ctx, "component.add", {{"objectId", object}, {"componentType", kRegionSequenceComponentType}});
@@ -823,7 +805,7 @@ bool CreateArea(EditorWorkspaceHostContext& ctx, const std::string& name, const 
     if (!added.ok) { error = added.error; return false; }
     uint64_t component = 0;
     for (const auto& c : added.data.value("addedComponents", Json::array())) { if (c.value("type", "") == kAreaComponent) { component = ObjectId(c.value("componentId", Json{})); } }
-    if (!component) { error = "镜头大区域组件创建失败"; return false; }
+    if (!component) { error = "カメラの大区域の部品を作れません"; return false; }
     return WriteAreaRegions(ctx, {id, component, name, {}}, regions, error);
 }
 

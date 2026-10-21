@@ -22,12 +22,10 @@ public:
     const StageActorSettings& Settings() const noexcept { return settings_; }
     void DescribeProperties(HIKARI::PropertyFields& fields) override {
         // 名前はシーンに保存されるので変えない。並びは StageActorRole の順。
-        static constexpr std::string_view kRoles[]{"主角", "残影"};
-        fields.Choice("role", "角色", settings_.role, kRoles);
-        fields.Float("height", "模型站立高度（模型单位）", settings_.height, .1f, 10.0f);
-        fields.Float("turn", "朝镜头转的角度（度）", settings_.turn, 0.0f, 60.0f);
-        fields.Note("Play 中这个人形代替烘好的静止姿势，"
-                    "位置、朝向和动作由规则状态决定。动作名：Idle Run Jump Fall Land Dash WallJump Swap Echo。");
+        static constexpr std::string_view kRoles[]{"プレイヤー", "残影"};
+        fields.Choice("role", "役", settings_.role, kRoles);
+        fields.Float("height", "モデルの背丈", settings_.height, .1f, 10.0f);
+        fields.Float("turn", "カメラへ向ける角度", settings_.turn, 0.0f, 60.0f);
     }
 private:
     StageActorSettings settings_;

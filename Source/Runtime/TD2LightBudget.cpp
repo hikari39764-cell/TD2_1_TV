@@ -25,7 +25,7 @@ void LightBudgetSystem::Update(HIKARI::WorldView& world, const HIKARI::FrameCont
     const bool hasControl = playing && world.GetCamera().GetControlPose(control);
     if (!playing) {
         // 編集中は何もしない。
-        lights_.clear(); status_ = " Play待ち"; return;
+        lights_.clear(); status_ = "Play 待ち"; return;
     }
     size_t total = 0, off = 0;
     const HIKARI::ComponentTypeId types[]{HIKARI::MakeComponentTypeId(kLightCullComponentType)};
@@ -52,7 +52,7 @@ void LightBudgetSystem::Update(HIKARI::WorldView& world, const HIKARI::FrameCont
             }
             off += tracked.off ? 1 : 0;
         });
-    auto next = "灯光预算：" + std::to_string(total - off) + "/" + std::to_string(total) + " 盏开启";
+    auto next = "点灯 " + std::to_string(total - off) + "/" + std::to_string(total);
     if (next != status_) { std::fprintf(stderr, "[TD2 lights] on=%zu total=%zu\n", total - off, total); status_ = std::move(next); }
 }
 }

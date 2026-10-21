@@ -4,12 +4,12 @@ namespace TD2::Editor::Level {
 namespace {
 // 道具の列。名前は短く、押すとその道具の棚が下に出る。
 struct ToolInfo { Tool tool; std::string_view label; };
-constexpr std::array<ToolInfo, 7> kTools{{{Tool::Select, "选择"}, {Tool::Terrain, "地形"}, {Tool::Device, "装置"}, {Tool::Link, "连线"},
-                                         {Tool::Machine, "机构"}, {Tool::Camera, "镜头"}, {Tool::Stage, "布景"}}};
+constexpr std::array<ToolInfo, 7> kTools{{{Tool::Select, "選択"}, {Tool::Terrain, "地形"}, {Tool::Device, "装置"}, {Tool::Link, "配線"},
+                                         {Tool::Machine, "仕掛け"}, {Tool::Camera, "カメラ"}, {Tool::Stage, "舞台"}}};
 }
 
 EditorWorkspaceDescriptor LevelEditor::GetDescriptor() const {
-    EditorWorkspaceDescriptor d; d.workspaceId = kLevelWorkspace; d.displayName = "关卡编辑";
+    EditorWorkspaceDescriptor d; d.workspaceId = kLevelWorkspace; d.displayName = "レベル編集";
     d.options = static_cast<uint32_t>(EditorWorkspaceOption::RequestSceneViewport);
     return d;
 }
@@ -37,7 +37,7 @@ EditorWorkspaceSaveResult LevelEditor::Save(EditorWorkspaceHostContext& ctx) {
     const auto saved = Execute(ctx, "scene.save", Json::object());
     if (!saved.ok) { model_.error = saved.error; return EditorWorkspaceSaveResult::Failed; }
     model_.sceneDirty = false; model_.savedOnce = true; model_.error.clear();
-    SetNote("已保存");
+    SetNote("保存しました");
     return EditorWorkspaceSaveResult::Saved;
 }
 
@@ -64,9 +64,9 @@ void LevelEditor::Draw(EditorWorkspaceHostContext& ctx) {
         model_.historyFrames = 3; model_.sceneDirty = true; model_.machinesStale = true; layoutStale_ = true; followResync_ = true;
     }
     // 三つの欄は毎フレーム同じ ID で開く（最初のドッキングで各欄を決まった場所に置くため）。左を先に描き、地図へのドラッグを集める。
-    if (ui.BeginPanel("td2.level.side", "属性", nullptr, EditorWorkspaceDockRegion::Left)) { DrawInspector(ctx); } ui.EndPanel();
-    if (ui.BeginPanel("td2.level.map", "地图", nullptr, EditorWorkspaceDockRegion::Right)) { DrawToolbar(ctx); DrawMap(ctx); } ui.EndPanel();
-    if (ui.BeginPanel("td2.level.stage", "零件", nullptr, EditorWorkspaceDockRegion::Bottom)) { DrawPalette(ctx); } ui.EndPanel();
+    if (ui.BeginPanel("td2.level.side", "プロパティ", nullptr, EditorWorkspaceDockRegion::Left)) { DrawInspector(ctx); } ui.EndPanel();
+    if (ui.BeginPanel("td2.level.map", "地図", nullptr, EditorWorkspaceDockRegion::Right)) { DrawToolbar(ctx); DrawMap(ctx); } ui.EndPanel();
+    if (ui.BeginPanel("td2.level.stage", "部品", nullptr, EditorWorkspaceDockRegion::Bottom)) { DrawPalette(ctx); } ui.EndPanel();
     model_.Publish(ctx);
 }
 
@@ -81,27 +81,27 @@ void LevelEditor::DrawToolbar(EditorWorkspaceHostContext& ctx) {
         }
         ui.TableNextRow();
         ui.TableNextColumn();
-        if (ui.Button("td2.level.play", pickingStart_ ? "● 试玩" : "▶ 试玩")) {
+        if (ui.Button("td2.level.play", pickingStart_ ? "● 試遊" : "▶ 試遊")) {
             if (pickingStart_) { pickingStart_ = false; }
             else if (model_.Commit(ctx)) { pickingStart_ = true; drag_ = Drag::None; recipe_ = -1; placeModel_ = -1; focus_ = Focus::None; }
         }
         ui.TableNextColumn();
         const size_t errors = static_cast<size_t>(std::count_if(issues_.begin(), issues_.end(), [](const LevelIssue& i) { return i.level == IssueLevel::Error; }));
-        const std::string issueLabel = issues_.empty() ? "✓ 检查" : (errors ? "⚠ " : "△ ") + std::to_string(issues_.size());
+        const std::string issueLabel = issues_.empty() ? "✓ 検査" : (errors ? "⚠ " : "△ ") + std::to_string(issues_.size());
         if (ui.Button("td2.level.issues", issueLabel) && !issues_.empty()) { JumpToIssue(ctx, issueIndex_ % issues_.size()); ++issueIndex_; }
         ui.TableNextColumn();
         size_t passed = 0;
         for (const auto& s : solutions_) { passed += s.passed ? 1 : 0; }
-        // 回放の後に関卡を直したら、結果は古い（もう一度押して回放する）。
+        // 再生の後にレベルを直したら、結果は古い（もう一度押して再生する）。
         const bool stale = solutionsStale_ || solutionsRevision_ != model_.revision;
         const std::string solutionLabel = solutions_.empty() ? "解法" : (stale ? "解法 " : passed == solutions_.size() ? "✓ 解法 " : "✕ 解法 ") + std::to_string(passed) + "/" + std::to_string(solutions_.size()) + (stale ? " ↻" : "");
         if (ui.Button("td2.level.solutions", solutionLabel)) { RunSolutions(ctx); focus_ = Focus::None; }
         ui.TableNextColumn();
-        if (ui.Button("td2.level.fit", "适应")) { fitChapter_ = false; view_.fit = true; }
+        if (ui.Button("td2.level.fit", "全体")) { fitChapter_ = false; view_.fit = true; }
         ui.TableNextColumn();
-        if (ui.Button("td2.level.undo", "撤销")) { History(ctx, false); }
+        if (ui.Button("td2.level.undo", "元に戻す")) { History(ctx, false); }
         ui.TableNextColumn();
-        if (ui.Button("td2.level.redo", "重做")) { History(ctx, true); }
+        if (ui.Button("td2.level.redo", "やり直し")) { History(ctx, true); }
         ui.TableNextColumn();
         if (ui.Button("td2.level.save", model_.sceneDirty || model_.Dirty() ? "保存 ●" : "保存")) { Save(ctx); }
         ui.EndTable();

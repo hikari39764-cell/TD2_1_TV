@@ -24,13 +24,12 @@ public:
     const StageLightSettings& Settings() const noexcept { return settings_; }
     void DescribeProperties(HIKARI::PropertyFields& fields) override {
         // 名前はシーンに保存されるので変えない。並びは StageLightRole の順。
-        static constexpr std::string_view kRoles[]{"主光", "补光", "背光"};
-        fields.Choice("role", "キャラクター", settings_.role, kRoles);
+        static constexpr std::string_view kRoles[]{"キー", "フィル", "バック"};
+        fields.Choice("role", "役", settings_.role, kRoles);
         fields.Float("offsetX", "横の位置", settings_.offsetX, -3, 3);
         fields.Float("offsetY", "縦の位置", settings_.offsetY, -3, 3);
         fields.Float("offsetZ", "手前への距離", settings_.offsetZ, -12, 30);
-        fields.Float("aimDepth", "部屋の照らす深さ", settings_.aimDepth, 0, 12);
-        fields.Note("ライトのコンポーネント：舞台の部屋を照らす灯の置き場所。主光・補光・背光の三つを置く。");
+        fields.Float("aimDepth", "照らす奥行き", settings_.aimDepth, 0, 12);
     }
 private:
     StageLightSettings settings_;

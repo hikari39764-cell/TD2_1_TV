@@ -50,8 +50,9 @@ private:
     std::optional<Rules::Vec2> previewSpawn_;
     std::string previewEntryRegion_;
     std::vector<std::pair<std::string, int>> previewStates_;
-    // 試遊の記録（止めた時に一時ディレクトリへ書く）。
+    // 試遊の記録（途中は一時ディレクトリへ少しずつ書き足し、止めた時に終わりの行を書く）。
     PlayRecord record_;
+    PlayRecordCursor recordCursor_;
     bool recording_ = false, recordClosed_ = false;
     uint32_t recordFrame_ = 0;
     std::string recordRegion_;

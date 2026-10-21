@@ -58,8 +58,8 @@ void StagePuppets::Player(HIKARI::WorldView& world, const StagePartBuilder& buil
         if (airborne_ >= kLandAirborne && fallSpeed_ >= kLandSpeed && std::abs(body.walkVx) < .01) { landUntil_ = now + kLandSeconds; }
         airborne_ = fallSpeed_ = 0;
     }
-    // 動作の優先：冲刺 → 蹬墙の跳ね返り → 交换 → 空中（上りは跳び、下りは落ち）→ 着地 → 走り → 待機。
-    // 冲刺・蹬墙・交换は今は仮の動作（走りを速めたもの、元の忍者の動作）。
+    // 動作の優先：ダッシュ → 壁蹴りの跳ね返り → 交換 → 空中（上りは跳び、下りは落ち）→ 着地 → 走り → 待機。
+    // ダッシュ・壁蹴り・交換は今は仮の動作（走りを速めたもの、元の忍者の動作）。
     if (snapshot.dashing) { Play(world, player_, "Dash", true, .04f, 1); }
     else if (snapshot.bouncing) { Play(world, player_, "WallJump", false, .04f, 1); }
     else if (now < swapUntil_) { Play(world, player_, "Swap", false, .05f, 1); }

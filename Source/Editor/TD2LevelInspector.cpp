@@ -9,16 +9,16 @@ void DrawSpring(IEditorWorkspaceUi& ui, DeviceDraft& d) {
         try { return text.empty() ? fallback : std::stod(text); } catch (...) { return fallback; }
     };
     double power = read("power", 22.5), delay = read("delay", .85), cooldown = read("cooldown", 3);
-    if (EditFloat(ui, "td2.device.power", "弹力", power, 3, 44)) { d.SetExtra("power", std::abs(power - 22.5) < 1e-6 ? "" : ShortNumber(power)); }
-    ui.Text("约弹起 " + ShortNumber(power * power / 87.5) + " 格");
-    if (EditFloat(ui, "td2.device.delay", "站上去多久发射（秒）", delay, .05f, 3)) { d.SetExtra("delay", std::abs(delay - .85) < 1e-6 ? "" : ShortNumber(delay)); }
-    if (EditFloat(ui, "td2.device.cooldown", "冷却（秒）", cooldown, 3, 30)) { d.SetExtra("cooldown", std::abs(cooldown - 3) < 1e-6 ? "" : ShortNumber(cooldown)); }
+    if (EditFloat(ui, "td2.device.power", "バネの強さ", power, 3, 44)) { d.SetExtra("power", std::abs(power - 22.5) < 1e-6 ? "" : ShortNumber(power)); }
+    ui.Text("約 " + ShortNumber(power * power / 87.5) + " マス跳ぶ");
+    if (EditFloat(ui, "td2.device.delay", "乗ってから跳ぶまでの秒数", delay, .05f, 3)) { d.SetExtra("delay", std::abs(delay - .85) < 1e-6 ? "" : ShortNumber(delay)); }
+    if (EditFloat(ui, "td2.device.cooldown", "次に使えるまでの秒数", cooldown, 3, 30)) { d.SetExtra("cooldown", std::abs(cooldown - 3) < 1e-6 ? "" : ShortNumber(cooldown)); }
 }
 
-// 貼り絵の図案：按键の説明・出口の矢印・前景（実体の地形の時に手前に出る暗い塊と垂れた線）。
+// 貼り絵の図案：キーの説明・出口の矢印・前景（実体の地形の時に手前に出る暗い塊と垂れた線）。
 void DrawDecal(IEditorWorkspaceUi& ui, DeviceDraft& d) {
-    constexpr std::array<std::pair<std::string_view, std::string_view>, 9> variants{{{"ad", "A / D"}, {"space", "空格"}, {"spaceHold", "长按空格"},
-        {"exit", "出口 →"}, {"exitLeft", "出口 ←"}, {"exitUp", "出口 ↑"}, {"exitDown", "出口 ↓"}, {"fore", "前景块"}, {"foreCable", "前景线缆"}}};
+    constexpr std::array<std::pair<std::string_view, std::string_view>, 9> variants{{{"ad", "A / D"}, {"space", "スペース"}, {"spaceHold", "スペース長押し"},
+        {"exit", "出口 →"}, {"exitLeft", "出口 ←"}, {"exitUp", "出口 ↑"}, {"exitDown", "出口 ↓"}, {"fore", "手前の塊"}, {"foreCable", "手前のケーブル"}}};
     const auto current = d.Extra("variant");
     if (ui.BeginTable("td2.device.decal", 3)) {
         for (size_t i = 0; i < variants.size(); ++i) {
@@ -31,7 +31,7 @@ void DrawDecal(IEditorWorkspaceUi& ui, DeviceDraft& d) {
     if (current != "fore" && current != "foreCable") { return; }
     double depth = 1.0;
     try { if (const auto text = d.Extra("depth"); !text.empty()) { depth = std::stod(text); } } catch (...) {}
-    if (EditFloat(ui, "td2.device.depth", "离角色多远（格）", depth, .25f, 6)) { d.SetExtra("depth", std::abs(depth - 1.0) < 1e-6 ? "" : ShortNumber(depth)); }
+    if (EditFloat(ui, "td2.device.depth", "人物からの距離", depth, .25f, 6)) { d.SetExtra("depth", std::abs(depth - 1.0) < 1e-6 ? "" : ShortNumber(depth)); }
 }
 }
 
@@ -88,17 +88,17 @@ void LevelEditor::RefreshChapters(EditorWorkspaceHostContext& ctx) {
 void LevelEditor::DrawOverview(EditorWorkspaceHostContext& ctx) {
     auto& ui = *ctx.ui;
     RefreshChapters(ctx);
-    // 刚才的试玩：解法として残すと、以後の修正で通れなくなった時に分かる。
+    // 今の試遊：解法として残すと、以後の修正で通れなくなった時に分かる。
     if (lastRecord_) {
         double seconds = 0;
         for (const auto& f : lastRecord_->frames) { seconds += f.seconds; }
-        ui.Text("刚才的试玩：" + ShortChoiceLabel(RoomName(lastRecord_->entryRegion), 8) + " → " + ShortChoiceLabel(RoomName(lastRecord_->endRegion), 8) + "，" + std::to_string(static_cast<int>(seconds)) + " 秒");
-        if (ui.Button("td2.recording.save", "存为解法")) { SaveRecording(ctx); }
-        ui.SameLine(); if (ui.Button("td2.recording.drop", "不要")) { lastRecord_.reset(); }
+        ui.Text("今の試遊：" + ShortChoiceLabel(RoomName(lastRecord_->entryRegion), 8) + " → " + ShortChoiceLabel(RoomName(lastRecord_->endRegion), 8) + "、" + std::to_string(static_cast<int>(seconds)) + " 秒");
+        if (ui.Button("td2.recording.save", "解法として保存")) { SaveRecording(ctx); }
+        ui.SameLine(); if (ui.Button("td2.recording.drop", "捨てる")) { lastRecord_.reset(); }
         ui.Separator();
     }
     if (!issues_.empty()) {
-        ui.Text("问题（" + std::to_string(issues_.size()) + "）");
+        ui.Text("問題（" + std::to_string(issues_.size()) + "）");
         for (size_t i = 0; i < issues_.size() && i < 12; ++i) {
             const auto& issue = issues_[i];
             if (ui.Selectable("td2.issue." + std::to_string(i), (issue.level == IssueLevel::Error ? "⚠ " : "△ ") + ShortChoiceLabel(issue.text, 26))) { JumpToIssue(ctx, i); return; }
@@ -113,8 +113,8 @@ void LevelEditor::DrawOverview(EditorWorkspaceHostContext& ctx) {
                 pathIndex_ = pathIndex_ == static_cast<int>(i) ? -1 : static_cast<int>(i);
             }
             if (pathIndex_ == static_cast<int>(i)) {
-                if (confirmSolution_ != static_cast<int>(i)) { if (ui.Button("td2.solution.delete." + std::to_string(i), "删除这个解法")) { confirmSolution_ = static_cast<int>(i); } }
-                else if (ui.Button("td2.solution.confirm." + std::to_string(i), "确认删除")) {
+                if (confirmSolution_ != static_cast<int>(i)) { if (ui.Button("td2.solution.delete." + std::to_string(i), "この解法を削除")) { confirmSolution_ = static_cast<int>(i); } }
+                else if (ui.Button("td2.solution.confirm." + std::to_string(i), "削除する")) {
                     std::error_code error;
                     std::filesystem::remove(std::filesystem::path(std::u8string(s.file.begin(), s.file.end())), error);
                     confirmSolution_ = pathIndex_ = -1;
@@ -125,13 +125,13 @@ void LevelEditor::DrawOverview(EditorWorkspaceHostContext& ctx) {
         }
         ui.Separator();
     }
-    EditText(ui, "td2.overview.search", "查找", search_);
+    EditText(ui, "td2.overview.search", "検索", search_);
     // 章ごとにテレビを並べる。世界にまだ置いていないテレビは小さな地図で出し、地図へドラッグして置く。
     std::map<std::string, std::vector<const RoomItem*>> chapters;
     for (const auto& room : model_.rooms) {
         if (!search_.empty() && room.object.name.find(search_) == std::string::npos && room.settings.region.regionId.find(search_) == std::string::npos) { continue; }
         const auto found = chapterOf_.find(room.object.objectId);
-        chapters[found == chapterOf_.end() ? "其他" : found->second].push_back(&room);
+        chapters[found == chapterOf_.end() ? "その他" : found->second].push_back(&room);
     }
     for (const auto& [chapter, rooms] : chapters) {
         ui.Text(chapter + "（" + std::to_string(rooms.size()) + "）");
@@ -143,7 +143,7 @@ void LevelEditor::DrawOverview(EditorWorkspaceHostContext& ctx) {
                 }
                 continue;
             }
-            ui.Text("   ○ " + ShortChoiceLabel(room->object.name, 16) + "（拖进地图）");
+            ui.Text("   ○ " + ShortChoiceLabel(room->object.name, 16) + "（地図へドラッグ）");
             const auto input = ui.BeginCanvas("td2.overview.thumbnail." + std::to_string(id), 54);
             TrackDrag(input);
             MapCanvasView thumbnail;
@@ -168,24 +168,24 @@ void LevelEditor::DrawRoomInspector(EditorWorkspaceHostContext& ctx) {
     const auto before = s;
     ui.Text(ShortChoiceLabel(room->object.name, 18) + "  " + std::to_string(s.region.cols) + "×" + std::to_string(s.region.rows));
     if (s.worldPlaced) {
-        if (ui.Button("td2.room.play", "▶ 从这屏开始")) { if (model_.Commit(ctx)) { pickingStart_ = true; FitRoom(s); } }
+        if (ui.Button("td2.room.play", "▶ この画面から")) { if (model_.Commit(ctx)) { pickingStart_ = true; FitRoom(s); } }
         ui.SameLine();
-        if (ui.Button("td2.room.fit", "看这屏")) { FitRoom(s); }
-    } else { ui.Text("还没放进世界：从左边列表拖进地图"); }
-    ui.Checkbox("td2.room.entry", "开始电视", &s.entryRegion);
+        if (ui.Button("td2.room.fit", "この画面を見る")) { FitRoom(s); }
+    } else { ui.Text("まだ世界にありません：左の一覧から地図へドラッグ"); }
+    ui.Checkbox("td2.room.entry", "開始テレビ", &s.entryRegion);
     const auto previous = s.region;
     EditInt(ui, "td2.room.cols", "列", s.region.cols, 1, 64);
     EditInt(ui, "td2.room.rows", "行", s.region.rows, 1, 64);
-    if (!ResizeCells(previous, s.region)) { s.region = previous; model_.error = "尺寸变化失败"; }
+    if (!ResizeCells(previous, s.region)) { s.region = previous; model_.error = "大きさを変えられません"; }
     if (s != before) { propertyPending_ = true; }
     ui.Separator();
     DrawRoomStage(ctx, *room);
     ui.Separator();
     DrawRoomCamera(ctx, s.region.regionId);
     ui.Separator();
-    if (ui.Checkbox("td2.room.advanced", "高级", &screenSettings_) && screenSettings_) { RefreshScreens(ctx); }
+    if (ui.Checkbox("td2.room.advanced", "詳細", &screenSettings_) && screenSettings_) { RefreshScreens(ctx); }
     if (screenSettings_) { DrawScreenBinding(ctx); }
-    if (s.worldPlaced && ui.Button("td2.room.remove", "移出世界")) { s.worldPlaced = false; model_.Commit(ctx); }
+    if (s.worldPlaced && ui.Button("td2.room.remove", "世界から外す")) { s.worldPlaced = false; model_.Commit(ctx); }
 }
 
 void LevelEditor::DrawScreenBinding(EditorWorkspaceHostContext& ctx) {
@@ -194,14 +194,14 @@ void LevelEditor::DrawScreenBinding(EditorWorkspaceHostContext& ctx) {
     const auto before = s;
     ui.Text("区域 ID：" + s.region.regionId);
     double brightness = s.screenBrightness;
-    if (EditFloat(ui, "td2.room.brightness", "屏幕亮度", brightness, .5f, 4.0f)) { s.screenBrightness = static_cast<float>(brightness); }
+    if (EditFloat(ui, "td2.room.brightness", "画面の明るさ", brightness, .5f, 4.0f)) { s.screenBrightness = static_cast<float>(brightness); }
     const auto current = std::find_if(screens_.begin(), screens_.end(), [&s](const auto& item) { return item.objectId == s.screenObject; });
-    ui.Text("屏幕对象：" + (s.screenObject == 0 ? std::string("未绑定") : current == screens_.end() ? std::to_string(s.screenObject) : ShortChoiceLabel(current->name)));
-    if (ui.Button("td2.room.screen.pick", screenPicker_ ? "收起" : "换屏幕对象")) { screenPicker_ = !screenPicker_; }
+    ui.Text("画面の物体：" + (s.screenObject == 0 ? std::string("未設定") : current == screens_.end() ? std::to_string(s.screenObject) : ShortChoiceLabel(current->name)));
+    if (ui.Button("td2.room.screen.pick", screenPicker_ ? "閉じる" : "画面の物体を替える")) { screenPicker_ = !screenPicker_; }
     if (screenPicker_) {
-        EditText(ui, "td2.room.screen.search", "查找", screenSearch_);
-        if (ui.Checkbox("td2.room.screen.all", "包括无模型对象", &allScreens_)) { RefreshScreens(ctx); }
-        std::vector<EditorChoice> choices{{"td2.room.screen.none", "未绑定", s.screenObject == 0}};
+        EditText(ui, "td2.room.screen.search", "検索", screenSearch_);
+        if (ui.Checkbox("td2.room.screen.all", "モデルの無い物体も含める", &allScreens_)) { RefreshScreens(ctx); }
+        std::vector<EditorChoice> choices{{"td2.room.screen.none", "未設定", s.screenObject == 0}};
         std::vector<uint64_t> ids{0};
         for (const auto& screen : screens_) {
             if (!screenSearch_.empty() && screen.name.find(screenSearch_) == std::string::npos) { continue; }
@@ -209,7 +209,7 @@ void LevelEditor::DrawScreenBinding(EditorWorkspaceHostContext& ctx) {
         }
         if (const int chosen = DrawChoices(ui, choices); chosen >= 0) { s.screenObject = ids[static_cast<size_t>(chosen)]; screenPicker_ = false; }
     }
-    EditText(ui, "td2.room.screen.slot", "材质槽", s.screenSlot);
+    EditText(ui, "td2.room.screen.slot", "材質スロット", s.screenSlot);
     if (!model_.screenWarning.empty()) { ui.Text(model_.screenWarning); }
     if (s != before) { propertyPending_ = true; }
 }
@@ -220,7 +220,7 @@ void LevelEditor::RefreshScreens(EditorWorkspaceHostContext& ctx) {
         const auto id = ObjectId(object.value("objectId", Json{}));
         const bool model = object.contains("model") && object["model"].is_object() &&
             (!object["model"].value("assetId", "").empty() || object["model"].value("materialSlotCount", 0) > 0);
-        if (id && (allScreens_ || id == model_.draft.screenObject || model)) { screens_.push_back({id, object.value("name", "对象 " + std::to_string(id))}); }
+        if (id && (allScreens_ || id == model_.draft.screenObject || model)) { screens_.push_back({id, object.value("name", "物体 " + std::to_string(id))}); }
         return true;
     }, model_.error);
 }
@@ -229,20 +229,20 @@ void LevelEditor::DrawRoomCamera(EditorWorkspaceHostContext& ctx, const std::str
     auto& ui = *ctx.ui;
     EnsureLayout(ctx);
     const auto* room = layoutValid_ ? layout_.Room(regionId) : nullptr;
-    std::string state = "机位";
+    std::string state = "カメラ";
     if (room) {
-        state += !room->cameraId ? "：还没有" : room->cameraLocked ? "：已锁定" : room->cameraAuto.empty() ? "：作者放置" : CameraEdited(*room) ? "：已手调" : "：自动";
+        state += !room->cameraId ? "：なし" : room->cameraLocked ? "：固定" : room->cameraAuto.empty() ? "：手置き" : CameraEdited(*room) ? "：手直し" : "：自動";
         if (const auto* area = layout_.AreaOf(regionId)) { state += " · " + ShortChoiceLabel(area->name, 10); }
     }
     ui.Text(state);
-    if (ui.Button("td2.room.camera.view", "预览机位")) {
+    if (ui.Button("td2.room.camera.view", "カメラを見る")) {
         if (model_.Commit(ctx)) { const auto* item = model_.Current(); OpenRegionCamera(ctx, regionId, item ? item->object.name : regionId, model_.error); layoutStale_ = true; }
     }
     ui.SameLine();
     // 生成の後は layout_ が作り直されて room が指す先が消えるので、すぐ戻る。
-    if (ui.Button("td2.room.camera.generate", room && room->cameraId ? "按位置重新生成" : "生成机位")) { Generate(ctx, true, false, {}, regionId, nullptr, false); return; }
+    if (ui.Button("td2.room.camera.generate", room && room->cameraId ? "位置から作り直す" : "カメラを作る")) { Generate(ctx, true, false, {}, regionId, nullptr, false); return; }
     if (room && room->cameraId && (room->cameraLocked || CameraEdited(*room))) {
-        if (ui.Button("td2.room.camera.reset", "恢复自动机位")) { Generate(ctx, true, false, {}, regionId, nullptr, true); return; }
+        if (ui.Button("td2.room.camera.reset", "自動に戻す")) { Generate(ctx, true, false, {}, regionId, nullptr, true); return; }
     }
 }
 
@@ -254,9 +254,9 @@ void LevelEditor::DrawDeviceInspector(EditorWorkspaceHostContext& ctx) {
     auto& s = model_.draft;
     const auto before = s;
     ui.Text(DeviceName(*d));
-    if (ui.Button("td2.device.back", "← 这台电视")) { model_.devices.Select(-1); focus_ = Focus::Room; return; }
-    ui.SameLine(); if (ui.Button("td2.device.duplicate", "复制")) { model_.devices.DuplicateSelected(s.region.cols, s.region.rows); }
-    ui.SameLine(); if (ui.Button("td2.device.delete", "删除")) { model_.devices.RemoveSelected(); s.devices = model_.devices.Serialize(); model_.Commit(ctx); focus_ = Focus::Room; return; }
+    if (ui.Button("td2.device.back", "← このテレビ")) { model_.devices.Select(-1); focus_ = Focus::Room; return; }
+    ui.SameLine(); if (ui.Button("td2.device.duplicate", "複製")) { model_.devices.DuplicateSelected(s.region.cols, s.region.rows); }
+    ui.SameLine(); if (ui.Button("td2.device.delete", "削除")) { model_.devices.RemoveSelected(); s.devices = model_.devices.Serialize(); model_.Commit(ctx); focus_ = Focus::Room; return; }
     d = model_.devices.Selected();
     if (!d) { return; }
     if (d->kind == "Laser" || d->kind == "Spikes" || d->kind == "OneWay") {
@@ -267,39 +267,39 @@ void LevelEditor::DrawDeviceInspector(EditorWorkspaceHostContext& ctx) {
             if (ui.Button("td2.device.direction." + std::to_string(i), d->direction == directions[i] ? std::string(names[i]) + " ●" : std::string(names[i]))) { d->direction = directions[i]; }
         }
     }
-    if (d->kind == "Laser") { EditFloat(ui, "td2.device.range", "射程（格）", d->range, .125f, 128); }
+    if (d->kind == "Laser") { EditFloat(ui, "td2.device.range", "射程", d->range, .125f, 128); }
     if (d->kind == "Spring") { DrawSpring(ui, *d); }
     if (d->kind == "Decal") { DrawDecal(ui, *d); }
-    if (d->kind == "Laser" || d->kind == "Door" || d->kind == "Bridge") { ui.Checkbox("td2.device.invert", "通电时关闭（反向）", &d->inverted); }
+    if (d->kind == "Laser" || d->kind == "Door" || d->kind == "Bridge") { ui.Checkbox("td2.device.invert", "通電で閉じる（逆）", &d->inverted); }
     if (d->kind == "Plate") {
-        if (ui.Selectable("td2.device.latch.off", "踩住才通电", !d->latch)) { d->latch = false; }
-        if (ui.Selectable("td2.device.latch.on", "踩一下切换", d->latch)) { d->latch = true; }
+        if (ui.Selectable("td2.device.latch.off", "踏んでいる間だけ通電", !d->latch)) { d->latch = false; }
+        if (ui.Selectable("td2.device.latch.on", "踏むたびに切り替え", d->latch)) { d->latch = true; }
         bool reset = d->Extra("variant") == "reset";
-        if (ui.Checkbox("td2.device.reset", "圆形复位钮外观", &reset)) { d->SetExtra("variant", reset ? "reset" : ""); }
+        if (ui.Checkbox("td2.device.reset", "丸いリセットボタンの見た目", &reset)) { d->SetExtra("variant", reset ? "reset" : ""); }
         s.devices = model_.devices.Serialize();
         if (s != before) { propertyPending_ = true; RememberTemplate(*d); }
         DrawPlateLinks(ctx);
         return;
     }
-    ui.Checkbox("td2.device.advanced", "位置与大小", &deviceAdvanced_);
+    ui.Checkbox("td2.device.advanced", "位置と大きさ", &deviceAdvanced_);
     if (deviceAdvanced_) {
         EditFloat(ui, "td2.device.x", "X", d->x, 0, static_cast<float>((std::max)(0.0, s.region.cols - d->w)));
         EditFloat(ui, "td2.device.y", "Y", d->y, 0, static_cast<float>((std::max)(0.0, s.region.rows - d->h)));
-        EditFloat(ui, "td2.device.w", "宽", d->w, .125f, static_cast<float>(s.region.cols - d->x));
-        EditFloat(ui, "td2.device.h", "高", d->h, .125f, static_cast<float>(s.region.rows - d->y));
+        EditFloat(ui, "td2.device.w", "幅", d->w, .125f, static_cast<float>(s.region.cols - d->x));
+        EditFloat(ui, "td2.device.h", "高さ", d->h, .125f, static_cast<float>(s.region.rows - d->y));
     }
     s.devices = model_.devices.Serialize();
     if (s != before) { propertyPending_ = true; RememberTemplate(*d); }
 }
 
-// 圧力板のつながり：今の相手の一覧（外せる）。つなぐのは地図の「连线」で板から相手へ引く。
+// 圧力板のつながり：今の相手の一覧（外せる）。つなぐのは地図の「配線」で板から相手へ引く。
 void LevelEditor::DrawPlateLinks(EditorWorkspaceHostContext& ctx) {
     auto& ui = *ctx.ui;
     RefreshMachines(ctx);
     const auto* d = model_.devices.Selected();
     if (!d) { return; }
     ui.Separator();
-    ui.Text(d->targets.empty() ? "还没连接：用「连线」从这块板拖到门、激光、桥或机构" : "连接");
+    ui.Text(d->targets.empty() ? "まだつないでいません：「配線」でこの板から扉・レーザー・橋・仕掛けへドラッグ" : "つなぎ先");
     const std::string region = model_.draft.region.regionId;
     std::string removing;
     for (const auto& target : d->targets) {
@@ -318,9 +318,9 @@ void LevelEditor::DrawPlateLinks(EditorWorkspaceHostContext& ctx) {
         } else if (kind == TargetKind::Machine) {
             for (const auto& m : model_.machines) for (const auto& [receiver, text] : m.Receivers()) { if (receiver == target) { label = text; found = true; } }
         }
-        ui.Text((found ? "→ " : "✕ 找不到 ") + ShortChoiceLabel(label, 22));
+        ui.Text((found ? "→ " : "✕ 見つからない ") + ShortChoiceLabel(label, 22));
         ui.SameLine();
-        if (ui.Button("td2.device.unlink." + target, "断开")) { removing = target; }
+        if (ui.Button("td2.device.unlink." + target, "外す")) { removing = target; }
     }
     if (!removing.empty()) { TogglePlateTarget(ctx, region + "/" + d->id, removing); }
 }
@@ -345,33 +345,33 @@ void LevelEditor::RefreshStageObject(EditorWorkspaceHostContext& ctx) {
 // 選んだ物体の位置・向き・縮尺。動かすのは主にビューポートのギズモ（W / E / R）で、ここは数値と一押しの向き直しだけ。
 static bool DrawPoseEditor(IEditorWorkspaceUi& ui, Pose& pose, const StageObject& read) {
     bool changed = false;
-    changed |= EditFloat(ui, "td2.stage.x", "X（米）", pose.position[0], -1000, 1000);
-    changed |= EditFloat(ui, "td2.stage.y", "高度（米）", pose.position[1], -1000, 1000);
-    changed |= EditFloat(ui, "td2.stage.z", "Z（米）", pose.position[2], -1000, 1000);
-    changed |= EditFloat(ui, "td2.stage.yaw", "朝向（度）", pose.rotation[1], -360, 360);
+    changed |= EditFloat(ui, "td2.stage.x", "X", pose.position[0], -1000, 1000);
+    changed |= EditFloat(ui, "td2.stage.y", "高さ", pose.position[1], -1000, 1000);
+    changed |= EditFloat(ui, "td2.stage.z", "Z", pose.position[2], -1000, 1000);
+    changed |= EditFloat(ui, "td2.stage.yaw", "向き", pose.rotation[1], -360, 360);
     const bool uniform = std::abs(pose.scale[0] - pose.scale[1]) < 1e-4 && std::abs(pose.scale[0] - pose.scale[2]) < 1e-4;
     if (uniform) {
         double s = pose.scale[0];
-        if (EditFloat(ui, "td2.stage.scale", "缩放", s, .05f, 20)) { pose.scale = {s, s, s}; changed = true; }
+        if (EditFloat(ui, "td2.stage.scale", "拡大", s, .05f, 20)) { pose.scale = {s, s, s}; changed = true; }
     }
     constexpr std::array<std::pair<double, std::string_view>, 4> turns{{{-90, "↺ 90°"}, {-15, "↺ 15°"}, {15, "↻ 15°"}, {90, "↻ 90°"}}};
     for (size_t i = 0; i < turns.size(); ++i) {
         if (i) { ui.SameLine(); }
         if (ui.Button("td2.stage.turn." + std::to_string(i), turns[i].second)) { pose.rotation[1] = std::fmod(pose.rotation[1] + turns[i].first + 540.0, 360.0) - 180; changed = true; }
     }
-    if (ui.Button("td2.stage.floor", "落到地面") && read.hasBounds) { pose.position[1] -= read.lo[1]; changed = true; }
+    if (ui.Button("td2.stage.floor", "床に下ろす") && read.hasBounds) { pose.position[1] -= read.lo[1]; changed = true; }
     return changed;
 }
 
 void LevelEditor::DrawObjectInspector(EditorWorkspaceHostContext& ctx) {
     auto& ui = *ctx.ui;
-    if (!stageObject_ || !stageReadOk_) { ui.Text("在视口里点选一个物体"); return; }
+    if (!stageObject_ || !stageReadOk_) { ui.Text("ビューポートで物体を一つ選んでください"); return; }
     ui.Text(ShortChoiceLabel(stageRead_.name, 20));
     if (stageRead_.television) {
-        ui.Text(std::string(stageRead_.television->label) + "（还不是关卡电视）");
-        if (ui.Button("td2.stage.adopt", "建成关卡电视")) {
+        ui.Text(std::string(stageRead_.television->label) + "（まだレベルのテレビではない）");
+        if (ui.Button("td2.stage.adopt", "レベルのテレビにする")) {
             const auto model3d = *stageRead_.television;
-            if (model_.AdoptTelevision(ctx, stageObject_, model3d, std::nullopt)) { focus_ = Focus::Room; SetNote("已建成，从左边列表拖进地图"); }
+            if (model_.AdoptTelevision(ctx, stageObject_, model3d, std::nullopt)) { focus_ = Focus::Room; SetNote("作りました。左の一覧から地図へドラッグしてください"); }
             return;
         }
     }
@@ -390,18 +390,18 @@ void LevelEditor::DrawRoomStage(EditorWorkspaceHostContext& ctx, const RoomItem&
     const auto& s = model_.draft;
     // 3D の付き方：地図の隣のテレビに付けてあるか、自由に置いたか。
     if (!s.stageAnchor.empty()) {
-        ui.Text("3D：贴在「" + ShortChoiceLabel(RoomName(s.stageAnchor), 10) + "」旁");
+        ui.Text("3D：「" + ShortChoiceLabel(RoomName(s.stageAnchor), 10) + "」の隣");
         ui.SameLine();
-        if (ui.Button("td2.room.stage.free", "解开")) { model_.draft.stageAnchor.clear(); model_.Commit(ctx); }
-    } else { ui.Text("3D：自由摆放"); }
+        if (ui.Button("td2.room.stage.free", "外す")) { model_.draft.stageAnchor.clear(); model_.Commit(ctx); }
+    } else { ui.Text("3D：自由配置"); }
     if (s.worldPlaced) {
         const auto here = Placement(s);
         for (const auto& other : model_.rooms) {
             if (other.object.objectId == room.object.objectId || !other.settings.worldPlaced) { continue; }
             const auto edge = FindSharedWorldEdge(Placement(other.settings), here);
             if (!edge) { continue; }
-            const std::string where = edge->sideA == WorldSide::Right ? "右边" : edge->sideA == WorldSide::Left ? "左边" : edge->sideA == WorldSide::Top ? "上面" : "下面";
-            if (ui.Button("td2.room.stage.attach." + std::to_string(other.object.objectId), "贴到「" + ShortChoiceLabel(other.object.name, 14) + "」" + where)) {
+            const std::string where = edge->sideA == WorldSide::Right ? "右" : edge->sideA == WorldSide::Left ? "左" : edge->sideA == WorldSide::Top ? "上" : "下";
+            if (ui.Button("td2.room.stage.attach." + std::to_string(other.object.objectId), "「" + ShortChoiceLabel(other.object.name, 14) + "」の" + where + "に付ける")) {
                 const auto region = s.region.regionId, anchor = other.settings.region.regionId;
                 AttachRoom(ctx, region, anchor);
                 return;
@@ -409,9 +409,9 @@ void LevelEditor::DrawRoomStage(EditorWorkspaceHostContext& ctx, const RoomItem&
         }
     }
     // テレビの姿勢（数値）は畳んでおく。
-    ui.Checkbox("td2.room.stage.pose", "3D 位置", &stagePoseOpen_);
+    ui.Checkbox("td2.room.stage.pose", "3D の位置", &stagePoseOpen_);
     if (!stagePoseOpen_) { return; }
-    if (tv != stageObject_ || !stageReadOk_) { ui.Text("读取中…"); return; }
+    if (tv != stageObject_ || !stageReadOk_) { ui.Text("読み込み中…"); return; }
     if (!stagePending_) { stageEditing_ = stageRead_.pose; }
     if (DrawPoseEditor(ui, stageEditing_, stageRead_)) { stagePending_ = true; }
     if (stagePending_ && !ui.GetInteraction().editing) {

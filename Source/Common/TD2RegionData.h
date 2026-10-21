@@ -45,28 +45,28 @@ struct RegionValidation {
 
 inline RegionValidation ValidateRegion(const RegionDefinition& region) noexcept {
     if (region.regionId.empty() || region.regionId.size() > 95) {
-        return {false, "区域 ID 必须为 1～95 个字符"};
+        return {false, "区域 ID は 1～95 文字"};
     }
     if (!IsStableId(region.regionId)) {
-        return {false, "区域 ID 仅允许英文字母、数字、点、下划线和连字符"};
+        return {false, "区域 ID は英数字・点・下線・ハイフンだけ"};
     }
     if (region.cols <= 0 || region.rows <= 0 || region.tilePixels <= 0) {
-        return {false, "行、列和格子像素必须为正整数"};
+        return {false, "行・列・マスの画素は正の整数"};
     }
     // 不正な寸法でもあふれないよう、先に広い型へ変えて掛ける。
     const auto count = static_cast<uint64_t>(region.cols) * static_cast<uint64_t>(region.rows);
     if (count != region.cells.size()) {
-        return {false, "格数据数量必须等于 cols × rows；可明确重建测试网格"};
+        return {false, "マスの数が cols × rows と合いません"};
     }
     const auto width = static_cast<uint64_t>(region.cols) * static_cast<uint64_t>(region.tilePixels);
     const auto height = static_cast<uint64_t>(region.rows) * static_cast<uint64_t>(region.tilePixels);
     if (width > (std::numeric_limits<uint32_t>::max)() ||
         height > (std::numeric_limits<uint32_t>::max)()) {
-        return {false, "区域逻辑像素尺寸超出可表示范围"};
+        return {false, "区域の画素の大きさが大きすぎます"};
     }
     for (const char cell : region.cells) {
         if (cell != '0' && cell != '1') {
-            return {false, "首批格数据仅支持 0（空）与 1（测试块）"};
+            return {false, "マスは 0（空）か 1（ブロック）だけ"};
         }
     }
     return {true, {}};

@@ -39,13 +39,13 @@ void LevelEditor::DrawEdgeKind(IEditorWorkspaceUi& ui, const EdgeSelection& e, E
     if (!edge) { return; }
     if (!edge->passable) { ui.CanvasLine(a, b, {.32f, .36f, .38f, .7f}, 1.0f); return; }   // 壁で隔てた辺（越えられない）
     if (edge->between) {
-        // 镜头区どうし：演出が流れる。まだ演出が無い辺は赤みで知らせる。
+        // 大区域どうし：演出が流れる。まだ演出が無い辺は赤みで知らせる。
         const EditorWorkspaceColor color = edge->sequenceGuid.empty() ? EditorWorkspaceColor{.95f, .45f, .40f, .95f} : EditorWorkspaceColor{.97f, .79f, .39f, .9f};
         ui.CanvasLine(a, b, color, 3.0f);
         ui.CanvasCircle({(a.x + b.x) * .5f, (a.y + b.y) * .5f}, 4.5f, color, 2.0f);
         return;
     }
-    // 镜头区の中：点線（カメラは自動で追い、演出は流れない）。
+    // 大区域の中：点線（カメラは自動で追い、演出は流れない）。
     const float dx = b.x - a.x, dy = b.y - a.y, length = std::hypot(dx, dy);
     for (float t = 0; t < length; t += 10) {
         const float t1 = (std::min)(t + 5, length);
@@ -65,16 +65,16 @@ void LevelEditor::Generate(EditorWorkspaceHostContext& ctx, bool cameras, bool t
     cameraReport = {};
     if (cameras && !GenerateCameras(ctx, layout_, area, room, force, cameraReport, error)) { model_.error = error; return; }
     if (travels && !GenerateTravels(ctx, layout_, area, edge, force, travelReport, error)) { model_.error = error; return; }
-    std::string note = cameras && travels ? "机位与演出" : cameras ? "机位" : "演出";
-    note += "：写入 " + std::to_string(cameraReport.written + travelReport.written);
-    if (cameraReport.kept + travelReport.kept) { note += "，保留手调 " + std::to_string(cameraReport.kept + travelReport.kept); }
-    if (cameraReport.failed + travelReport.failed) { note += "，失败 " + std::to_string(cameraReport.failed + travelReport.failed); }
+    std::string note = cameras && travels ? "カメラと演出" : cameras ? "カメラ" : "演出";
+    note += "：書き込み " + std::to_string(cameraReport.written + travelReport.written);
+    if (cameraReport.kept + travelReport.kept) { note += "、手直しを残した " + std::to_string(cameraReport.kept + travelReport.kept); }
+    if (cameraReport.failed + travelReport.failed) { note += "、失敗 " + std::to_string(cameraReport.failed + travelReport.failed); }
     for (const auto* list : {&cameraReport.notes, &travelReport.notes}) for (size_t i = 0; i < list->size() && i < 3; ++i) { note += "\n· " + (*list)[i]; }
     SetNote(note);
     MarkSceneChanged(); model_.error.clear(); model_.refresh = true;
 }
 
-// 新しく置いたテレビのカメラ：隣のテレビが镜头区に入っていれば同じ镜头区へ入れてから作る。
+// 新しく置いたテレビのカメラ：隣のテレビが大区域に入っていれば同じ大区域へ入れてから作る。
 void LevelEditor::SetUpNewRoom(EditorWorkspaceHostContext& ctx, const std::string& regionId, const std::string& besideRegion) {
     if (!besideRegion.empty() && EnsureLayout(ctx, true)) {
         if (const auto* area = layout_.AreaOf(besideRegion)) {
@@ -91,7 +91,7 @@ void LevelEditor::ToggleArea(EditorWorkspaceHostContext& ctx, const std::string&
     if (!EnsureLayout(ctx, true)) { return; }
     const auto focus = std::find_if(layout_.areas.begin(), layout_.areas.end(), [this](const auto& a) { return a.name == areaFocus_; });
     if (focus == layout_.areas.end()) { return; }
-    // 選んだ镜头区に入っていれば外し、入っていなければ入れる（他の镜头区からは外す）。一回の取り消しにまとめる。
+    // 選んだ大区域に入っていれば外し、入っていなければ入れる（他の大区域からは外す）。一回の取り消しにまとめる。
     Json commands = Json::array();
     const bool inside = std::find(focus->regions.begin(), focus->regions.end(), regionId) != focus->regions.end();
     for (const auto& area : layout_.areas) {
@@ -106,7 +106,7 @@ void LevelEditor::ToggleArea(EditorWorkspaceHostContext& ctx, const std::string&
     MarkSceneChanged(); model_.error.clear(); layoutStale_ = true;
 }
 
-// 下の棚：镜头区を色で並べる。選んで地図のテレビを押すと入れる・外す。
+// 下の棚：大区域を色で並べる。選んで地図のテレビを押すと入れる・外す。
 void LevelEditor::DrawCameraShelf(EditorWorkspaceHostContext& ctx) {
     auto& ui = *ctx.ui;
     EnsureLayout(ctx);
@@ -117,9 +117,9 @@ void LevelEditor::DrawCameraShelf(EditorWorkspaceHostContext& ctx) {
             if (i % columns == 0) { ui.TableNextRow(); }
             ui.TableNextColumn();
             if (i == layout_.areas.size()) {
-                if (Tile(ui, "td2.palette.area.new", "+ 镜头区", false, nullptr)) {
+                if (Tile(ui, "td2.palette.area.new", "+ 大区域", false, nullptr)) {
                     std::string error;
-                    const auto name = "镜头区 " + std::to_string(layout_.areas.size() + 1);
+                    const auto name = "大区域 " + std::to_string(layout_.areas.size() + 1);
                     if (CreateArea(ctx, name, {}, error)) { areaFocus_ = name; MarkSceneChanged(); } else { model_.error = error; }
                     return;
                 }
@@ -138,26 +138,26 @@ void LevelEditor::DrawCameraShelf(EditorWorkspaceHostContext& ctx) {
         }
         ui.EndTable();
     }
-    if (ui.Button("td2.palette.plan", plan_ ? "● 俯视" : "俯视")) { plan_ = !plan_; }
+    if (ui.Button("td2.palette.plan", plan_ ? "● 見下ろし" : "見下ろし")) { plan_ = !plan_; }
     ui.SameLine();
-    if (ui.Button("td2.palette.generate.all", "全部生成机位与演出")) { Generate(ctx, true, true, {}, {}, nullptr, false); }
+    if (ui.Button("td2.palette.generate.all", "カメラと演出をすべて作る")) { Generate(ctx, true, true, {}, {}, nullptr, false); }
 }
 
-// 左の欄（镜头の道具で何も選んでいない時）：選んだ镜头区の構図と生成。
+// 左の欄（カメラの道具で何も選んでいない時）：選んだ大区域の構図と生成。
 void LevelEditor::DrawAreaInspector(EditorWorkspaceHostContext& ctx) {
     auto& ui = *ctx.ui;
     EnsureLayout(ctx);
     if (!layoutValid_) { return; }
     int loose = 0;
     for (const auto& room : layout_.rooms) { if (room.placed && AreaIndex(room.regionId) < 0) { ++loose; } }
-    if (loose) { ui.Text("△ " + std::to_string(loose) + " 台电视不在任何镜头区（红色）"); }
+    if (loose) { ui.Text("△ " + std::to_string(loose) + " 台のテレビがどの大区域にも入っていない（赤）"); }
     const auto focus = std::find_if(layout_.areas.begin(), layout_.areas.end(), [this](const auto& a) { return a.name == areaFocus_; });
-    if (focus == layout_.areas.end()) { ui.Text("在下面选一个镜头区，再点电视加入或移出"); return; }
+    if (focus == layout_.areas.end()) { ui.Text("下で大区域を選び、テレビをクリックして加える・外す"); return; }
     ui.Text(focus->name + "（" + std::to_string(focus->regions.size()) + " 台）");
     double fill = focus->frameFill, orbit = focus->orbitDegrees, lift = focus->cameraLift;
-    bool changed = EditFloat(ui, "td2.area.fill", "屏幕占画面高度", fill, .15f, .8f);
-    changed |= EditFloat(ui, "td2.area.orbit", "向出口侧斜拍（度）", orbit, 0, 40);
-    changed |= EditFloat(ui, "td2.area.lift", "机位高于屏幕（米）", lift, -1, 2);
+    bool changed = EditFloat(ui, "td2.area.fill", "画面が占める高さ", fill, .15f, .8f);
+    changed |= EditFloat(ui, "td2.area.orbit", "出口側への角度", orbit, 0, 40);
+    changed |= EditFloat(ui, "td2.area.lift", "画面より上の高さ", lift, -1, 2);
     if (changed) { areaDraft_ = {fill, orbit, lift}; areaDraftPending_ = true; areaDraftObject_ = focus->objectId; areaDraftComponent_ = focus->componentId; }
     if (areaDraftPending_ && !ui.GetInteraction().editing) {
         const auto set = [this](std::string_view id, double v) { return PropertyCommand(areaDraftObject_, areaDraftComponent_, id, v); };
@@ -165,14 +165,14 @@ void LevelEditor::DrawAreaInspector(EditorWorkspaceHostContext& ctx) {
         areaDraftPending_ = false; MarkSceneChanged();
     }
     // 生成の後は layout_ が作り直されて focus が指す先も消えるので、このフレームの残りは描かずに戻る。
-    if (ui.Button("td2.area.cameras", "生成本区机位")) { Generate(ctx, true, false, focus->name, {}, nullptr, false); return; }
-    if (ui.Button("td2.area.travels", "生成出入本区的演出")) { Generate(ctx, false, true, focus->name, {}, nullptr, false); return; }
-    if (ui.Button("td2.area.force", "恢复自动（覆盖本区手调）")) { Generate(ctx, true, true, focus->name, {}, nullptr, true); return; }
+    if (ui.Button("td2.area.cameras", "この大区域のカメラを作る")) { Generate(ctx, true, false, focus->name, {}, nullptr, false); return; }
+    if (ui.Button("td2.area.travels", "この大区域に出入りする演出を作る")) { Generate(ctx, false, true, focus->name, {}, nullptr, false); return; }
+    if (ui.Button("td2.area.force", "自動に戻す（手直しを上書き）")) { Generate(ctx, true, true, focus->name, {}, nullptr, true); return; }
     int dead = 0;
     for (const auto& edge : layout_.edges) { if ((!edge.between || !edge.passable) && edge.bindingObject) { ++dead; } }
-    if (dead && ui.Button("td2.area.prune", "清理区内旧演出（" + std::to_string(dead) + "）")) {
+    if (dead && ui.Button("td2.area.prune", "区域内の古い演出を消す（" + std::to_string(dead) + "）")) {
         int removed = 0; std::string error;
-        if (PruneInAreaBindings(ctx, layout_, removed, error)) { SetNote("已移除 " + std::to_string(removed) + " 个旧绑定"); MarkSceneChanged(); } else { model_.error = error; }
+        if (PruneInAreaBindings(ctx, layout_, removed, error)) { SetNote("古い結び付けを " + std::to_string(removed) + " 個消しました"); MarkSceneChanged(); } else { model_.error = error; }
     }
 }
 
@@ -186,11 +186,11 @@ std::string LevelEditor::ResolveStyleLabel(const LayoutEdge& edge) const {
 void LevelEditor::TrialFromEdge(EditorWorkspaceHostContext& ctx, const LayoutEdge& edge, bool fromA) {
     if (!model_.Commit(ctx)) { return; }
     double x = 0, y = 0; uint64_t room = 0;
-    if (!EdgeTrialSpawn(layout_, edge, fromA, x, y, room)) { model_.error = "这条边附近没有能站的位置"; return; }
+    if (!EdgeTrialSpawn(layout_, edge, fromA, x, y, room)) { model_.error = "この境の近くに立てる場所がありません"; return; }
     StartPreview(ctx, room, {x, y});
 }
 
-// 左の欄：选んだ辺の切り替え（镜头区どうしの演出の様式と秒数、试走）。
+// 左の欄：選んだ辺の切り替え（大区域どうしの演出の様式と秒数、試し歩き）。
 void LevelEditor::DrawEdgeInspector(EditorWorkspaceHostContext& ctx) {
     auto& ui = *ctx.ui;
     EnsureLayout(ctx);
@@ -199,13 +199,13 @@ void LevelEditor::DrawEdgeInspector(EditorWorkspaceHostContext& ctx) {
     const auto ra = a->settings.region.regionId, rb = b->settings.region.regionId;
     const LayoutEdge* edge = nullptr;
     for (const auto& e : layout_.edges) { if ((e.a == ra && e.b == rb) || (e.a == rb && e.b == ra)) { edge = &e; } }
-    if (!edge) { ui.Text("读取中…"); return; }
+    if (!edge) { ui.Text("読み込み中…"); return; }
     ui.Text(ShortChoiceLabel(RoomName(edge->a), 10) + " ↔ " + ShortChoiceLabel(RoomName(edge->b), 10));
     if (edgeDraftKey_ != edge->a + "|" + edge->b) { edgeDraft_ = *edge; edgeDraftKey_ = edge->a + "|" + edge->b; }
-    if (!edge->passable) { ui.Text("被地形隔开，走不过去"); return; }
-    if (!edge->between) { ui.Text("同一镜头区：镜头自动跟随"); }
+    if (!edge->passable) { ui.Text("地形でふさがっていて通れません"); return; }
+    if (!edge->between) { ui.Text("同じ大区域：カメラが自動で追う"); }
     else {
-        ui.Text(edge->sequenceGuid.empty() ? "镜头区交界 · 还没有演出" : edge->keepAuthored ? "镜头区交界 · 保留手调" : "镜头区交界");
+        ui.Text(edge->sequenceGuid.empty() ? "大区域の境 · 演出なし" : edge->keepAuthored ? "大区域の境 · 手直しを残す" : "大区域の境");
         bool changed = false;
         for (const auto& style : TravelStyles()) {
             const bool current = edgeDraft_.style == style.id;
@@ -214,8 +214,8 @@ void LevelEditor::DrawEdgeInspector(EditorWorkspaceHostContext& ctx) {
             }
         }
         double seconds = edgeDraft_.seconds;
-        if (EditFloat(ui, "td2.edge.seconds", "时长（秒）", seconds, .4f, 10.f)) { edgeDraft_.seconds = seconds; changed = true; }
-        changed |= ui.Checkbox("td2.edge.keep", "保留手调", &edgeDraft_.keepAuthored);
+        if (EditFloat(ui, "td2.edge.seconds", "秒数", seconds, .4f, 10.f)) { edgeDraft_.seconds = seconds; changed = true; }
+        changed |= ui.Checkbox("td2.edge.keep", "手直しを残す", &edgeDraft_.keepAuthored);
         if (changed) { edgeDraftPending_ = true; }
         if (edgeDraftPending_ && !ui.GetInteraction().editing) {
             std::string error;
@@ -223,21 +223,21 @@ void LevelEditor::DrawEdgeInspector(EditorWorkspaceHostContext& ctx) {
             edgeDraftPending_ = false; MarkSceneChanged();
         }
         // 生成の後は layout_ が作り直されて edge が指す先が消えるので、すぐ戻る。
-        if (ui.Button("td2.edge.generate", edge->sequenceGuid.empty() ? "生成演出" : "重新生成")) { Generate(ctx, false, true, {}, {}, &edgeDraft_, false); return; }
+        if (ui.Button("td2.edge.generate", edge->sequenceGuid.empty() ? "演出を作る" : "作り直す")) { Generate(ctx, false, true, {}, {}, &edgeDraft_, false); return; }
         if (!edge->sequenceGuid.empty()) {
-            ui.SameLine(); if (ui.Button("td2.edge.force", "恢复自动")) { auto draft = edgeDraft_; draft.keepAuthored = false; Generate(ctx, false, true, {}, {}, &draft, true); return; }
-            if (ui.Button("td2.edge.edit", "在演出工作区编辑")) {
+            ui.SameLine(); if (ui.Button("td2.edge.force", "自動に戻す")) { auto draft = edgeDraft_; draft.keepAuthored = false; Generate(ctx, false, true, {}, {}, &draft, true); return; }
+            if (ui.Button("td2.edge.edit", "演出ワークスペースで編集")) {
                 RegionSequenceBinding binding; binding.regionA = edge->a; binding.regionB = edge->b;
                 binding.sequenceAssetGuid = edge->sequenceGuid; binding.speed = static_cast<float>(edge->speed);
                 OpenTransitionCamera(ctx, binding, model_.error);
             }
         }
     }
-    if (ui.Button("td2.edge.trial.a", "▶ 从 " + ShortChoiceLabel(RoomName(edge->a), 8) + " 走过去")) { const auto copy = *edge; TrialFromEdge(ctx, copy, true); return; }
-    if (ui.Button("td2.edge.trial.b", "▶ 从 " + ShortChoiceLabel(RoomName(edge->b), 8) + " 走过去")) { const auto copy = *edge; TrialFromEdge(ctx, copy, false); return; }
+    if (ui.Button("td2.edge.trial.a", "▶ " + ShortChoiceLabel(RoomName(edge->a), 8) + " から歩く")) { const auto copy = *edge; TrialFromEdge(ctx, copy, true); return; }
+    if (ui.Button("td2.edge.trial.b", "▶ " + ShortChoiceLabel(RoomName(edge->b), 8) + " から歩く")) { const auto copy = *edge; TrialFromEdge(ctx, copy, false); return; }
 }
 
-// 俯瞰図：テレビ（色は镜头区）・画面の向き・区域カメラ（視錐）・镜头区の間の経路・障害物を上から見る。
+// 俯瞰図：テレビ（色は大区域）・画面の向き・区域カメラ（視錐）・大区域の間の経路・障害物を上から見る。
 void LevelEditor::DrawPlan(EditorWorkspaceHostContext& ctx, const EditorWorkspaceCanvasInput& input) {
     auto& ui = *ctx.ui;
     if (!layoutValid_) { return; }

@@ -82,15 +82,15 @@ inline bool ParseOffsets(const std::string& text, std::vector<MachineRegionOffse
         if (!(values >> offset.regionId)) { continue; }
         const auto fail = [&error](std::string_view message) { if (error.empty()) { error = message; } };
         std::string first;
-        if (!(values >> first)) { fail("区域行需要：区域ID dX dY [flip] [@锚点区域] 或 区域ID park"); continue; }
+        if (!(values >> first)) { fail("区域の行：区域ID dX dY [flip] [@基準の区域] か 区域ID park"); continue; }
         if (first == "park") { offset.park = true; out.push_back(std::move(offset)); continue; }
-        try { offset.dx = std::stoi(first); } catch (...) { fail("区域行的 dX 需要整数"); continue; }
-        if (!(values >> offset.dy)) { fail("区域行需要：区域ID dX dY [flip] [@锚点区域]"); continue; }
+        try { offset.dx = std::stoi(first); } catch (...) { fail("区域の行の dX は整数"); continue; }
+        if (!(values >> offset.dy)) { fail("区域の行：区域ID dX dY [flip] [@基準の区域]"); continue; }
         bool valid = true;
         for (std::string option; values >> option;) {
             if (option == "flip") { offset.flip = true; }
             else if (option.size() > 1 && option[0] == '@') { offset.anchor = option.substr(1); }
-            else { fail("区域行的附加项只能是 flip 或 @锚点区域"); valid = false; break; }
+            else { fail("区域の行の追加は flip か @基準の区域だけ"); valid = false; break; }
         }
         if (valid) { out.push_back(std::move(offset)); }
     }
@@ -118,22 +118,22 @@ inline bool ParseDeltas(const std::string& text, std::vector<MachineObjectDelta>
         if (!(values >> delta.object)) { continue; }
         const auto fail = [&error](std::string_view message) { if (error.empty()) { error = message; } };
         if (!(values >> delta.position[0] >> delta.position[1] >> delta.position[2] >> delta.rotation[0] >> delta.rotation[1] >> delta.rotation[2])) {
-            fail("物体行需要：物体ID dx dy dz rx ry rz [cx cy cz] [@锚点物体]"); continue;
+            fail("物体の行：物体ID dx dy dz rx ry rz [cx cy cz] [@基準の物体]"); continue;
         }
         std::vector<std::string> rest;
         for (std::string token; values >> token;) { rest.push_back(token); }
         size_t i = 0;
         if (rest.size() >= 3 && rest[0][0] != '@') {
             try { for (size_t k = 0; k < 3; ++k) { delta.pivot[k] = std::stod(rest[k]); } }
-            catch (...) { fail("物体行的转动中心需要三个数"); continue; }
+            catch (...) { fail("物体の行の回転の中心は三つの数"); continue; }
             delta.hasPivot = true; i = 3;
         }
         if (i < rest.size()) {
-            if (rest[i].size() < 2 || rest[i][0] != '@') { fail("物体行的末尾只能是 @锚点物体"); continue; }
-            try { delta.anchor = std::stoull(rest[i].substr(1)); } catch (...) { fail("锚点物体需要物体 ID"); continue; }
+            if (rest[i].size() < 2 || rest[i][0] != '@') { fail("物体の行の最後は @基準の物体だけ"); continue; }
+            try { delta.anchor = std::stoull(rest[i].substr(1)); } catch (...) { fail("基準の物体には物体 ID が要ります"); continue; }
             ++i;
         }
-        if (i != rest.size()) { fail("物体行有多余的项"); continue; }
+        if (i != rest.size()) { fail("物体の行に余計な項目があります"); continue; }
         out.push_back(delta);
     }
     return error.empty();
@@ -159,7 +159,7 @@ inline bool ParseSlots(const std::string& text, std::vector<std::pair<int, int>>
         std::istringstream values(line);
         std::pair<int, int> slot;
         if (!(values >> slot.first)) { continue; }
-        if (!(values >> slot.second)) { if (error.empty()) { error = "空槽行需要：dX dY"; } continue; }
+        if (!(values >> slot.second)) { if (error.empty()) { error = "空きスロットの行：dX dY"; } continue; }
         out.push_back(slot);
     }
     return error.empty();

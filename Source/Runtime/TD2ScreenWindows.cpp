@@ -13,7 +13,7 @@ constexpr int kSharpTexelsPerCell = 48;
 // 透視の窓は部屋の周りに余白を取る（目を動かしても部屋が像に収まる）。窓の行数と列数に掛ける。組の窓は部屋が多いぶん小さめ。
 constexpr double kLensMargin = 1.5, kGroupMargin = 1.25;
 // 組の窓のキャプチャの大きさ（窓の種類ごとに固定。大きさを変えると数フレーム映らない）。大区域は数部屋を収める横長、
-// 遠くの二組は関卡の並びに合わせた横長と、離れた小さな組用の小さめ。鮮明は部屋の大きさで決まる（ここでは使わない）。
+// 遠くの二組はレベルの並びに合わせた横長と、離れた小さな組用の小さめ。鮮明は部屋の大きさで決まる（ここでは使わない）。
 constexpr std::array<std::array<uint32_t, 2>, 4> kGroupCapture{{{0u, 0u}, {2048u, 1280u}, {1536u, 512u}, {1024u, 512u}}};
 // 大区域の窓の 1 マスの texel（窓の大きさが決まる）。操作中の部屋と、それに接する部屋（次に入る部屋・いま出た部屋）が
 // 余白込みで必ず収まる細かさ（今の地図では横に約 38 マス要る。2048 / (38 × 1.25) ≒ 43）。収まらない隣が遠くの窓へ回ると、
@@ -108,7 +108,7 @@ void Screen3DStage::PlaceWindows(const std::vector<const StageRoom*>& rooms, con
     if (area != groupArea_) {
         groupArea_ = area; groupEyeValid_ = {}; farSeen_.clear(); farGroup_.clear(); farNeed_.clear();
     }
-    // 大区域：操作中の部屋の周りの同じ镜头大区域の部屋。
+    // 大区域：操作中の部屋の周りの同じカメラの大区域の部屋。
     PlaceArea(rooms, active, frame);
     // 鮮明：操作中の部屋だけを中央に撮る。
     const auto& camera = cameras_[static_cast<size_t>(ViewKind::Sharp)];
@@ -150,7 +150,7 @@ void Screen3DStage::PlaceArea(const std::vector<const StageRoom*>& rooms, const 
     auto& window = windows_[index];
     window = {};
     members_[index].clear();
-    // 候補：同じ镜头大区域の部屋と、世界地図でそれに接する部屋（次の大区域の入口など）、画に写っているほかの部屋
+    // 候補：同じカメラの大区域の部屋と、世界地図でそれに接する部屋（次の大区域の入口など）、画に写っているほかの部屋
     // （大区域を移った直後の前の大区域の部屋など）。預け場所の部屋は除く。収まるかどうかは下で目立つ順に決める。
     const auto parked = [](const StageRoom* room) { return room->x <= -50000 || room->y <= -50000; };
     const auto inArea = [&](const StageRoom* room) {
