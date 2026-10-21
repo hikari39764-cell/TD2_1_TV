@@ -2,10 +2,10 @@
 
 namespace TD2::Editor::Level {
 namespace {
-// 道具の列。名前は短く、押すとその道具の棚が下に出る。
+// 道具の列。レベルを作る人が使うのは四つ。カメラと舞台は「…」で開く（カメラ位置と 3D の配置を直す人向け）。
 struct ToolInfo { Tool tool; std::string_view label; };
-constexpr std::array<ToolInfo, 7> kTools{{{Tool::Select, "選択"}, {Tool::Terrain, "地形"}, {Tool::Device, "装置"}, {Tool::Link, "配線"},
-                                         {Tool::Machine, "仕掛け"}, {Tool::Camera, "カメラ"}, {Tool::Stage, "舞台"}}};
+constexpr std::array<ToolInfo, 4> kTools{{{Tool::Select, "地図"}, {Tool::Terrain, "描く"}, {Tool::Link, "配線"}, {Tool::Machine, "仕掛け"}}};
+constexpr std::array<ToolInfo, 2> kMoreTools{{{Tool::Camera, "カメラ"}, {Tool::Stage, "舞台"}}};
 }
 
 EditorWorkspaceDescriptor LevelEditor::GetDescriptor() const {
@@ -70,40 +70,35 @@ void LevelEditor::Draw(EditorWorkspaceHostContext& ctx) {
     model_.Publish(ctx);
 }
 
-// 地図の上の列：道具・試遊・問題・保存と履歴。狭い欄でも切れないよう表に並べる。
+// 地図の上の一列：道具と、試遊・検査・保存。
 void LevelEditor::DrawToolbar(EditorWorkspaceHostContext& ctx) {
     auto& ui = *ctx.ui;
-    if (ui.BeginTable("td2.level.tools", static_cast<uint32_t>(kTools.size()))) {
+    const auto button = [&](std::string_view id, std::string_view label, bool on) {
+        ui.TableNextColumn();
+        return ui.Button("td2.level." + std::string(id), (on ? "● " : "") + std::string(label));
+    };
+    const size_t columns = kTools.size() + 1 + (moreTools_ ? kMoreTools.size() : 0) + 3;
+    if (ui.BeginTable("td2.level.tools", static_cast<uint32_t>(columns))) {
         ui.TableNextRow();
         for (const auto& info : kTools) {
-            ui.TableNextColumn();
-            if (ui.Button("td2.level.tool." + std::string(info.label), (tool_ == info.tool ? "● " : "") + std::string(info.label))) { ChooseTool(ctx, info.tool); }
+            // 「描く」は地形と装置のどちらか（最後に選んだ方）。
+            const bool painting = info.tool == Tool::Terrain;
+            const bool on = painting ? tool_ == Tool::Terrain || tool_ == Tool::Device : tool_ == info.tool;
+            if (button("tool." + std::string(info.label), info.label, on)) { ChooseTool(ctx, painting ? paintTool_ : info.tool); }
         }
-        ui.TableNextRow();
-        ui.TableNextColumn();
-        if (ui.Button("td2.level.play", pickingStart_ ? "● 試遊" : "▶ 試遊")) {
+        if (button("tool.more", moreTools_ ? "‹" : "…", false)) { moreTools_ = !moreTools_; }
+        if (moreTools_) for (const auto& info : kMoreTools) {
+            if (button("tool." + std::string(info.label), info.label, tool_ == info.tool)) { ChooseTool(ctx, info.tool); }
+        }
+        if (button("play", "▶ 試遊", pickingStart_)) {
             if (pickingStart_) { pickingStart_ = false; }
-            else if (model_.Commit(ctx)) { pickingStart_ = true; drag_ = Drag::None; recipe_ = -1; placeModel_ = -1; focus_ = Focus::None; }
+            else if (model_.Commit(ctx)) { pickingStart_ = true; drag_ = Drag::None; recipe_ = -1; focus_ = Focus::None; }
         }
-        ui.TableNextColumn();
-        const size_t errors = static_cast<size_t>(std::count_if(issues_.begin(), issues_.end(), [](const LevelIssue& i) { return i.level == IssueLevel::Error; }));
-        const std::string issueLabel = issues_.empty() ? "✓ 検査" : (errors ? "⚠ " : "△ ") + std::to_string(issues_.size());
-        if (ui.Button("td2.level.issues", issueLabel) && !issues_.empty()) { JumpToIssue(ctx, issueIndex_ % issues_.size()); ++issueIndex_; }
-        ui.TableNextColumn();
-        size_t passed = 0;
-        for (const auto& s : solutions_) { passed += s.passed ? 1 : 0; }
-        // 再生の後にレベルを直したら、結果は古い（もう一度押して再生する）。
-        const bool stale = solutionsStale_ || solutionsRevision_ != model_.revision;
-        const std::string solutionLabel = solutions_.empty() ? "解法" : (stale ? "解法 " : passed == solutions_.size() ? "✓ 解法 " : "✕ 解法 ") + std::to_string(passed) + "/" + std::to_string(solutions_.size()) + (stale ? " ↻" : "");
-        if (ui.Button("td2.level.solutions", solutionLabel)) { RunSolutions(ctx); focus_ = Focus::None; }
-        ui.TableNextColumn();
-        if (ui.Button("td2.level.fit", "全体")) { fitChapter_ = false; view_.fit = true; }
-        ui.TableNextColumn();
-        if (ui.Button("td2.level.undo", "元に戻す")) { History(ctx, false); }
-        ui.TableNextColumn();
-        if (ui.Button("td2.level.redo", "やり直し")) { History(ctx, true); }
-        ui.TableNextColumn();
-        if (ui.Button("td2.level.save", model_.sceneDirty || model_.Dirty() ? "保存 ●" : "保存")) { Save(ctx); }
+        // 検査：問題と、通れなくなった解法の数。押すと解法を流し直し、左の欄に結果を出す。
+        const size_t failed = static_cast<size_t>(std::count_if(solutions_.begin(), solutions_.end(), [](const auto& s) { return !s.passed; }));
+        const size_t problems = issues_.size() + failed;
+        if (button("check", problems ? "⚠ 検査 " + std::to_string(problems) : "✓ 検査", false)) { RunSolutions(ctx); focus_ = Focus::None; }
+        if (button("save", model_.sceneDirty || model_.Dirty() ? "保存 ●" : "保存", false)) { Save(ctx); }
         ui.EndTable();
     }
     if (!model_.error.empty()) { ui.Text("⚠ " + model_.error); }
@@ -114,33 +109,18 @@ void LevelEditor::ChooseTool(EditorWorkspaceHostContext& ctx, Tool tool) {
     if (posing_) { CancelPose(ctx); }
     if (previewState_ != 0) { PreviewState(ctx, 0); }
     if (model_.gesture) { model_.Finish(ctx, true); }
-    tool_ = tool; drag_ = Drag::None; link_ = {}; recipe_ = -1; recipeFirst_.clear(); placeModel_ = -1; pickingStart_ = false; plan_ = false;
+    tool_ = tool; drag_ = Drag::None; link_ = {}; recipe_ = -1; recipeFirst_.clear(); pickingStart_ = false; plan_ = false;
     multi_.clear();
     if (tool_ == Tool::Machine) { model_.machinesStale = true; checkInputClock_ = 10; if (machineObject_) { focus_ = Focus::Machine; } }
     if (tool_ == Tool::Camera) { layoutStale_ = true; }
+    if (tool_ == Tool::Terrain || tool_ == Tool::Device) { paintTool_ = tool_; }
     if (tool_ == Tool::Terrain || tool_ == Tool::Device || tool_ == Tool::Link) { model_.devices.Select(-1); if (model_.ready) { focus_ = Focus::Room; } }
-}
-
-void LevelEditor::History(EditorWorkspaceHostContext& ctx, bool redo) {
-    if (posing_) { CancelPose(ctx); }
-    if (model_.Dirty() && !model_.Commit(ctx)) { return; }
-    model_.History(ctx, redo);
-    model_.machinesStale = true; layoutStale_ = true; checkClock_ = 10; followResync_ = true;
 }
 
 bool LevelEditor::SelectRoom(EditorWorkspaceHostContext& ctx, uint64_t objectId) {
     if (!model_.Select(ctx, objectId)) { return false; }
     edge_ = {};
     return true;
-}
-
-void LevelEditor::FocusRoom(uint64_t objectId) {
-    for (const auto& room : model_.rooms) {
-        if (room.object.objectId != objectId) { continue; }
-        const auto& s = SettingsOf(room);
-        if (s.worldPlaced) { FitRoom(s); }
-        return;
-    }
 }
 
 void LevelEditor::FitAll(EditorWorkspacePoint size) {
@@ -168,6 +148,7 @@ bool LevelEditor::EnsureLayout(EditorWorkspaceHostContext& ctx, bool force) {
     layoutClock_ = 0; layoutStale_ = false; layoutRevision_ = model_.revision; layoutPulse_ = model_.Pulses();
     std::string error;
     layoutValid_ = LoadLayout(ctx, layout_, error);
+    ++layoutVersion_;
     if (!layoutValid_) { model_.error = error; return false; }
     planPaths_.clear();
     std::map<std::string, CameraPose, std::less<>> cameras;

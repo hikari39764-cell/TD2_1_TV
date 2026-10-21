@@ -148,6 +148,10 @@ std::vector<LevelIssue> CheckLevel(const std::vector<CheckRoom>& rooms, const st
             }
         }
         if (layout && layout->AreaOf(id) == nullptr) { add(IssueLevel::Warning, room.name + "：どの大区域にも入っていません", id); }
+        // 型の表に無いモデルは、画面の位置と大きさを既定で扱う（カメラや見え方の判定がずれる）。
+        if (const auto* placed = layout ? layout->Room(id) : nullptr; placed && !placed->knownModel) {
+            add(IssueLevel::Warning, room.name + "：型の分からないテレビ（画面は既定の大きさで扱う）", id);
+        }
     }
     for (const auto& m : machines) {
         MachineCheckInput input;

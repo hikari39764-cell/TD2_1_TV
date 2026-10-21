@@ -13,6 +13,17 @@ bool Linkable(std::string_view kind) { return kind == "Door" || kind == "Laser" 
 EditorWorkspacePoint Center(const DeviceDraft& d, int worldX, int worldY) {
     return {static_cast<float>(worldX + d.x + d.w * .5), static_cast<float>(worldY + d.y + d.h * .5)};
 }
+// 地図の右の「未配置」の幅。
+constexpr float kTrayWidth = 112;
+bool AnyUnplaced(const MapModel& model) {
+    return std::any_of(model.rooms.begin(), model.rooms.end(), [](const RoomItem& r) { return !r.settings.worldPlaced; });
+}
+// 「裏」の印：枠の右上。
+void DrawBackBadge(IEditorWorkspaceUi& ui, EditorWorkspacePoint a, EditorWorkspacePoint b) {
+    if (b.x - a.x < 30 || b.y - a.y < 22) { return; }
+    ui.CanvasFill({b.x - 23, a.y + 3}, {b.x - 3, a.y + 21}, kAmber);
+    ui.CanvasText({b.x - 19, a.y + 4}, {.08f, .07f, .05f, 1}, "裏");
+}
 }
 
 const RegionSettings& LevelEditor::SettingsOf(const RoomItem& room) const {
@@ -74,41 +85,37 @@ void LevelEditor::DrawMap(EditorWorkspaceHostContext& ctx) {
     if (input.size.x > 0 && input.size.y > 0) {
         if (tool_ == Tool::Camera && plan_) { EnsureLayout(ctx); DrawPlan(ctx, input); ui.EndCanvas(); return; }
         RefreshChapters(ctx);
-        // 開いた時は今のテレビの章に合わせる（世界全体は「全体」）。大きさが変わった時も同じ範囲に合わせ直す。
-        if (view_.fit && (!model_.gesture || !view_.hasFit)) { if (!fitChapter_ || !FitChapter(input.size)) { FitAll(input.size); } }
+        EnsureLayout(ctx);   // カメラ・仕掛けのほか、「裏」の印（3D の向き）にも使う
+        // 開いた時は今のテレビの章に合わせる（ダブルクリックで世界全体）。「未配置」が出ている時はその幅を除いて合わせる。
+        const EditorWorkspacePoint fitSize{input.size.x - (AnyUnplaced(model_) ? kTrayWidth : 0), input.size.y};
+        if (view_.fit && (!model_.gesture || !view_.hasFit)) { if (!fitChapter_ || !FitChapter(fitSize)) { FitAll(fitSize); } }
         view_.Navigate(input, false, drag_ != Drag::None);
         DrawCanvasGrid(ui, view_, input.size);
-        if (tool_ == Tool::Camera || tool_ == Tool::Machine) { EnsureLayout(ctx); }
         if (tool_ == Tool::Machine) { RefreshMachines(ctx); RefreshCheckInput(ctx); }
         const auto p = view_.World(input.pointer);
-        const bool inside = PointIn(input.pointer, {0, 0}, input.size);
-        if (drag_ == Drag::None && !pickingStart_ && !view_.panning && input.hovered && (input.pressedButtons & (kPrimary | kSecondary))) {
-            if (placeModel_ >= 0 && (input.pressedButtons & kPrimary)) {
-                const auto& m = kTelevisionModels[static_cast<size_t>(placeModel_)];
-                PlaceTelevision(ctx, m, static_cast<int>(std::round(p.x - m.cols * .5f)), static_cast<int>(std::round(p.y - m.rows * .5f)));
-            } else if (placeModel_ >= 0) { placeModel_ = -1; }
-            else {
-                switch (tool_) {
-                case Tool::Select: PressSelect(ctx, input, p); break;
-                case Tool::Terrain: PressTerrain(ctx, input, p); break;
-                case Tool::Device: PressDevice(ctx, input, p); break;
-                case Tool::Link: if (input.pressedButtons & kPrimary) { PressLink(ctx, p); } else { link_ = {}; } break;
-                case Tool::Machine:
-                    // テレビを押すとそのテレビの仕掛けを選び、テレビの移動などは選ぶ道具と同じに扱う。
-                    if (!PressMachine(ctx, input, p)) { PressSelect(ctx, input, p); if (SelectedMachine() && focus_ == Focus::Room) { focus_ = Focus::Machine; } }
-                    break;
-                case Tool::Camera: {
-                    if (!(input.pressedButtons & kPrimary)) { break; }
-                    if (const auto edge = EdgeAt(input.pointer)) { if (model_.Commit(ctx)) { edge_ = *edge; focus_ = Focus::Edge; edgeDraftKey_.clear(); } break; }
-                    if (auto* room = RoomAt(p)) {
-                        const auto id = room->object.objectId; const auto region = room->settings.region.regionId;
-                        if (!areaFocus_.empty()) { ToggleArea(ctx, region); }
-                        if (SelectRoom(ctx, id)) { focus_ = Focus::Room; }
-                    } else { focus_ = Focus::None; edge_ = {}; }
-                    break;
-                }
-                case Tool::Stage: PressStage(ctx, input, p); break;
-                }
+        // 「未配置」の上は地図の外として扱う（引いてきたテレビをそこで離すと取り消し）。
+        const bool inside = PointIn(input.pointer, {0, 0}, input.size) && !OverTray(input.pointer, input.size);
+        if (drag_ == Drag::None && !pickingStart_ && !view_.panning && input.hovered && (input.pressedButtons & (kPrimary | kSecondary)) && !PressTray(ctx, input)) {
+            switch (tool_) {
+            case Tool::Select: PressSelect(ctx, input, p); break;
+            case Tool::Terrain: PressTerrain(ctx, input, p); break;
+            case Tool::Device: PressDevice(ctx, input, p); break;
+            case Tool::Link: if (input.pressedButtons & kPrimary) { PressLink(ctx, p); } else { link_ = {}; } break;
+            case Tool::Machine:
+                // テレビを押すとそのテレビの仕掛けを選び、テレビの移動などは選ぶ道具と同じに扱う。
+                if (!PressMachine(ctx, input, p)) { PressSelect(ctx, input, p); if (SelectedMachine() && focus_ == Focus::Room) { focus_ = Focus::Machine; } }
+                break;
+            case Tool::Camera: {
+                if (!(input.pressedButtons & kPrimary)) { break; }
+                if (const auto edge = EdgeAt(input.pointer)) { if (model_.Commit(ctx)) { edge_ = *edge; focus_ = Focus::Edge; edgeDraftKey_.clear(); } break; }
+                if (auto* room = RoomAt(p)) {
+                    const auto id = room->object.objectId; const auto region = room->settings.region.regionId;
+                    if (!areaFocus_.empty()) { ToggleArea(ctx, region); }
+                    if (SelectRoom(ctx, id)) { focus_ = Focus::Room; }
+                } else { focus_ = Focus::None; edge_ = {}; }
+                break;
+            }
+            case Tool::Stage: PressStage(ctx, input, p); break;
             }
         }
         if (drag_ != Drag::None) { ContinueDrag(ctx, input, p, inside); }
@@ -124,8 +131,10 @@ void LevelEditor::DrawMap(EditorWorkspaceHostContext& ctx) {
         if (drag_ == Drag::Box) {
             ui.CanvasRect(view_.Screen((std::min)(dragStart_.x, p.x), (std::min)(dragStart_.y, p.y)), view_.Screen((std::max)(dragStart_.x, p.x), (std::max)(dragStart_.y, p.y)), kAmber, 1.5f);
         }
+        DrawTray(ui, input);
+        DrawToolHint(ui, input);
         DrawSpawnPicker(ctx, input, p);
-        if (drag_ == Drag::None && input.hovered && !view_.panning) { DrawHover(ui, input, p); }
+        if (drag_ == Drag::None && input.hovered && !view_.panning && inside) { DrawHover(ui, input, p); }
     }
     ui.EndCanvas();
     HandleDelete(ctx);
@@ -151,6 +160,7 @@ void LevelEditor::DrawRooms(EditorWorkspaceHostContext& ctx, const EditorWorkspa
         const bool chosen = selected || multi_.contains(room.object.objectId);
         const bool invalid = model_.gesture && selected && (drag_ == Drag::Room || drag_ == Drag::Library) && !model_.Validate(s).empty();
         ui.CanvasRect(a, b, invalid ? kRed : chosen ? kAmber : kFrame, chosen ? 3.0f : 1.0f);
+        if (BackFacing(room)) { DrawBackBadge(ui, a, b); }
         // 名前：中くらいに見ている時はすべて、近くで見ている時は選んだテレビだけ（全体の時は章の名前を出す）。
         if ((view_.tile >= 3 && view_.tile < 14) || (chosen && view_.tile >= 3)) {
             const auto name = ShortChoiceLabel(room.object.name, 12);
@@ -344,21 +354,9 @@ int LevelEditor::HandleAt(EditorWorkspacePoint screen) const {
     return hit;
 }
 
-// 置く前の影：装置・新しいテレビ・地形の筆。
+// 置く前の影：装置・地形の筆。
 void LevelEditor::DrawPlacementGhost(IEditorWorkspaceUi& ui, const EditorWorkspaceCanvasInput& input, EditorWorkspacePoint p) {
     if (!input.hovered || view_.panning || drag_ != Drag::None || pickingStart_) { return; }
-    if (placeModel_ >= 0) {
-        const auto& m = kTelevisionModels[static_cast<size_t>(placeModel_)];
-        RegionPlacement ghost{"td2.ghost", m.cols, m.rows, true, static_cast<int>(std::round(p.x - m.cols * .5f)), static_cast<int>(std::round(p.y - m.rows * .5f))};
-        auto layout = model_.Layout(); layout.push_back(ghost);
-        const bool valid = ValidateWorldLayout(layout).valid;
-        const auto a = view_.Screen(static_cast<float>(ghost.worldX), static_cast<float>(ghost.worldY));
-        const auto b = view_.Screen(static_cast<float>(ghost.worldX + m.cols), static_cast<float>(ghost.worldY + m.rows));
-        ui.CanvasFill(a, b, valid ? EditorWorkspaceColor{.97f, .80f, .40f, .18f} : EditorWorkspaceColor{.92f, .36f, .38f, .22f});
-        ui.CanvasRect(a, b, valid ? kAmber : kRed, 2);
-        ui.CanvasText({a.x + 4, a.y + 3}, kLabel, std::string(m.label) + " " + std::to_string(m.cols) + "×" + std::to_string(m.rows));
-        return;
-    }
     auto* room = RoomAt(p);
     if (!room) { return; }
     const auto& s = SettingsOf(*room);
@@ -397,7 +395,12 @@ void LevelEditor::PressSelect(EditorWorkspaceHostContext& ctx, const EditorWorks
         return;
     }
     multi_.clear();
-    if (!room) { drag_ = Drag::Box; dragStart_ = p; focus_ = Focus::None; edge_ = {}; model_.devices.Select(-1); return; }
+    if (!room) {
+        // 空いた所のダブルクリックで世界全体を見る。
+        if (clock_ - emptyPressAt_ < .35f) { fitChapter_ = false; view_.fit = true; emptyPressAt_ = -1; return; }
+        emptyPressAt_ = clock_;
+        drag_ = Drag::Box; dragStart_ = p; focus_ = Focus::None; edge_ = {}; model_.devices.Select(-1); return;
+    }
     const auto id = room->object.objectId;
     // 選んだ装置のハンドル（大きさを変える）を先に見る。
     if (id == model_.selected && focus_ == Focus::Device) {
@@ -528,9 +531,9 @@ void LevelEditor::ContinueDrag(EditorWorkspaceHostContext& ctx, const EditorWork
         s.worldY = static_cast<int>(std::round(std::clamp(p.y - dragOffset_.y, -1e6f, 1e6f)));
         break;
     case Drag::Library:
-        // 一覧から引いてきたテレビは、地図の上にある間だけ置き場所を示す。
-        if (inside && model_.ready) {
-            s.worldPlaced = true;
+        // 「未配置」から引いてきたテレビは、地図の上にある間だけ置き場所を示す。
+        if (model_.ready) {
+            s.worldPlaced = inside;
             s.worldX = static_cast<int>(std::round(p.x - s.region.cols * .5f)); s.worldY = static_cast<int>(std::round(p.y - s.region.rows * .5f));
         }
         if (dragReleasedAny_ || (!dragHeldAny_ && !dragPressedAny_)) { FinishDrag(ctx, p, inside); }
@@ -589,7 +592,12 @@ void LevelEditor::FinishDrag(EditorWorkspaceHostContext& ctx, EditorWorkspacePoi
     }
     case Drag::Library:
         if (inside) {
-            if (model_.Finish(ctx, true)) { focus_ = Focus::Room; layoutStale_ = true; }
+            const bool first = model_.Current() && !model_.Current()->settings.worldPlaced;
+            if (model_.Finish(ctx, true)) {
+                focus_ = Focus::Room; layoutStale_ = true;
+                // 初めて世界に置いたテレビは、地図で隣になったテレビの大区域へ入れてカメラを作る。
+                if (first) { SetUpNewRoom(ctx, model_.draft.region.regionId, NeighborRegion(model_.draft)); }
+            }
         } else { model_.Discard(); model_.gesture = false; }
         break;
     case Drag::Group: model_.gesture = false; FinishGroupMove(ctx); break;
@@ -712,41 +720,135 @@ void LevelEditor::DrawSpawnPicker(EditorWorkspaceHostContext& ctx, const EditorW
     }
 }
 
-// ---------------------------------------------------------------- 新しいテレビ
-void LevelEditor::PlaceTelevision(EditorWorkspaceHostContext& ctx, const TelevisionModel& m, int worldX, int worldY) {
-    if (model_.Dirty() && !model_.Commit(ctx)) { return; }
-    RegionPlacement ghost{"td2.ghost", m.cols, m.rows, true, worldX, worldY};
-    auto layout = model_.Layout(); layout.push_back(ghost);
-    if (!ValidateWorldLayout(layout).valid) { model_.error = "ほかのテレビと重なります"; return; }
-    // 地図で隣になるテレビ（共有する辺が一番長いもの）。3D ではその横に置く。
-    const RoomItem* neighbor = nullptr; int64_t best = 0;
+// 地図で隣になるテレビ（共有する辺が一番長いもの）の区域 ID。無ければ空。
+std::string LevelEditor::NeighborRegion(const RegionSettings& s) const {
+    const auto self = Placement(s);
+    std::string best; int64_t length = 0;
     for (const auto& room : model_.rooms) {
-        if (const auto edge = FindSharedWorldEdge(ghost, Placement(room.settings)); edge && edge->overlapEnd - edge->overlapBegin > best) {
-            best = edge->overlapEnd - edge->overlapBegin; neighbor = &room;
+        if (room.settings.region.regionId == s.region.regionId) { continue; }
+        if (const auto edge = FindSharedWorldEdge(self, Placement(room.settings)); edge && edge->overlapEnd - edge->overlapBegin > length) {
+            length = edge->overlapEnd - edge->overlapBegin; best = room.settings.region.regionId;
         }
     }
-    const std::string besideRegion = neighbor ? neighbor->settings.region.regionId : std::string{};
-    const uint64_t neighborTv = neighbor ? MapModel::TelevisionObject(*neighbor) : 0;
-    Pose pose; std::string error;
-    StageObject anchor;
-    const bool hasAnchor = neighborTv && ReadStageObject(ctx, neighborTv, anchor, error);
-    if (hasAnchor) { pose = PoseBeside(anchor, m.width * m.scale, m.height * m.scale, 1); }
-    else if (!PoseAtView(ctx, pose, model_.error)) { return; }
-    pose.scale = {m.scale, m.scale, m.scale};
-    const std::string name = "テレビ " + std::string(m.label);
-    const uint64_t id = CreateStageModel(ctx, m.path, name, pose, model_.error);
-    if (!id) { return; }
-    MarkSceneChanged();
-    if (hasAnchor) { JoinFolderOf(ctx, id, anchor.objectId); }
-    if (!model_.AdoptTelevision(ctx, id, m, std::nullopt)) { return; }
-    // 押した位置へ置く（AdoptTelevision は未配置で作る）。
-    model_.draft.worldPlaced = true; model_.draft.worldX = worldX; model_.draft.worldY = worldY;
-    if (!model_.Commit(ctx)) { return; }
-    const std::string region = model_.draft.region.regionId;
-    if (!besideRegion.empty()) { AttachRoom(ctx, region, besideRegion); }
-    SetUpNewRoom(ctx, region, besideRegion);
-    if (Execute(ctx, "scene.object.select", {{"objectId", id}}).ok) { model_.sceneSelection = id; }
-    focus_ = Focus::Room; placeModel_ = -1;
-    SetNote("「" + name + "」を作りました");
+    return best;
+}
+
+// ---------------------------------------------------------------- 未配置・操作の一行・裏
+// 世界に置いていないテレビを右の列に縦に並べる（入らない分は数だけ出す）。
+std::vector<LevelEditor::TrayItem> LevelEditor::TrayItems(EditorWorkspacePoint size) const {
+    std::vector<TrayItem> items;
+    const float left = size.x - kTrayWidth + 8, width = kTrayWidth - 16;
+    float y = 30;
+    for (const auto& room : model_.rooms) {
+        const auto& r = room.settings.region;
+        if (room.settings.worldPlaced) { continue; }
+        const float h = std::clamp(width * r.rows / static_cast<float>((std::max)(1, r.cols)), 20.0f, 72.0f);
+        if (y + h + 20 > size.y - 24) { break; }
+        items.push_back({room.object.objectId, {left, y}, {left + width, y + h}});
+        y += h + 26;
+    }
+    return items;
+}
+
+bool LevelEditor::OverTray(EditorWorkspacePoint pointer, EditorWorkspacePoint size) const {
+    return pointer.x >= size.x - kTrayWidth && AnyUnplaced(model_);
+}
+
+// 「未配置」の中の押し：テレビを押したら地図へ引き始める。列の上の押しは地図へ渡さない。
+bool LevelEditor::PressTray(EditorWorkspaceHostContext& ctx, const EditorWorkspaceCanvasInput& input) {
+    if (!OverTray(input.pointer, input.size)) { return false; }
+    if (!(input.pressedButtons & kPrimary)) { return true; }
+    for (const auto& item : TrayItems(input.size)) {
+        if (!PointIn(input.pointer, item.a, {item.b.x, item.b.y + 18})) { continue; }
+        if (SelectRoom(ctx, item.objectId)) { drag_ = Drag::Library; model_.gesture = true; focus_ = Focus::Room; multi_.clear(); }
+        break;
+    }
+    return true;
+}
+
+void LevelEditor::DrawTray(IEditorWorkspaceUi& ui, const EditorWorkspaceCanvasInput& input) {
+    if (!AnyUnplaced(model_)) { return; }
+    const float x0 = input.size.x - kTrayWidth;
+    const bool dragging = drag_ == Drag::Library, over = dragging && OverTray(input.pointer, input.size);
+    ui.CanvasFill({x0, 0}, input.size, {.05f, .07f, .09f, .94f});
+    ui.CanvasRect({x0, 0}, input.size, over ? kAmber : kFrame, over ? 2.0f : 1.0f);
+    ui.CanvasText({x0 + 8, 7}, over ? kAmber : kLabel, over ? "離すと取り消し" : "未配置");
+    const auto items = TrayItems(input.size);
+    for (const auto& item : items) {
+        const auto* room = model_.Room(item.objectId);
+        if (!room) { continue; }
+        const auto& s = room->settings;
+        MapCanvasView v;
+        v.tile = (std::min)((item.b.x - item.a.x) / static_cast<float>((std::max)(1, s.region.cols)), (item.b.y - item.a.y) / static_cast<float>((std::max)(1, s.region.rows)));
+        v.origin = {(item.a.x + item.b.x - s.region.cols * v.tile) * .5f, (item.a.y + item.b.y - s.region.rows * v.tile) * .5f};
+        DrawRoomMap(ui, s, v, false, false, false);
+        const auto a = v.Screen(0, 0), b = v.Screen(static_cast<float>(s.region.cols), static_cast<float>(s.region.rows));
+        const bool held = dragging && item.objectId == model_.selected;
+        if (held) { ui.CanvasFill(a, b, {0, 0, 0, .55f}); }
+        const bool hover = !dragging && PointIn(input.pointer, item.a, {item.b.x, item.b.y + 18});
+        ui.CanvasRect(a, b, hover || held ? kAmber : kFrame, hover ? 2.0f : 1.0f);
+        if (BackFacing(*room)) { DrawBackBadge(ui, a, b); }
+        ui.CanvasText({item.a.x, item.b.y + 2}, kLabel, ShortChoiceLabel(room->object.name, 6));
+    }
+    const auto total = static_cast<size_t>(std::count_if(model_.rooms.begin(), model_.rooms.end(), [](const RoomItem& r) { return !r.settings.worldPlaced; }));
+    if (total > items.size()) { ui.CanvasText({x0 + 8, input.size.y - 22}, kLabel, "ほか " + std::to_string(total - items.size()) + " 台"); }
+}
+
+// 今の道具でできることを一行だけ（地図の左下）。
+void LevelEditor::DrawToolHint(IEditorWorkspaceUi& ui, const EditorWorkspaceCanvasInput& input) {
+    std::string_view text;
+    if (pickingStart_) { text = "人物を置く所をクリック · 右クリックでやめる"; }
+    else if (drag_ == Drag::Library) { text = "置きたい所で離す"; }
+    else switch (tool_) {
+    case Tool::Select: text = AnyUnplaced(model_) ? "右の「未配置」から地図へドラッグ · 空いた所をダブルクリックで全体" : "テレビをドラッグで動かす · 空いた所をダブルクリックで全体"; break;
+    case Tool::Terrain: text = "左ドラッグで描く · 右ドラッグで消す"; break;
+    case Tool::Device: text = "クリックで置く · ドラッグで動かす · 右クリックで消す"; break;
+    case Tool::Link: text = "圧力板から扉・レーザー・橋・仕掛けへドラッグ"; break;
+    case Tool::Machine: text = "下で種類を選び、動かすテレビを押す"; break;
+    case Tool::Camera: text = "テレビでカメラ · 境目で切り替えの演出"; break;
+    case Tool::Stage: text = "テレビを押して 3D の付き方を直す"; break;
+    }
+    if (text.empty()) { return; }
+    const float y = input.size.y - 26;
+    ui.CanvasFill({6, y}, {16 + TextWidth(text), y + 20}, {.04f, .06f, .08f, .8f});
+    ui.CanvasText({11, y + 2}, {.80f, .86f, .87f, 1}, text);
+}
+
+bool LevelEditor::BackFacing(const RoomItem& room) {
+    if (!layoutValid_) { return false; }
+    if (const uint64_t key = layoutVersion_ * 1000003u + model_.revision; key != backKey_) { back_.clear(); backKey_ = key; }
+    const auto id = room.object.objectId;
+    if (const auto found = back_.find(id); found != back_.end()) { return found->second; }
+    // 画面の向き：テレビのモデルは +Z 側に画面がある。
+    const auto facing = [this](const RoomItem& r) { return layout_.Room(r.settings.region.regionId); };
+    const auto forward = [](const LayoutRoom& l) { return Math::Normalize(Math::QRotate(Math::QFromEulerDeg(l.tv.rotation), {0, 0, 1})); };
+    const auto* self = facing(room);
+    bool& back = back_[id];
+    back = false;
+    if (!self) { return false; }
+    Vec3 sum{};
+    int count = 0;
+    if (room.settings.worldPlaced) {
+        for (const auto& other : model_.rooms) {
+            if (other.object.objectId == id || !other.settings.worldPlaced || !FindSharedWorldEdge(Placement(room.settings), Placement(other.settings))) { continue; }
+            if (const auto* l = facing(other)) { sum = Math::Add(sum, forward(*l)); ++count; }
+        }
+    }
+    // 地図で隣が無い（まだ置いていない等）時は、世界に置いたテレビのうち 3D で一番近いものと比べる。
+    if (!count) {
+        const LayoutRoom* nearest = nullptr;
+        double best = 1e18;
+        for (const auto& other : model_.rooms) {
+            if (other.object.objectId == id || !other.settings.worldPlaced) { continue; }
+            const auto* l = facing(other);
+            if (!l) { continue; }
+            const auto d = Math::Sub(l->tv.position, self->tv.position);
+            if (const double distance = Math::Dot(d, d); distance < best) { best = distance; nearest = l; }
+        }
+        if (nearest) { sum = forward(*nearest); count = 1; }
+    }
+    if (!count || Math::Dot(sum, sum) < 1e-6) { return false; }
+    back = Math::Dot(forward(*self), Math::Normalize(sum)) < -.3;
+    return back;
 }
 }

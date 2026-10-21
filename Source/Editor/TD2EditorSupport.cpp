@@ -111,9 +111,8 @@ bool ReadRegion(EditorWorkspaceHostContext& context, uint64_t objectId, RegionTa
     if (!ResolveRegion(context, objectId, target, error)) { return false; }
     const auto result = Execute(context, "component.describe",
         {{"objectId", target.objectId}, {"componentId", target.componentId},
-         {"propertyIds", {"regionId", "cols", "rows", "tilePixels", "cells", "screenObject",
-                          "screenSlot", "spawnX", "spawnY", "entryRegion", "devices", "worldPlaced", "worldX", "worldY",
-                          "screenBrightness", "stageAnchor"}}});
+         {"propertyIds", {"regionId", "cols", "rows", "tilePixels", "cells", "spawnX", "spawnY", "entryRegion", "devices",
+                          "worldPlaced", "worldX", "worldY", "screenBrightness", "stageAnchor"}}});
     if (!result.ok) { error = result.error; return false; }
     const auto fields = result.data.find("fields");
     if (fields == result.data.end() || !fields->is_array()) {
@@ -136,11 +135,6 @@ bool ReadRegion(EditorWorkspaceHostContext& context, uint64_t objectId, RegionTa
         value = field->get<int>();
         return true;
     };
-    const auto* screen = FieldValue(*fields, "screenObject");
-    if (screen == nullptr || !screen->is_number_integer() || *screen < 0) {
-        error = "component.describe: INVALID_RESULT: screenObject の参照が無効です"; return false;
-    }
-    settings.screenObject = ObjectId(*screen);
     const auto* spawnX = FieldValue(*fields, "spawnX");
     const auto* spawnY = FieldValue(*fields, "spawnY");
     const auto* entry = FieldValue(*fields, "entryRegion");
@@ -170,7 +164,7 @@ bool ReadRegion(EditorWorkspaceHostContext& context, uint64_t objectId, RegionTa
     if (const auto* anchor = FieldValue(*fields, "stageAnchor"); anchor && anchor->is_string()) { settings.stageAnchor = anchor->get<std::string>(); }
     return text("regionId", settings.region.regionId) && number("cols", settings.region.cols) &&
         number("rows", settings.region.rows) && number("tilePixels", settings.region.tilePixels) &&
-        text("cells", settings.region.cells) && text("screenSlot", settings.screenSlot) && text("devices", settings.devices);
+        text("cells", settings.region.cells) && text("devices", settings.devices);
 }
 
 void AppendRegionChanges(Json& commands, const RegionTarget& target, const RegionSettings& before, const RegionSettings& after) {
@@ -182,8 +176,6 @@ void AppendRegionChanges(Json& commands, const RegionTarget& target, const Regio
     add("rows", before.region.rows, after.region.rows);
     add("tilePixels", before.region.tilePixels, after.region.tilePixels);
     add("cells", before.region.cells, after.region.cells);
-    add("screenObject", before.screenObject, after.screenObject);
-    add("screenSlot", before.screenSlot, after.screenSlot);
     add("screenBrightness", before.screenBrightness, after.screenBrightness);
     add("spawnX", before.spawnX, after.spawnX);
     add("spawnY", before.spawnY, after.spawnY);
@@ -195,60 +187,6 @@ void AppendRegionChanges(Json& commands, const RegionTarget& target, const Regio
     add("stageAnchor", before.stageAnchor, after.stageAnchor);
 }
 
-std::string ScreenSlotWarning(EditorWorkspaceHostContext& context, const RegionSettings& settings) {
-    if (!settings.screenObject) { return {}; }
-    if (settings.screenSlot.empty()) { return "画面の材質スロット名を指定してください"; }
-    const auto result = Execute(context, "scene.objects.query", {{"objectIds", {settings.screenObject}}, {"detail", true}});
-    if (!result.ok) { return result.error; }
-    for (const auto& object : result.data.value("objects", Json::array())) {
-        if (!object.is_object() || ObjectId(object.value("objectId", Json{})) != settings.screenObject) { continue; }
-        const auto model = object.find("model");
-        if (model == object.end() || !model->is_object()) { break; }
-        // 一覧が途中で切れている時は確かめられないので注意しない。
-        if (model->value("materialSlotsTruncated", false)) { return {}; }
-        for (const auto& slot : model->value("materialSlots", Json::array())) {
-            if (slot.is_object() && slot.value("name", "") == settings.screenSlot) { return {}; }
-        }
-        return "画面の材質スロットが見つかりません：" + settings.screenSlot;
-    }
-    return "画面の物体のモデルを確認できません";
-}
-
-bool AddRegion(EditorWorkspaceHostContext& context, uint64_t objectId, bool bindSelf, std::string& status) {
-    const auto instances = Execute(context, "component.instances.query", {{"objectId", objectId}});
-    if (!instances.ok) { status = instances.error; return false; }
-    const auto components = instances.data.find("components");
-    if (components == instances.data.end() || !components->is_array()) {
-        status = "component.instances.query: INVALID_RESULT: components の配列がありません"; return false;
-    }
-    if (RegionComponentId(*components) != 0) { return true; }
-    const auto result = Execute(context, "component.add", {{"objectId", objectId}, {"componentType", kRegionComponentType}});
-    if (!result.ok) { status = result.error; return false; }
-    const auto added = result.data.find("addedComponents");
-    const uint64_t componentId = added == result.data.end() ? 0 : RegionComponentId(*added);
-    if (componentId == 0) { status = "component.add: INVALID_RESULT: 新しい区域の部品の ID がありません"; return false; }
-    // 新しい ID は Scene の Object ID から作る。既存の ID は変えない。
-    Json commands = Json::array({PropertyCommand(objectId, componentId, "regionId", "td2.region." + std::to_string(objectId))});
-    // 最初の地図だけを開始区域にする。
-    std::vector<SceneItem> regions;
-    if (!QueryObjects(context, kRegionComponentType, regions, status)) { return false; }
-    bool firstEntry = true;
-    for (const auto& item : regions) {
-        if (item.objectId == objectId) { continue; }
-        RegionTarget existingTarget; RegionSettings existing;
-        if (!ReadRegion(context, item.objectId, existingTarget, existing, status)) { return false; }
-        if (existing.entryRegion) { firstEntry = false; break; }
-    }
-    commands.push_back(PropertyCommand(objectId, componentId, "entryRegion", firstEntry));
-    if (bindSelf) {
-        commands.push_back(PropertyCommand(objectId, componentId, "screenObject", objectId));
-        commands.push_back(PropertyCommand(objectId, componentId, "screenSlot", "TD2_Screen"));
-    }
-    if (std::string error; !Transact(context, commands, error)) {
-        status = "区域の部品は追加しましたが、初期設定に失敗しました：" + error; return false;
-    }
-    return true;
-}
 
 bool EditText(IEditorWorkspaceUi& ui, std::string_view id, std::string_view label, std::string& value) {
     std::vector<char> buffer((std::max)(size_t{1024}, value.size() + 256), '\0');

@@ -23,8 +23,7 @@ static StageObject ParseStageObject(uint64_t objectId, const Json& o) {
     out.pose.position = Vec(t.value("position", Json{}), {0, 0, 0});
     out.pose.rotation = Vec(t.contains("rotation") ? t["rotation"] : t.value("rotationEulerDeg", Json{}), {0, 0, 0});
     out.pose.scale = Vec(t.value("scale", Json{}), {1, 1, 1});
-    if (o.contains("model") && o["model"].is_object()) { out.source = o["model"].value("sourcePath", ""); }
-    out.television = out.source.empty() ? nullptr : FindTelevisionModel(out.source);
+    if (o.contains("model") && o["model"].is_object()) { out.television = FindTelevisionModel(o["model"].value("assetId", "")); }
     if (o.contains("worldBounds") && o["worldBounds"].is_object()) {
         out.lo = Vec(o["worldBounds"].value("min", Json{}), {0, 0, 0});
         out.hi = Vec(o["worldBounds"].value("max", Json{}), {0, 0, 0});

@@ -1,6 +1,6 @@
 #pragma once
 // レベル編集：世界地図を主の画布にして、テレビの地形と装置・画面の外の仕掛け・カメラ・3D の布景を一つのワークスペースで直す。
-// 右は世界地図（上に道具の列）、左は選んだものの属性（何も選んでいない時は章とテレビの一覧）、下は置くものの棚。中央は 3D ビューポート。
+// 右は世界地図（上に道具の列、右端に未配置のテレビ）、左は選んだものの属性（何も選んでいない時は試遊・問題・解法）、下は置くものの棚。中央は 3D ビューポート。
 #include "TD2LevelModel.h"
 #include "TD2Recipes.h"
 #include "TD2StageAttach.h"
@@ -39,13 +39,11 @@ private:
     // ---- 全体（TD2LevelEditor.cpp）
     void DrawToolbar(EditorWorkspaceHostContext& ctx);
     void ChooseTool(EditorWorkspaceHostContext& ctx, Tool tool);
-    void History(EditorWorkspaceHostContext& ctx, bool redo);
     bool EnsureLayout(EditorWorkspaceHostContext& ctx, bool force = false);
     void RefreshMachines(EditorWorkspaceHostContext& ctx, bool force = false);
     void RefreshCheck(EditorWorkspaceHostContext& ctx);
     // 区域を選ぶ（草稿を確定してから）。シーンの選択も合わせる。
     bool SelectRoom(EditorWorkspaceHostContext& ctx, uint64_t objectId);
-    void FocusRoom(uint64_t objectId);
     void FitAll(EditorWorkspacePoint size);
     void FitRoom(const RegionSettings& s);
     void SetNote(std::string text) { note_ = std::move(text); noteClock_ = 0; }
@@ -66,6 +64,16 @@ private:
     void DrawHover(IEditorWorkspaceUi& ui, const EditorWorkspaceCanvasInput& input, EditorWorkspacePoint p);
     void DrawIssues(IEditorWorkspaceUi& ui);
     void DrawChapterLabels(IEditorWorkspaceUi& ui);
+    // 地図の右の「未配置」：世界に置いていないテレビを並べ、地図へドラッグして置く（ここへ戻すと取り消し）。
+    struct TrayItem { uint64_t objectId = 0; EditorWorkspacePoint a, b; };
+    std::vector<TrayItem> TrayItems(EditorWorkspacePoint size) const;
+    bool OverTray(EditorWorkspacePoint pointer, EditorWorkspacePoint size) const;
+    bool PressTray(EditorWorkspaceHostContext& ctx, const EditorWorkspaceCanvasInput& input);
+    void DrawTray(IEditorWorkspaceUi& ui, const EditorWorkspaceCanvasInput& input);
+    // 地図の左下に、今の道具の操作を一行だけ出す。
+    void DrawToolHint(IEditorWorkspaceUi& ui, const EditorWorkspaceCanvasInput& input);
+    // 3D の向き：地図で隣り合うテレビ（世界に無ければ 3D で一番近いテレビ）と逆を向いていれば「裏」。
+    bool BackFacing(const RoomItem& room);
     bool FitChapter(EditorWorkspacePoint size);
     void PressSelect(EditorWorkspaceHostContext& ctx, const EditorWorkspaceCanvasInput& input, EditorWorkspacePoint p);
     void PressTerrain(EditorWorkspaceHostContext& ctx, const EditorWorkspaceCanvasInput& input, EditorWorkspacePoint p);
@@ -85,8 +93,7 @@ private:
     void RememberTemplate(const DeviceDraft& d) { templates_[d.kind] = d; }
     void ApplyTemplate(DeviceDraft& d, int cols, int rows) const;
     bool FinishGroupMove(EditorWorkspaceHostContext& ctx);
-    // 区域の地図上の位置に、型を選んだテレビを新しく作る（3D では地図の隣のテレビの横へ）。
-    void PlaceTelevision(EditorWorkspaceHostContext& ctx, const TelevisionModel& model, int worldX, int worldY);
+    std::string NeighborRegion(const RegionSettings& s) const;
 
     // ---- 左の欄（TD2LevelInspector.cpp）
     void DrawInspector(EditorWorkspaceHostContext& ctx);
@@ -98,14 +105,12 @@ private:
     void DrawRoomCamera(EditorWorkspaceHostContext& ctx, const std::string& regionId);
     void DrawPlateLinks(EditorWorkspaceHostContext& ctx);
     void DrawScreenBinding(EditorWorkspaceHostContext& ctx);
-    void RefreshScreens(EditorWorkspaceHostContext& ctx);
     void RefreshChapters(EditorWorkspaceHostContext& ctx);
     void CommitPending(EditorWorkspaceHostContext& ctx);
 
     // ---- 下の棚（TD2LevelPalette.cpp）
     void DrawPalette(EditorWorkspaceHostContext& ctx);
     bool Tile(IEditorWorkspaceUi& ui, std::string_view id, std::string_view label, bool selected, const std::function<void(IEditorWorkspaceUi&, EditorWorkspacePoint)>& icon);
-    void DrawTelevisionShelf(EditorWorkspaceHostContext& ctx);
     void DrawPropShelf(EditorWorkspaceHostContext& ctx);
     void PlaceProp(EditorWorkspaceHostContext& ctx, const StageProp& prop);
     void FinishStand(EditorWorkspaceHostContext& ctx);
@@ -170,6 +175,8 @@ private:
     // ---- データ
     MapModel model_;
     Tool tool_ = Tool::Select;
+    Tool paintTool_ = Tool::Terrain;   // 「描く」で最後に選んだもの（地形か装置）
+    bool moreTools_ = false;           // カメラと舞台の道具を出すか
     Focus focus_ = Focus::None;
     MapCanvasView view_;
     bool fitChapter_ = true;   // 合わせる範囲：今のテレビの章（false で世界全体）
@@ -177,6 +184,9 @@ private:
     std::string note_;
     uint64_t pushed_ = 0;
     bool canvasHovered_ = false;
+    float emptyPressAt_ = -1;            // 空いた所を最後に押した時刻（二度押しで全体を見る）
+    uint64_t backKey_ = 0;
+    std::map<uint64_t, bool> back_;      // テレビの物体 → 裏か（布局と配置が変わった時だけ求め直す）
 
     // 地図の操作
     Drag drag_ = Drag::None;
@@ -199,8 +209,7 @@ private:
     LinkSource link_;
     std::string hoverText_;
 
-    // 新しいテレビと布景
-    int placeModel_ = -1;
+    // 布景
     uint64_t stageObject_ = 0;
     StageObject stageRead_;
     bool stageReadOk_ = false, stagePending_ = false;
@@ -219,15 +228,12 @@ private:
     std::map<uint64_t, std::string> chapterOf_;
     float chapterClock_ = 10;
     uint64_t chapterPulse_ = 0;
-    std::string search_;
-    bool screenSettings_ = false, screenPicker_ = false, allScreens_ = false, deviceAdvanced_ = false, stagePoseOpen_ = false;
-    std::vector<SceneItem> screens_;
-    std::string screenSearch_;
+    bool screenSettings_ = false, deviceAdvanced_ = false, stagePoseOpen_ = false;
 
     // カメラ・布局
     LayoutSnapshot layout_;
     bool layoutValid_ = false, layoutStale_ = true, plan_ = false;
-    uint64_t layoutRevision_ = 0, layoutPulse_ = 0;
+    uint64_t layoutRevision_ = 0, layoutPulse_ = 0, layoutVersion_ = 0;   // layoutVersion_ は読み直すたびに増える
     float layoutClock_ = 0;
     std::string areaFocus_;
     EdgeSelection edge_;

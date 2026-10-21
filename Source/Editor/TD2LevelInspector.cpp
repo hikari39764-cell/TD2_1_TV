@@ -125,38 +125,7 @@ void LevelEditor::DrawOverview(EditorWorkspaceHostContext& ctx) {
         }
         ui.Separator();
     }
-    EditText(ui, "td2.overview.search", "検索", search_);
-    // 章ごとにテレビを並べる。世界にまだ置いていないテレビは小さな地図で出し、地図へドラッグして置く。
-    std::map<std::string, std::vector<const RoomItem*>> chapters;
-    for (const auto& room : model_.rooms) {
-        if (!search_.empty() && room.object.name.find(search_) == std::string::npos && room.settings.region.regionId.find(search_) == std::string::npos) { continue; }
-        const auto found = chapterOf_.find(room.object.objectId);
-        chapters[found == chapterOf_.end() ? "その他" : found->second].push_back(&room);
-    }
-    for (const auto& [chapter, rooms] : chapters) {
-        ui.Text(chapter + "（" + std::to_string(rooms.size()) + "）");
-        for (const auto* room : rooms) {
-            const auto id = room->object.objectId;
-            if (room->settings.worldPlaced) {
-                if (ui.Selectable("td2.overview.room." + std::to_string(id), "   " + ShortChoiceLabel(room->object.name, 16), id == model_.selected)) {
-                    if (SelectRoom(ctx, id)) { focus_ = Focus::Room; FocusRoom(id); }
-                }
-                continue;
-            }
-            ui.Text("   ○ " + ShortChoiceLabel(room->object.name, 16) + "（地図へドラッグ）");
-            const auto input = ui.BeginCanvas("td2.overview.thumbnail." + std::to_string(id), 54);
-            TrackDrag(input);
-            MapCanvasView thumbnail;
-            const auto& s = room->settings;
-            thumbnail.tile = (std::max)(.5f, (std::min)((input.size.x - 12) / static_cast<float>(s.region.cols), (input.size.y - 8) / static_cast<float>(s.region.rows)));
-            thumbnail.origin = {(input.size.x - s.region.cols * thumbnail.tile) * .5f, (input.size.y - s.region.rows * thumbnail.tile) * .5f};
-            DrawRoomMap(ui, s, thumbnail, false, false, false);
-            if (input.hovered && (input.pressedButtons & kPrimary) && drag_ == Drag::None && SelectRoom(ctx, id)) {
-                drag_ = Drag::Library; model_.gesture = true; focus_ = Focus::Room;
-            }
-            ui.EndCanvas();
-        }
-    }
+    if (!lastRecord_ && issues_.empty() && solutions_.empty()) { ui.Text("地図でテレビを選ぶと、ここに設定が出ます"); }
 }
 
 // ---------------------------------------------------------------- テレビ
@@ -166,12 +135,11 @@ void LevelEditor::DrawRoomInspector(EditorWorkspaceHostContext& ctx) {
     if (!room) { return; }
     auto& s = model_.draft;
     const auto before = s;
-    ui.Text(ShortChoiceLabel(room->object.name, 18) + "  " + std::to_string(s.region.cols) + "×" + std::to_string(s.region.rows));
+    // いつも出すのは名前・大きさ・向き・試遊・開始テレビだけ。3D の付き方・カメラ・画面は「詳細」に畳む。
+    ui.Text(ShortChoiceLabel(room->object.name, 18) + "  " + std::to_string(s.region.cols) + "×" + std::to_string(s.region.rows) + (BackFacing(*room) ? "  · 裏" : ""));
     if (s.worldPlaced) {
         if (ui.Button("td2.room.play", "▶ この画面から")) { if (model_.Commit(ctx)) { pickingStart_ = true; FitRoom(s); } }
-        ui.SameLine();
-        if (ui.Button("td2.room.fit", "この画面を見る")) { FitRoom(s); }
-    } else { ui.Text("まだ世界にありません：左の一覧から地図へドラッグ"); }
+    } else { ui.Text("地図の右の「未配置」から地図へドラッグ"); }
     ui.Checkbox("td2.room.entry", "開始テレビ", &s.entryRegion);
     const auto previous = s.region;
     EditInt(ui, "td2.room.cols", "列", s.region.cols, 1, 64);
@@ -179,50 +147,23 @@ void LevelEditor::DrawRoomInspector(EditorWorkspaceHostContext& ctx) {
     if (!ResizeCells(previous, s.region)) { s.region = previous; model_.error = "大きさを変えられません"; }
     if (s != before) { propertyPending_ = true; }
     ui.Separator();
+    ui.Checkbox("td2.room.advanced", "詳細", &screenSettings_);
+    if (!screenSettings_) { return; }
     DrawRoomStage(ctx, *room);
     ui.Separator();
     DrawRoomCamera(ctx, s.region.regionId);
     ui.Separator();
-    if (ui.Checkbox("td2.room.advanced", "詳細", &screenSettings_) && screenSettings_) { RefreshScreens(ctx); }
-    if (screenSettings_) { DrawScreenBinding(ctx); }
+    DrawScreenBinding(ctx);
     if (s.worldPlaced && ui.Button("td2.room.remove", "世界から外す")) { s.worldPlaced = false; model_.Commit(ctx); }
 }
 
+// 画面の位置と材質スロットはテレビの型で決まるので、ここは ID と明るさだけ。
 void LevelEditor::DrawScreenBinding(EditorWorkspaceHostContext& ctx) {
     auto& ui = *ctx.ui;
     auto& s = model_.draft;
-    const auto before = s;
     ui.Text("区域 ID：" + s.region.regionId);
     double brightness = s.screenBrightness;
-    if (EditFloat(ui, "td2.room.brightness", "画面の明るさ", brightness, .5f, 4.0f)) { s.screenBrightness = static_cast<float>(brightness); }
-    const auto current = std::find_if(screens_.begin(), screens_.end(), [&s](const auto& item) { return item.objectId == s.screenObject; });
-    ui.Text("画面の物体：" + (s.screenObject == 0 ? std::string("未設定") : current == screens_.end() ? std::to_string(s.screenObject) : ShortChoiceLabel(current->name)));
-    if (ui.Button("td2.room.screen.pick", screenPicker_ ? "閉じる" : "画面の物体を替える")) { screenPicker_ = !screenPicker_; }
-    if (screenPicker_) {
-        EditText(ui, "td2.room.screen.search", "検索", screenSearch_);
-        if (ui.Checkbox("td2.room.screen.all", "モデルの無い物体も含める", &allScreens_)) { RefreshScreens(ctx); }
-        std::vector<EditorChoice> choices{{"td2.room.screen.none", "未設定", s.screenObject == 0}};
-        std::vector<uint64_t> ids{0};
-        for (const auto& screen : screens_) {
-            if (!screenSearch_.empty() && screen.name.find(screenSearch_) == std::string::npos) { continue; }
-            choices.push_back({"td2.room.screen." + std::to_string(screen.objectId), screen.name, s.screenObject == screen.objectId}); ids.push_back(screen.objectId);
-        }
-        if (const int chosen = DrawChoices(ui, choices); chosen >= 0) { s.screenObject = ids[static_cast<size_t>(chosen)]; screenPicker_ = false; }
-    }
-    EditText(ui, "td2.room.screen.slot", "材質スロット", s.screenSlot);
-    if (!model_.screenWarning.empty()) { ui.Text(model_.screenWarning); }
-    if (s != before) { propertyPending_ = true; }
-}
-
-void LevelEditor::RefreshScreens(EditorWorkspaceHostContext& ctx) {
-    screens_.clear();
-    (void)QueryAll(ctx, "scene.objects.query", {{"detail", true}}, "objects", [this](const Json& object) {
-        const auto id = ObjectId(object.value("objectId", Json{}));
-        const bool model = object.contains("model") && object["model"].is_object() &&
-            (!object["model"].value("assetId", "").empty() || object["model"].value("materialSlotCount", 0) > 0);
-        if (id && (allScreens_ || id == model_.draft.screenObject || model)) { screens_.push_back({id, object.value("name", "物体 " + std::to_string(id))}); }
-        return true;
-    }, model_.error);
+    if (EditFloat(ui, "td2.room.brightness", "画面の明るさ", brightness, .5f, 4.0f)) { s.screenBrightness = static_cast<float>(brightness); propertyPending_ = true; }
 }
 
 void LevelEditor::DrawRoomCamera(EditorWorkspaceHostContext& ctx, const std::string& regionId) {
@@ -337,7 +278,7 @@ void LevelEditor::RefreshStageObject(EditorWorkspaceHostContext& ctx) {
     if (id) { stageReadOk_ = ReadStageObject(ctx, id, stageRead_, error); }
     // 布景の道具でテレビ以外を選んだら、その物体の属性を出す。
     if (changed && stageReadOk_ && tool_ == Tool::Stage) {
-        const bool room = std::any_of(model_.rooms.begin(), model_.rooms.end(), [id](const RoomItem& r) { return MapModel::TelevisionObject(r) == id; });
+        const bool room = std::any_of(model_.rooms.begin(), model_.rooms.end(), [id](const RoomItem& r) { return r.object.objectId == id; });
         if (!room) { focus_ = Focus::Object; }
     }
 }
@@ -367,14 +308,8 @@ void LevelEditor::DrawObjectInspector(EditorWorkspaceHostContext& ctx) {
     auto& ui = *ctx.ui;
     if (!stageObject_ || !stageReadOk_) { ui.Text("ビューポートで物体を一つ選んでください"); return; }
     ui.Text(ShortChoiceLabel(stageRead_.name, 20));
-    if (stageRead_.television) {
-        ui.Text(std::string(stageRead_.television->label) + "（まだレベルのテレビではない）");
-        if (ui.Button("td2.stage.adopt", "レベルのテレビにする")) {
-            const auto model3d = *stageRead_.television;
-            if (model_.AdoptTelevision(ctx, stageObject_, model3d, std::nullopt)) { focus_ = Focus::Room; SetNote("作りました。左の一覧から地図へドラッグしてください"); }
-            return;
-        }
-    }
+    // テレビのモデルでも区域が無ければ飾り。インスペクターで区域を付けると、ここの一覧に出てくる。
+    if (stageRead_.television) { ui.Text(std::string(stageRead_.television->label) + "（インスペクターで「TD2 テレビの区域」を付けるとレベルのテレビになる）"); }
     if (!stagePending_) { stageEditing_ = stageRead_.pose; }
     if (DrawPoseEditor(ui, stageEditing_, stageRead_)) { stagePending_ = true; }
     if (stagePending_ && !ui.GetInteraction().editing) {
@@ -386,7 +321,7 @@ void LevelEditor::DrawObjectInspector(EditorWorkspaceHostContext& ctx) {
 
 void LevelEditor::DrawRoomStage(EditorWorkspaceHostContext& ctx, const RoomItem& room) {
     auto& ui = *ctx.ui;
-    const auto tv = MapModel::TelevisionObject(room);
+    const auto tv = room.object.objectId;
     const auto& s = model_.draft;
     // 3D の付き方：地図の隣のテレビに付けてあるか、自由に置いたか。
     if (!s.stageAnchor.empty()) {

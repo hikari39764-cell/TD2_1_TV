@@ -35,9 +35,6 @@ struct RegionTarget {
 // 作者データを丸ごと比べ、他での編集を古い草稿で上書きしない。
 struct RegionSettings {
     RegionDefinition region;
-    uint64_t screenObject = 0;
-    // 画面は 3D キャプチャの材質スロットへつなぐ。
-    std::string screenSlot = "TD2_Screen";
     // 明るさはテレビの画面材質だけに掛ける。
     float screenBrightness = 2.2f;
     float spawnX = 0.5f, spawnY = 0.5f;
@@ -65,9 +62,6 @@ const Json* FieldValue(const Json&, std::string_view id);
 bool QueryObjects(EditorWorkspaceHostContext&, std::string_view componentType, std::vector<SceneItem>&, std::string& error);
 bool ReadRegion(EditorWorkspaceHostContext&, uint64_t objectId, RegionTarget&, RegionSettings&, std::string& error);
 void AppendRegionChanges(Json& commands, const RegionTarget&, const RegionSettings& before, const RegionSettings& after);
-bool AddRegion(EditorWorkspaceHostContext&, uint64_t objectId, bool bindSelf, std::string& status);
-// 画面の物体のモデルに、指定した材質スロットがあるか確かめる。無ければ作者向けの注意を返す。
-std::string ScreenSlotWarning(EditorWorkspaceHostContext&, const RegionSettings&);
 bool EditText(IEditorWorkspaceUi&, std::string_view id, std::string_view label, std::string& value);
 void EditInt(IEditorWorkspaceUi&, std::string_view id, std::string_view label, int& value, int minimum, int maximum);
 bool EditFloat(IEditorWorkspaceUi&, std::string_view id, std::string_view label, double& value,

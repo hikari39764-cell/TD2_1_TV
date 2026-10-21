@@ -50,7 +50,7 @@ public:
     float elapsed = 0;
     uint64_t revision = 0;
     bool sceneDirty = false, savedOnce = false;
-    std::string error, published, screenWarning;
+    std::string error, published;
     // 画面の外の仕掛け（読み直しは重いので、開いた時・仕掛けを書いた時・刷新を押した時だけ）。
     std::vector<Machine> machines;
     bool machinesStale = true;
@@ -81,7 +81,7 @@ public:
         return found == rooms.end() ? nullptr : &*found;
     }
     bool Dirty() const { const auto* item = Current(); return ready && item && draft != item->settings; }
-    void Discard() { if (const auto* item = Current()) { draft = item->settings; devices.Load(draft.devices); } gesture = false; error.clear(); screenWarning.clear(); }
+    void Discard() { if (const auto* item = Current()) { draft = item->settings; devices.Load(draft.devices); } gesture = false; error.clear(); }
     // ---- シーンの変化の目印。editor.state を一回だけ読み、文書（版・物体数・取り消し札・未保存）と選んだ物（ID と包囲箱）の変化を数える。
     // 操作は一回ごとにログへ残るので、重い読み直しはこの数が変わった時だけにする（テレビ全部を毎秒読むとログが膨らむ）。
     uint64_t documentPulse = 0, selectionPulse = 0, activeObject = 0;
@@ -132,12 +132,13 @@ public:
         if (!Current()) { selected = rooms.empty() ? 0 : rooms.front().object.objectId; }
         ready = Current() != nullptr;
         if (ready) { draft = Current()->settings; devices.Load(draft.devices); }
+        if (PrepareNewTelevisions(ctx)) { refresh = true; }
     }
     bool Select(EditorWorkspaceHostContext& ctx, uint64_t objectId) {
         if (objectId == selected && ready) { return true; }
         if (Dirty() && !Commit(ctx)) { return false; }
         selected = objectId; ready = Current() != nullptr;
-        if (ready) { draft = Current()->settings; devices.Select(-1); devices.Load(draft.devices); screenWarning.clear(); }
+        if (ready) { draft = Current()->settings; devices.Select(-1); devices.Load(draft.devices); }
         return ready;
     }
     std::vector<RegionPlacement> Layout(const RegionSettings* replacement = nullptr) const {
@@ -160,8 +161,6 @@ public:
     }
     bool Commit(EditorWorkspaceHostContext& ctx) {
         auto* item = Current(); if (!ready || !item || !Dirty()) { return true; }
-        // 画面の物体か材質スロットを変えたら、モデルにそのスロットがあるか確かめ直す。
-        if (draft.screenObject != item->settings.screenObject || draft.screenSlot != item->settings.screenSlot) { screenWarning = ScreenSlotWarning(ctx, draft); }
         if (const auto problem = Validate(draft); !problem.empty()) { error = problem; return false; }
         RegionTarget target; RegionSettings fresh;
         if (!ReadRegion(ctx, selected, target, fresh, error)) { return false; }
@@ -199,27 +198,9 @@ public:
         if (rejectInvalid) { const auto message = error; Discard(); error = message; }
         return false;
     }
-    void History(EditorWorkspaceHostContext& ctx, bool redo) {
-        if (gesture) { return; }
-        if (Dirty()) { error = "先に今の下書きを反映するか戻してください"; return; }
-        const auto result = Execute(ctx, redo ? "scene.redo" : "scene.undo", Json::object());
-        if (!result.ok) { error = result.error; return; }
-        sceneDirty = true;
-        refresh = true; Poll(ctx, true);
-    }
-    void Create(EditorWorkspaceHostContext& ctx) {
-        if (Dirty() && !Commit(ctx)) { return; }
-        const auto created = Execute(ctx, "scene.create_empty_object", {{"name", "テレビの地図"}});
-        if (!created.ok) { error = created.error; return; }
-        sceneDirty = true;
-        const auto id = ObjectId(created.data.value("objectId", Json{}));
-        if (!id || !AddRegion(ctx, id, false, error)) { return; }
-        refresh = true; Poll(ctx, true); Select(ctx, id);
-    }
     // ---- シーン（3D）の選択との同期。シーンでテレビを選ぶと地図もそのテレビを開き、地図で選ぶとシーンでもそのテレビを選ぶ。
     uint64_t sceneSelection = 0, followedPulse = 0;
     int historyFrames = 0;
-    static uint64_t TelevisionObject(const RoomItem& room) { return room.settings.screenObject ? room.settings.screenObject : room.object.objectId; }
     // 目印が新しく読んだ選択だけを見る（地図から選んだ直後に、古い選択へ戻さない）。
     void FollowScene(EditorWorkspaceHostContext& ctx) {
         if (gesture || followedPulse == selectionPulse) { return; }
@@ -228,7 +209,7 @@ public:
         if (id == sceneSelection) { return; }
         sceneSelection = id;
         for (const auto& room : rooms) {
-            if (!id || (room.object.objectId != id && room.settings.screenObject != id)) { continue; }
+            if (!id || room.object.objectId != id) { continue; }
             if (room.object.objectId != selected) { Select(ctx, room.object.objectId); }
             return;
         }
@@ -236,40 +217,67 @@ public:
     void ShowInScene(EditorWorkspaceHostContext& ctx) {
         const auto* room = Current();
         if (!room) { return; }
-        const auto id = TelevisionObject(*room);
+        const auto id = room->object.objectId;
         if (id != sceneSelection && Execute(ctx, "scene.object.select", {{"objectId", id}}).ok) { sceneSelection = id; }
     }
-    // 新しく置いたテレビの物体を区域にする：型の格子と床だけの地図。
-    // beside が世界に置いてあれば、世界地図ではその右（空いていなければ左・上・下）に下端を揃えて置く。
-    bool AdoptTelevision(EditorWorkspaceHostContext& ctx, uint64_t object, const TelevisionModel& model, std::optional<RegionSettings> beside) {
-        if (Dirty() && !Commit(ctx)) { return false; }
-        if (!AddRegion(ctx, object, true, error)) { return false; }
-        sceneDirty = true;
-        refresh = true; Poll(ctx, true);
-        if (!Select(ctx, object)) { return false; }
-        screenWarning = ScreenSlotWarning(ctx, draft);
-        const auto previous = draft.region;
-        draft.region.cols = model.cols; draft.region.rows = model.rows;
-        if (!ResizeCells(previous, draft.region)) { draft.region = previous; error = "マスの大きさを変えられません"; return false; }
-        std::fill(draft.region.cells.begin(), draft.region.cells.end(), '0');
-        for (int x = 0; x < model.cols; ++x) { draft.region.cells[CellIndex(draft.region, x, model.rows - 1)] = '1'; }
-        draft.spawnX = 1.1875f; draft.spawnY = static_cast<float>(model.rows) - 1.875f;
-        draft.devices.clear(); devices.Load(draft.devices);
-        draft.worldPlaced = false;
-        if (beside && beside->worldPlaced) {
-            const int bx = beside->worldX, by = beside->worldY, bc = beside->region.cols, br = beside->region.rows;
-            const std::array<std::pair<int, int>, 4> spots{{{bx + bc, by + br - model.rows}, {bx - model.cols, by + br - model.rows}, {bx, by - model.rows}, {bx, by + br}}};
-            for (const auto& [x, y] : spots) {
-                auto trial = draft; trial.worldPlaced = true; trial.worldX = x; trial.worldY = y;
-                if (ValidateWorldLayout(Layout(&trial)).valid) { draft = trial; break; }
-            }
+    // 新しく区域を付けたテレビ（ID が既定のまま）と、シーンで複製したテレビ（ID が重なる。物体 ID の大きい方）を整える。
+    // 新しいテレビは型の格子と床だけの地図、複製は地図を残す。どちらも新しい ID で世界の外に置き、一回の取り消しにまとめる。
+    bool PrepareNewTelevisions(EditorWorkspaceHostContext& ctx) {
+        const std::string unset = RegionDefinition{}.regionId;
+        std::vector<RoomItem*> order;
+        for (auto& room : rooms) { order.push_back(&room); }
+        std::sort(order.begin(), order.end(), [](const RoomItem* a, const RoomItem* b) { return a->object.objectId < b->object.objectId; });
+        std::set<std::string> seen;
+        std::vector<RoomItem*> renamed;
+        for (auto* room : order) {
+            const auto& id = room->settings.region.regionId;
+            if (id != unset && seen.insert(id).second) { continue; }
+            renamed.push_back(room);
         }
-        if (!Commit(ctx)) { return false; }
-        error = draft.worldPlaced || !beside ? std::string{} : "作りました。世界地図の隣に空きが無いので、一覧から世界へドラッグしてください";
+        if (renamed.empty()) { return false; }
+        // 新しいテレビの型（モデルの GUID）。
+        std::map<uint64_t, const TelevisionModel*> models;
+        std::vector<uint64_t> ids;
+        for (const auto* room : renamed) { if (room->settings.region.regionId == unset) { ids.push_back(room->object.objectId); } }
+        if (!ids.empty()) {
+            const auto detail = Execute(ctx, "scene.objects.query", {{"objectIds", ids}, {"detail", true}});
+            if (!detail.ok) { error = detail.error; return false; }
+            for (const auto& object : detail.data.value("objects", Json::array())) {
+                const auto model = object.find("model");
+                const auto asset = model != object.end() && model->is_object() ? model->value("assetId", "") : std::string{};
+                if (!asset.empty()) { models[ObjectId(object.value("objectId", Json{}))] = FindTelevisionModel(asset); }
+            }
+            // 空の物体に区域を付けたばかりのテレビは、モデルを選ぶまで待つ（型の格子で整える）。
+            std::erase_if(renamed, [&](const RoomItem* room) { return room->settings.region.regionId == unset && !models.contains(room->object.objectId); });
+            if (renamed.empty()) { return false; }
+        }
+        bool hasEntry = std::any_of(rooms.begin(), rooms.end(), [&](const RoomItem& r) {
+            return r.settings.entryRegion && std::find(renamed.begin(), renamed.end(), &r) == renamed.end();
+        });
+        Json commands = Json::array();
+        for (auto* room : renamed) {
+            auto next = room->settings;
+            next.region.regionId = "td2.region." + std::to_string(room->object.objectId);
+            next.worldPlaced = false; next.stageAnchor.clear();
+            next.entryRegion = !hasEntry; hasEntry = true;
+            if (room->settings.region.regionId == unset) {
+                // 型の格子（表に無いモデルは一番多い型と同じ 12×7）に、下の一列だけの床。
+                const auto found = models.find(room->object.objectId);
+                const auto* model = found == models.end() ? nullptr : found->second;
+                next.region.cols = model ? model->cols : 12; next.region.rows = model ? model->rows : 7;
+                next.region.cells.assign(static_cast<size_t>(next.region.cols * next.region.rows), '0');
+                for (int x = 0; x < next.region.cols; ++x) { next.region.cells[CellIndex(next.region, x, next.region.rows - 1)] = '1'; }
+                next.spawnX = 1.1875f; next.spawnY = static_cast<float>(next.region.rows) - 1.875f;
+                next.devices.clear();
+            }
+            AppendRegionChanges(commands, room->target, room->settings, next);
+        }
+        if (!Transact(ctx, commands, error)) { return false; }
+        sceneDirty = true;
         return true;
     }
     void Publish(EditorWorkspaceHostContext& ctx) {
-        std::string message = !error.empty() ? error : screenWarning;
+        std::string message = error;
         if (message.empty() && !rooms.empty()) {
             const auto entries = std::count_if(rooms.begin(), rooms.end(), [](const auto& r) { return r.settings.worldPlaced && r.settings.entryRegion; });
             if (entries == 0) { message = "世界地図に開始テレビを置いてください"; }

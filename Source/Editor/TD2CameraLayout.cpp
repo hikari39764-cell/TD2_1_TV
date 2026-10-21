@@ -230,13 +230,13 @@ bool LoadLayout(EditorWorkspaceHostContext& ctx, LayoutSnapshot& snap, std::stri
         for (const auto& [t, id] : s.components) { if (t == type) { return id; } }
         return 0;
     };
-    // 3. 区域（テレビ）。モデルの元パスから型を引き、画面の寸法と筐体を決める。
+    // 3. 区域（テレビ）。モデルから型を引き、画面の寸法と筐体を決める。
     std::vector<uint64_t> tvIds;
     for (const auto& s : summaries) {
         const auto componentId = componentOf(s, kRegionComponentType);
         if (!componentId) { continue; }
         const auto fields = Describe(ctx, s.id, componentId, {"regionId", "cols", "rows", "cells", "worldPlaced", "worldX", "worldY", "cameraObject",
-            "cameraAuto", "screenObject", "screenCenterX", "screenCenterY", "screenCenterZ", "screenWidth", "screenHeight"}, error);
+            "cameraAuto"}, error);
         if (!fields.is_array()) { return false; }
         LayoutRoom room;
         room.objectId = s.id; room.componentId = componentId; room.name = s.name;
@@ -247,11 +247,7 @@ bool LoadLayout(EditorWorkspaceHostContext& ctx, LayoutSnapshot& snap, std::stri
         room.worldX = static_cast<int>(NumberField(fields, "worldX", 0)); room.worldY = static_cast<int>(NumberField(fields, "worldY", 0));
         room.cameraId = ReferenceId(FieldValue(fields, "cameraObject"));
         room.cameraAuto = TextField(fields, "cameraAuto");
-        room.screenCenter[0] = NumberField(fields, "screenCenterX", 0); room.screenCenter[1] = NumberField(fields, "screenCenterY", .4);
-        room.screenCenter[2] = NumberField(fields, "screenCenterZ", .28);
-        room.screenWidth = NumberField(fields, "screenWidth", .84); room.screenHeight = NumberField(fields, "screenHeight", .49);
-        const uint64_t screen = ReferenceId(FieldValue(fields, "screenObject"));
-        const uint64_t tv = screen ? screen : s.id;
+        const uint64_t tv = s.id;
         room.tvObject = tv;
         if (const auto found = snap.transforms.find(tv); found != snap.transforms.end()) { room.tv = found->second; }
         if (room.cameraId) {
@@ -266,8 +262,7 @@ bool LoadLayout(EditorWorkspaceHostContext& ctx, LayoutSnapshot& snap, std::stri
         if (!detail.ok) { error = detail.error; return false; }
         for (const auto& object : detail.data.value("objects", Json::array())) {
             const auto id = ObjectId(object.value("objectId", Json{}));
-            const auto source = object.contains("model") && object["model"].is_object() ? object["model"].value("sourcePath", "") : std::string{};
-            const auto* model = FindTelevisionModel(source);
+            const auto* model = object.contains("model") && object["model"].is_object() ? FindTelevisionModel(object["model"].value("assetId", "")) : nullptr;
             if (!model) { continue; }
             for (size_t i = 0; i < snap.rooms.size(); ++i) {
                 if (tvIds[i] != id) { continue; }
@@ -779,18 +774,6 @@ bool GenerateTravels(EditorWorkspaceHostContext& ctx, LayoutSnapshot& snap, std:
         ++report.written;
     }
     return LoadLayout(ctx, snap, error);
-}
-
-bool SyncScreenGeometry(EditorWorkspaceHostContext& ctx, const LayoutSnapshot& snap, GenerateReport& report, std::string& error) {
-    Json commands = Json::array();
-    for (const auto& room : snap.rooms) {
-        if (!room.knownModel) { continue; }
-        const auto set = [&](std::string_view id, double value) { commands.push_back(PropertyCommand(room.objectId, room.componentId, id, value)); };
-        set("screenCenterX", room.screenCenter[0]); set("screenCenterY", room.screenCenter[1]); set("screenCenterZ", room.screenCenter[2]);
-        set("screenWidth", room.screenWidth); set("screenHeight", room.screenHeight);
-        ++report.written;
-    }
-    return Transact(ctx, commands, error);
 }
 
 bool WriteAreaRegions(EditorWorkspaceHostContext& ctx, const LayoutArea& area, const std::vector<std::string>& regions, std::string& error) {

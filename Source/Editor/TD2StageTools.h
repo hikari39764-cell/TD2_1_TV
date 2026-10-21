@@ -10,7 +10,7 @@ namespace TD2::Editor {
 // 3D の舞台の道具：シーンの物体を読み、置き、並べる。レベル編集の下の欄（3D の舞台）が使う。
 struct StageObject {
     uint64_t objectId = 0, parentId = 0;
-    std::string name, source;              // source はモデルの元パス
+    std::string name;
     Pose pose;                              // シーンに書いた姿勢（親の座標）
     bool hasBounds = false;
     std::array<double, 3> lo{}, hi{};       // 世界の外接箱

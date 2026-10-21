@@ -64,11 +64,11 @@ void LevelEditor::FollowAnchors(EditorWorkspaceHostContext& ctx) {
     // 付いているテレビと、その相手。
     std::map<uint64_t, uint64_t> anchorOf;   // 付いているテレビ → 相手のテレビ
     std::map<std::string, uint64_t> tvOf;
-    for (const auto& room : model_.rooms) { tvOf[room.settings.region.regionId] = MapModel::TelevisionObject(room); }
+    for (const auto& room : model_.rooms) { tvOf[room.settings.region.regionId] = room.object.objectId; }
     for (const auto& room : model_.rooms) {
         if (room.settings.stageAnchor.empty()) { continue; }
         const auto found = tvOf.find(room.settings.stageAnchor);
-        if (found != tvOf.end()) { anchorOf[MapModel::TelevisionObject(room)] = found->second; }
+        if (found != tvOf.end()) { anchorOf[room.object.objectId] = found->second; }
     }
     if (anchorOf.empty()) { anchorPoses_.clear(); seenPoses_.clear(); return; }
     std::vector<uint64_t> ids;
@@ -96,7 +96,7 @@ void LevelEditor::FollowAnchors(EditorWorkspaceHostContext& ctx) {
         // 付いているテレビを作者が直接動かした：付きを外す（相手は動いていない時だけ）。
         if (const auto parent = anchorOf.find(id); parent != anchorOf.end() && !moved.contains(parent->second)) {
             for (auto& room : model_.rooms) {
-                if (MapModel::TelevisionObject(room) != id) { continue; }
+                if (room.object.objectId != id) { continue; }
                 if (room.object.objectId == model_.selected && model_.ready) { model_.draft.stageAnchor.clear(); model_.Commit(ctx); }
                 else if (Transact(ctx, Json::array({PropertyCommand(room.target.objectId, room.target.componentId, "stageAnchor", std::string{})}), model_.error)) { model_.refresh = true; }
                 SetNote("「" + ShortChoiceLabel(room.object.name, 10) + "」を 3D で動かしたので、自由配置にしました");

@@ -61,8 +61,6 @@ void LevelEditor::Generate(EditorWorkspaceHostContext& ctx, bool cameras, bool t
     const LayoutEdge* edge = edgeCopy ? &*edgeCopy : nullptr;
     if (!model_.Commit(ctx) || !EnsureLayout(ctx, true)) { return; }
     std::string error; GenerateReport cameraReport, travelReport;
-    if (!SyncScreenGeometry(ctx, layout_, cameraReport, error)) { model_.error = error; return; }
-    cameraReport = {};
     if (cameras && !GenerateCameras(ctx, layout_, area, room, force, cameraReport, error)) { model_.error = error; return; }
     if (travels && !GenerateTravels(ctx, layout_, area, edge, force, travelReport, error)) { model_.error = error; return; }
     std::string note = cameras && travels ? "カメラと演出" : cameras ? "カメラ" : "演出";

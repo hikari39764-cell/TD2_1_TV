@@ -97,7 +97,6 @@ bool GenerateCameras(EditorWorkspaceHostContext&, LayoutSnapshot&, std::string_v
 bool GenerateTravels(EditorWorkspaceHostContext&, LayoutSnapshot&, std::string_view areaName, const LayoutEdge* onlyEdge,
                      bool force, GenerateReport&, std::string& error);
 // 画面の寸法をテレビの型から区域の属性へ書く（表に無い型は触らない）。
-bool SyncScreenGeometry(EditorWorkspaceHostContext&, const LayoutSnapshot&, GenerateReport&, std::string& error);
 // 大区域の区域 ID の列を書く（区域を大区域へ入れる・外す）。
 bool WriteAreaRegions(EditorWorkspaceHostContext&, const LayoutArea&, const std::vector<std::string>& regions, std::string& error);
 bool CreateArea(EditorWorkspaceHostContext&, const std::string& name, const std::vector<std::string>& regions, std::string& error);
