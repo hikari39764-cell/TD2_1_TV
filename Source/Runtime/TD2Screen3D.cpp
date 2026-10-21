@@ -257,7 +257,7 @@ void Screen3DStage::ApplyIntro(HIKARI::WorldView& world, std::map<uint64_t, Bind
             w = .04 + .16 * k; h = .04 + .16 * k;
             x = .125 - w * .5; y = kNoiseDot - h * .5;
         }
-        next[object.value] = {object, view->handle, "TD2_Screen",
+        next[object.value] = {object, view->handle, std::string(kScreenSlot),
                               {static_cast<float>(x), static_cast<float>(y), static_cast<float>(w), static_cast<float>(h)}, false, region};
     };
     // 砂嵐の始まり：パソコンに近いテレビほど早く、最初の稲妻の瞬間に机の周りから工場の奥へ広がる。
@@ -689,13 +689,13 @@ bool Screen3DStage::SyncCaptures(HIKARI::WorldView& world, const std::vector<Ass
         if (viewOf[i] < 0) { continue; }
         const auto& room = *screens[i].room; const auto& config = room.configuration; const auto& r = room.Region();
         const auto screen = world.FindSceneObject(config.screenObject);
-        if (!screen.IsValid() || config.screenSlot.empty() || config.screenSlot.size() >= HIKARI::kGameProjectSceneCaptureMaterialSlotNameCapacity) { continue; }
+        if (!screen.IsValid()) { continue; }
         const auto& view = views_[static_cast<size_t>(viewOf[i])];
         const auto& window = WindowOf(view.kind);
         const HIKARI::GameProjectSceneCaptureSourceRect rect{
             static_cast<float>((room.x - window.x) / window.cols), static_cast<float>((room.y - window.y) / window.rows),
             static_cast<float>(r.cols / window.cols), static_cast<float>(r.rows / window.rows)};
-        next[screen.GetHandle().value] = {screen.GetHandle(), view.handle, config.screenSlot, rect, false, room.regionId};
+        next[screen.GetHandle().value] = {screen.GetHandle(), view.handle, std::string(kScreenSlot), rect, false, room.regionId};
     }
     // 保護は前のフレームのカメラで測った見え方で選ぶ。オープニングの砂嵐はその後で結び直す。
     ChooseProtected(next);

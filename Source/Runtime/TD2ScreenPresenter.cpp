@@ -85,8 +85,8 @@ void ScreenPresentationSystem::Update(HIKARI::WorldView& world, const HIKARI::Fr
         [&](HIKARI::ObjectView object, RegionComponent& region) {
             const auto placement = region.Placement();
             StageRoom room;
-            room.owner = object.GetHandle(); room.regionId = placement.regionId; room.configuration = region.Screen();
-            room.surface = region.Geometry();
+            room.owner = object.GetHandle(); room.regionId = placement.regionId; room.configuration = region.Screen(object);
+            room.surface = RegionComponent::Surface(object);
             room.style = globalStyle;
             if (const auto own = localStyles.find(object.GetHandle().value); own != localStyles.end()) {
                 room.style = own->second; room.style.captureCameraObject = globalStyle.captureCameraObject;

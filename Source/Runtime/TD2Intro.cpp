@@ -137,13 +137,12 @@ void IntroDirector::Collect(HIKARI::WorldView& world) {
     std::set<uint64_t> screens;
     const HIKARI::ComponentTypeId regionTypes[]{HIKARI::MakeComponentTypeId(kRegionComponentType)};
     (void)world.ForEachComponents<RegionComponent>(regionTypes, HIKARI::GameProjectWorldQueryAnchor::FirstRequiredTerm,
-        [&](HIKARI::ObjectView, RegionComponent& region) {
-            const auto screen = world.FindSceneObject(region.Screen().screenObject);
-            if (screen.IsValid() && screens.insert(screen.GetHandle().value).second) { screens_.tvScreens.push_back(screen.GetHandle()); }
+        [&](HIKARI::ObjectView screen, RegionComponent&) {
+            if (screens.insert(screen.GetHandle().value).second) { screens_.tvScreens.push_back(screen.GetHandle()); }
             // パソコンの画面の中心（テレビの縮尺と向きを掛けたモデルの画面位置）。小物はここへ飛び込む。
             HIKARI::GameProjectTransform tv{};
-            if (region.Screen().screenObject == settings_.computerScreen && screen.IsValid() && screen.GetWorldTransform(tv)) {
-                const auto& g = region.Geometry();
+            if (screen.GetSceneObjectId() == settings_.computerScreen && screen.GetWorldTransform(tv)) {
+                const auto g = RegionComponent::Surface(screen);
                 const auto local = QRotate(tv.rotation, {g.centerX * tv.scale.x, g.centerY * tv.scale.y, g.centerZ * tv.scale.z});
                 screenCenter_ = {tv.position.x + local.x, tv.position.y + local.y, tv.position.z + local.z};
             }

@@ -63,10 +63,17 @@ void GameSession::SyncRegions(HIKARI::WorldView& world) {
         [this, &sources, &definitionsValid, &previewEntry](HIKARI::ObjectView object, RegionComponent& component) {
             Rules::RegionSource source; source.placement = component.Placement(); source.entry = component.IsEntryRegion();
             const auto& id = source.placement.regionId;
+            // まだレベル編集が整えていないテレビ（区域を付けたばかりで ID が既定のまま、またはシーンで複製して ID が重なる）は
+            // 世界に入れない。一台のために世界全体を止めない。
+            if (id == RegionDefinition{}.regionId || regions_.televisions.contains(id)) {
+                std::fprintf(stderr, "[TD2 configuration] skipped unprepared tv object=%llu region=%s\n",
+                             static_cast<unsigned long long>(object.GetSceneObjectId()), id.c_str());
+                return;
+            }
             if (object.GetSceneObjectId() == previewEntryObject_ || (TestEntryRegion() && id == TestEntryRegion())) { previewEntry = id; }
             regions_.televisions[id] = object.GetHandle();
             regions_.cameras[id] = component.CameraObject();
-            regions_.geometry[id] = component.Geometry();
+            regions_.geometry[id] = RegionComponent::Surface(object);
             std::string error;
             if (!component.BuildDefinition(source.definition, error) && source.placement.worldPlaced) {
                 std::fprintf(stderr, "[TD2 configuration] region=%s error=%s\n", id.c_str(), error.c_str());

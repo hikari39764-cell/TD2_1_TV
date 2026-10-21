@@ -16,13 +16,12 @@
 #include <vector>
 
 namespace TD2 {
+// テレビの画面の材質スロット名（どの型のモデルも同じ名前）。
+inline constexpr std::string_view kScreenSlot = "TD2_Screen";
+// 画面を映すテレビの物体（区域の付いた物体そのもの）と、画面の明るさ。
 struct ScreenConfiguration {
     uint64_t screenObject = 0;
-    std::string screenSlot = "TD2_Screen";
-    int outputWidth = 256, outputHeight = 192;
     float brightness = 2.2f;
-    int materialIndex = -1;
-    std::string modelAssetGuid;
 };
 // 舞台に並べる一部屋。x, y は舞台上のマス位置（世界に置いた部屋は世界の位置、未配置の地図は世界の外に並べた位置）。
 // region は描く間だけ借りる（Play は Session の地図、編集中は ownedRegion へ写した値）。

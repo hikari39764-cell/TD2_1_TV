@@ -17,7 +17,7 @@ namespace TD2 {
 struct RegionObjects {
     std::map<std::string, HIKARI::GameProjectObjectHandle, std::less<>> televisions;
     std::map<std::string, uint64_t, std::less<>> cameras;
-    std::map<std::string, RegionComponent::ScreenGeometry, std::less<>> geometry;
+    std::map<std::string, ScreenSurface, std::less<>> geometry;
     // 区域のテレビの物体（無ければ無効な値）。
     HIKARI::GameProjectObjectHandle Television(std::string_view region) const {
         const auto found = televisions.find(region);

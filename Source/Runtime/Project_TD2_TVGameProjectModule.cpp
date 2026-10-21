@@ -34,6 +34,9 @@ public:
 
 // 以下はエンジンへの登録。日常のゲーム処理は上の Game に書く。
 // Register で登録したコンポーネントとシステムは自動的にこの Feature の所有になる。
+// テレビの区域はモデルと一緒に使う。付けると ModelComponent も付き、区域がある間は外せない。
+inline constexpr std::string_view kTelevisionNeeds[]{"ModelComponent"};
+
 class GameplayFeature final : public HIKARI::IRuntimeFeature {
 public:
     std::string_view GetFeatureId() const noexcept override { return "Project_TD2_TV.Gameplay"; }
@@ -46,7 +49,8 @@ public:
     bool Register(HIKARI::RuntimeFeatureContext& context) override {
         // Region があるシーンには表示システムを自動で入れる。
         return context.RegisterSystem<Game>({.systemId = "Project_TD2_TV.Game", .displayName = "Game"}) &&
-            context.RegisterComponent<TD2::RegionComponent>({.typeName = TD2::kRegionComponentType, .displayName = "TD2 テレビの区域", .category = "TD2"}) &&
+            context.RegisterComponent<TD2::RegionComponent>({.typeName = TD2::kRegionComponentType, .requiredComponents = kTelevisionNeeds,
+                .displayName = "TD2 テレビの区域", .category = "TD2"}) &&
             context.RegisterComponent<TD2::RegionSequenceComponent>({.typeName = TD2::kRegionSequenceComponentType, .displayName = "TD2 区域の演出", .category = "TD2"}) &&
             context.RegisterComponent<TD2::MechanismComponent>({.typeName = TD2::kMechanismComponentType, .displayName = "TD2 画面外の仕掛け", .category = "TD2"}) &&
             context.RegisterComponent<TD2::SlideRackComponent>({.typeName = TD2::kSlideRackComponentType, .displayName = "TD2 スライド棚", .category = "TD2"}) &&
