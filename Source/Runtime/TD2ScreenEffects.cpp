@@ -3,6 +3,10 @@
 
 namespace TD2 {
 void ScreenEffects::Reset() { previous_.reset(); effects_.clear(); }
+void ScreenEffects::Add(ScreenEffectKind kind, const Rules::Rect& rect, double now, double duration, uint64_t tick) {
+    if (effects_.size() == 24) { effects_.erase(effects_.begin()); }
+    effects_.push_back({kind, rect, {}, now, duration, false, tick, nextEventId_++});
+}
 void ScreenEffects::Observe(const Rules::WorldSnapshot& s) {
     if (previous_ && (s.realTime < previous_->realTime || s.regionId != previous_->regionId)) { Reset(); }
     std::erase_if(effects_, [&s](const auto& e) { return s.realTime - e.born >= e.duration; });

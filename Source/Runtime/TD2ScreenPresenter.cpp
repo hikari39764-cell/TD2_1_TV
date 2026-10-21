@@ -115,7 +115,12 @@ void ScreenPresentationSystem::Update(HIKARI::WorldView& world, const HIKARI::Fr
         stage.snapshot = &session->Snapshot(); stage.activeRegion = session->ActiveRegion(); stage.simulated = true;
         (void)session->TravelRooms(stage.travelFrom, stage.travelTo);
         stage.areaRooms = session->AreaRooms(stage.activeRegion);
+        if (session->Intro().active) { stage.intro = &session->Intro(); }
     } else {
+        if (!playing) {
+            intro_.Preview(world);
+            if (intro_.Screens().active) { stage.intro = &intro_.Screens(); }
+        }
         // 未配置の地図は世界の下に 1 マスずつ空けて並べる。
         int left = 0, bottom = 0, maxCols = 1, maxRows = 1; bool any = false;
         for (const auto& room : rooms_) if (room.placed) {

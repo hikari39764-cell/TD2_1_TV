@@ -216,16 +216,6 @@ public:
         if (!id || !AddRegion(ctx, id, false, error)) { return; }
         refresh = true; Poll(ctx, true); Select(ctx, id);
     }
-    void AddSelectedTelevision(EditorWorkspaceHostContext& ctx) {
-        if (Dirty() && !Commit(ctx)) { return; }
-        const auto id = SelectedObject(ctx, error);
-        if (!id || !AddRegion(ctx, id, true, error)) { return; }
-        sceneDirty = true;
-        refresh = true; Poll(ctx, true);
-        if (!Select(ctx, id)) { return; }
-        screenWarning = ScreenSlotWarning(ctx, draft);
-        if (Commit(ctx)) { error.clear(); }
-    }
     // ---- シーン（3D）の選択との同期。シーンでテレビを選ぶと地図もそのテレビを開き、地図で選ぶとシーンでもそのテレビを選ぶ。
     uint64_t sceneSelection = 0, followedPulse = 0;
     int historyFrames = 0;

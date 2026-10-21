@@ -3,6 +3,7 @@
 #include "Rules/TD2Exploration.h"
 #include "TD2CameraDirector.h"
 #include "TD2MachineViews.h"
+#include "TD2Intro.h"
 #include "../Common/TD2PlayRecord.h"
 #include "HIKARI/Project/GameProjectSession.h"
 #include "HIKARI/Project/FrameContext.h"
@@ -30,6 +31,8 @@ public:
     const Rules::WorldSnapshot& Snapshot() { return exploration_.Snapshot(); }
     // 同じ大区域の部屋。画面の舞台の周りの窓を大区域ごとに固定するのに使う。
     std::vector<std::string> AreaRooms(std::string_view region) const { return camera_.AreaRooms(region); }
+    // オープニングの演出の画面の状態（タイトルと砂嵐）。オープニングが無い・終わった後は active が false。
+    const IntroScreens& Intro() const noexcept { return intro_.Screens(); }
 
 private:
     void SyncRegions(HIKARI::WorldView& world);
@@ -40,6 +43,8 @@ private:
     RegionObjects regions_;
     CameraDirector camera_;
     MachineViews machines_;
+    IntroDirector intro_;
+    bool introChecked_ = false;
     // エディタからの一回限りの入口。保存データには戻さない。
     uint64_t previewEntryObject_ = 0;
     std::optional<Rules::Vec2> previewSpawn_;

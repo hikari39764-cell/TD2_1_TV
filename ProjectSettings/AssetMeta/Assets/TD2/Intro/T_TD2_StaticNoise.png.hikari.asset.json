@@ -1,0 +1,21 @@
+{
+  "displayName": "T_TD2_StaticNoise",
+  "guid": "5e0c7d2a9b3f4e61a8c4d0f2b6e19a73",
+  "importSettings": {
+    "allowResize": false,
+    "colorSpace": "Srgb",
+    "compression": "None",
+    "debugOutputFormat": "DDS",
+    "dimension": "Texture2D",
+    "forcePowerOfTwo": false,
+    "maxSize": 4096,
+    "mipPolicy": "None",
+    "outputFormat": "HTEX",
+    "usage": "BaseColor"
+  },
+  "importerId": "TextureImporter",
+  "importerVersion": 8,
+  "metaVersion": 1,
+  "sourcePath": "Assets/TD2/Intro/T_TD2_StaticNoise.png",
+  "type": "Texture"
+}

@@ -9,10 +9,9 @@ namespace {
 using Math::Vec3;
 
 Pose PoseOf(const LayoutTransform& t) { Pose p; p.position = t.position; p.rotation = t.rotation; p.scale = t.scale; return p; }
-Vec3 Axis(const Pose& pose, const Vec3& local) { return Math::QRotate(Math::QFromEulerDeg(pose.rotation), local); }
 Pose Offset(const Pose& base, double right, double up, double forward) {
     Pose p = base;
-    const auto r = Axis(base, {1, 0, 0}), u = Axis(base, {0, 1, 0}), f = Axis(base, {0, 0, 1});
+    const auto r = PoseAxis(base, {1, 0, 0}), u = PoseAxis(base, {0, 1, 0}), f = PoseAxis(base, {0, 0, 1});
     for (size_t i = 0; i < 3; ++i) { p.position[i] = std::round((base.position[i] + r[i] * right + u[i] * up + f[i] * forward) * 10000) / 10000; }
     return p;
 }

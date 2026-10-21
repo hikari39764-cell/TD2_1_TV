@@ -195,14 +195,6 @@ void AppendRegionChanges(Json& commands, const RegionTarget& target, const Regio
     add("stageAnchor", before.stageAnchor, after.stageAnchor);
 }
 
-bool CommitProperties(EditorWorkspaceHostContext& context, const RegionTarget& target,
-                      const RegionSettings& before, const RegionSettings& after, std::string& error) {
-    // 寸法と配列をまとめて変え、一回の取り消しで戻せるようにする。
-    Json commands = Json::array();
-    AppendRegionChanges(commands, target, before, after);
-    return Transact(context, commands, error);
-}
-
 std::string ScreenSlotWarning(EditorWorkspaceHostContext& context, const RegionSettings& settings) {
     if (!settings.screenObject) { return {}; }
     if (settings.screenSlot.empty()) { return "请指定屏幕材质槽名称"; }
@@ -220,18 +212,6 @@ std::string ScreenSlotWarning(EditorWorkspaceHostContext& context, const RegionS
         return "找不到屏幕材质槽：" + settings.screenSlot;
     }
     return "屏幕对象没有可确认的模型";
-}
-
-uint64_t SelectedObject(EditorWorkspaceHostContext& context, std::string& error) {
-    const auto result = Execute(context, "editor.state", Json::object());
-    if (!result.ok) { error = result.error; return 0; }
-    const auto selection = result.data.find("selection");
-    if (selection == result.data.end() || !selection->is_object() || !selection->contains("activeObjectId")) {
-        error = "editor.state: INVALID_RESULT: selection.activeObjectId 缺失"; return 0;
-    }
-    const uint64_t selected = ObjectId((*selection)["activeObjectId"]);
-    if (selected == 0) { error = "请先在场景中选择电视或其他承载区块的对象"; }
-    return selected;
 }
 
 bool AddRegion(EditorWorkspaceHostContext& context, uint64_t objectId, bool bindSelf, std::string& status) {

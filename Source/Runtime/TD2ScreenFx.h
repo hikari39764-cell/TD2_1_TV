@@ -11,9 +11,9 @@ namespace TD2 {
 inline constexpr std::string_view kScreenFxComponentType = "TD2.ScreenFx";
 
 // 画面内のイベントごとのエフェクトスロット。順番は kScreenFxDefaults と同じ。
-enum class ScreenFxSlot : int { Dash, Impact, Land, Bounce, EchoForm, EchoRecall, EchoBlocked, Death, Respawn, Device, Checkpoint, EchoAbsorb };
+enum class ScreenFxSlot : int { Dash, Impact, Land, Bounce, EchoForm, EchoRecall, EchoBlocked, Death, Respawn, Device, Checkpoint, EchoAbsorb, Arrive };
 inline constexpr size_t kScreenFxSlotCount = kScreenFxDefaults.size();
-static_assert(static_cast<size_t>(ScreenFxSlot::EchoAbsorb) + 1 == kScreenFxSlotCount);
+static_assert(static_cast<size_t>(ScreenFxSlot::Arrive) + 1 == kScreenFxSlotCount);
 
 struct ScreenFxEntry {
     HIKARI::GameProjectVfxAssetReference asset{};

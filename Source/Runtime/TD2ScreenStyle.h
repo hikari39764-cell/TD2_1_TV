@@ -39,18 +39,16 @@ struct ScreenStyleSettings {
     // 判定は手前の一列のまま。
     bool depthGrid = false;
     int depthRows = 4;
-    // 透視の窓（共有設定だけが効き、Play の時だけ）：目立つ二台を透視カメラで撮り、外のカメラが画面を見る角度に合わせて
-    // 目の位置を動かす。視差の強さは parallax。透視カメラは窓ごとに別の物体（画角で透視の強さが決まる）。
+    // 透視の窓（共有設定だけが効き、Play の時だけ）：操作中の部屋（主）と同じ镜头大区域の残りの部屋（副）を透視カメラで撮り、
+    // 外のカメラが画面を見る角度に合わせて目の位置を動かす。視差の強さは parallax。透視カメラは窓ごとに別の物体（画角で透視の強さが決まる）。
     bool perspective = false;
     uint64_t perspectiveCameraObject = 0;
     uint64_t perspectiveCamera2Object = 0;
-    // 遠くのテレビ（共有設定だけが効き、Play の時だけ）：ほかの窓に入らない写っているテレビをまとめて撮る、画角の狭い透視カメラ。
-    // 写すテレビの範囲に合わせて近づけたり離したりする（キャプチャの大きさは変えない）。
-    uint64_t farCameraObject = 0;
-    // 舞台を撮る正投影カメラ（窓ごとに別の物体）。主は操作中の部屋、周りは周囲のテレビ、
-    // 未配置は編集中だけ未配置の地図を撮る。
+    // 遠くのテレビ（共有設定だけが効き、Play の時だけ）：ほかの窓に入らない写っているテレビを地図で近いものどうしの二組に分けて
+    // 撮る、画角の狭い透視カメラ（組ごとに一台）。写すテレビの範囲に合わせて近づけたり離したりする（キャプチャの大きさは変えない）。
+    uint64_t farCameraObject = 0, farCamera2Object = 0;
+    // 編集中に舞台を撮る正投影カメラ（詰めて並べた地図の二組。二つ目は未配置の地図）。主の高さが舞台の縮尺を決める。
     uint64_t captureCameraObject = 0;
-    uint64_t wideCameraObject = 0;
     uint64_t unplacedCameraObject = 0;
 };
 
@@ -81,11 +79,11 @@ public:
         fields.Int("depthRows", "纵深格数", settings_.depthRows, 1, 8);
         fields.Bool("perspective", "透视窗口（Play 时清晰的两台随外部视角真透视）", settings_.perspective);
         fields.SceneObject("perspectiveCameraObject", "透视舞台镜头（主，画角决定透视强度）", settings_.perspectiveCameraObject);
-        fields.SceneObject("perspectiveCamera2Object", "透视舞台镜头（副）", settings_.perspectiveCamera2Object);
-        fields.SceneObject("farCameraObject", "远处电视的舞台镜头（透视，小画角，自动拉远拉近）", settings_.farCameraObject);
-        fields.SceneObject("captureCameraObject", "舞台正交镜头（当前与相邻电视）", settings_.captureCameraObject);
-        fields.SceneObject("wideCameraObject", "舞台正交镜头（周围电视，高度为主镜头3倍）", settings_.wideCameraObject);
-        fields.SceneObject("unplacedCameraObject", "舞台正交镜头（Play 时第二台清晰电视，高度同主镜头；编辑时未布置的地图）", settings_.unplacedCameraObject);
+        fields.SceneObject("perspectiveCamera2Object", "透视舞台镜头（副，同一镜头大区域的其余电视）", settings_.perspectiveCamera2Object);
+        fields.SceneObject("farCameraObject", "远处电视的舞台镜头 1（透视，小画角，自动拉远拉近）", settings_.farCameraObject);
+        fields.SceneObject("farCamera2Object", "远处电视的舞台镜头 2（地图上离得远的另一组）", settings_.farCamera2Object);
+        fields.SceneObject("captureCameraObject", "编辑时的舞台正交镜头（高度决定舞台缩尺）", settings_.captureCameraObject);
+        fields.SceneObject("unplacedCameraObject", "编辑时的第二台正交镜头（未布置的地图，高度同上）", settings_.unplacedCameraObject);
         fields.Note("挂在舞台镜头上是全部电视的设置；挂在某台电视的区域对象上只改那一台的风格。配色固定为青瓷立体。"
                     "「纵深格子」「透视窗口」「受光」只在 Play 时生效；受光要和透视窗口一起开。透视窗口的视差强度用「视差」。"
                     "不在其他窗口里、但画面中看得见的电视，由「远处电视的舞台镜头」一起拍，不会黑屏。");

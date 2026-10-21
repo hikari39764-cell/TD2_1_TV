@@ -9,33 +9,14 @@ using F3 = HIKARI::GameProjectFloat3;
 using Math::Vec3;
 using Math::kPi;
 
-// 長さが 0 に近ければ false を返し、v は変えない。
-bool Normalize(Vec3& v) {
-    const double length = std::sqrt(Math::Dot(v, v));
-    if (length < 1e-9) { return false; }
-    for (double& e : v) { e /= length; }
-    return true;
-}
 // 前の向きから右（前 × 世界の上）と上（右 × 前）を作る。前がほぼ 0 か真上・真下なら false で、right と up は変えない。
-bool SideAxes(Vec3 forward, Vec3& right, Vec3& up) {
-    if (!Normalize(forward)) { return false; }
-    Vec3 candidate = Math::Cross(forward, {0, 1, 0});
-    if (!Normalize(candidate)) { return false; }
-    right = candidate;
-    up = Math::Cross(right, forward);
+bool SideAxes(const Vec3& forward, Vec3& right, Vec3& up) {
+    if (Math::Dot(forward, forward) < 1e-18) { return false; }
+    const Vec3 f = Math::Normalize(forward), candidate = Math::Cross(f, {0, 1, 0});
+    if (Math::Dot(candidate, candidate) < 1e-18) { return false; }
+    right = Math::Normalize(candidate);
+    up = Math::Cross(right, f);
     return true;
-}
-// ローカルの点をテレビのワールド変換で移す（縮尺→回転→平行移動）。
-F3 Transform(const HIKARI::GameProjectTransform& t, double x, double y, double z, bool translate) {
-    const Vec3 v{x * t.scale.x, y * t.scale.y, z * t.scale.z};
-    const Vec3 q{t.rotation.x, t.rotation.y, t.rotation.z};
-    Vec3 c = Math::Cross(q, v);
-    for (double& e : c) { e *= 2; }
-    const Vec3 d = Math::Cross(q, c);
-    Vec3 out;
-    for (size_t i = 0; i < 3; ++i) { out[i] = v[i] + t.rotation.w * c[i] + d[i]; }
-    if (translate) { out[0] += t.position.x; out[1] += t.position.y; out[2] += t.position.z; }
-    return ToF3(out);
 }
 }
 
@@ -43,25 +24,23 @@ F3 CameraRig::ScreenPoint(const CameraRegionFrame& frame, double x, double y) {
     // 画面の左上がマス (0,0)。右がローカル +X、下がローカル -Y（画面は +Z 向き）。
     const double u = std::clamp((x - frame.worldX) / (std::max)(frame.cols, 1.0), -.25, 1.25);
     const double v = std::clamp((y - frame.worldY) / (std::max)(frame.rows, 1.0), -.25, 1.25);
-    return Transform(frame.screen, frame.screenCenter.x + (u - .5) * frame.screenWidth,
-                     frame.screenCenter.y + (.5 - v) * frame.screenHeight, frame.screenCenter.z, true);
+    return TransformPoint(frame.screen, {frame.screenCenter.x + (u - .5) * frame.screenWidth,
+                                         frame.screenCenter.y + (.5 - v) * frame.screenHeight, frame.screenCenter.z});
 }
 
 F3 CameraRig::ScreenVelocity(const CameraRegionFrame& frame, double vx, double vy) {
-    return Transform(frame.screen, vx / (std::max)(frame.cols, 1.0) * frame.screenWidth,
-                     -vy / (std::max)(frame.rows, 1.0) * frame.screenHeight, 0, false);
+    return TransformPoint(frame.screen, {vx / (std::max)(frame.cols, 1.0) * frame.screenWidth,
+                                         -vy / (std::max)(frame.rows, 1.0) * frame.screenHeight, 0}, false);
 }
 
 F3 CameraRig::Forward(const HIKARI::GameProjectTransform& transform) {
-    HIKARI::GameProjectTransform rotation = transform;
-    rotation.scale = {1, 1, 1};
-    return ToF3(Math::Normalize(ToVec3(Transform(rotation, 0, 0, 1, false))));
+    return ToF3(Math::Normalize(Math::QRotate(ToQuat(transform.rotation), {0, 0, 1})));
 }
 
 void CameraRig::Snap(const F3& eye, const F3& look, float verticalFovRadians) {
     baseEye_.Snap(ToVec3(eye)); baseLook_.Snap(ToVec3(look));
     offset_.Snap({}); aim_.Snap({}); roll_.Snap({});
-    fov_ = verticalFovRadians;
+    fov_ = verticalFovRadians; fovVelocity_ = 0;
     last_ = {eye, look, {0, 1, 0}, verticalFovRadians};
     ready_ = true;
 }
@@ -126,7 +105,7 @@ CameraRigPose CameraRig::Update(const CameraRegionFrame& frame, const CameraArea
     if (!ready_) { Snap(frame.eye, frame.look, frame.verticalFovRadians); }
     baseEye_.Step(ToVec3(frame.eye), area.regionSeconds, dt);
     baseLook_.Step(ToVec3(frame.look), area.regionSeconds, dt);
-    fov_ = frame.verticalFovRadians;
+    fov_ = Math::CriticalDamp(fov_, frame.verticalFovRadians, fovVelocity_, area.regionSeconds, dt);
     const Vec3 forward = Math::Sub(baseLook_.value, baseEye_.value);
     const double distance = std::sqrt(Math::Dot(forward, forward));
     (void)SideAxes(forward, right_, up_);
@@ -166,7 +145,7 @@ CameraRigPose CameraRig::Update(const CameraRegionFrame& frame, const CameraArea
                   up_[i] * (offset_.value[1] * area.lookCarry + aim_.value[1]) + bl[i];
         up[i] = up_[i] * std::cos(roll_.value[0] + handRoll) + right_[i] * std::sin(roll_.value[0] + handRoll);
     }
-    last_ = {ToF3(eye), ToF3(look), ToF3(up), fov_};
+    last_ = {ToF3(eye), ToF3(look), ToF3(up), static_cast<float>(fov_)};
     return last_;
 }
 }

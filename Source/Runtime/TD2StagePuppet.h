@@ -14,7 +14,9 @@ public:
     // その役の人形があるか（無い役は焼いた形を使う）。
     bool Has(StageActorRole role) const;
     // 主角：builder は鏡像の設定を済ませたもの（回された部屋の中なら点対称に移す）。
-    void Player(HIKARI::WorldView& world, const StagePartBuilder& builder, const Rules::WorldSnapshot& snapshot, double actorScale, double depth);
+    // shown が false なら隠す。grow は足元から現れる時の縦の伸び（0→1、オープニングの登場で使う）。
+    void Player(HIKARI::WorldView& world, const StagePartBuilder& builder, const Rules::WorldSnapshot& snapshot, double actorScale, double depth,
+                bool shown = true, double grow = 1.0);
     // 残影：grow は足元から現れる時の縦の伸び（0→1）。
     void Echo(HIKARI::WorldView& world, const StagePartBuilder& builder, const Rules::BodyState& body, const Rules::Rect& rect,
               bool shown, double grow, double actorScale, double depth, double now);

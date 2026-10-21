@@ -6,10 +6,12 @@
 #include "TD2ScreenModels.h"
 #include "TD2ScreenStyle.h"
 #include "TD2StagePuppet.h"
+#include "TD2Intro.h"
 #include "HIKARI/Project/SceneCaptureView.h"
 #include "HIKARI/Project/WorldView.h"
 #include <array>
 #include <map>
+#include <set>
 #include <string>
 #include <vector>
 
@@ -62,6 +64,8 @@ struct StageFrame {
     std::string travelFrom, travelTo;
     // 操作中の部屋と同じ大区域の部屋。周りの窓はこの部屋たちを覆う位置に固定する（部屋を移るたびに窓を動かさない）。
     std::vector<std::string> areaRooms;
+    // オープニングの演出（タイトルと砂嵐）。無ければ普段どおり。
+    const IntroScreens* intro = nullptr;
 };
 
 // 編集中の並べ直し：全部の部屋を一枚ずつの窓に収めるため、描く位置（x, y）だけを二つの組に詰めて並べる。
@@ -81,14 +85,14 @@ public:
     const std::string& Status() const noexcept { return status_; }
 
 private:
-    // 舞台を撮る窓の種類。鮮明は操作中の部屋、周りは世界全体（大きすぎる時は今の大区域の周り）、
-    // 未配置は編集中だけ世界の外に並べた作者の地図（Play では二台目の鮮明）、遠くはほかの窓に入らない写っているテレビ。
-    enum class ViewKind : int { Sharp = 0, Wide = 1, Unplaced = 2, Far = 3 };
+    // 舞台を撮る窓の種類。Play ではどれも透視の窓で、外のカメラが画面を見る角度へ目を寄せる（テレビが窓を移っても角度と
+    // 細かさが跳ばない）：鮮明は操作中の部屋、大区域は同じ镜头大区域と世界地図で近い残りの部屋の組、遠く・遠く2 は背景に
+    // 写るほかのテレビを地図で近いものどうしに分けた二組。編集中は鮮明と大区域の二枚を正投影で撮る（詰めて並べた地図の二組）。
+    enum class ViewKind : int { Sharp = 0, Area = 1, Far = 2, Far2 = 3 };
     static constexpr size_t kViewKinds = 4;
-    // 正投影カメラを持つ窓の種類（遠くは透視カメラだけ）。
-    static constexpr size_t kOrthoKinds = 3;
-    // 透視カメラの番号：主・副の鮮明と、遠く。
-    static constexpr size_t kFarLens = 2;
+    // 正投影カメラを持つ窓の種類（編集中だけ使う）。透視カメラは窓の種類ごとに一台（番号は窓の種類と同じ）。
+    static constexpr size_t kOrthoKinds = 2;
+    static constexpr std::array<ViewKind, 2> kFarKinds{ViewKind::Far, ViewKind::Far2};
     // 窓は世界のマスの範囲（行数は正投影の高さで決まる）と、キャプチャの大きさ（texel）。
     struct Window {
         double x = 0, y = 0, cols = 0, rows = 0;
@@ -143,23 +147,38 @@ private:
     struct ActiveFx { uint64_t eventId = 0; HIKARI::GameProjectVfxPlaybackHandle handle; };
 
     bool AcquireCameras(HIKARI::WorldView& world, const ScreenStyleSettings& stage);
-    // 透視の窓の二台（主・副）。一台も使えなければ false（透視を使わない）。
+    // 鮮明と大区域の透視カメラ。鮮明が使えなければ false（透視を使わない）。
     bool AcquireLensCameras(HIKARI::WorldView& world, const ScreenStyleSettings& stage);
-    // 遠くのテレビを撮る透視カメラ。無ければ false（遠くのテレビは今までどおり映らない）。
-    bool AcquireFarCamera(HIKARI::WorldView& world, const ScreenStyleSettings& stage);
+    // 遠くの二組の透視カメラ。一台目が無ければ false（遠くのテレビは映らない）。
+    bool AcquireFarCameras(HIKARI::WorldView& world, const ScreenStyleSettings& stage);
     void RestoreCamera(HIKARI::WorldView& world, StageCamera& camera);
+    // Play の鮮明と大区域の窓。
     void PlaceWindows(const std::vector<const StageRoom*>& rooms, const StageFrame& frame, int maxCols);
-    // 遠くの窓：鮮明・周りの窓に入らず画に写っているテレビ（目立つ順に kFarRooms 台まで）を一枚に収める。
-    void PlaceFar(const std::vector<const StageRoom*>& rooms, const StageFrame& frame);
+    // 大区域の窓：細かさ固定の透視の窓。目（窓の中心）は操作中の部屋と接する部屋・目立つ部屋の組へなめらかに動き、
+    // 窓にまるごと写る部屋を撮る。
+    void PlaceArea(const std::vector<const StageRoom*>& rooms, const StageRoom* active, const StageFrame& frame);
+    // 遠くの窓：鮮明・大区域に入らず画に写っているテレビ（目立つ順に kFarRooms 台まで）を、世界地図で近いものどうしの
+    // 二組に分けて収める。
+    void PlaceFar(const std::vector<const StageRoom*>& rooms);
+    // 部屋の画面の 1 マスがゲームの画に写る画素（1080p 換算）。窓の 1 マスの texel がこれを下回ると拡大されてぼける。
+    double CellPixels(const StageRoom& room) const;
+    // 部屋の組を一枚の透視の窓に収める。窓の大きさはキャプチャの大きさ（固定）と組の外接で決まり、目は組の部屋を
+    // 外のカメラが見る角度に合わせる。
+    void PlaceGroup(ViewKind kind, const std::vector<const StageRoom*>& members, uint32_t width, uint32_t height);
+    // 透視の窓の目の位置（外接 box の中心からのずれ。マス）：部屋ごとに外のカメラと同じ角度でその部屋を見る目を、
+    // 写っている割合で平均する。
+    std::array<double, 2> EyeOffset(const Window& window, const std::array<double, 4>& box,
+                                    const std::vector<const StageRoom*>& members) const;
+    // 余白を取った窓の中心（目の真正面）を目の位置へずらし、切り出しの位置をゲーム画素の格子に合わせて決める。
+    void AimWindow(Window& window, const std::array<double, 4>& box, std::array<double, 2> offset) const;
+    // オープニングの砂嵐：ノイズの板を撮る窓（遠くの窓の透視カメラを借りる）と、各テレビを砂嵐の段へ結び直す。
+    void PlaceNoise();
+    void ApplyIntro(HIKARI::WorldView& world, std::map<uint64_t, Binding>& next) const;
     // 編集中は全テレビを一枚の舞台像へ収める。
     void PlaceEditorWindow(const std::vector<const StageRoom*>& rooms);
     bool SyncCaptures(HIKARI::WorldView& world, const std::vector<Assigned>& screens, double flash);
-    // ゲームカメラから見た各部屋の画面（目立ち具合・向き・遮られた標本の数）。Play 中は毎フレーム測り直す。
-    struct Seen { ScreenOnCamera view; int blocked = 0; };
+    // ゲームカメラから見た各部屋の画面（目立ち具合・向き）。Play 中は毎フレーム測り直す。
     void Inspect(HIKARI::WorldView& world, const std::vector<const StageRoom*>& rooms, const StageFrame& frame);
-    // Play で鮮明に撮る二部屋を、通り道のテレビ（今の大区域と世界地図で近い部屋）から目立つ順に選ぶ。
-    // 今の二部屋は、他の部屋が十分に大きく写るまで入れ替えない。
-    void ChooseFocus(const StageFrame& frame, const std::vector<const StageRoom*>& rooms);
     // 読みやすさの保護を掛ける画面（エンジンの上限 12）。保護の有無で色調が変わるので、入れ替えは控えめにする。
     void ChooseProtected(std::map<uint64_t, Binding>& next) const;
     void SubmitParts(HIKARI::WorldView& world, const std::vector<const StageRoom*>& rooms, const std::vector<Assigned>& shown,
@@ -189,12 +208,33 @@ private:
     };
     std::map<uint64_t, StageLightTrack> stageLights_;
     double stageLightTime_ = 0;
-    std::array<StageCamera, 3> lensCameras_{};
-    // 遠くの窓に入れるテレビ（区域 ID）と、今の大区域で写ったテレビの一番目立った時の値（大区域が替わるまで外さない）。
-    std::vector<std::string> farRooms_;
-    std::map<std::string, double, std::less<>> farBest_;
-    std::string farArea_;
-    Window farSticky_;                            // 使い続けている遠くの窓
+    std::array<StageCamera, kViewKinds> lensCameras_{};
+    // 組の窓（大区域・遠く）に入れる部屋（区域 ID）。
+    std::array<std::vector<std::string>, kViewKinds> members_;
+    // 遠くの組の目（地図のマス）、その行き先と、行き先を決めた時の外接。
+    std::array<std::array<double, 2>, kViewKinds> groupEye_{};
+    std::array<std::array<double, 2>, kViewKinds> groupTarget_{};
+    std::array<std::array<double, 4>, kViewKinds> groupEyeBox_{};
+    std::array<bool, kViewKinds> groupEyeValid_{};
+    // 今の大区域で写ったテレビ、入れた遠くの組（大区域が替わるまで外さない）、要る細かさ（ゆっくり下げる）。
+    std::set<std::string, std::less<>> farSeen_;
+    std::map<std::string, double, std::less<>> farNeed_;
+    std::map<std::string, size_t, std::less<>> farGroup_;
+    std::string groupArea_;                       // 組の窓を決めた大区域（その大区域の最初の部屋の ID）
+    // 大区域の窓に入れている部屋と、窓の中心に置く目（地図のマス）。視差と同じ速さ（parallaxFollow_）でなめらかに追う。
+    std::vector<std::string> areaMembers_;
+    std::array<double, 2> areaEye_{};
+    bool areaEyeValid_ = false;
+    double parallaxFollow_ = 1;
+    // このフレームのオープニング（無ければ null）と、砂嵐の窓を使っているか。砂嵐を出す区域のテレビは全部の部屋から選ぶ。
+    const IntroScreens* intro_ = nullptr;
+    bool introStatic_ = false;
+    // オープニングで主人公を隠すか、現れる途中の伸び（0〜1）、登場のエフェクトを足したか。
+    bool heroShown_ = true, introArrived_ = false;
+    double heroGrow_ = 1, arrivePlayedAt_ = -1;   // 登場のエフェクトが出たオープニングの時刻（まだなら -1）
+    std::vector<const StageRoom*> introRooms_;
+    // テレビごとの砂嵐の始まりとパソコンからの遠さ（距離で決め、オープニングの間は変えない）。
+    mutable std::map<uint64_t, std::array<double, 2>> introOnset_;
     double parallaxGain_ = 1.0, lastParallaxTime_ = -1;
     std::map<std::string, std::array<double, 2>, std::less<>> parallax_;
     std::map<std::string, WindowSpan, std::less<>> windowSpans_;   // 区域 ID → 窓の上下（操作の札を避けた位置）
@@ -202,11 +242,7 @@ private:
     StageProjection projection_;
     std::vector<View> views_;
     std::map<uint64_t, Binding> bound_;            // 画面の物体 → 今の割り当て
-    std::map<std::string, Seen, std::less<>> seen_;   // このフレームの見え方（区域 ID → 値。ゲームカメラが無い時は空）
-    std::array<std::string, 2> focus_{};          // Play で鮮明に撮る二部屋（区域 ID）
-    std::string wideCenter_;                      // 周りの窓の中心の部屋（区域 ID）
-    std::string wideArea_;                        // 周りの窓を固定した大区域（その大区域の最初の部屋の ID）
-    Window stickyWide_;                           // その大区域で使い続けている周りの窓
+    std::map<std::string, ScreenOnCamera, std::less<>> seen_;   // このフレームの見え方（区域 ID → 値。ゲームカメラが無い時は空）
     std::map<std::string, RoomParts> roomParts_;   // 区域 ID → 背景と地形の描画要求
     // 180° 回されている部屋の世界の範囲（左・上・右・下）。エフェクトを点対称に置くのに使う。
     std::vector<std::pair<std::string, std::array<double, 4>>> flippedRooms_;

@@ -1,0 +1,48 @@
+{
+  "displayName": "SM_TD2_StaticBright",
+  "guid": "c4d2e8f1a6b94375a2e7f0c9b3d8e146",
+  "importSettings": {
+    "clusterGeometry": {
+      "balancePlanarStaticSurfaces": true,
+      "clusterMergeNormalMinDot": 0.20000000298023224,
+      "compactUnderfilledClusters": true,
+      "enabled": true,
+      "largeSurfaceTargetExtent": 4.0,
+      "largeTriangleMaxEdgeLength": 3.0,
+      "largeTriangleMaxGeneratedTriangles": 16384,
+      "largeTriangleMaxSubdivisions": 4,
+      "lockPartitionBorders": true,
+      "lodQualityBias": 1.0,
+      "maxLodCount": 5,
+      "maxNormalBucketClusterOverhead": 1.100000023841858,
+      "meshletConeWeight": 0.3499999940395355,
+      "meshletSplitFactor": 1.0,
+      "minClusterOccupancyRatio": 0.75,
+      "normalBucketCoherentGroupMinDot": 0.3499999940395355,
+      "normalBucketQualityBonusRatio": 0.15000000596046448,
+      "partitionLargeSurfaces": true,
+      "partitionMinClusterEstimate": 16,
+      "planarSurfaceMaxDepth": 4,
+      "planarSurfaceMinPartitionExtent": 5.0,
+      "planarSurfaceMinTrianglesPerChunk": 1024,
+      "profile": "Scene",
+      "subdivideLargeTriangles": false
+    },
+    "cookModel": true,
+    "lightmapUv": {
+      "mode": "Preserve",
+      "padding": 8,
+      "resolution": 64
+    },
+    "loadMaterials": true,
+    "loadTextures": true,
+    "meshFormat": "HCMESH",
+    "outputFormat": "HMODEL",
+    "sourceFormat": ".gltf"
+  },
+  "importerId": "ModelImporter",
+  "importerVersion": 43,
+  "metaVersion": 1,
+  "sourcePath": "Assets/TD2/Intro/SM_TD2_StaticBright.gltf",
+  "type": "Model"
+}

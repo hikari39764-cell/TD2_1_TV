@@ -1,0 +1,21 @@
+{
+  "displayName": "T_TD2_LetterboxBlack",
+  "guid": "2e29c4ab75054754a21ffc09edfcb379",
+  "importSettings": {
+    "allowResize": false,
+    "colorSpace": "Srgb",
+    "compression": "None",
+    "debugOutputFormat": "DDS",
+    "dimension": "Texture2D",
+    "forcePowerOfTwo": false,
+    "maxSize": 4096,
+    "mipPolicy": "None",
+    "outputFormat": "HTEX",
+    "usage": "BaseColor"
+  },
+  "importerId": "TextureImporter",
+  "importerVersion": 8,
+  "metaVersion": 1,
+  "sourcePath": "Assets/TD2/Intro/T_TD2_LetterboxBlack.png",
+  "type": "Texture"
+}

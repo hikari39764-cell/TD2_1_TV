@@ -5,8 +5,9 @@
 
 namespace TD2 {
 // EchoAbsorb は回収時にプレイヤーで出すエフェクト、RecallTrail は残影からプレイヤーへの光跡（部品で描く）。
+// Arrive はオープニングの終わりにプレイヤーが画面の中へ現れる時（規則からは起きず、演出が足す）。
 enum class ScreenEffectKind { BlinkTrail, Impact, Bounce, EchoCreate, EchoRecall, EchoBlocked, Death, Respawn, DeviceSwitch, Checkpoint, Land,
-                              EchoAbsorb, RecallTrail };
+                              EchoAbsorb, RecallTrail, Arrive };
 struct ScreenEffect {
     ScreenEffectKind kind = ScreenEffectKind::Impact;
     Rules::Rect rect, source;
@@ -23,6 +24,8 @@ public:
     void Observe(const Rules::WorldSnapshot& snapshot);
     void Reset();
     const std::vector<ScreenEffect>& Items() const noexcept { return effects_; }
+    // 規則の差分からではなく、演出が直接足すイベント（now は規則の時計）。
+    void Add(ScreenEffectKind kind, const Rules::Rect& rect, double now, double duration, uint64_t tick);
 private:
     std::optional<Rules::WorldSnapshot> previous_;
     std::vector<ScreenEffect> effects_;

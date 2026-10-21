@@ -87,7 +87,8 @@
     "2 工厂布景/电视塔",
     "2 工厂布景/货架电视墙",
     "3 灯光",
-    "3 灯光/关卡"
+    "3 灯光/关卡",
+    "3 灯光/开场"
   ],
   "environment": {
     "location": {
@@ -10840,7 +10841,7 @@
               "$hikariRef": "SceneObject",
               "id": 6079
             },
-            "wideCameraObject": {
+            "farCamera2Object": {
               "$hikariRef": "SceneObject",
               "id": 6078
             }
@@ -10883,16 +10884,16 @@
               "enabled": false
             },
             "enabled": true,
-            "farClip": 60.0,
+            "farClip": 6000.0,
             "motionBlur": {
               "enabled": false
             },
-            "nearClip": 0.1,
-            "orthographic": true,
-            "orthographicHeight": 26.0,
+            "nearClip": 1.0,
+            "orthographic": false,
+            "orthographicHeight": 10.0,
             "pixelSnap": false,
             "pixelsPerUnit": 64.0,
-            "verticalFovDegrees": 45.0
+            "verticalFovDegrees": 20.0
           },
           "type": "CameraComponent"
         }
@@ -10902,7 +10903,7 @@
       "editorVisible": true,
       "enabled": true,
       "id": 6078,
-      "name": "TD2 舞台镜头 · 周边电视",
+      "name": "TD2 舞台镜头 · 远处电视 2",
       "parent": null,
       "sourcePrefabId": "",
       "transform": {
@@ -25166,7 +25167,7 @@
             "orthographicHeight": 10.0,
             "pixelSnap": false,
             "pixelsPerUnit": 64.0,
-            "verticalFovDegrees": 40.0
+            "verticalFovDegrees": 19.0
           },
           "type": "CameraComponent"
         }
@@ -27263,6 +27264,302 @@
         "rotationEulerDeg": [
           0.0,
           180.0,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "components": [
+        {
+          "id": 1,
+          "properties": {
+            "angularFalloff": 1.0,
+            "castsShadows": false,
+            "color": [
+              0.72,
+              0.83,
+              1.0
+            ],
+            "cookie": "8d2f6a1c4e9b47d3b5a0c7e2f1d4b836",
+            "enabled": false,
+            "height": 1.0,
+            "iesProfile": "",
+            "innerConeAngleDegrees": 46.0,
+            "intensity": 400000.0,
+            "intensityUnit": "Lumens",
+            "length": 1.0,
+            "outerConeAngleDegrees": 56.0,
+            "priority": 10,
+            "range": 45.0,
+            "sceneRelativeIntensity": 1.0,
+            "sourceRadius": 0.08,
+            "type": "Spot"
+          },
+          "type": "LightComponent"
+        }
+      ],
+      "editorFolder": "3 灯光/开场",
+      "editorLocked": false,
+      "editorVisible": true,
+      "enabled": true,
+      "id": 11423,
+      "name": "闪电 左窗",
+      "parent": null,
+      "sourcePrefabId": "",
+      "transform": {
+        "position": [
+          -14.600000381469727,
+          9.0,
+          -6.0
+        ],
+        "rotationEulerDeg": [
+          29.780000686645508,
+          97.30599975585938,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "components": [
+        {
+          "id": 1,
+          "properties": {
+            "angularFalloff": 1.0,
+            "castsShadows": false,
+            "color": [
+              0.72,
+              0.83,
+              1.0
+            ],
+            "cookie": "8d2f6a1c4e9b47d3b5a0c7e2f1d4b836",
+            "enabled": false,
+            "height": 1.0,
+            "iesProfile": "",
+            "innerConeAngleDegrees": 46.0,
+            "intensity": 400000.0,
+            "intensityUnit": "Lumens",
+            "length": 1.0,
+            "outerConeAngleDegrees": 56.0,
+            "priority": 10,
+            "range": 45.0,
+            "sceneRelativeIntensity": 1.0,
+            "sourceRadius": 0.08,
+            "type": "Spot"
+          },
+          "type": "LightComponent"
+        }
+      ],
+      "editorFolder": "3 灯光/开场",
+      "editorLocked": false,
+      "editorVisible": true,
+      "enabled": true,
+      "id": 11424,
+      "name": "闪电 右后窗",
+      "parent": null,
+      "sourcePrefabId": "",
+      "transform": {
+        "position": [
+          11.0,
+          9.0,
+          5.699999809265137
+        ],
+        "rotationEulerDeg": [
+          45.03200149536133,
+          -147.9949951171875,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "components": [
+        {
+          "id": 1,
+          "properties": {
+            "cameraObject": {
+              "$hikariRef": "SceneObject",
+              "id": 3
+            },
+            "computerScreen": {
+              "$hikariRef": "SceneObject",
+              "id": 11115
+            },
+            "enabled": true,
+            "lightning1": {
+              "$hikariRef": "SceneObject",
+              "id": 11423
+            },
+            "lightning2": {
+              "$hikariRef": "SceneObject",
+              "id": 11424
+            },
+            "prop1": {
+              "$hikariRef": "SceneObject",
+              "id": 5413
+            },
+            "prop2": {
+              "$hikariRef": "SceneObject",
+              "id": 5414
+            },
+            "prop3": {
+              "$hikariRef": "SceneObject",
+              "id": 5412
+            },
+            "prop4": {
+              "$hikariRef": "SceneObject",
+              "id": 5415
+            },
+            "prop5": {
+              "$hikariRef": "SceneObject",
+              "id": 5416
+            },
+            "screenGlow": {
+              "$hikariRef": "SceneObject",
+              "id": 11425
+            },
+            "sequenceAssetGuid": "3b9d6e2f0a4c4f18b7e1d5a2c8f60b94",
+            "tvModel1AssetGuid": "7be5aef402aaeb01a21b5b6d3b5e6584",
+            "tvModel2AssetGuid": "454ef2078d7d392593cfb6b24c7970aa",
+            "tvModel3AssetGuid": "34dcc4f6f620cd1ab49b5ffee5274397",
+            "tvModel4AssetGuid": "29c9bce8db98e7fbb6d72c4a6392c3b9"
+          },
+          "type": "TD2.Intro"
+        }
+      ],
+      "editorFolder": "1 玩法/镜头与演出",
+      "editorLocked": false,
+      "editorVisible": true,
+      "enabled": true,
+      "id": 11422,
+      "name": "TD2 开场演出",
+      "parent": null,
+      "sourcePrefabId": "",
+      "transform": {
+        "position": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "rotationEulerDeg": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "components": [
+        {
+          "id": 1,
+          "properties": {
+            "angularFalloff": 1.0,
+            "castsShadows": false,
+            "color": [
+              0.78,
+              0.92,
+              1.0
+            ],
+            "cookie": "",
+            "enabled": true,
+            "height": 1.0,
+            "iesProfile": "",
+            "innerConeAngleDegrees": 25.0,
+            "intensity": 45.0,
+            "intensityUnit": "Lumens",
+            "length": 1.0,
+            "outerConeAngleDegrees": 35.0,
+            "priority": 0,
+            "range": 1.6,
+            "sceneRelativeIntensity": 1.0,
+            "sourceRadius": 0.15,
+            "type": "Point"
+          },
+          "type": "LightComponent"
+        },
+        {
+          "id": 2,
+          "properties": {
+            "cull": true,
+            "margin": 2.0
+          },
+          "type": "TD2.LightCull"
+        }
+      ],
+      "editorFolder": "3 灯光/开场",
+      "editorLocked": false,
+      "editorVisible": true,
+      "enabled": true,
+      "id": 11425,
+      "name": "电脑屏幕光",
+      "parent": null,
+      "sourcePrefabId": "",
+      "transform": {
+        "position": [
+          3.0,
+          0.8999999761581421,
+          3.4800000190734863
+        ],
+        "rotationEulerDeg": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "components": [
+        {
+          "id": 1,
+          "properties": {
+            "assetId": "599c7ca0464174fcec05b59e6c14289f",
+            "castShadow": true,
+            "receiveShadow": true,
+            "visible": true
+          },
+          "type": "ModelComponent"
+        }
+      ],
+      "editorFolder": "2 工厂布景/开发者桌角",
+      "editorLocked": false,
+      "editorVisible": true,
+      "enabled": true,
+      "id": 11426,
+      "name": "主角的椅子",
+      "parent": null,
+      "sourcePrefabId": "",
+      "transform": {
+        "position": [
+          3.700000047683716,
+          0.014999999664723873,
+          4.699999809265137
+        ],
+        "rotationEulerDeg": [
+          0.0,
+          200.0,
           0.0
         ],
         "scale": [

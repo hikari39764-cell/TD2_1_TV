@@ -1,5 +1,6 @@
 #pragma once
 #include "TD2EditorSupport.h"
+#include "../Common/TD2Math.h"
 #include "../Common/TD2MachineText.h"
 #include "../Common/TD2WorldLayout.h"
 #include <array>
@@ -43,7 +44,6 @@ struct Machine {
     bool operator==(const Machine&) const = default;
 };
 
-std::string_view MachineComponentType(MachineKind);
 std::string FormatParts(const std::vector<Machine::Part>&);
 std::vector<Machine::Part> ParseParts(std::string_view text);
 bool LoadMachines(EditorWorkspaceHostContext&, std::vector<Machine>&, std::string& error);
@@ -66,6 +66,8 @@ std::vector<std::string> PlatesFor(const Machine&, const MachineCheckInput&);
 
 // ---- 姿勢（編集器で状態 B を置いてみる時に使う。度、エンジンの順 M = Rz·Ry·Rx）
 struct Pose { std::array<double, 3> position{}, rotation{}, scale{1, 1, 1}; };
+// 姿勢の回転で local の向きを回す（縮尺は掛けない）。
+inline Math::Vec3 PoseAxis(const Pose& pose, const Math::Vec3& local) { return Math::QRotate(Math::QFromEulerDeg(pose.rotation), local); }
 // base に相対の姿勢を載せる（位置は base の向きで測ったずれ）。pivot があればその点を中心に回した位置。
 Pose ApplyDelta(const Pose& a, const Pose& base, const MachineObjectDelta& d);
 // a（状態 A）・base（基準）・b（置いてみた状態 B）から相対の姿勢を作る。pivot は保つ。

@@ -52,8 +52,6 @@ V ToEuler(const Q& q) {
 }
 }
 
-std::string_view MachineComponentType(MachineKind kind) { return InfoOf(kind).type; }
-
 // 部品の欄：「物体ID 区域ID 役目 m|s|b」を「;」で区切る（m は配方が置いて一緒に動く、s は配方が置いて動かない、b は元からある物を一緒に動かす）。
 std::string FormatParts(const std::vector<Machine::Part>& parts) {
     std::string text;

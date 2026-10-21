@@ -1,4 +1,5 @@
 #include "TD2StagePuppet.h"
+#include "TD2Transform.h"
 #include "HIKARI/Project/ActionViews.h"
 #include "HIKARI/Project/WorldQuery.h"
 #include <algorithm>
@@ -21,10 +22,6 @@ constexpr double kBodyHalfDepth = .21;
 // 退避点：舞台の下の、どの舞台カメラにも写らない所。
 constexpr float kParkDrop = 2000.0f;
 
-HIKARI::GameProjectQuaternion RotateY(double degrees) {
-    const double r = degrees * kPi / 180.0;
-    return {0, static_cast<float>(std::sin(r * .5)), 0, static_cast<float>(std::cos(r * .5))};
-}
 }
 
 bool StagePuppets::Acquire(HIKARI::WorldView& world) {
@@ -46,13 +43,13 @@ bool StagePuppets::Has(StageActorRole role) const {
 }
 
 void StagePuppets::Player(HIKARI::WorldView& world, const StagePartBuilder& builder, const Rules::WorldSnapshot& snapshot,
-                          double actorScale, double depth) {
+                          double actorScale, double depth, bool shown, double grow) {
     if (!player_.handle.IsValid()) { return; }
     const auto& body = snapshot.player;
     const double now = snapshot.realTime;
     const double dt = lastTime_ < 0 ? 0.0 : std::clamp(now - lastTime_, 0.0, .1);
     lastTime_ = now;
-    if (!snapshot.playerPresent || body.dead) { ParkOne(world, player_); airborne_ = fallSpeed_ = 0; return; }
+    if (!snapshot.playerPresent || body.dead || !shown) { ParkOne(world, player_); airborne_ = fallSpeed_ = 0; return; }
     // 交換した瞬間から、印を結ぶ動作を少しの間見せる。
     if (!swapsKnown_) { swaps_ = snapshot.swaps; swapsKnown_ = true; }
     if (snapshot.swaps != swaps_) { swaps_ = snapshot.swaps; swapUntil_ = now + kSwapSeconds; }
@@ -78,7 +75,7 @@ void StagePuppets::Player(HIKARI::WorldView& world, const StagePartBuilder& buil
         Play(world, player_, "Run", true, .1f, std::clamp(static_cast<float>(heights / stride), kRunSlowest, kRunFastest));
     }
     else { Play(world, player_, "Idle", true, .22f, 1); }
-    Stand(world, builder, player_, snapshot.presentationPlayer, body.facing, actorScale, depth, 1.0, now);
+    Stand(world, builder, player_, snapshot.presentationPlayer, body.facing, actorScale, depth, grow, now);
 }
 
 void StagePuppets::Echo(HIKARI::WorldView& world, const StagePartBuilder& builder, const Rules::BodyState& body, const Rules::Rect& rect,
@@ -122,7 +119,7 @@ void StagePuppets::Stand(HIKARI::WorldView& world, const StagePartBuilder& build
     // 全体を移して焼いた形と重ねる（実体の組ではずれは 0）。
     const double half = kBodyHalfDepth * size;
     const auto& projection = builder.Projection();
-    auto pose = builder.Place(rect.x + rect.w * .5 + projection.ShiftX(-half), rect.y + rect.h + projection.ShiftY(-half), depth - half, RotateY(puppet.yaw));
+    auto pose = builder.Place(rect.x + rect.w * .5 + projection.ShiftX(-half), rect.y + rect.h + projection.ShiftY(-half), depth - half, QFromEulerDeg(0, puppet.yaw, 0));
     const auto s = static_cast<float>(size * builder.StageScale() / (std::max)(puppet.settings.height, .1f));
     pose.scale = {s, static_cast<float>(s * std::clamp(grow, .01, 1.0)), s};
     (void)object.SetWorldTransform(pose);

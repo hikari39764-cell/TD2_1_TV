@@ -33,15 +33,11 @@ public:
     const std::vector<DeviceDraft>& Items() const { return devices_; }
     DeviceDraft* Selected() { return HasSelection() ? &devices_[selected_] : nullptr; }
     const DeviceDraft* Selected() const { return HasSelection() ? &devices_[selected_] : nullptr; }
-    int SelectedIndex() const { return HasSelection() ? selected_ : -1; }
     int Hit(double x, double y) const;
     void Select(int index) { selected_ = index; }
     bool Add(std::string_view kind, int col, int row, int cols, int rows);
     bool RemoveSelected();
     bool DuplicateSelected(int cols, int rows);
-    bool Paste(const std::vector<DeviceDraft>& copied, double x, double y, int cols, int rows,
-               std::vector<std::string>& pastedIds);
-    bool ToggleLink(std::string_view sourceId, int targetIndex);
     // 目標の文字列をそのまま付け外しする（別のテレビの装置・仕掛け）。
     bool ToggleTarget(std::string_view sourceId, const std::string& target);
     bool IsLoaded() const { return error_.empty(); }

@@ -1,0 +1,10 @@
+{
+  "displayName": "开场演出",
+  "guid": "3b9d6e2f0a4c4f18b7e1d5a2c8f60b94",
+  "importSettings": {},
+  "importerId": "SequenceAssetImporter",
+  "importerVersion": 3,
+  "metaVersion": 1,
+  "sourcePath": "Assets/Sequences/TD2_Intro.hsequence",
+  "type": "Sequence"
+}

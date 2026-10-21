@@ -126,50 +126,12 @@ bool DeviceEditor::DuplicateSelected(int cols, int rows) {
     return true;
 }
 
-bool DeviceEditor::Paste(const std::vector<DeviceDraft>& copied, double x, double y, int cols, int rows,
-                         std::vector<std::string>& pastedIds) {
-    if (!IsLoaded() || copied.empty()) { return false; }
-    double left = copied.front().x, top = copied.front().y, right = left, bottom = top;
-    for (const auto& d : copied) {
-        left = (std::min)(left, d.x); top = (std::min)(top, d.y);
-        right = (std::max)(right, d.x + d.w); bottom = (std::max)(bottom, d.y + d.h);
-    }
-    if (right - left > cols || bottom - top > rows) { return false; }
-    x = std::clamp(x, 0.0, cols - (right - left)); y = std::clamp(y, 0.0, rows - (bottom - top));
-    // ID は貼り付け先で振り直す。外への接続は切り、コピー内の接続だけ残す。
-    const size_t first = devices_.size();
-    pastedIds.clear();
-    for (const auto& d : copied) {
-        if (!Add(d.kind, 0, 0, cols, rows)) { devices_.resize(first); selected_ = -1; pastedIds.clear(); return false; }
-        const std::string id = Selected()->id;
-        *Selected() = d; Selected()->id = id; Selected()->x = d.x - left + x; Selected()->y = d.y - top + y; Selected()->targets.clear();
-        pastedIds.push_back(id);
-    }
-    for (size_t i = 0; i < copied.size(); ++i) for (const auto& target : copied[i].targets) {
-        const auto match = std::find_if(copied.begin(), copied.end(), [&target](const auto& d) { return d.id == target; });
-        if (match != copied.end()) { devices_[first + i].targets.push_back(pastedIds[static_cast<size_t>(match - copied.begin())]); }
-    }
-    return true;
-}
-
 bool DeviceEditor::ToggleTarget(std::string_view sourceId, const std::string& target) {
     if (!IsLoaded() || ClassifyTarget(target) == TargetKind::Invalid) { return false; }
     auto source = std::find_if(devices_.begin(), devices_.end(), [sourceId](const auto& d) { return d.id == sourceId && d.kind == "Plate"; });
     if (source == devices_.end()) { return false; }
     const auto found = std::find(source->targets.begin(), source->targets.end(), target);
     if (found == source->targets.end()) { source->targets.push_back(target); }
-    else { source->targets.erase(found); }
-    return true;
-}
-
-bool DeviceEditor::ToggleLink(std::string_view sourceId, int targetIndex) {
-    if (!IsLoaded() || targetIndex < 0 || targetIndex >= static_cast<int>(devices_.size())) { return false; }
-    const auto& target = devices_[targetIndex];
-    if (target.kind != "Door" && target.kind != "Laser" && target.kind != "Bridge") { return false; }
-    auto source = std::find_if(devices_.begin(), devices_.end(), [sourceId](const auto& d) { return d.id == sourceId && d.kind == "Plate"; });
-    if (source == devices_.end()) { return false; }
-    const auto found = std::find(source->targets.begin(), source->targets.end(), target.id);
-    if (found == source->targets.end()) { source->targets.push_back(target.id); }
     else { source->targets.erase(found); }
     return true;
 }

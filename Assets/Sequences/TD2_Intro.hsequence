@@ -1,0 +1,2485 @@
+{
+  "assetType": "Sequence",
+  "displayName": "开场演出",
+  "formatVersion": 5,
+  "guid": "3b9d6e2f0a4c4f18b7e1d5a2c8f60b94",
+  "sequence": {
+    "bindings": [
+      {
+        "id": 1,
+        "name": "游戏摄像机",
+        "required": true,
+        "slotName": "Camera",
+        "targetKind": "slot"
+      }
+    ],
+    "durationSeconds": 33.2,
+    "id": 1,
+    "name": "开场演出",
+    "screenEffects": [
+      {
+        "amount": {
+          "keys": [],
+          "value": 0.42
+        },
+        "color": [
+          1,
+          1,
+          1
+        ],
+        "duration": 16.75,
+        "enabled": true,
+        "fadeIn": 2.5,
+        "fadeOut": 0.3,
+        "id": 1,
+        "kind": 6,
+        "name": "暗角",
+        "start": 1.6,
+        "weight": {
+          "keys": [],
+          "value": 1
+        }
+      },
+      {
+        "amount": {
+          "keys": [],
+          "value": 0.95
+        },
+        "color": [
+          1,
+          1,
+          1
+        ],
+        "duration": 1.7,
+        "enabled": true,
+        "fadeIn": 1.4,
+        "fadeOut": 0.02,
+        "id": 7,
+        "kind": 6,
+        "name": "吸入隧道",
+        "start": 17.95,
+        "weight": {
+          "keys": [],
+          "value": 1
+        }
+      },
+      {
+        "amount": {
+          "keys": [],
+          "value": 5300
+        },
+        "color": [
+          1,
+          1,
+          1
+        ],
+        "duration": 18.05,
+        "enabled": true,
+        "fadeIn": 3.5,
+        "fadeOut": 0.02,
+        "id": 2,
+        "kind": 5,
+        "name": "冷色",
+        "start": 1.6,
+        "weight": {
+          "keys": [],
+          "value": 1
+        }
+      },
+      {
+        "amount": {
+          "keys": [],
+          "value": 0.68
+        },
+        "color": [
+          1,
+          1,
+          1
+        ],
+        "duration": 18.05,
+        "enabled": true,
+        "fadeIn": 3.5,
+        "fadeOut": 0.02,
+        "id": 6,
+        "kind": 3,
+        "name": "低饱和",
+        "start": 1.6,
+        "weight": {
+          "keys": [],
+          "value": 1
+        }
+      },
+      {
+        "amount": {
+          "keys": [],
+          "value": 1.3
+        },
+        "color": [
+          1,
+          1,
+          1
+        ],
+        "duration": 6.2,
+        "enabled": true,
+        "fadeIn": 0.03,
+        "fadeOut": 1.2,
+        "id": 11,
+        "kind": 0,
+        "name": "白屏泛光",
+        "start": 11.4,
+        "weight": {
+          "keys": [],
+          "value": 1
+        }
+      },
+      {
+        "amount": {
+          "keys": [],
+          "value": 1.2
+        },
+        "color": [
+          1,
+          1,
+          1
+        ],
+        "duration": 0.4,
+        "enabled": true,
+        "fadeIn": 0.02,
+        "fadeOut": 0.35,
+        "id": 12,
+        "kind": 2,
+        "name": "白屏闪光",
+        "start": 11.4,
+        "weight": {
+          "keys": [],
+          "value": 1
+        }
+      },
+      {
+        "amount": {
+          "keys": [],
+          "value": 1.0
+        },
+        "color": [
+          1,
+          1,
+          1
+        ],
+        "duration": 1.3,
+        "enabled": true,
+        "fadeIn": 1.2,
+        "fadeOut": 0.02,
+        "id": 3,
+        "kind": 11,
+        "name": "吸入色差",
+        "start": 18.35,
+        "weight": {
+          "keys": [],
+          "value": 1
+        }
+      },
+      {
+        "amount": {
+          "keys": [],
+          "value": 0.5
+        },
+        "color": [
+          1,
+          1,
+          1
+        ],
+        "duration": 0.35,
+        "enabled": true,
+        "fadeIn": 0.3,
+        "fadeOut": 0.02,
+        "id": 4,
+        "kind": 10,
+        "name": "吸入像素",
+        "start": 19.3,
+        "weight": {
+          "keys": [],
+          "value": 1
+        }
+      },
+      {
+        "amount": {
+          "keys": [],
+          "value": 1.6
+        },
+        "color": [
+          1,
+          1,
+          1
+        ],
+        "duration": 0.23,
+        "enabled": true,
+        "fadeIn": 0.18,
+        "fadeOut": 0.02,
+        "id": 8,
+        "kind": 2,
+        "name": "撞入白光",
+        "start": 19.41,
+        "weight": {
+          "keys": [],
+          "value": 1
+        }
+      },
+      {
+        "amount": {
+          "keys": [],
+          "value": 2.5
+        },
+        "color": [
+          1,
+          1,
+          1
+        ],
+        "duration": 0.23,
+        "enabled": true,
+        "fadeIn": 0.18,
+        "fadeOut": 0.02,
+        "id": 9,
+        "kind": 0,
+        "name": "撞入泛光",
+        "start": 19.41,
+        "weight": {
+          "keys": [],
+          "value": 1
+        }
+      },
+      {
+        "amount": {
+          "keys": [],
+          "value": 0.0
+        },
+        "color": [
+          1,
+          1,
+          1
+        ],
+        "duration": 0.23,
+        "enabled": true,
+        "fadeIn": 0.18,
+        "fadeOut": 0.02,
+        "id": 10,
+        "kind": 1,
+        "name": "撞入泛光阈值",
+        "start": 19.41,
+        "weight": {
+          "keys": [],
+          "value": 1
+        }
+      },
+      {
+        "amount": {
+          "keys": [],
+          "value": 1
+        },
+        "color": [
+          0,
+          0,
+          0
+        ],
+        "duration": 4.235,
+        "enabled": true,
+        "fadeIn": 0.015,
+        "fadeOut": 0.45,
+        "id": 5,
+        "kind": 9,
+        "name": "黑场",
+        "start": 19.615,
+        "weight": {
+          "keys": [],
+          "value": 1
+        }
+      },
+      {
+        "amount": {
+          "keys": [],
+          "value": 0.9
+        },
+        "color": [
+          1,
+          1,
+          1
+        ],
+        "duration": 0.35,
+        "enabled": true,
+        "fadeIn": 0.02,
+        "fadeOut": 0.3,
+        "id": 20,
+        "kind": 2,
+        "name": "闪电",
+        "start": 6.0,
+        "weight": {
+          "keys": [],
+          "value": 1
+        }
+      },
+      {
+        "amount": {
+          "keys": [],
+          "value": 0.9
+        },
+        "color": [
+          1,
+          1,
+          1
+        ],
+        "duration": 0.35,
+        "enabled": true,
+        "fadeIn": 0.02,
+        "fadeOut": 0.3,
+        "id": 21,
+        "kind": 2,
+        "name": "闪电",
+        "start": 6.15,
+        "weight": {
+          "keys": [],
+          "value": 1
+        }
+      },
+      {
+        "amount": {
+          "keys": [],
+          "value": 0.9
+        },
+        "color": [
+          1,
+          1,
+          1
+        ],
+        "duration": 0.35,
+        "enabled": true,
+        "fadeIn": 0.02,
+        "fadeOut": 0.3,
+        "id": 22,
+        "kind": 2,
+        "name": "闪电",
+        "start": 7.75,
+        "weight": {
+          "keys": [],
+          "value": 1
+        }
+      },
+      {
+        "amount": {
+          "keys": [],
+          "value": 0.9
+        },
+        "color": [
+          1,
+          1,
+          1
+        ],
+        "duration": 0.35,
+        "enabled": true,
+        "fadeIn": 0.02,
+        "fadeOut": 0.3,
+        "id": 23,
+        "kind": 2,
+        "name": "闪电",
+        "start": 9.2,
+        "weight": {
+          "keys": [],
+          "value": 1
+        }
+      },
+      {
+        "amount": {
+          "keys": [],
+          "value": 0.9
+        },
+        "color": [
+          1,
+          1,
+          1
+        ],
+        "duration": 0.35,
+        "enabled": true,
+        "fadeIn": 0.02,
+        "fadeOut": 0.3,
+        "id": 24,
+        "kind": 2,
+        "name": "闪电",
+        "start": 9.32,
+        "weight": {
+          "keys": [],
+          "value": 1
+        }
+      },
+      {
+        "amount": {
+          "keys": [],
+          "value": 0.9
+        },
+        "color": [
+          1,
+          1,
+          1
+        ],
+        "duration": 0.35,
+        "enabled": true,
+        "fadeIn": 0.02,
+        "fadeOut": 0.3,
+        "id": 25,
+        "kind": 2,
+        "name": "闪电",
+        "start": 10.25,
+        "weight": {
+          "keys": [],
+          "value": 1
+        }
+      },
+      {
+        "amount": {
+          "keys": [],
+          "value": -0.35
+        },
+        "color": [
+          1,
+          1,
+          1
+        ],
+        "duration": 0.3,
+        "enabled": true,
+        "fadeIn": 0.01,
+        "fadeOut": 0.27,
+        "id": 40,
+        "kind": 2,
+        "name": "熄灭拍",
+        "start": 12.6,
+        "weight": {
+          "keys": [],
+          "value": 1
+        }
+      },
+      {
+        "amount": {
+          "keys": [],
+          "value": -0.35
+        },
+        "color": [
+          1,
+          1,
+          1
+        ],
+        "duration": 0.3,
+        "enabled": true,
+        "fadeIn": 0.01,
+        "fadeOut": 0.27,
+        "id": 41,
+        "kind": 2,
+        "name": "熄灭拍",
+        "start": 13.1714,
+        "weight": {
+          "keys": [],
+          "value": 1
+        }
+      },
+      {
+        "amount": {
+          "keys": [],
+          "value": -0.35
+        },
+        "color": [
+          1,
+          1,
+          1
+        ],
+        "duration": 0.3,
+        "enabled": true,
+        "fadeIn": 0.01,
+        "fadeOut": 0.27,
+        "id": 42,
+        "kind": 2,
+        "name": "熄灭拍",
+        "start": 13.6857,
+        "weight": {
+          "keys": [],
+          "value": 1
+        }
+      },
+      {
+        "amount": {
+          "keys": [],
+          "value": -0.35
+        },
+        "color": [
+          1,
+          1,
+          1
+        ],
+        "duration": 0.3,
+        "enabled": true,
+        "fadeIn": 0.01,
+        "fadeOut": 0.27,
+        "id": 43,
+        "kind": 2,
+        "name": "熄灭拍",
+        "start": 14.1429,
+        "weight": {
+          "keys": [],
+          "value": 1
+        }
+      },
+      {
+        "amount": {
+          "keys": [],
+          "value": -0.35
+        },
+        "color": [
+          1,
+          1,
+          1
+        ],
+        "duration": 0.3,
+        "enabled": true,
+        "fadeIn": 0.01,
+        "fadeOut": 0.27,
+        "id": 44,
+        "kind": 2,
+        "name": "熄灭拍",
+        "start": 14.5429,
+        "weight": {
+          "keys": [],
+          "value": 1
+        }
+      },
+      {
+        "amount": {
+          "keys": [],
+          "value": -0.35
+        },
+        "color": [
+          1,
+          1,
+          1
+        ],
+        "duration": 0.3,
+        "enabled": true,
+        "fadeIn": 0.01,
+        "fadeOut": 0.27,
+        "id": 45,
+        "kind": 2,
+        "name": "熄灭拍",
+        "start": 14.8857,
+        "weight": {
+          "keys": [],
+          "value": 1
+        }
+      },
+      {
+        "amount": {
+          "keys": [],
+          "value": -0.35
+        },
+        "color": [
+          1,
+          1,
+          1
+        ],
+        "duration": 0.3,
+        "enabled": true,
+        "fadeIn": 0.01,
+        "fadeOut": 0.27,
+        "id": 46,
+        "kind": 2,
+        "name": "熄灭拍",
+        "start": 15.1714,
+        "weight": {
+          "keys": [],
+          "value": 1
+        }
+      },
+      {
+        "amount": {
+          "keys": [],
+          "value": -0.35
+        },
+        "color": [
+          1,
+          1,
+          1
+        ],
+        "duration": 0.3,
+        "enabled": true,
+        "fadeIn": 0.01,
+        "fadeOut": 0.27,
+        "id": 47,
+        "kind": 2,
+        "name": "熄灭拍",
+        "start": 15.4,
+        "weight": {
+          "keys": [],
+          "value": 1
+        }
+      }
+    ],
+    "tracks": [
+      {
+        "clips": [
+          {
+            "camera": {
+              "aimWeight": {
+                "keys": [],
+                "value": 1.0
+              },
+              "anchor": 0,
+              "base": {
+                "customTangents": 0,
+                "far": 500.0,
+                "fov": 50.0,
+                "inFovTangent": 0.0,
+                "inTangent": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "interpolation": "spline",
+                "near": 0.01,
+                "outFovTangent": 0.0,
+                "outTangent": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "position": [
+                  3.0,
+                  1.21,
+                  3.97
+                ],
+                "reference": 0,
+                "rotation": [
+                  0.0,
+                  0.990957,
+                  -0.134178,
+                  0.0
+                ]
+              },
+              "keys": [
+                {
+                  "customTangents": 0,
+                  "far": 500.0,
+                  "fov": 50.0,
+                  "inFovTangent": 0.0,
+                  "inTangent": [
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  "interpolation": "spline",
+                  "near": 0.01,
+                  "outFovTangent": 0.0,
+                  "outTangent": [
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  "position": [
+                    3.0,
+                    1.21,
+                    3.97
+                  ],
+                  "reference": 0,
+                  "rotation": [
+                    0.0,
+                    0.990957,
+                    -0.134178,
+                    0.0
+                  ],
+                  "time": 0.0
+                },
+                {
+                  "customTangents": 0,
+                  "far": 500.0,
+                  "fov": 50.0,
+                  "inFovTangent": 0.0,
+                  "inTangent": [
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  "interpolation": "spline",
+                  "near": 0.01,
+                  "outFovTangent": 0.0,
+                  "outTangent": [
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  "position": [
+                    3.0,
+                    1.21,
+                    3.97
+                  ],
+                  "reference": 0,
+                  "rotation": [
+                    0.0,
+                    0.990957,
+                    -0.134178,
+                    0.0
+                  ],
+                  "time": 0.6
+                },
+                {
+                  "customTangents": 0,
+                  "far": 500.0,
+                  "fov": 52.0,
+                  "inFovTangent": 0.0,
+                  "inTangent": [
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  "interpolation": "spline",
+                  "near": 0.01,
+                  "outFovTangent": 0.0,
+                  "outTangent": [
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  "position": [
+                    3.0,
+                    1.23,
+                    4.02
+                  ],
+                  "reference": 0,
+                  "rotation": [
+                    -0.000944,
+                    0.994092,
+                    -0.108187,
+                    -0.008675
+                  ],
+                  "time": 1.3
+                },
+                {
+                  "customTangents": 0,
+                  "far": 500.0,
+                  "fov": 52.0,
+                  "inFovTangent": 0.0,
+                  "inTangent": [
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  "interpolation": "spline",
+                  "near": 0.01,
+                  "outFovTangent": 0.0,
+                  "outTangent": [
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  "position": [
+                    3.0,
+                    1.23,
+                    4.02
+                  ],
+                  "reference": 0,
+                  "rotation": [
+                    -0.001737,
+                    0.994885,
+                    -0.099497,
+                    -0.017366
+                  ],
+                  "time": 1.9
+                },
+                {
+                  "customTangents": 0,
+                  "far": 500.0,
+                  "fov": 56.0,
+                  "inFovTangent": 0.0,
+                  "inTangent": [
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  "interpolation": "spline",
+                  "near": 0.01,
+                  "outFovTangent": 0.0,
+                  "outTangent": [
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  "position": [
+                    3.0,
+                    1.25,
+                    4.04
+                  ],
+                  "reference": 0,
+                  "rotation": [
+                    0.015028,
+                    0.991093,
+                    0.121244,
+                    -0.053006
+                  ],
+                  "time": 2.3
+                },
+                {
+                  "customTangents": 0,
+                  "far": 500.0,
+                  "fov": 56.0,
+                  "inFovTangent": 0.0,
+                  "inTangent": [
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  "interpolation": "spline",
+                  "near": 0.01,
+                  "outFovTangent": 0.0,
+                  "outTangent": [
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  "position": [
+                    3.0,
+                    1.25,
+                    4.04
+                  ],
+                  "reference": 0,
+                  "rotation": [
+                    0.011376,
+                    0.987672,
+                    0.13003,
+                    -0.08641
+                  ],
+                  "time": 3.1
+                },
+                {
+                  "customTangents": 0,
+                  "far": 500.0,
+                  "fov": 56.0,
+                  "inFovTangent": 0.0,
+                  "inTangent": [
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  "interpolation": "spline",
+                  "near": 0.01,
+                  "outFovTangent": 0.0,
+                  "outTangent": [
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  "position": [
+                    2.98,
+                    1.26,
+                    4.05
+                  ],
+                  "reference": 0,
+                  "rotation": [
+                    0.024839,
+                    0.963921,
+                    0.145957,
+                    -0.221215
+                  ],
+                  "time": 3.45
+                },
+                {
+                  "customTangents": 0,
+                  "far": 500.0,
+                  "fov": 56.0,
+                  "inFovTangent": 0.0,
+                  "inTangent": [
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  "interpolation": "spline",
+                  "near": 0.01,
+                  "outFovTangent": 0.0,
+                  "outTangent": [
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  "position": [
+                    2.98,
+                    1.26,
+                    4.05
+                  ],
+                  "reference": 0,
+                  "rotation": [
+                    0.026478,
+                    0.958993,
+                    0.136899,
+                    -0.246758
+                  ],
+                  "time": 4.2
+                },
+                {
+                  "customTangents": 0,
+                  "far": 500.0,
+                  "fov": 56.0,
+                  "inFovTangent": 0.0,
+                  "inTangent": [
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  "interpolation": "spline",
+                  "near": 0.01,
+                  "outFovTangent": 0.0,
+                  "outTangent": [
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  "position": [
+                    3.02,
+                    1.26,
+                    4.05
+                  ],
+                  "reference": 0,
+                  "rotation": [
+                    -0.003898,
+                    0.986952,
+                    0.096156,
+                    0.129091
+                  ],
+                  "time": 4.55
+                },
+                {
+                  "customTangents": 0,
+                  "far": 500.0,
+                  "fov": 56.0,
+                  "inFovTangent": 0.0,
+                  "inTangent": [
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  "interpolation": "spline",
+                  "near": 0.01,
+                  "outFovTangent": 0.0,
+                  "outTangent": [
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  "position": [
+                    3.02,
+                    1.26,
+                    4.05
+                  ],
+                  "reference": 0,
+                  "rotation": [
+                    -0.005047,
+                    0.984011,
+                    0.087439,
+                    0.155082
+                  ],
+                  "time": 5.2
+                },
+                {
+                  "customTangents": 0,
+                  "far": 500.0,
+                  "fov": 56.0,
+                  "inFovTangent": 0.0,
+                  "inTangent": [
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  "interpolation": "spline",
+                  "near": 0.01,
+                  "outFovTangent": 0.0,
+                  "outTangent": [
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  "position": [
+                    3.0,
+                    1.25,
+                    4.04
+                  ],
+                  "reference": 0,
+                  "rotation": [
+                    0.005473,
+                    0.994489,
+                    0.078268,
+                    -0.069541
+                  ],
+                  "time": 5.6
+                },
+                {
+                  "customTangents": 0,
+                  "far": 500.0,
+                  "fov": 56.0,
+                  "inFovTangent": 0.0,
+                  "inTangent": [
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  "interpolation": "spline",
+                  "near": 0.01,
+                  "outFovTangent": 0.0,
+                  "outTangent": [
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  "position": [
+                    2.98,
+                    1.25,
+                    4.04
+                  ],
+                  "reference": 0,
+                  "rotation": [
+                    0.01213,
+                    0.9865,
+                    0.086308,
+                    -0.138644
+                  ],
+                  "time": 5.95
+                },
+                {
+                  "customTangents": 0,
+                  "far": 500.0,
+                  "fov": 56.0,
+                  "inFovTangent": 0.0,
+                  "inTangent": [
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  "interpolation": "spline",
+                  "near": 0.01,
+                  "outFovTangent": 0.0,
+                  "outTangent": [
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  "position": [
+                    2.98,
+                    1.25,
+                    4.04
+                  ],
+                  "reference": 0,
+                  "rotation": [
+                    0.013634,
+                    0.98393,
+                    0.086083,
+                    -0.155839
+                  ],
+                  "time": 6.15
+                },
+                {
+                  "customTangents": 0,
+                  "far": 500.0,
+                  "fov": 58.0,
+                  "inFovTangent": 0.0,
+                  "inTangent": [
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  "interpolation": "spline",
+                  "near": 0.01,
+                  "outFovTangent": 0.0,
+                  "outTangent": [
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  "position": [
+                    2.95,
+                    1.26,
+                    4.05
+                  ],
+                  "reference": 0,
+                  "rotation": [
+                    0.013883,
+                    0.837891,
+                    0.053378,
+                    -0.543044
+                  ],
+                  "time": 6.5
+                },
+                {
+                  "customTangents": 0,
+                  "far": 500.0,
+                  "fov": 58.0,
+                  "inFovTangent": 0.0,
+                  "inTangent": [
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  "interpolation": "spline",
+                  "near": 0.01,
+                  "outFovTangent": 0.0,
+                  "outTangent": [
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  "position": [
+                    2.94,
+                    1.27,
+                    4.06
+                  ],
+                  "reference": 0,
+                  "rotation": [
+                    0.033958,
+                    0.807373,
+                    0.061549,
+                    -0.585839
+                  ],
+                  "time": 7.4
+                },
+                {
+                  "customTangents": 0,
+                  "far": 500.0,
+                  "fov": 58.0,
+                  "inFovTangent": 0.0,
+                  "inTangent": [
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  "interpolation": "spline",
+                  "near": 0.01,
+                  "outFovTangent": 0.0,
+                  "outTangent": [
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  "position": [
+                    2.94,
+                    1.27,
+                    4.06
+                  ],
+                  "reference": 0,
+                  "rotation": [
+                    0.032878,
+                    0.817475,
+                    0.062132,
+                    -0.571659
+                  ],
+                  "time": 7.8
+                },
+                {
+                  "customTangents": 0,
+                  "far": 500.0,
+                  "fov": 58.0,
+                  "inFovTangent": 0.0,
+                  "inTangent": [
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  "interpolation": "spline",
+                  "near": 0.01,
+                  "outFovTangent": 0.0,
+                  "outTangent": [
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  "position": [
+                    3.07,
+                    1.26,
+                    4.05
+                  ],
+                  "reference": 0,
+                  "rotation": [
+                    -0.01219,
+                    0.889693,
+                    0.062295,
+                    0.452125
+                  ],
+                  "time": 8.3
+                },
+                {
+                  "customTangents": 0,
+                  "far": 500.0,
+                  "fov": 58.0,
+                  "inFovTangent": 0.0,
+                  "inTangent": [
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  "interpolation": "spline",
+                  "near": 0.01,
+                  "outFovTangent": 0.0,
+                  "outTangent": [
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  "position": [
+                    3.06,
+                    1.27,
+                    4.05
+                  ],
+                  "reference": 0,
+                  "rotation": [
+                    -0.040398,
+                    0.862424,
+                    0.087345,
+                    0.496955
+                  ],
+                  "time": 9.1
+                },
+                {
+                  "customTangents": 0,
+                  "far": 500.0,
+                  "fov": 58.0,
+                  "inFovTangent": 0.0,
+                  "inTangent": [
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  "interpolation": "spline",
+                  "near": 0.01,
+                  "outFovTangent": 0.0,
+                  "outTangent": [
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  "position": [
+                    3.06,
+                    1.27,
+                    4.05
+                  ],
+                  "reference": 0,
+                  "rotation": [
+                    -0.039635,
+                    0.866728,
+                    0.087694,
+                    0.48941
+                  ],
+                  "time": 9.55
+                },
+                {
+                  "customTangents": 0,
+                  "far": 500.0,
+                  "fov": 62.0,
+                  "inFovTangent": 0.0,
+                  "inTangent": [
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  "interpolation": "spline",
+                  "near": 0.01,
+                  "outFovTangent": 0.0,
+                  "outTangent": [
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  "position": [
+                    3.01,
+                    1.28,
+                    4.07
+                  ],
+                  "reference": 0,
+                  "rotation": [
+                    -0.002131,
+                    0.997527,
+                    0.061011,
+                    0.034834
+                  ],
+                  "time": 10.0
+                },
+                {
+                  "customTangents": 0,
+                  "far": 500.0,
+                  "fov": 62.0,
+                  "inFovTangent": 0.0,
+                  "inTangent": [
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  "interpolation": "spline",
+                  "near": 0.01,
+                  "outFovTangent": 0.0,
+                  "outTangent": [
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  "position": [
+                    3.01,
+                    1.28,
+                    4.07
+                  ],
+                  "reference": 0,
+                  "rotation": [
+                    -0.000913,
+                    0.998477,
+                    0.052328,
+                    0.017428
+                  ],
+                  "time": 10.6
+                },
+                {
+                  "customTangents": 0,
+                  "far": 500.0,
+                  "fov": 60.0,
+                  "inFovTangent": 0.0,
+                  "inTangent": [
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  "interpolation": "spline",
+                  "near": 0.01,
+                  "outFovTangent": 0.0,
+                  "outTangent": [
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  "position": [
+                    3.01,
+                    1.27,
+                    4.05
+                  ],
+                  "reference": 0,
+                  "rotation": [
+                    -0.000381,
+                    0.99901,
+                    0.043618,
+                    0.008718
+                  ],
+                  "time": 11.3
+                },
+                {
+                  "customTangents": 0,
+                  "far": 500.0,
+                  "fov": 63.0,
+                  "inFovTangent": 0.0,
+                  "inTangent": [
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  "interpolation": "spline",
+                  "near": 0.01,
+                  "outFovTangent": 0.0,
+                  "outTangent": [
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  "position": [
+                    3.01,
+                    1.29,
+                    4.1
+                  ],
+                  "reference": 0,
+                  "rotation": [
+                    -0.0,
+                    0.998135,
+                    0.061049,
+                    0.0
+                  ],
+                  "time": 11.6
+                },
+                {
+                  "customTangents": 0,
+                  "far": 500.0,
+                  "fov": 62.0,
+                  "inFovTangent": 0.0,
+                  "inTangent": [
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  "interpolation": "spline",
+                  "near": 0.01,
+                  "outFovTangent": 0.0,
+                  "outTangent": [
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  "position": [
+                    3.01,
+                    1.28,
+                    4.08
+                  ],
+                  "reference": 0,
+                  "rotation": [
+                    0.000457,
+                    0.998592,
+                    0.052334,
+                    -0.008715
+                  ],
+                  "time": 12.5
+                },
+                {
+                  "customTangents": 0,
+                  "far": 500.0,
+                  "fov": 56.0,
+                  "inFovTangent": 0.0,
+                  "inTangent": [
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  "interpolation": "spline",
+                  "near": 0.01,
+                  "outFovTangent": 0.0,
+                  "outTangent": [
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  "position": [
+                    3.01,
+                    1.26,
+                    4.02
+                  ],
+                  "reference": 0,
+                  "rotation": [
+                    0.000609,
+                    0.999239,
+                    0.034894,
+                    -0.017442
+                  ],
+                  "time": 15.4
+                },
+                {
+                  "customTangents": 0,
+                  "far": 500.0,
+                  "fov": 50.0,
+                  "inFovTangent": 0.0,
+                  "inTangent": [
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  "interpolation": "spline",
+                  "near": 0.01,
+                  "outFovTangent": 0.0,
+                  "outTangent": [
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  "position": [
+                    3.0,
+                    1.21,
+                    3.99
+                  ],
+                  "reference": 0,
+                  "rotation": [
+                    0.0,
+                    0.99209,
+                    -0.125525,
+                    0.0
+                  ],
+                  "time": 16.6
+                },
+                {
+                  "customTangents": 0,
+                  "far": 500.0,
+                  "fov": 48.0,
+                  "inFovTangent": 0.0,
+                  "inTangent": [
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  "interpolation": "spline",
+                  "near": 0.01,
+                  "outFovTangent": 0.0,
+                  "outTangent": [
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  "position": [
+                    3.0,
+                    1.205,
+                    3.97
+                  ],
+                  "reference": 0,
+                  "rotation": [
+                    0.0,
+                    0.990957,
+                    -0.134178,
+                    0.0
+                  ],
+                  "time": 17.6
+                },
+                {
+                  "customTangents": 0,
+                  "far": 500.0,
+                  "fov": 47.0,
+                  "inFovTangent": 0.0,
+                  "inTangent": [
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  "interpolation": "spline",
+                  "near": 0.01,
+                  "outFovTangent": 0.0,
+                  "outTangent": [
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  "position": [
+                    3.0,
+                    1.2,
+                    3.94
+                  ],
+                  "reference": 0,
+                  "rotation": [
+                    0.0,
+                    0.989749,
+                    -0.14282,
+                    0.0
+                  ],
+                  "time": 18.0
+                },
+                {
+                  "customTangents": 0,
+                  "far": 500.0,
+                  "fov": 45.0,
+                  "inFovTangent": 0.0,
+                  "inTangent": [
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  "interpolation": "spline",
+                  "near": 0.01,
+                  "outFovTangent": 0.0,
+                  "outTangent": [
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  "position": [
+                    3.0,
+                    1.225,
+                    4.04
+                  ],
+                  "reference": 0,
+                  "rotation": [
+                    -0.008658,
+                    0.992053,
+                    -0.12552,
+                    -0.001095
+                  ],
+                  "time": 18.35
+                },
+                {
+                  "customTangents": 0,
+                  "far": 500.0,
+                  "fov": 52.0,
+                  "inFovTangent": 0.0,
+                  "inTangent": [
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  "interpolation": "spline",
+                  "near": 0.01,
+                  "outFovTangent": 0.0,
+                  "outTangent": [
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  "position": [
+                    3.0,
+                    1.17782,
+                    3.85333
+                  ],
+                  "reference": 0,
+                  "rotation": [
+                    0.02594,
+                    0.990618,
+                    -0.134132,
+                    0.003512
+                  ],
+                  "time": 18.9
+                },
+                {
+                  "customTangents": 0,
+                  "far": 500.0,
+                  "fov": 64.0,
+                  "inFovTangent": 0.0,
+                  "inTangent": [
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  "interpolation": "spline",
+                  "near": 0.01,
+                  "outFovTangent": 0.0,
+                  "outTangent": [
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  "position": [
+                    3.0,
+                    1.10289,
+                    3.58172
+                  ],
+                  "reference": 0,
+                  "rotation": [
+                    0.069126,
+                    0.988543,
+                    -0.133851,
+                    0.00936
+                  ],
+                  "time": 19.3
+                },
+                {
+                  "customTangents": 0,
+                  "far": 500.0,
+                  "fov": 76.0,
+                  "inFovTangent": 0.0,
+                  "inTangent": [
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  "interpolation": "spline",
+                  "near": 0.01,
+                  "outFovTangent": 0.0,
+                  "outTangent": [
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  "position": [
+                    3.0,
+                    1.03092,
+                    3.32084
+                  ],
+                  "reference": 0,
+                  "rotation": [
+                    0.120767,
+                    0.983571,
+                    -0.133178,
+                    0.016352
+                  ],
+                  "time": 19.55
+                },
+                {
+                  "customTangents": 0,
+                  "far": 500.0,
+                  "fov": 84.0,
+                  "inFovTangent": 0.0,
+                  "inTangent": [
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  "interpolation": "hold",
+                  "near": 0.01,
+                  "outFovTangent": 0.0,
+                  "outTangent": [
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  "position": [
+                    3.0,
+                    1.0036,
+                    3.2218
+                  ],
+                  "reference": 0,
+                  "rotation": [
+                    0.15502,
+                    0.978757,
+                    -0.132526,
+                    0.02099
+                  ],
+                  "time": 19.615
+                },
+                {
+                  "customTangents": 0,
+                  "far": 500.0,
+                  "fov": 30.0,
+                  "inFovTangent": 0.0,
+                  "inTangent": [
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  "interpolation": "hold",
+                  "near": 0.01,
+                  "outFovTangent": 0.0,
+                  "outTangent": [
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  "position": [
+                    3.0,
+                    1.0036,
+                    3.2218
+                  ],
+                  "reference": 0,
+                  "rotation": [
+                    0.15502,
+                    0.978757,
+                    -0.132526,
+                    0.02099
+                  ],
+                  "time": 19.62
+                },
+                {
+                  "customTangents": 0,
+                  "far": 500.0,
+                  "fov": 52.0,
+                  "inFovTangent": 0.0,
+                  "inTangent": [
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  "interpolation": "spline",
+                  "near": 0.01,
+                  "outFovTangent": 0.0,
+                  "outTangent": [
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  "position": [
+                    4.6,
+                    1.95,
+                    5.85
+                  ],
+                  "reference": 0,
+                  "rotation": [
+                    0.054314,
+                    -0.945663,
+                    0.230078,
+                    0.223241
+                  ],
+                  "time": 23.38
+                },
+                {
+                  "customTangents": 0,
+                  "far": 500.0,
+                  "fov": 49.0,
+                  "inFovTangent": 0.0,
+                  "inTangent": [
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  "interpolation": "spline",
+                  "near": 0.01,
+                  "outFovTangent": 0.0,
+                  "outTangent": [
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  "position": [
+                    4.45,
+                    1.86,
+                    5.66
+                  ],
+                  "reference": 0,
+                  "rotation": [
+                    0.051338,
+                    -0.948651,
+                    0.218355,
+                    0.223039
+                  ],
+                  "time": 28.9
+                },
+                {
+                  "customTangents": 0,
+                  "far": 500.0,
+                  "fov": 28.0,
+                  "inFovTangent": 0.0,
+                  "inTangent": [
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  "interpolation": "spline",
+                  "near": 0.01,
+                  "outFovTangent": 0.0,
+                  "outTangent": [
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  "position": [
+                    3.22,
+                    1.23,
+                    5.08
+                  ],
+                  "reference": 0,
+                  "rotation": [
+                    0.003586,
+                    -0.996368,
+                    0.064743,
+                    0.055184
+                  ],
+                  "time": 32.0
+                },
+                {
+                  "customTangents": 0,
+                  "far": 500.0,
+                  "fov": 26.0,
+                  "inFovTangent": 0.0,
+                  "inTangent": [
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  "interpolation": "spline",
+                  "near": 0.01,
+                  "outFovTangent": 0.0,
+                  "outTangent": [
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  "position": [
+                    3.12,
+                    1.189,
+                    4.9203
+                  ],
+                  "reference": 0,
+                  "rotation": [
+                    0.0,
+                    0.998199,
+                    -0.059982,
+                    0.0
+                  ],
+                  "time": 33.2
+                }
+              ],
+              "lookAt": 0,
+              "motion": [
+                {
+                  "amount": {
+                    "keys": [],
+                    "value": 0.012
+                  },
+                  "duration": 33.2,
+                  "enabled": true,
+                  "fadeIn": 0,
+                  "fadeOut": 0,
+                  "frequency": 1.2,
+                  "id": 1,
+                  "kind": 8,
+                  "maximumSpeed": 8,
+                  "seed": 3,
+                  "start": 0.0,
+                  "weight": {
+                    "keys": [],
+                    "value": 1
+                  }
+                },
+                {
+                  "amount": {
+                    "keys": [],
+                    "value": 0.025
+                  },
+                  "duration": 4.2,
+                  "enabled": true,
+                  "fadeIn": 1.5,
+                  "fadeOut": 0.3,
+                  "frequency": 2.0,
+                  "id": 2,
+                  "kind": 8,
+                  "maximumSpeed": 8,
+                  "seed": 11,
+                  "start": 1.8,
+                  "weight": {
+                    "keys": [],
+                    "value": 1
+                  }
+                },
+                {
+                  "amount": {
+                    "keys": [],
+                    "value": 0.05
+                  },
+                  "duration": 4.9,
+                  "enabled": true,
+                  "fadeIn": 0.4,
+                  "fadeOut": 0.5,
+                  "frequency": 2.6,
+                  "id": 5,
+                  "kind": 8,
+                  "maximumSpeed": 8,
+                  "seed": 12,
+                  "start": 5.8,
+                  "weight": {
+                    "keys": [],
+                    "value": 1
+                  }
+                },
+                {
+                  "amount": {
+                    "keys": [],
+                    "value": 0.05
+                  },
+                  "duration": 0.5,
+                  "enabled": true,
+                  "fadeIn": 0.01,
+                  "fadeOut": 0.45,
+                  "frequency": 16,
+                  "id": 6,
+                  "kind": 7,
+                  "maximumSpeed": 8,
+                  "seed": 62,
+                  "start": 11.4,
+                  "weight": {
+                    "keys": [],
+                    "value": 1
+                  }
+                },
+                {
+                  "amount": {
+                    "keys": [],
+                    "value": 0.02
+                  },
+                  "duration": 0.35,
+                  "enabled": true,
+                  "fadeIn": 0.02,
+                  "fadeOut": 0.3,
+                  "frequency": 14,
+                  "id": 3,
+                  "kind": 7,
+                  "maximumSpeed": 8,
+                  "seed": 60,
+                  "start": 18.0,
+                  "weight": {
+                    "keys": [],
+                    "value": 1
+                  }
+                },
+                {
+                  "amount": {
+                    "keys": [],
+                    "value": 0.012
+                  },
+                  "duration": 1.28,
+                  "enabled": true,
+                  "fadeIn": 1.1,
+                  "fadeOut": 0.02,
+                  "frequency": 22,
+                  "id": 4,
+                  "kind": 7,
+                  "maximumSpeed": 8,
+                  "seed": 61,
+                  "start": 18.35,
+                  "weight": {
+                    "keys": [],
+                    "value": 1
+                  }
+                },
+                {
+                  "amount": {
+                    "keys": [],
+                    "value": 0.012
+                  },
+                  "duration": 0.35,
+                  "enabled": true,
+                  "fadeIn": 0.01,
+                  "fadeOut": 0.32,
+                  "frequency": 14,
+                  "id": 8,
+                  "kind": 7,
+                  "maximumSpeed": 8,
+                  "seed": 63,
+                  "start": 31.72,
+                  "weight": {
+                    "keys": [],
+                    "value": 1
+                  }
+                },
+                {
+                  "amount": {
+                    "keys": [],
+                    "value": 0.035
+                  },
+                  "duration": 0.45,
+                  "enabled": true,
+                  "fadeIn": 0.02,
+                  "fadeOut": 0.4,
+                  "frequency": 18,
+                  "id": 10,
+                  "kind": 7,
+                  "maximumSpeed": 8,
+                  "seed": 40,
+                  "start": 6.0,
+                  "weight": {
+                    "keys": [],
+                    "value": 1
+                  }
+                },
+                {
+                  "amount": {
+                    "keys": [],
+                    "value": 0.035
+                  },
+                  "duration": 0.45,
+                  "enabled": true,
+                  "fadeIn": 0.02,
+                  "fadeOut": 0.4,
+                  "frequency": 18,
+                  "id": 11,
+                  "kind": 7,
+                  "maximumSpeed": 8,
+                  "seed": 41,
+                  "start": 6.15,
+                  "weight": {
+                    "keys": [],
+                    "value": 1
+                  }
+                },
+                {
+                  "amount": {
+                    "keys": [],
+                    "value": 0.035
+                  },
+                  "duration": 0.45,
+                  "enabled": true,
+                  "fadeIn": 0.02,
+                  "fadeOut": 0.4,
+                  "frequency": 18,
+                  "id": 12,
+                  "kind": 7,
+                  "maximumSpeed": 8,
+                  "seed": 42,
+                  "start": 7.75,
+                  "weight": {
+                    "keys": [],
+                    "value": 1
+                  }
+                },
+                {
+                  "amount": {
+                    "keys": [],
+                    "value": 0.035
+                  },
+                  "duration": 0.45,
+                  "enabled": true,
+                  "fadeIn": 0.02,
+                  "fadeOut": 0.4,
+                  "frequency": 18,
+                  "id": 13,
+                  "kind": 7,
+                  "maximumSpeed": 8,
+                  "seed": 43,
+                  "start": 9.2,
+                  "weight": {
+                    "keys": [],
+                    "value": 1
+                  }
+                },
+                {
+                  "amount": {
+                    "keys": [],
+                    "value": 0.035
+                  },
+                  "duration": 0.45,
+                  "enabled": true,
+                  "fadeIn": 0.02,
+                  "fadeOut": 0.4,
+                  "frequency": 18,
+                  "id": 14,
+                  "kind": 7,
+                  "maximumSpeed": 8,
+                  "seed": 44,
+                  "start": 9.32,
+                  "weight": {
+                    "keys": [],
+                    "value": 1
+                  }
+                },
+                {
+                  "amount": {
+                    "keys": [],
+                    "value": 0.035
+                  },
+                  "duration": 0.45,
+                  "enabled": true,
+                  "fadeIn": 0.02,
+                  "fadeOut": 0.4,
+                  "frequency": 18,
+                  "id": 15,
+                  "kind": 7,
+                  "maximumSpeed": 8,
+                  "seed": 45,
+                  "start": 10.25,
+                  "weight": {
+                    "keys": [],
+                    "value": 1
+                  }
+                },
+                {
+                  "amount": {
+                    "keys": [],
+                    "value": 0.018
+                  },
+                  "duration": 0.3,
+                  "enabled": true,
+                  "fadeIn": 0.01,
+                  "fadeOut": 0.28,
+                  "frequency": 14,
+                  "id": 30,
+                  "kind": 7,
+                  "maximumSpeed": 8,
+                  "seed": 70,
+                  "start": 12.6,
+                  "weight": {
+                    "keys": [],
+                    "value": 1
+                  }
+                },
+                {
+                  "amount": {
+                    "keys": [],
+                    "value": 0.018
+                  },
+                  "duration": 0.3,
+                  "enabled": true,
+                  "fadeIn": 0.01,
+                  "fadeOut": 0.28,
+                  "frequency": 14,
+                  "id": 31,
+                  "kind": 7,
+                  "maximumSpeed": 8,
+                  "seed": 71,
+                  "start": 13.1714,
+                  "weight": {
+                    "keys": [],
+                    "value": 1
+                  }
+                },
+                {
+                  "amount": {
+                    "keys": [],
+                    "value": 0.018
+                  },
+                  "duration": 0.3,
+                  "enabled": true,
+                  "fadeIn": 0.01,
+                  "fadeOut": 0.28,
+                  "frequency": 14,
+                  "id": 32,
+                  "kind": 7,
+                  "maximumSpeed": 8,
+                  "seed": 72,
+                  "start": 13.6857,
+                  "weight": {
+                    "keys": [],
+                    "value": 1
+                  }
+                },
+                {
+                  "amount": {
+                    "keys": [],
+                    "value": 0.018
+                  },
+                  "duration": 0.3,
+                  "enabled": true,
+                  "fadeIn": 0.01,
+                  "fadeOut": 0.28,
+                  "frequency": 14,
+                  "id": 33,
+                  "kind": 7,
+                  "maximumSpeed": 8,
+                  "seed": 73,
+                  "start": 14.1429,
+                  "weight": {
+                    "keys": [],
+                    "value": 1
+                  }
+                },
+                {
+                  "amount": {
+                    "keys": [],
+                    "value": 0.018
+                  },
+                  "duration": 0.3,
+                  "enabled": true,
+                  "fadeIn": 0.01,
+                  "fadeOut": 0.28,
+                  "frequency": 14,
+                  "id": 34,
+                  "kind": 7,
+                  "maximumSpeed": 8,
+                  "seed": 74,
+                  "start": 14.5429,
+                  "weight": {
+                    "keys": [],
+                    "value": 1
+                  }
+                },
+                {
+                  "amount": {
+                    "keys": [],
+                    "value": 0.018
+                  },
+                  "duration": 0.3,
+                  "enabled": true,
+                  "fadeIn": 0.01,
+                  "fadeOut": 0.28,
+                  "frequency": 14,
+                  "id": 35,
+                  "kind": 7,
+                  "maximumSpeed": 8,
+                  "seed": 75,
+                  "start": 14.8857,
+                  "weight": {
+                    "keys": [],
+                    "value": 1
+                  }
+                },
+                {
+                  "amount": {
+                    "keys": [],
+                    "value": 0.018
+                  },
+                  "duration": 0.3,
+                  "enabled": true,
+                  "fadeIn": 0.01,
+                  "fadeOut": 0.28,
+                  "frequency": 14,
+                  "id": 36,
+                  "kind": 7,
+                  "maximumSpeed": 8,
+                  "seed": 76,
+                  "start": 15.1714,
+                  "weight": {
+                    "keys": [],
+                    "value": 1
+                  }
+                },
+                {
+                  "amount": {
+                    "keys": [],
+                    "value": 0.018
+                  },
+                  "duration": 0.3,
+                  "enabled": true,
+                  "fadeIn": 0.01,
+                  "fadeOut": 0.28,
+                  "frequency": 14,
+                  "id": 37,
+                  "kind": 7,
+                  "maximumSpeed": 8,
+                  "seed": 77,
+                  "start": 15.4,
+                  "weight": {
+                    "keys": [],
+                    "value": 1
+                  }
+                },
+                {
+                  "amount": {
+                    "keys": [],
+                    "value": 0.015
+                  },
+                  "duration": 0.3,
+                  "enabled": true,
+                  "fadeIn": 0.01,
+                  "fadeOut": 0.32,
+                  "frequency": 14,
+                  "id": 9,
+                  "kind": 7,
+                  "maximumSpeed": 8,
+                  "seed": 64,
+                  "start": 24.9,
+                  "weight": {
+                    "keys": [],
+                    "value": 1
+                  }
+                }
+              ],
+              "name": "开场第一人称",
+              "pivotDistance": 2.0,
+              "rail": {
+                "loop": false,
+                "points": []
+              },
+              "railT": {
+                "keys": [],
+                "value": 0.0
+              },
+              "targetOffset": [
+                0.0,
+                0.0,
+                0.0
+              ],
+              "timing": {
+                "keys": [],
+                "value": 0.0
+              },
+              "useScenePose": false
+            },
+            "cameraBindingId": 1,
+            "durationSeconds": 33.2,
+            "effects": [],
+            "id": 1,
+            "sourceOffsetSeconds": 0.0,
+            "startTimeSeconds": 0.0,
+            "transition": {
+              "durationSeconds": 0.0,
+              "mode": "cut"
+            }
+          }
+        ],
+        "enabled": true,
+        "id": 1,
+        "type": "cameraCut"
+      },
+      {
+        "clips": [
+          {
+            "durationSeconds": 0.1,
+            "id": 1,
+            "name": "标题消失",
+            "startSeconds": 0.6
+          },
+          {
+            "durationSeconds": 32.6,
+            "id": 2,
+            "name": "黑边",
+            "startSeconds": 0.6
+          },
+          {
+            "durationSeconds": 4.4,
+            "id": 3,
+            "name": "前兆",
+            "startSeconds": 1.6
+          },
+          {
+            "durationSeconds": 0.1,
+            "id": 4,
+            "name": "闪电",
+            "startSeconds": 6.0
+          },
+          {
+            "durationSeconds": 0.1,
+            "id": 5,
+            "name": "闪电",
+            "startSeconds": 6.15
+          },
+          {
+            "durationSeconds": 0.1,
+            "id": 6,
+            "name": "闪电",
+            "startSeconds": 7.75
+          },
+          {
+            "durationSeconds": 0.1,
+            "id": 7,
+            "name": "闪电",
+            "startSeconds": 9.2
+          },
+          {
+            "durationSeconds": 0.1,
+            "id": 8,
+            "name": "闪电",
+            "startSeconds": 9.32
+          },
+          {
+            "durationSeconds": 0.1,
+            "id": 9,
+            "name": "闪电",
+            "startSeconds": 10.25
+          },
+          {
+            "durationSeconds": 3.0,
+            "id": 10,
+            "name": "雪花扩散",
+            "startSeconds": 6.0
+          },
+          {
+            "durationSeconds": 0.1,
+            "id": 11,
+            "name": "断电",
+            "startSeconds": 10.6
+          },
+          {
+            "durationSeconds": 0.1,
+            "id": 12,
+            "name": "白屏",
+            "startSeconds": 11.4
+          },
+          {
+            "durationSeconds": 2.8,
+            "id": 13,
+            "name": "逐批熄灭",
+            "startSeconds": 12.6
+          },
+          {
+            "durationSeconds": 2.2,
+            "id": 14,
+            "name": "凝视",
+            "startSeconds": 15.4
+          },
+          {
+            "durationSeconds": 1.28,
+            "id": 15,
+            "name": "吸入",
+            "startSeconds": 18.35
+          },
+          {
+            "durationSeconds": 2.58,
+            "id": 16,
+            "name": "标题卡",
+            "startSeconds": 20.63
+          },
+          {
+            "durationSeconds": 0.1,
+            "id": 17,
+            "name": "揭示",
+            "startSeconds": 23.4
+          },
+          {
+            "durationSeconds": 2.5,
+            "id": 18,
+            "name": "来电",
+            "startSeconds": 24.9
+          },
+          {
+            "durationSeconds": 2.0,
+            "id": 19,
+            "name": "对信号",
+            "startSeconds": 28.6
+          },
+          {
+            "durationSeconds": 0.1,
+            "id": 20,
+            "name": "登场",
+            "startSeconds": 31.0
+          }
+        ],
+        "type": "event"
+      }
+    ]
+  }
+}

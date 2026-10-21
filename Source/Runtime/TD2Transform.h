@@ -19,24 +19,27 @@ inline GameProjectFloat3 Lerp(const GameProjectFloat3& a, const GameProjectFloat
     return {a.x + (b.x - a.x) * t, a.y + (b.y - a.y) * t, a.z + (b.z - a.z) * t};
 }
 
-inline GameProjectQuaternion QMul(const GameProjectQuaternion& a, const GameProjectQuaternion& b) {
-    return {a.w * b.x + a.x * b.w + a.y * b.z - a.z * b.y, a.w * b.y - a.x * b.z + a.y * b.w + a.z * b.x,
-            a.w * b.z + a.x * b.y - a.y * b.x + a.z * b.w, a.w * b.w - a.x * b.x - a.y * b.y - a.z * b.z};
+// 四元数の計算は TD2Math（倍精度）に一つだけ置き、ここはエンジンの型との受け渡しだけ。
+inline Math::Quat ToQuat(const GameProjectQuaternion& q) { return {q.x, q.y, q.z, q.w}; }
+inline GameProjectQuaternion ToQuaternion(const Math::Quat& q) {
+    return {static_cast<float>(q[0]), static_cast<float>(q[1]), static_cast<float>(q[2]), static_cast<float>(q[3])};
 }
-inline GameProjectQuaternion QConj(const GameProjectQuaternion& q) { return {-q.x, -q.y, -q.z, q.w}; }
+inline GameProjectQuaternion QMul(const GameProjectQuaternion& a, const GameProjectQuaternion& b) {
+    return ToQuaternion(Math::QMul(ToQuat(a), ToQuat(b)));
+}
+inline GameProjectQuaternion QConj(const GameProjectQuaternion& q) { return ToQuaternion(Math::QConj(ToQuat(q))); }
 inline GameProjectFloat3 QRotate(const GameProjectQuaternion& q, const GameProjectFloat3& v) {
-    const auto r = QMul(QMul(q, {v.x, v.y, v.z, 0}), QConj(q));
-    return {r.x, r.y, r.z};
+    return ToF3(Math::QRotate(ToQuat(q), ToVec3(v)));
 }
 // エンジンの回転順（X → Y → Z、M = Rz·Ry·Rx）で度から四元数へ。
-inline GameProjectQuaternion QFromEulerDeg(float rx, float ry, float rz) {
-    const auto axis = [](float degrees, int i) {
-        const float half = degrees * static_cast<float>(Math::kPi) / 360.f;
-        GameProjectQuaternion q{0, 0, 0, std::cos(half)};
-        (i == 0 ? q.x : i == 1 ? q.y : q.z) = std::sin(half);
-        return q;
-    };
-    return QMul(QMul(axis(rz, 2), axis(ry, 1)), axis(rx, 0));
+inline GameProjectQuaternion QFromEulerDeg(double rx, double ry, double rz) {
+    return ToQuaternion(Math::QFromEulerDeg({rx, ry, rz}));
+}
+// ローカルの点を変換で移す（縮尺 → 回転 → 平行移動）。translate が false なら向きとして移す（平行移動しない）。
+inline GameProjectFloat3 TransformPoint(const GameProjectTransform& t, const Math::Vec3& local, bool translate = true) {
+    auto r = Math::QRotate(ToQuat(t.rotation), {local[0] * t.scale.x, local[1] * t.scale.y, local[2] * t.scale.z});
+    if (translate) { r[0] += t.position.x; r[1] += t.position.y; r[2] += t.position.z; }
+    return ToF3(r);
 }
 inline GameProjectQuaternion QSlerp(GameProjectQuaternion a, GameProjectQuaternion b, float t) {
     float dot = a.x * b.x + a.y * b.y + a.z * b.z + a.w * b.w;

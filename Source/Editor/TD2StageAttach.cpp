@@ -4,7 +4,6 @@
 namespace TD2::Editor {
 namespace {
 using Math::Vec3;
-Vec3 Axis(const Pose& pose, const Vec3& local) { return Math::QRotate(Math::QFromEulerDeg(pose.rotation), local); }
 }
 
 ScreenBox BoxOf(const LayoutRoom& room) {
@@ -43,7 +42,7 @@ std::optional<Pose> AttachedPose(const ScreenBox& r, const RegionPlacement& rp, 
     // 画面の面を揃える。
     const double oz = n.screenCenter[2] * sn - r.screenCenter[2] * sr;
     Pose pose;
-    const auto right = Axis(n.pose, {1, 0, 0}), up = Axis(n.pose, {0, 1, 0}), forward = Axis(n.pose, {0, 0, 1});
+    const auto right = PoseAxis(n.pose, {1, 0, 0}), up = PoseAxis(n.pose, {0, 1, 0}), forward = PoseAxis(n.pose, {0, 0, 1});
     for (int i = 0; i < 3; ++i) { pose.position[static_cast<size_t>(i)] = n.pose.position[static_cast<size_t>(i)] + right[static_cast<size_t>(i)] * ox + up[static_cast<size_t>(i)] * oy + forward[static_cast<size_t>(i)] * oz; }
     for (auto& v : pose.position) { v = std::round(v * 10000) / 10000; }
     pose.rotation = n.pose.rotation;
@@ -66,7 +65,7 @@ MachineObjectDelta MoveDelta(const ScreenBox& r, const RegionPlacement& a, const
     double right = dx * r.CellWidth(), up = -dy * r.CellHeight();
     if (best) {
         if (const auto pose = AttachedPose(r, b, best->first, best->second)) {
-            const auto ar = Axis(r.pose, {1, 0, 0}), au = Axis(r.pose, {0, 1, 0});
+            const auto ar = PoseAxis(r.pose, {1, 0, 0}), au = PoseAxis(r.pose, {0, 1, 0});
             const Vec3 move{pose->position[0] - r.pose.position[0], pose->position[1] - r.pose.position[1], pose->position[2] - r.pose.position[2]};
             // 動く向きの成分だけを使う（吊り台は横の位置と奥行きを変えない）。
             if (dx) { right = Math::Dot(move, ar); }

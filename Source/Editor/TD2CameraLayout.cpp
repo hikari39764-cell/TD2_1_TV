@@ -47,10 +47,7 @@ Vec3 Apply(const M3& m, const Vec3& v) {
     return {m[0][0] * v[0] + m[0][1] * v[1] + m[0][2] * v[2], m[1][0] * v[0] + m[1][1] * v[1] + m[1][2] * v[2],
             m[2][0] * v[0] + m[2][1] * v[1] + m[2][2] * v[2]};
 }
-Vec3 RotateY(const Vec3& v, double deg) {
-    const double c = std::cos(deg * kPi / 180), s = std::sin(deg * kPi / 180);
-    return {v[0] * c + v[2] * s, v[1], -v[0] * s + v[2] * c};
-}
+Vec3 RotateY(const Vec3& v, double deg) { return Math::QRotate(Math::QFromEulerDeg({0, deg, 0}), v); }
 // カメラの回転行列（列 = ローカル X（画の左）・Y（上）・Z（前））。roll は前の軸まわりの傾き（度）。
 M3 LookMatrix(const Vec3& eye, const Vec3& look, double roll = 0) {
     const auto f = Normalize(Sub(look, eye));

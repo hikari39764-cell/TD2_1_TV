@@ -115,7 +115,8 @@ private:
     Spring baseEye_, baseLook_, offset_, aim_, roll_;
     Math::Vec3 right_{1, 0, 0}, up_{0, 1, 0};
     CameraRigPose last_{};
-    float fov_ = .4538f;
+    // 画角（ラジアン）とその速さ。区域カメラの画角が違っても、位置と同じ速さで寄せる（乗り換えの瞬間に画がズームしない）。
+    double fov_ = .4538, fovVelocity_ = 0;
     bool ready_ = false;
 };
 }

@@ -13,12 +13,14 @@ inline double& GameUpdateMilliseconds() { static double value = 0; return value;
 class ScreenPresentationSystem final : public HIKARI::IGameSystem {
 public:
     void Update(HIKARI::WorldView& world, const HIKARI::FrameContext& frame) override;
-    void OnWorldDetached(HIKARI::WorldView& world) override { stage_.Release(world); }
+    void OnWorldDetached(HIKARI::WorldView& world) override { intro_.Stop(world); stage_.Release(world); }
     void DescribeSettings(HIKARI::PropertyFields& fields) override { fields.Note(status_); }
 private:
     void ReportStatus();
     void ReportTiming(double frameSeconds, double renderSeconds);
     Screen3DStage stage_;
+    // 編集中：演出ワークスペースがオープニングの演出をプレビューしている間、その時刻の灯・画面・小物を出す。
+    IntroDirector intro_;
     std::vector<StageRoom> rooms_;
     // 編集中の舞台の状態（装置と、スポーン位置に立つプレイヤー）。
     Rules::WorldSnapshot authored_;

@@ -64,10 +64,7 @@ uint64_t ObjectId(const Json&);
 const Json* FieldValue(const Json&, std::string_view id);
 bool QueryObjects(EditorWorkspaceHostContext&, std::string_view componentType, std::vector<SceneItem>&, std::string& error);
 bool ReadRegion(EditorWorkspaceHostContext&, uint64_t objectId, RegionTarget&, RegionSettings&, std::string& error);
-bool CommitProperties(EditorWorkspaceHostContext&, const RegionTarget&, const RegionSettings& before,
-                      const RegionSettings& after, std::string& error);
 void AppendRegionChanges(Json& commands, const RegionTarget&, const RegionSettings& before, const RegionSettings& after);
-uint64_t SelectedObject(EditorWorkspaceHostContext&, std::string& error);
 bool AddRegion(EditorWorkspaceHostContext&, uint64_t objectId, bool bindSelf, std::string& status);
 // 画面の物体のモデルに、指定した材質スロットがあるか確かめる。無ければ作者向けの注意を返す。
 std::string ScreenSlotWarning(EditorWorkspaceHostContext&, const RegionSettings&);

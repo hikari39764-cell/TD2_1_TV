@@ -9,9 +9,16 @@
 #include <cstdlib>
 
 namespace TD2 {
+namespace {
+// 診断用（環境変数 TD2_TEST_ENTRY に区域 ID）：オープニングを飛ばし、その区域の出生点から始める（無窓の検証用）。
+const char* TestEntryRegion() {
+    static const char* region = std::getenv("TD2_TEST_ENTRY");
+    return region;
+}
+}
 
 void GameSession::OnGameStarted(HIKARI::WorldView&) {
-    exploration_ = {}; regions_ = {}; camera_.Reset(); machines_ = {};
+    exploration_ = {}; regions_ = {}; camera_.Reset(); machines_ = {}; introChecked_ = false;
     sceneActive_ = leftHeld_ = rightHeld_ = false;
     previewEntryObject_ = 0; previewSpawn_.reset(); previewEntryRegion_.clear(); previewStates_.clear();
     recording_ = recordClosed_ = false; record_ = {};
@@ -30,6 +37,7 @@ void GameSession::OnSceneEntered(HIKARI::WorldView& world) {
 }
 
 void GameSession::OnSceneExiting(HIKARI::WorldView& world) {
+    intro_.Stop(world); introChecked_ = false;
     camera_.Stop(world);
     FinishRecord();
     sceneActive_ = false;
@@ -55,7 +63,7 @@ void GameSession::SyncRegions(HIKARI::WorldView& world) {
         [this, &sources, &definitionsValid, &previewEntry](HIKARI::ObjectView object, RegionComponent& component) {
             Rules::RegionSource source; source.placement = component.Placement(); source.entry = component.IsEntryRegion();
             const auto& id = source.placement.regionId;
-            if (object.GetSceneObjectId() == previewEntryObject_) { previewEntry = id; }
+            if (object.GetSceneObjectId() == previewEntryObject_ || (TestEntryRegion() && id == TestEntryRegion())) { previewEntry = id; }
             regions_.televisions[id] = object.GetHandle();
             regions_.cameras[id] = component.CameraObject();
             regions_.geometry[id] = component.Geometry();
@@ -115,6 +123,13 @@ void GameSession::Update(HIKARI::WorldView& world, const HIKARI::FrameContext& f
     double remaining = camera_.HoldsWorld() ? 0 : frameSeconds;
     camera_.AdvanceClock(frameSeconds);
     if (!camera_.Initialized()) camera_.Initialize(world, exploration_, regions_);
+    // オープニングの演出：最初の Play のフレームで始め（「从这屏开始」の試遊は除く）、終わるまで規則を進めない。
+    // スペースは演出を始めるだけで、ダッシュにはならない。カメラは演出が動かし、焦点だけは画面に合わせて追う。
+    if (!introChecked_) { introChecked_ = true; (void)intro_.Begin(world, previewSpawn_.has_value() || previewEntryObject_ != 0 || TestEntryRegion()); }
+    if (intro_.Update(world, buttons.action.pressed)) {
+        camera_.Update(world, exploration_, regions_, 0.f, 0.0, std::isfinite(frame.gameDt) ? std::max(0.0, double(frame.gameDt)) : 0.0);
+        return;
+    }
     // 試遊の記録：このフレームの秒とボタン（空格は押した・離した瞬間も）、世界が止まっていたか。
     if (!recording_ && !recordClosed_) {
         record_ = {}; recording_ = true; recordFrame_ = 0;

@@ -60,25 +60,4 @@ inline int DrawChoices(IEditorWorkspaceUi& ui, const std::vector<EditorChoice>& 
     }
     return chosen;
 }
-
-// 表示数を固定し、長い一覧で下の操作が隠れないようにする。
-inline int DrawPagedChoices(IEditorWorkspaceUi& ui, const std::vector<EditorChoice>& choices, int& page,
-                            std::string_view group, int pageSize = 5) {
-    if (choices.empty()) { ui.Text("没有可选项"); return -1; }
-    const int count = static_cast<int>(choices.size());
-    const int lastPage = (count - 1) / pageSize;
-    page = std::clamp(page, 0, lastPage);
-    int chosen = -1;
-    for (int i = page * pageSize; i < (std::min)(count, (page + 1) * pageSize); ++i) {
-        const auto& choice = choices[static_cast<size_t>(i)];
-        if (ui.Button(choice.id, ShortChoiceLabel(choice.label) + (choice.selected ? " ●" : ""))) { chosen = i; }
-    }
-    if (lastPage > 0) {
-        const std::string key(group);
-        if (ui.Button(key + ".previous", "上一页") && page > 0) { --page; }
-        ui.SameLine(); if (ui.Button(key + ".next", "下一页") && page < lastPage) { ++page; }
-        ui.Text(std::to_string(page + 1) + " / " + std::to_string(lastPage + 1));
-    }
-    return chosen;
-}
 }
