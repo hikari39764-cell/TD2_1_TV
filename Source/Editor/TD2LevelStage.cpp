@@ -51,13 +51,14 @@ void LevelEditor::AttachRoom(EditorWorkspaceHostContext& ctx, const std::string&
 }
 
 // 付けた相手のテレビが 3D で動いたら、付いているテレビも同じだけ動かす。付いているテレビを作者が動かしたら外す。
-// 動きの途中は書かず、二回続けて同じ姿勢を読んだ時（手を離した後）だけ動かす。取り消し・やり直しの後は読み直すだけにする。
+// 動きの途中（マウスを押している間）は書かず、二回続けて同じ姿勢を読んだ時（手を離した後）だけ動かす。
+// 取り消し・やり直しの後（やり直せる記録がある間）は読み直すだけにする。書くとやり直しが消え、取り消した動きを付き従いがまた戻す。
 void LevelEditor::FollowAnchors(EditorWorkspaceHostContext& ctx) {
     followClock_ += ctx.unscaledDeltaSeconds;
-    if (followClock_ < .4f || model_.gesture || posing_ || previewState_ != 0 || drag_ != Drag::None) { return; }
+    if (followClock_ < .4f || model_.gesture || posing_ || previewState_ != 0 || drag_ != Drag::None || ctx.ui->GetInteraction().editing) { return; }
     // シーンの目印が変わった後だけ読む。手を離した後の同じ姿勢を二回見るまで続ける。
     if (followPulse_ != model_.Pulses()) { followPulse_ = model_.Pulses(); followReads_ = 2; }
-    const bool resync = model_.historyFrames > 0 || followResync_;
+    const bool resync = model_.historyFrames > 0 || followResync_ || (model_.canRedo && followReads_ > 0);
     if (!resync && followReads_ <= 0) { return; }
     followClock_ = 0; --followReads_;
     followResync_ = false;

@@ -82,10 +82,12 @@ public:
     }
     bool Dirty() const { const auto* item = Current(); return ready && item && draft != item->settings; }
     void Discard() { if (const auto* item = Current()) { draft = item->settings; devices.Load(draft.devices); } gesture = false; error.clear(); }
-    // ---- シーンの変化の目印。editor.state を一回だけ読み、文書（版・物体数・取り消し札・未保存）と選んだ物（ID と包囲箱）の変化を数える。
+    // ---- シーンの変化の目印。editor.state を一回だけ読み、文書（編集の版・物体数・取り消し札・未保存）と選んだ物（ID と包囲箱）の変化を数える。
     // 操作は一回ごとにログへ残るので、重い読み直しはこの数が変わった時だけにする（テレビ全部を毎秒読むとログが膨らむ）。
     uint64_t documentPulse = 0, selectionPulse = 0, activeObject = 0;
     std::string documentMark, selectionMark;
+    // やり直せる記録がある（取り消した直後）。この間に自動で書くと、やり直しが消え、取り消した物がまた戻るので書かない。
+    bool canRedo = false;
     float pulseClock = 1;
     uint64_t Pulses() const { return documentPulse + selectionPulse; }
     void Pulse(EditorWorkspaceHostContext& ctx, bool force = false) {
@@ -96,7 +98,10 @@ public:
         if (!state.ok) { return; }
         const auto scene = state.data.value("scene", Json::object());
         const auto selection = state.data.value("selection", Json::object());
-        if (scene.is_object()) { if (const auto d = scene.find("dirty"); d != scene.end() && d->is_boolean()) { sceneDirty = d->get<bool>(); } }
+        if (scene.is_object()) {
+            if (const auto d = scene.find("dirty"); d != scene.end() && d->is_boolean()) { sceneDirty = d->get<bool>(); }
+            canRedo = scene.value("canRedo", false);
+        }
         activeObject = selection.is_object() ? ObjectId(selection.value("activeObjectId", Json{})) : 0;
         // 編集カメラは毎フレーム動くので目印に入れない。
         auto document = scene.dump() + state.data.value("play", Json::object()).dump();
@@ -132,7 +137,7 @@ public:
         if (!Current()) { selected = rooms.empty() ? 0 : rooms.front().object.objectId; }
         ready = Current() != nullptr;
         if (ready) { draft = Current()->settings; devices.Load(draft.devices); }
-        if (PrepareNewTelevisions(ctx)) { refresh = true; }
+        if (!canRedo && PrepareNewTelevisions(ctx)) { refresh = true; }
     }
     bool Select(EditorWorkspaceHostContext& ctx, uint64_t objectId) {
         if (objectId == selected && ready) { return true; }
@@ -221,6 +226,7 @@ public:
         if (id != sceneSelection && Execute(ctx, "scene.object.select", {{"objectId", id}}).ok) { sceneSelection = id; }
     }
     // 新しく区域を付けたテレビ（ID が既定のまま）と、シーンで複製したテレビ（ID が重なる。物体 ID の大きい方）を整える。
+    // 取り消しでこの整えを戻した時は、次に普通の編集をするまで整え直さない（canRedo の間は呼ばない）。
     // 新しいテレビは型の格子と床だけの地図、複製は地図を残す。どちらも新しい ID で世界の外に置き、一回の取り消しにまとめる。
     bool PrepareNewTelevisions(EditorWorkspaceHostContext& ctx) {
         const std::string unset = RegionDefinition{}.regionId;
