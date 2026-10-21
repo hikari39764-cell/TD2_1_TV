@@ -178,6 +178,13 @@
       "control": "Start",
       "scale": 1.0,
       "source": "GamepadButton"
+    },
+    {
+      "action": "Gameplay.DevSkipIntro",
+      "component": 0,
+      "control": "K",
+      "scale": 1.0,
+      "source": "Keyboard"
     }
   ],
   "consumeInput": false,

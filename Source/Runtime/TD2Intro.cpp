@@ -550,4 +550,10 @@ void IntroDirector::Stop(HIKARI::WorldView& world) {
     if (phase_ == Phase::Preview) { Restore(world); playback_ = {}; }
     phase_ = Phase::None;
 }
+
+void IntroDirector::Skip(HIKARI::WorldView& world) {
+    if (phase_ != Phase::Title && phase_ != Phase::Playing) { return; }
+    std::fprintf(stderr, "[TD2 intro] skipped\n");
+    Finish(world);
+}
 }

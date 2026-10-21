@@ -137,6 +137,12 @@
       "displayName": "Camera Reset",
       "id": "Editor.CameraReset",
       "valueType": "Button"
+    },
+    {
+      "clamp": true,
+      "displayName": "Skip Intro (Dev)",
+      "id": "Gameplay.DevSkipIntro",
+      "valueType": "Button"
     }
   ],
   "version": 1

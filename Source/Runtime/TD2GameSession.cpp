@@ -133,6 +133,11 @@ void GameSession::Update(HIKARI::WorldView& world, const HIKARI::FrameContext& f
     // オープニングの演出：最初の Play のフレームで始め（「この画面から」の試遊は除く）、終わるまで規則を進めない。
     // スペースは演出を始めるだけで、ダッシュにはならない。カメラは演出が動かし、焦点だけは画面に合わせて追う。
     if (!introChecked_) { introChecked_ = true; (void)intro_.Begin(world, previewSpawn_.has_value() || previewEntryObject_ != 0 || TestEntryRegion()); }
+    // 開発用：エディタの Play の時だけ、K でオープニングを飛ばす（出荷したゲームでは効かない）。
+    if (HIKARI::GameProjectInputActionState skip{}; world.GetRuntimeSession().GetHostKind() == HIKARI::GameProjectRuntimeHostKind::EditorPreview &&
+        input.GetAction("Gameplay.DevSkipIntro", skip) && skip.pressed) {
+        intro_.Skip(world);
+    }
     if (intro_.Update(world, buttons.action.pressed)) {
         camera_.Update(world, exploration_, regions_, 0.f, 0.0, std::isfinite(frame.gameDt) ? std::max(0.0, double(frame.gameDt)) : 0.0);
         return;

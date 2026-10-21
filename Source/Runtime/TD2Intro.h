@@ -158,6 +158,8 @@ public:
     void Preview(HIKARI::WorldView& world);
     // シーンを出る時：灯を戻し、演出を止める。
     void Stop(HIKARI::WorldView& world);
+    // 開発用の早送り：タイトル待ちでも流している途中でも、終わった時と同じ姿へ戻してゲームを始める。
+    void Skip(HIKARI::WorldView& world);
     const IntroScreens& Screens() const noexcept { return screens_; }
 
 private:
