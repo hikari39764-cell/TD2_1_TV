@@ -41,8 +41,9 @@ void ScreenEffects::Observe(const Rules::WorldSnapshot& s) {
         }
         if (p.pendingEcho && !s.pendingEcho && !s.echo) { add(ScreenEffectKind::EchoBlocked, *p.pendingEcho, .24); }
         for (const auto& d : s.devices) {
-            // 圧力板・扉・橋は部品自体の動きで切り替えを見せる。
-            if (d.kind == Rules::DeviceKind::Plate || d.kind == Rules::DeviceKind::Door || d.kind == Rules::DeviceKind::Bridge) { continue; }
+            // 圧力板・扉・橋・通関の扉は部品自体の動きで切り替えを見せる。
+            if (d.kind == Rules::DeviceKind::Plate || d.kind == Rules::DeviceKind::Door || d.kind == Rules::DeviceKind::Bridge ||
+                d.kind == Rules::DeviceKind::Goal) { continue; }
             const auto old = std::find_if(p.devices.begin(), p.devices.end(), [&d](const auto& v) { return v.id == d.id && v.kind == d.kind; });
             if (old != p.devices.end() && (old->active != d.active || old->pressed != d.pressed)) { add(ScreenEffectKind::DeviceSwitch, d.rect, .22, {}, !d.active); }
         }

@@ -143,6 +143,12 @@
       "displayName": "Skip Intro (Dev)",
       "id": "Gameplay.DevSkipIntro",
       "valueType": "Button"
+    },
+    {
+      "clamp": true,
+      "displayName": "Teleport To Goal (Dev)",
+      "id": "Gameplay.DevGoal",
+      "valueType": "Button"
     }
   ],
   "version": 1

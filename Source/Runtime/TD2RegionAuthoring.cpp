@@ -3,7 +3,7 @@
 #include <utility>
 
 namespace TD2 {
-static_assert(static_cast<size_t>(Rules::DeviceKind::Decal) + 1 == kDeviceKindNames.size(), "装置の種類名の並びはルールの列挙と同じにする");
+static_assert(static_cast<size_t>(Rules::DeviceKind::Goal) + 1 == kDeviceKindNames.size(), "装置の種類名の並びはルールの列挙と同じにする");
 static_assert(static_cast<size_t>(Rules::Direction::Right) + 1 == kDirectionNames.size(), "向きの名前の並びはルールの列挙と同じにする");
 
 bool ParseDevices(std::string_view text, std::vector<Rules::DeviceDefinition>& devices, std::string& error) {

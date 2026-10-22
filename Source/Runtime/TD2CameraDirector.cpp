@@ -146,6 +146,18 @@ void CameraDirector::Initialize(HIKARI::WorldView& world, const Rules::Explorati
     initialized_ = true;
 }
 
+void CameraDirector::Jump(HIKARI::WorldView& world, const Rules::Exploration& exploration, const RegionObjects& objects, std::string_view region) {
+    StopTravel(world); Snap(world, exploration, objects, region);
+}
+
+bool CameraDirector::StartOffset(HIKARI::WorldView& world, const Rules::Exploration& exploration, const RegionObjects& objects,
+                                 std::string_view region, HIKARI::GameProjectFloat3& eye, HIKARI::GameProjectFloat3& look) const {
+    CameraRegionFrame frame;
+    if (!rig_.Ready() || !RegionFrame(world, exploration, objects, region, frame)) return false;
+    eye = Sub(rig_.Last().eye, frame.eye); look = Sub(rig_.Last().look, frame.look);
+    return true;
+}
+
 void CameraDirector::Snap(HIKARI::WorldView& world, const Rules::Exploration& exploration, const RegionObjects& objects, std::string_view region) {
     CameraRegionFrame frame;
     if (RegionFrame(world, exploration, objects, region, frame)) rig_.Snap(frame.eye, frame.look, frame.verticalFovRadians);

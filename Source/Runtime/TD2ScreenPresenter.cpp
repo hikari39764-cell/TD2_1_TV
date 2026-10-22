@@ -142,7 +142,7 @@ void ScreenPresentationSystem::Update(HIKARI::WorldView& world, const HIKARI::Fr
         for (size_t i = 0; i < rooms_.size(); ++i) for (const auto& device : authored[i].devices) {
             Rules::DeviceSnapshot item{rooms_[i].regionId + "/" + device.id, device.kind,
                 {device.rect.x + rooms_[i].x, device.rect.y + rooms_[i].y, device.rect.w, device.rect.h}, device.direction,
-                device.inverted, false,
+                device.inverted || device.kind == Rules::DeviceKind::Goal, false,   // 通関の扉は編集中は開けて見せる
                 device.kind == Rules::DeviceKind::Solid || device.kind == Rules::DeviceKind::Door || device.kind == Rules::DeviceKind::LockWall};
             item.variant = device.variant; item.latch = device.latch;
             item.world = device.kind == Rules::DeviceKind::Plate && std::any_of(device.targets.begin(), device.targets.end(), [](const std::string& t) {

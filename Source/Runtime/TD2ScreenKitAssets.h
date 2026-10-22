@@ -8,7 +8,7 @@
 namespace TD2 {
 // 立体の組の部品に焼いた斜投影：奥へ 1 マスで右と上へずれる量（マス）。
 inline constexpr double kScreenKitOblique = 0.4;
-inline constexpr std::array<std::string_view, 130> kScreenKitParts{
+inline constexpr std::array<std::string_view, 135> kScreenKitParts{
     "Backdrop",
     "Backdrop_GridH1",
     "Backdrop_GridH2",
@@ -44,6 +44,11 @@ inline constexpr std::array<std::string_view, 130> kScreenKitParts{
     "Gem_3",
     "Ghost_DashH",
     "Ghost_DashV",
+    "Goal_Frame",
+    "Goal_LeafL",
+    "Goal_LeafR",
+    "Goal_Screen",
+    "Goal_ScreenOff",
     "Hall_Column",
     "Hall_Far",
     "Hall_Slit",
@@ -141,7 +146,7 @@ inline constexpr std::array<std::string_view, 130> kScreenKitParts{
     "Window_FrameV",
 };
 inline constexpr int kScreenKitEdit = 0, kScreenKitPlay = 1;
-inline constexpr std::array<std::array<std::string_view, 130>, 2> kScreenKitGuids{{
+inline constexpr std::array<std::array<std::string_view, 135>, 2> kScreenKitGuids{{
     {{
         "b85a47b90dc63e32e6bf846f06dc2a43",
         "be23a86a4c6bf4b1e24ebb9b798f6c27",
@@ -178,6 +183,11 @@ inline constexpr std::array<std::array<std::string_view, 130>, 2> kScreenKitGuid
         "e61ef4e475ce7711b71a70cef67d766b",
         "50398136dd970000966d7feb1f05a8db",
         "14f6ee033efa33ca253d85f8a86e7c65",
+        "a15cd6919a044b50b4462438b088460b",
+        "0a42c1cea10c4454b1ab8525bd535c07",
+        "8804b9b3afe649f291d8543edfb0bbff",
+        "46f30d260d8b4bbebdc2c121d7ab3468",
+        "851a89310e13463aa7a08d5ef2b4116e",
         "db7ecae60c75a86058e9383b87470a76",
         "1ccc4716776006c360ca8b489ac1a76c",
         "46880272926c06381c424a387c88a0e2",
@@ -310,6 +320,11 @@ inline constexpr std::array<std::array<std::string_view, 130>, 2> kScreenKitGuid
         "35648e1a7b3dd98d1fea03cdedd33039",
         "c9ba15277a8ae81a79906ee07c9a23aa",
         "6bb6361932d46f4f236ee831709a1851",
+        "fe981491e27f4b3bbe5cd6737f554fbb",
+        "9acd7d2916804e0088e531f5ce349143",
+        "55342240c0b949c4a62a1b12fb95a7e2",
+        "8256593a1cce47d3af37a0ece4176410",
+        "e4a7d9f3caa54d46ad74be0c226660dc",
         "8e0d006e3b79a27fbb74a14e1f40377f",
         "979cda0c118e627b379b7aef86c22761",
         "c3036e4d6ec756fba88cb97e68ffb5b8",

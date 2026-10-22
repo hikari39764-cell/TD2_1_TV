@@ -48,6 +48,8 @@ public:
     void SetTime(double seconds) { time_ = seconds; }
     // 焼いた静止の人物を使うか（骨つきの人形が立つ間は false にして退避点へ置く）。
     void BakedActors(bool on) { bakedActors_ = on; }
+    // 通関の扉へ入ってからの秒（通関の演出が数える。負なら演出が無く、入った瞬間に閉じた姿にする）。
+    void GoalClosing(double seconds) { goalClosing_ = seconds; }
     // leanPivot は傾きを釣り合わせる高さ（部品の下辺から、マス）。負なら部品の高さの中ほど。
     bool Add(std::string_view part, double x, double bottomY, double width = 1, double height = 1, double depth = 0,
              HIKARI::GameProjectQuaternion rotation = {}, double leanPivot = -1, bool visible = true);
@@ -104,7 +106,7 @@ private:
     int depthRows_ = 0;
     // partDepth_ は Add の奥行きの倍率（実体の箱を部屋の奥まで伸ばす間だけ 1 以外）。
     double actorScale_ = 1, partDepth_ = 1, playDepth_ = 0;
-    double mirrorX_ = 0, mirrorY_ = 0, time_ = 0;
+    double mirrorX_ = 0, mirrorY_ = 0, time_ = 0, goalClosing_ = -1;
     size_t failed_ = 0;
 };
 }

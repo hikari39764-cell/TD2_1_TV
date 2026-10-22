@@ -15,8 +15,9 @@ struct Rect { double x = 0.0, y = 0.0, w = 1.0, h = 1.0; };
 enum class Direction { Up, Down, Left, Right };
 // Spring は上面 10/32 マスの踏み板。Bridge は Door と同じ通電規則（通電で収納）。Collectible は本体だけが拾う。
 // Decal はチュートリアルの貼り絵。衝突も光線の遮断もない。
+// Goal は通関の扉。圧力板につながっていなければ開いたまま、つながっていれば通電の間だけ開く。開いた扉に本体が入ると一度だけ知らせる。
 // Mechanism は画面の外の機構（転台・吊り台など）の受け口。当たりも表示も持たず、圧力板の通電だけを受ける。
-enum class DeviceKind { Solid, OneWay, Plate, Door, Laser, Spikes, Checkpoint, LockWall, Spring, Bridge, Collectible, Decal, Mechanism };
+enum class DeviceKind { Solid, OneWay, Plate, Door, Laser, Spikes, Checkpoint, LockWall, Spring, Bridge, Collectible, Decal, Goal, Mechanism };
 
 // 地形は RegionDefinition だけから作り、センサーと動く障害物だけを別に定義する。
 // targets は Plate から装置 ID への OR 接続。Door は active 時に実体を失う。
@@ -70,7 +71,7 @@ struct BeamState { std::string sourceId; Rect rect; };
 enum class EventKind {
     Blink, Bounce, BlinkRejected, EchoCreated, EchoRecalled, EchoRemoved,
     EchoSpawnBlocked, PlateChanged, DeviceChanged, CheckpointActivated,
-    PlayerDied, PlayerRespawned, SpringLaunched, CollectibleTaken, EchoSwapped
+    PlayerDied, PlayerRespawned, SpringLaunched, CollectibleTaken, EchoSwapped, GoalReached
 };
 // ログ用のイベント名。
 std::string_view EventName(EventKind kind);

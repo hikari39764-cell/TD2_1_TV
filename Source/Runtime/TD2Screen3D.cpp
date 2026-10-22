@@ -260,6 +260,45 @@ void Screen3DStage::ApplyIntro(HIKARI::WorldView& world, std::map<uint64_t, Bind
         next[object.value] = {object, view->handle, std::string(kScreenSlot),
                               {static_cast<float>(x), static_cast<float>(y), static_cast<float>(w), static_cast<float>(h)}, false, region};
     };
+    // 通関：普段の画面のまま前兆で乱れ、最初の稲妻からはオープニングと同じく砂嵐になり（遠くのテレビは普段の画面を撮っていないので
+    // 黒いまま残さない）、ゴールから遠い順にブラウン管のように消える。ゴールのテレビは扉を映したまま、最後にゆっくり消える。
+    // 暗転の後は全部黒く、目覚めからはパソコンだけがタイトルを映す（オープニングのタイトル待ちと同じ姿）。
+    if (intro_->ending) {
+        const double first = intro_->lightning.empty() ? intro_->suckStart : intro_->lightning.front();
+        const bool flash = std::any_of(intro_->lightning.begin(), intro_->lightning.end(), [&](float at) { return t >= at && t < at + .12; });
+        const bool omen = IntroOmenBurst(t, intro_->flickerStart, first);
+        const auto staticLook = [&](uint64_t key) {
+            const double r = IntroHash(key, tick * 13u + 1u);
+            return Look{r < .12 ? 0 : r < .42 ? 1 : r < .85 ? 2 : 3};
+        };
+        const auto endingLook = [&](uint64_t handle, bool computer) {
+            if (t >= intro_->blackTime) { return computer && t >= intro_->revealTime ? Look{6} : Look{0}; }
+            const bool goal = handle == intro_->goalScreen;
+            const auto found = intro_->offTime.find(handle);
+            const double off = found != intro_->offTime.end() ? found->second : intro_->suckStart + intro_->collapseSeconds;
+            const double line = goal ? .45 : .16, dot = goal ? .5 : .2;
+            if (t >= off + line + dot) { return Look{0}; }
+            if (t >= off + line) { return Look{7, (t - off - line) / dot}; }
+            if (t >= off) { return Look{4, (t - off) / line}; }
+            if (flash) { return Look{3}; }
+            const double r = IntroHash(handle, tick * 5u + 9u);
+            if (t >= first) { return !goal ? staticLook(handle) : r < .06 ? Look{1 + int(r < .03)} : Look{}; }
+            return omen && IntroHash(handle, 31) < .35 ? Look{1 + int(IntroHash(handle, tick) < .5)} : Look{};
+        };
+        std::set<uint64_t> placed;
+        for (const auto* room : introRooms_) {
+            const auto id = room->configuration.screenObject;
+            const auto screen = world.FindSceneObject(id);
+            if (!room->placed || !screen.IsValid()) { continue; }
+            placed.insert(screen.GetHandle().value);
+            if (const auto look = endingLook(screen.GetHandle().value, id == intro_->computerScreen); look.band >= 0) { bind(screen.GetHandle(), id, look, room->regionId); }
+        }
+        for (const auto& handle : intro_->tvScreens) {
+            if (placed.contains(handle.value) || next.contains(handle.value)) { continue; }
+            if (const auto look = endingLook(handle.value, false); look.band >= 0) { bind(handle, handle.value, look, {}); }
+        }
+        return;
+    }
     // 砂嵐の始まり：パソコンに近いテレビほど早く、最初の稲妻の瞬間に机の周りから工場の奥へ広がる。
     if (introOnset_.empty()) {
         HIKARI::GameProjectTransform origin{};
@@ -449,19 +488,24 @@ void Screen3DStage::Render(HIKARI::WorldView& world, const std::vector<StageRoom
     // 透視の窓は目の向きで置くので、視差を求めた後に窓を決める。
     intro_ = frame.intro;
     // 砂嵐の窓はパソコンの信号が合うまで使う。
-    introStatic_ = intro_ && intro_->time < (std::max)(intro_->restoreTime, intro_->lockStart + intro_->lockSeconds + .1f);
+    introStatic_ = intro_ && (intro_->ending || intro_->time < (std::max)(intro_->restoreTime, intro_->lockStart + intro_->lockSeconds + .1f));
     // 主人公は登場の光が集まってから足元から現れる。それまでは画面のどこにも出さない。
     // 体の現れ方はエフェクトが実際に出た時刻から数える（舞台の窓に入るまで出ないことがある）。出なくても 1 秒後には現す。
     heroShown_ = true; heroGrow_ = 1;
     if (!intro_) { introArrived_ = false; arrivePlayedAt_ = -1; }
-    else {
+    else if (intro_->ending) {
+        // 通関：扉が閉じ始めると、登場の光の中で足元へ縮んで消える。
+        const double since = intro_->time - intro_->closeStart;
+        heroShown_ = since < .2;
+        heroGrow_ = std::clamp(1 - since / .2, .02, 1.0);
+    } else {
         const double start = arrivePlayedAt_ >= 0 ? arrivePlayedAt_ : double(intro_->arriveTime) + 1.0 - kHeroFormDelay;
         const double since = intro_->time - start;
         heroShown_ = since >= kHeroFormDelay;
         heroGrow_ = std::clamp((since - kHeroFormDelay) / kHeroFormSeconds, .02, 1.0);
     }
     introRooms_ = valid;
-    if (!intro_) { introOnset_.clear(); }
+    if (!intro_ || intro_->ending) { introOnset_.clear(); }
     if (!frame.authoring) { PlaceWindows(valid, frame, maxCols); PlaceFar(valid); }
     if (introStatic_) { PlaceNoise(); }
 

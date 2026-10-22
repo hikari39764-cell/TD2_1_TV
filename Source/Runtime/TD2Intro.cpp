@@ -78,16 +78,41 @@ IntroTimeline ReadIntroTimeline(const std::vector<HIKARI::GameProjectSequenceEve
     return t;
 }
 
+IntroTimeline ReadEndingTimeline(const std::vector<HIKARI::GameProjectSequenceEventClip>& clips, std::string& missing) {
+    IntroTimeline t;
+    std::set<std::string, std::less<>> seen;
+    for (const auto& clip : clips) {
+        const std::string_view name(clip.name, strnlen(clip.name, sizeof(clip.name)));
+        const float start = clip.startSeconds, length = clip.durationSeconds, end = start + length;
+        seen.emplace(name);
+        if (name == EndingEvent::Close) { t.closeStart = start; }
+        else if (name == IntroEvent::Omen) { t.flickerStart = start; }
+        else if (name == IntroEvent::Lightning) { t.lightning.push_back(start); }
+        else if (name == IntroEvent::Collapse) { t.suckStart = start; t.collapseSeconds = length; }
+        else if (name == EndingEvent::Black) { t.blackTime = start; }
+        else if (name == EndingEvent::Wake) { t.revealTime = start; t.wakeEnd = end; }
+        else if (name == IntroEvent::Letterbox) { t.letterboxIn = start; t.letterboxOut = end; }
+    }
+    std::sort(t.lightning.begin(), t.lightning.end());
+    missing.clear();
+    for (const auto name : {EndingEvent::Close, IntroEvent::Omen, IntroEvent::Lightning, IntroEvent::Collapse, EndingEvent::Black, EndingEvent::Wake}) {
+        if (!seen.contains(name)) { missing += std::string(name) + " "; }
+    }
+    // 扉が閉じ始める瞬間、主人公の足元に登場の光を出し、その中へ消えていく（画面の表示が数える）。
+    t.arriveTime = t.closeStart;
+    return t;
+}
+
 bool IntroDirector::ReadSettings(HIKARI::WorldView& world) {
     bool found = false;
     const HIKARI::ComponentTypeId types[]{HIKARI::MakeComponentTypeId(kIntroComponentType)};
     (void)world.ForEachComponents<IntroComponent>(types, HIKARI::GameProjectWorldQueryAnchor::FirstRequiredTerm,
         [&](HIKARI::ObjectView, IntroComponent& intro) { if (!found) { settings_ = intro.Settings(); found = true; } });
-    return found && settings_.enabled && !settings_.sequence.empty();
+    return found;
 }
 
 bool IntroDirector::Prepare(HIKARI::WorldView& world, HIKARI::GameProjectSequencePlaybackHandle playback) {
-    screens_ = {}; lamps_.clear(); props_.clear(); screenCenter_ = {};
+    screens_ = {}; lamps_.clear(); props_.clear(); screenCenter_ = {}; ending_ = false;
     std::vector<HIKARI::GameProjectSequenceEventClip> clips(HIKARI::kGameProjectSequenceMaximumEventClips);
     const auto sequence = world.GetSequence();
     clips.resize((std::min)(clips.size(), size_t(sequence.GetEventClips(playback, clips.data(), static_cast<uint32_t>(clips.size())))));
@@ -102,9 +127,81 @@ bool IntroDirector::Prepare(HIKARI::WorldView& world, HIKARI::GameProjectSequenc
     return true;
 }
 
+void IntroDirector::PrepareEnding(HIKARI::WorldView& world, HIKARI::GameProjectSequencePlaybackHandle playback,
+                                  HIKARI::GameProjectObjectHandle goal) {
+    screens_ = {}; lamps_.clear(); props_.clear(); screenCenter_ = {}; ending_ = true;
+    std::vector<HIKARI::GameProjectSequenceEventClip> clips(HIKARI::kGameProjectSequenceMaximumEventClips);
+    const auto sequence = world.GetSequence();
+    clips.resize((std::min)(clips.size(), size_t(sequence.GetEventClips(playback, clips.data(), static_cast<uint32_t>(clips.size())))));
+    std::string missing;
+    static_cast<IntroTimeline&>(screens_) = ReadEndingTimeline(clips, missing);
+    if (!missing.empty()) { std::fprintf(stderr, "[TD2 ending] events missing: %s\n", missing.c_str()); }
+    playback_ = playback;
+    screens_.goalScreen = goal.value;
+    CenterOn(world, goal);
+    Collect(world);
+    ScheduleCollapse(world);
+    screens_.active = true; screens_.ending = true; screens_.time = 0;
+    screens_.computerScreen = settings_.computerScreen;
+}
+
+void IntroDirector::CenterOn(HIKARI::WorldView& world, HIKARI::GameProjectObjectHandle handle) {
+    // テレビの縮尺と向きを掛けたモデルの画面の中心（世界座標）。
+    const auto screen = world.FindObject(handle);
+    HIKARI::GameProjectTransform tv{};
+    if (!screen.IsValid() || !screen.GetWorldTransform(tv)) { return; }
+    const auto g = RegionComponent::Surface(screen);
+    const auto local = QRotate(tv.rotation, {g.centerX * tv.scale.x, g.centerY * tv.scale.y, g.centerZ * tv.scale.z});
+    screenCenter_ = {tv.position.x + local.x, tv.position.y + local.y, tv.position.z + local.z};
+}
+
+HIKARI::GameProjectObjectHandle IntroDirector::FindGoalScreen(HIKARI::WorldView& world) const {
+    HIKARI::GameProjectObjectHandle goal{};
+    const HIKARI::ComponentTypeId types[]{HIKARI::MakeComponentTypeId(kRegionComponentType)};
+    (void)world.ForEachComponents<RegionComponent>(types, HIKARI::GameProjectWorldQueryAnchor::FirstRequiredTerm,
+        [&](HIKARI::ObjectView screen, RegionComponent& region) {
+            Rules::WorldDefinition definition; std::string error;
+            if (goal.IsValid() || !region.BuildDefinition(definition, error)) { return; }
+            if (std::any_of(definition.devices.begin(), definition.devices.end(), [](const auto& d) { return d.kind == Rules::DeviceKind::Goal; })) {
+                goal = screen.GetHandle();
+            }
+        });
+    return goal;
+}
+
+bool IntroDirector::BeginEnding(HIKARI::WorldView& world, HIKARI::GameProjectObjectHandle goalScreen, uint64_t goalCamera,
+                                HIKARI::GameProjectFloat3 eye, HIKARI::GameProjectFloat3 look) {
+    if (!ReadSettings(world) || settings_.ending.empty()) { return false; }
+    const auto camera = world.FindSceneObject(settings_.cameraObject);
+    if (!camera.IsValid() || !world.FindObject(goalScreen).IsValid()) { std::fprintf(stderr, "[TD2 ending] camera or goal missing\n"); return false; }
+    HIKARI::GameProjectSequencePlayOptions options;
+    options.holdAtEnd = 1; options.priority = 3000;
+    options.channelPolicy = HIKARI::GameProjectSequenceChannelPolicy::Replace;
+    constexpr char channel[] = "TD2.Ending";
+    std::memcpy(options.channel, channel, sizeof(channel));
+    // スロット：ゲームのカメラ、ゴールのテレビ（カメラの基準）、その区域カメラ（最初の画）。
+    std::array<HIKARI::GameProjectSequenceBinding, 3> slots{};
+    const auto bindSlot = [&](size_t i, std::string_view name, HIKARI::GameProjectObjectHandle object) {
+        std::memcpy(slots[i].slotName, name.data(), (std::min)(name.size(), sizeof(slots[i].slotName) - 1));
+        slots[i].object = object;
+    };
+    bindSlot(0, "Camera", camera.GetHandle());
+    bindSlot(1, "Goal", goalScreen);
+    const auto regionCamera = world.FindSceneObject(goalCamera);
+    bindSlot(2, "GoalCamera", regionCamera.IsValid() ? regionCamera.GetHandle() : camera.GetHandle());
+    options.bindings = slots.data(); options.bindingCount = static_cast<uint32_t>(slots.size());
+    const auto playback = world.GetSequence().Play(settings_.ending, options);
+    if (!playback.IsValid()) { std::fprintf(stderr, "[TD2 ending] sequence rejected %s\n", settings_.ending.c_str()); return false; }
+    PrepareEnding(world, playback, goalScreen);
+    startEye_ = eye; startLook_ = look;
+    phase_ = Phase::Ending;
+    std::fprintf(stderr, "[TD2 ending] start lamps=%zu tvs=%zu lightning=%zu\n", lamps_.size(), screens_.tvScreens.size(), screens_.lightning.size());
+    return true;
+}
+
 bool IntroDirector::Begin(HIKARI::WorldView& world, bool preview) {
     phase_ = Phase::None; playback_ = {};
-    if (!ReadSettings(world) || preview) { return false; }
+    if (!ReadSettings(world) || !settings_.enabled || settings_.sequence.empty() || preview) { return false; }
     // 演出を 0 秒で止めて待つ（タイトルの構図）。スペースで続きを流す。
     const auto camera = world.FindSceneObject(settings_.cameraObject);
     if (!camera.IsValid()) { std::fprintf(stderr, "[TD2 intro] camera object missing\n"); return false; }
@@ -141,14 +238,14 @@ void IntroDirector::Collect(HIKARI::WorldView& world) {
             if (screens.insert(screen.GetHandle().value).second) { screens_.tvScreens.push_back(screen.GetHandle()); }
             // パソコンの画面の中心（テレビの縮尺と向きを掛けたモデルの画面位置）。小物はここへ飛び込む。
             HIKARI::GameProjectTransform tv{};
-            if (screen.GetSceneObjectId() == settings_.computerScreen && screen.GetWorldTransform(tv)) {
+            if (!ending_ && screen.GetSceneObjectId() == settings_.computerScreen && screen.GetWorldTransform(tv)) {
                 const auto g = RegionComponent::Surface(screen);
                 const auto local = QRotate(tv.rotation, {g.centerX * tv.scale.x, g.centerY * tv.scale.y, g.centerZ * tv.scale.z});
                 screenCenter_ = {tv.position.x + local.x, tv.position.y + local.y, tv.position.z + local.z};
             }
         });
     // 区域が見つからない時はパソコンの物体の位置を画面の中心とする。
-    if (screenCenter_.x == 0 && screenCenter_.y == 0 && screenCenter_.z == 0) {
+    if (!ending_ && screenCenter_.x == 0 && screenCenter_.y == 0 && screenCenter_.z == 0) {
         HIKARI::GameProjectTransform tv{};
         if (world.FindSceneObject(settings_.computerScreen).GetWorldTransform(tv)) { screenCenter_ = tv.position; }
     }
@@ -191,17 +288,21 @@ void IntroDirector::Collect(HIKARI::WorldView& world) {
 void IntroDirector::ScheduleCollapse(HIKARI::WorldView& world) {
     struct Item { uint64_t key; double reach; };
     std::vector<Item> items;
+    // オープニングはパソコンを、通関はゴールのテレビを最後まで残す（ゴールは範囲の終わりに一台だけで消える）。
     const auto computer = world.FindSceneObject(settings_.computerScreen);
+    const uint64_t last = ending_ ? screens_.goalScreen : computer.IsValid() ? computer.GetHandle().value : 0;
     for (const auto& handle : screens_.tvScreens) {
         HIKARI::GameProjectTransform at{};
-        if ((computer.IsValid() && handle.value == computer.GetHandle().value) || !world.FindObject(handle).GetWorldTransform(at)) { continue; }
+        if ((last && handle.value == last) || !world.FindObject(handle).GetWorldTransform(at)) { continue; }
         const auto d = Sub(at.position, screenCenter_);
         items.push_back({handle.value, IntroReach(std::sqrt(d.x * d.x + d.y * d.y + d.z * d.z))});
     }
     // 遠い順。同じ遠さは handle の順にして、毎回同じ並びにする。
     std::sort(items.begin(), items.end(), [](const Item& a, const Item& b) { return a.reach != b.reach ? a.reach > b.reach : a.key < b.key; });
     const int beats = (std::max)(1, settings_.collapseBeats);
-    const auto beatTime = [&](int k) { return IntroBeatTime(k, beats, screens_.suckStart, screens_.collapseSeconds); };
+    const double span = screens_.collapseSeconds * (ending_ ? .8 : 1.0);
+    const auto beatTime = [&](int k) { return IntroBeatTime(k, beats, screens_.suckStart, span); };
+    if (ending_ && last) { screens_.offTime[last] = screens_.suckStart + screens_.collapseSeconds; }
     std::vector<double> nearest(beats, -1);   // 拍ごとに消えるうちで一番近いものの遠さ（-1 はその拍に何も無い）
     for (size_t i = 0; i < items.size(); ++i) {
         const int k = IntroBeatOf(i, items.size(), beats);
@@ -219,6 +320,14 @@ void IntroDirector::ScheduleCollapse(HIKARI::WorldView& world) {
 }
 
 bool IntroDirector::Update(HIKARI::WorldView& world, bool start) {
+    if (phase_ == Phase::Ending) {
+        HIKARI::GameProjectSequencePlaybackSnapshot snapshot{};
+        const bool alive = world.GetSequence().GetSnapshot(playback_, snapshot);
+        const float end = (std::min)(alive ? snapshot.durationSeconds : 0.f, screens_.wakeEnd);
+        if (!alive || snapshot.timeSeconds >= end - 1e-3f) { FinishEnding(world); return true; }
+        Apply(world, snapshot.timeSeconds);
+        return true;
+    }
     if (phase_ == Phase::Title) {
         DriveDepthOfField(world);
         if (start && world.GetSequence().Resume(playback_)) { phase_ = Phase::Playing; std::fprintf(stderr, "[TD2 intro] start\n"); }
@@ -236,8 +345,10 @@ bool IntroDirector::Update(HIKARI::WorldView& world, bool start) {
 
 void IntroDirector::Preview(HIKARI::WorldView& world) {
     HIKARI::GameProjectSequencePlaybackSnapshot preview{};
-    const bool previewing = world.GetSequence().GetEditorPreview(preview) && ReadSettings(world) &&
-                            std::string_view(preview.assetGuid, strnlen(preview.assetGuid, sizeof(preview.assetGuid))) == settings_.sequence;
+    const bool found = world.GetSequence().GetEditorPreview(preview) && ReadSettings(world);
+    const std::string_view asset(preview.assetGuid, strnlen(preview.assetGuid, sizeof(preview.assetGuid)));
+    const bool endingPreview = found && !settings_.ending.empty() && asset == settings_.ending;
+    const bool previewing = endingPreview || (found && settings_.enabled && !settings_.sequence.empty() && asset == settings_.sequence);
     if (!previewing) {
         if (phase_ == Phase::Preview) { Restore(world); playback_ = {}; phase_ = Phase::None; }
         return;
@@ -245,7 +356,8 @@ void IntroDirector::Preview(HIKARI::WorldView& world) {
     // タイムラインでイベントの区間やカメラを直すとプレビューが流し直される（新しい handle）。その時は元へ戻してから読み直す。
     if (phase_ != Phase::Preview || !(preview.handle == playback_)) {
         if (phase_ == Phase::Preview) { Restore(world); }
-        Prepare(world, preview.handle);
+        if (endingPreview) { PrepareEnding(world, preview.handle, FindGoalScreen(world)); startEye_ = startLook_ = {}; }
+        else { Prepare(world, preview.handle); }
         phase_ = Phase::Preview;
     }
     Apply(world, preview.timeSeconds);
@@ -253,6 +365,16 @@ void IntroDirector::Preview(HIKARI::WorldView& world) {
 
 void IntroDirector::Apply(HIKARI::WorldView& world, double t) {
     screens_.time = t;
+    if (ending_) {
+        // ぼけはオープニングと同じ弱さ（引いた画で奥の工場が読める）。目覚めでは強くぼかしてからその弱さへ戻す（ピントが合っていく）。
+        const double focus = std::clamp((t - screens_.revealTime) / 4.0, 0.0, 1.0), k = (std::max)(.05f, settings_.depthOfField);
+        DriveDepthOfField(world, t < screens_.revealTime ? 1.0 : 1 + (1 / k - 1) * (1 - focus * focus * (3 - 2 * focus)));
+        DriveLetterbox(world, t);
+        DriveLights(world, t);
+        DriveEyelids(world, t);
+        DriveStartOffset(world, t);
+        return;
+    }
     DriveDepthOfField(world);
     DriveLetterbox(world, t);
     DriveTitleCard(world, t);
@@ -261,7 +383,7 @@ void IntroDirector::Apply(HIKARI::WorldView& world, double t) {
     DriveProps(world, t);
 }
 
-void IntroDirector::DriveDepthOfField(HIKARI::WorldView& world) {
+void IntroDirector::DriveDepthOfField(HIKARI::WorldView& world, double scale) {
     const auto view = world.GetCamera();
     const auto camera = world.FindSceneObject(settings_.cameraObject);
     if (!depthOfFieldRead_) {
@@ -276,9 +398,9 @@ void IntroDirector::DriveDepthOfField(HIKARI::WorldView& world) {
     request.cameraObjectHandle = camera.GetHandle().value;
     request.sourceId = 0x7D2147u; request.priority = 300;
     request.settings = depthOfField_;
-    const float k = std::clamp(settings_.depthOfField, 0.0f, 1.0f);
-    request.settings.nearBlurRadius1080pPixels *= k;
-    request.settings.farBlurRadius1080pPixels *= k;
+    const float k = std::clamp(settings_.depthOfField, 0.0f, 1.0f) * static_cast<float>(scale);
+    request.settings.nearBlurRadius1080pPixels = (std::min)(32.0f, request.settings.nearBlurRadius1080pPixels * k);
+    request.settings.farBlurRadius1080pPixels = (std::min)(32.0f, request.settings.farBlurRadius1080pPixels * k);
     request.settings.enabled = k > 0 ? 1u : 0u;
     (void)view.SubmitDepthOfField(request);
 }
@@ -348,6 +470,70 @@ void IntroDirector::DriveTitleCard(HIKARI::WorldView& world, double t) const {
     else { const double d = line * 3 * (1 - ease((off - .24) / .12)); if (d > .5) { put(kWhiteTexture, d, d, 1); } }
 }
 
+double IntroDirector::EndingLamp(const Lamp& lamp, double t) const {
+    const auto& s = screens_;
+    // 目覚めは元の工場（夢から覚めた）。暗転と、同じ遠さのテレビが消えた後は真っ暗。
+    if (t >= s.revealTime || t < s.flickerStart) { return lamp.base; }
+    if (t >= s.blackTime || t >= lamp.off + .05) { return 0; }
+    const double ramp = std::clamp((t - s.flickerStart) / 1.2, 0.0, 1.0) * std::clamp(double(settings_.flicker), 0.0, 1.0);
+    // 揺れ方はオープニングと同じ：同じ電源の灯が一緒に揺れ、最初の稲妻までは前兆、その後は非常灯のように暗くちらつく。
+    const double power = Noise(0xF11Cu, t, 9), surge = Noise(0xF11Du, t, 2.2), own = Noise(lamp.seed, t, 21);
+    const double first = s.lightning.empty() ? s.suckStart : s.lightning.front();
+    double v = 1;
+    if (t < first) {
+        const double p = std::clamp((t - s.flickerStart) / (std::max)(.1, first - s.flickerStart), 0.0, 1.0);
+        if (power < .1 + .32 * p) { v = .1; }
+        if (surge < .04 + .2 * p * p) { v = 0; }
+        if (IntroOmenBurst(t, s.flickerStart, first)) { v = (std::min)(v, .03); }
+    } else {
+        v = power < .35 ? .02 : .12;
+        if (surge < .25) { v = 0; }
+    }
+    if (own < .15) { v *= .4; }
+    for (const float flash : s.lightning) { if (t > flash - .25 && t < flash + .3) { v = 0; } }
+    return lamp.base * (1 + (v - 1) * ramp);
+}
+
+void IntroDirector::DriveEyelids(HIKARI::WorldView& world, double t) const {
+    if (t < screens_.blackTime) { return; }
+    // まぶたの開き（0 閉じ、1 開いた）：目覚めの 0.8 秒後から薄く開き、一度閉じかけてから、ゆっくり開ききる。
+    const auto ease = [](double x) { x = std::clamp(x, 0.0, 1.0); return x * x * (3 - 2 * x); };
+    const double u = t - screens_.revealTime;
+    double open = 0;
+    if (u >= .8) { open = .35 * ease((u - .8) / .7); }
+    if (u >= 1.7) { open = .35 - .3 * ease((u - 1.7) / .25); }
+    if (u >= 1.95) { open = .05 + .95 * ease((u - 1.95) / 1.4); }
+    if (open >= .999) { return; }
+    float width = 1920, height = 1080;
+    HIKARI::GameProjectCameraViewSnapshot view{};
+    if (world.GetCamera().TryGetViewSnapshot(view) && view.uiLogicalWidth > 0 && view.uiLogicalHeight > 0) {
+        width = static_cast<float>(view.uiLogicalWidth); height = static_cast<float>(view.uiLogicalHeight);
+    }
+    // UI は仕上げの後に描くので、上下の黒は本当の黒になる（色調整では漫画の仕上げの紙の色が残る）。
+    const double lid = height * .5 * (1 - open);
+    HIKARI::GameProjectUiSpriteRequest request{};
+    request.sourceId = 0x7D214Bu; request.order = 100001;
+    request.referenceWidth = width; request.referenceHeight = height;
+    request.width = width; request.height = static_cast<float>(lid + 2);
+    const auto ui = world.GetUi();
+    request.y = -1;
+    (void)ui.SubmitSprite(kLetterboxTexture, request);
+    request.y = static_cast<float>(height - lid - 1);
+    (void)ui.SubmitSprite(kLetterboxTexture, request);
+}
+
+void IntroDirector::DriveStartOffset(HIKARI::WorldView& world, double t) const {
+    // 区域カメラから始まる演出を、扉に入った時の追従の画からなめらかに受け継ぐ。
+    const double u = std::clamp(t / 1.2, 0.0, 1.0);
+    const auto w = static_cast<float>(1 - u * u * (3 - 2 * u));
+    if (w <= 0) { return; }
+    HIKARI::GameProjectCameraModifier modifier{};
+    modifier.sourceId = 0x7D214Au; modifier.priority = 60; modifier.applyDuringOverride = 1;
+    modifier.worldPositionOffset = {startEye_.x * w, startEye_.y * w, startEye_.z * w};
+    modifier.worldTargetOffset = {startLook_.x * w, startLook_.y * w, startLook_.z * w};
+    (void)world.GetCamera().SubmitModifier(modifier);
+}
+
 void IntroDirector::DriveBlack(HIKARI::WorldView& world, double t) {
     // 1 は作者の色調整のまま、0 は真っ黒。演出の暗転と同じく飛び込む直前の 1 フレームで切り、遠景に替わってから 0.4 秒で戻す。
     const double in = std::clamp((t - (screens_.blackTime - .015)) / .015, 0.0, 1.0);
@@ -396,6 +582,8 @@ void IntroDirector::DriveLights(HIKARI::WorldView& world, double t) {
             }
             intensity = lamp.base * (std::min)(env, 1.0);
             enabled = intensity > lamp.base * .002;
+        } else if (ending_) {
+            intensity = EndingLamp(lamp, t);
         } else if (lamp.glow && t >= s.blackTime) {
             const double on = s.powerOn + .1, locked = s.lockStart + s.lockSeconds;
             intensity = lamp.base * (t < on ? 0 : t < locked ? .5 + .3 * Hash(lamp.seed, static_cast<uint32_t>(t * 12)) : 1);
@@ -545,8 +733,17 @@ void IntroDirector::Finish(HIKARI::WorldView& world) {
     std::fprintf(stderr, "[TD2 intro] done\n");
 }
 
+void IntroDirector::FinishEnding(HIKARI::WorldView& world) {
+    Restore(world);
+    if (playback_.IsValid()) { (void)world.GetSequence().Stop(playback_); }
+    playback_ = {};
+    phase_ = Phase::Done; ending_ = false; endingFinished_ = true;
+    std::fprintf(stderr, "[TD2 ending] done\n");
+}
+
 void IntroDirector::Stop(HIKARI::WorldView& world) {
-    if (phase_ == Phase::Title || phase_ == Phase::Playing) { Finish(world); }
+    if (phase_ == Phase::Title || phase_ == Phase::Playing || phase_ == Phase::Ending) { Finish(world); }
+    endingFinished_ = false; ending_ = false;
     if (phase_ == Phase::Preview) { Restore(world); playback_ = {}; }
     phase_ = Phase::None;
 }

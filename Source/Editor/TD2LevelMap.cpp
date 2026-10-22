@@ -9,7 +9,7 @@ bool Released(const EditorWorkspaceCanvasInput& input) {
     constexpr uint32_t buttons = kPrimary | kSecondary;
     return (input.releasedButtons & buttons) || (!(input.heldButtons & buttons) && !(input.pressedButtons & buttons));
 }
-bool Linkable(std::string_view kind) { return kind == "Door" || kind == "Laser" || kind == "Bridge"; }
+bool Linkable(std::string_view kind) { return kind == "Door" || kind == "Laser" || kind == "Bridge" || kind == "Goal"; }
 EditorWorkspacePoint Center(const DeviceDraft& d, int worldX, int worldY) {
     return {static_cast<float>(worldX + d.x + d.w * .5), static_cast<float>(worldY + d.y + d.h * .5)};
 }
@@ -373,6 +373,7 @@ void LevelEditor::DrawPlacementGhost(IEditorWorkspaceUi& ui, const EditorWorkspa
         if (kind_ == "Door" || kind_ == "LockWall") { ghost.h = (std::min)(3.0, s.region.rows - ghost.y); }
         if (kind_ == "OneWay" || kind_ == "Bridge") { ghost.w = (std::min)(3.0, s.region.cols - ghost.x); }
         if (kind_ == "Laser") { ghost.direction = "Right"; }
+        if (kind_ == "Goal") { ghost.w = 2; ghost.h = 3; ghost.y = (std::max)(0.0, std::floor(static_cast<double>(ly)) - 2); }
         ApplyTemplate(ghost, s.region.cols, s.region.rows);
         DrawDeviceGlyph(ui, ghost, local);
         ui.CanvasRect(local.Screen(static_cast<float>(ghost.x), static_cast<float>(ghost.y)), local.Screen(static_cast<float>(ghost.x + ghost.w), static_cast<float>(ghost.y + ghost.h)), {.97f, .80f, .40f, .7f}, 1.5f);
@@ -803,7 +804,7 @@ void LevelEditor::DrawToolHint(IEditorWorkspaceUi& ui, const EditorWorkspaceCanv
     case Tool::Select: text = AnyUnplaced(model_) ? "右の「未配置」から地図へドラッグ · 空いた所をダブルクリックで全体" : "テレビをドラッグで動かす · 空いた所をダブルクリックで全体"; break;
     case Tool::Terrain: text = "左ドラッグで描く · 右ドラッグで消す"; break;
     case Tool::Device: text = "クリックで置く · ドラッグで動かす · 右クリックで消す"; break;
-    case Tool::Link: text = "圧力板から扉・レーザー・橋・仕掛けへドラッグ"; break;
+    case Tool::Link: text = "圧力板から扉・レーザー・橋・ゴール・仕掛けへドラッグ"; break;
     case Tool::Machine: text = "下で種類を選び、動かすテレビを押す"; break;
     case Tool::Camera: text = "テレビでカメラ · 境目で切り替えの演出"; break;
     case Tool::Stage: text = "テレビを押して 3D の付き方を直す"; break;

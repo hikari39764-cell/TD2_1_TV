@@ -22,9 +22,9 @@ void DeviceDraft::SetExtra(std::string_view key, std::string_view value) {
 }
 
 std::string_view DevicePrefix(std::string_view kind) {
-    constexpr std::array<std::pair<std::string_view, std::string_view>, 12> prefixes{{{"Solid", "block"}, {"OneWay", "oneway"}, {"Plate", "plate"},
+    constexpr std::array<std::pair<std::string_view, std::string_view>, 13> prefixes{{{"Solid", "block"}, {"OneWay", "oneway"}, {"Plate", "plate"},
         {"Door", "door"}, {"Laser", "laser"}, {"Spikes", "spikes"}, {"Checkpoint", "cp"}, {"LockWall", "lock"}, {"Spring", "spring"},
-        {"Bridge", "bridge"}, {"Collectible", "gem"}, {"Decal", "decal"}}};
+        {"Bridge", "bridge"}, {"Collectible", "gem"}, {"Decal", "decal"}, {"Goal", "goal"}}};
     for (const auto& [k, prefix] : prefixes) { if (k == kind) { return prefix; } }
     return "device";
 }
@@ -96,6 +96,11 @@ bool DeviceEditor::Add(std::string_view kind, int col, int row, int cols, int ro
     if (kind == "Door" || kind == "LockWall") { d.h = (std::min)(3, rows - row); }
     if (kind == "OneWay" || kind == "Bridge") { d.w = (std::min)(3, cols - col); }
     if (kind == "Laser") { d.direction = "Right"; }
+    // 通関の扉は幅 2・高さ 3 マス（押した所を下端にして、入りきらなければ部屋に収める）。
+    if (kind == "Goal") {
+        d.w = (std::min)(2, cols); d.h = (std::min)(3, rows);
+        d.x = (std::min)(col, cols - static_cast<int>(d.w)); d.y = (std::max)(0, (std::min)(row - static_cast<int>(d.h) + 1, rows - static_cast<int>(d.h)));
+    }
     // ID は種類の短い名前と英字（plate_A、door_B…）。表示名にも同じ英字を使い、他を消しても変わらない。
     for (unsigned n = 0;; ++n) {
         std::string letters;
@@ -174,8 +179,8 @@ std::string DeviceEditor::Validate(int cols, int rows) const {
         if (kind == TargetKind::Invalid) { return device.id + " のつなぎ先の書き方が無効です：" + target; }
         if (kind != TargetKind::Local) { continue; }
         const auto item = std::find_if(devices_.begin(), devices_.end(), [&target](const auto& value) { return value.id == target; });
-        if (item == devices_.end() || (item->kind != "Door" && item->kind != "Laser" && item->kind != "Bridge")) {
-            return device.id + " は同じ画面の扉・レーザー・伸びる橋にだけつなげます";
+        if (item == devices_.end() || (item->kind != "Door" && item->kind != "Laser" && item->kind != "Bridge" && item->kind != "Goal")) {
+            return device.id + " は同じ画面の扉・レーザー・伸びる橋・ゴールにだけつなげます";
         }
     }
     return {};

@@ -13,8 +13,8 @@
 
 namespace TD2 {
 // 装置の種類名。並びはルールの DeviceKind と同じ（受け口の Mechanism は作者が書かない）。
-inline constexpr std::array<std::string_view, 12> kDeviceKindNames{"Solid", "OneWay", "Plate", "Door", "Laser", "Spikes", "Checkpoint", "LockWall",
-                                                                   "Spring", "Bridge", "Collectible", "Decal"};
+inline constexpr std::array<std::string_view, 13> kDeviceKindNames{"Solid", "OneWay", "Plate", "Door", "Laser", "Spikes", "Checkpoint", "LockWall",
+                                                                   "Spring", "Bridge", "Collectible", "Decal", "Goal"};
 // 向きの名前。並びはルールの Direction と同じ。
 inline constexpr std::array<std::string_view, 4> kDirectionNames{"Up", "Down", "Left", "Right"};
 

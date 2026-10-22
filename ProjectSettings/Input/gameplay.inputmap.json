@@ -185,6 +185,13 @@
       "control": "K",
       "scale": 1.0,
       "source": "Keyboard"
+    },
+    {
+      "action": "Gameplay.DevGoal",
+      "component": 0,
+      "control": "O",
+      "scale": 1.0,
+      "source": "Keyboard"
     }
   ],
   "consumeInput": false,

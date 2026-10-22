@@ -8,8 +8,8 @@
 namespace TD2::Editor {
 // 装置の種類（並びと名前は TD2DeviceText.h）と、エディタでの表示名。
 inline constexpr const auto& kEditorDeviceKinds = kDeviceKindNames;
-inline constexpr std::array<std::string_view, 12> kEditorDeviceLabels{"▧ ブロック", "━ 片側床", "▰ 圧力板", "▥ 扉", "→ レーザー", "▲ トゲ", "⚑ チェックポイント", "▣ ロック壁",
-                                                                      "⤒ バネ", "═ 伸びる橋", "◆ 収集物", "✎ 説明の貼り紙"};
+inline constexpr std::array<std::string_view, 13> kEditorDeviceLabels{"▧ ブロック", "━ 片側床", "▰ 圧力板", "▥ 扉", "→ レーザー", "▲ トゲ", "⚑ チェックポイント", "▣ ロック壁",
+                                                                      "⤒ バネ", "═ 伸びる橋", "◆ 収集物", "✎ 説明の貼り紙", "◎ ゴール"};
 
 inline std::string DeviceLabel(std::string_view kind) {
     const auto it = std::find(kEditorDeviceKinds.begin(), kEditorDeviceKinds.end(), kind);

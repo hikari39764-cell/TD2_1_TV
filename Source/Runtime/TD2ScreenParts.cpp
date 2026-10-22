@@ -274,6 +274,8 @@ void Screen3DStage::SubmitParts(HIKARI::WorldView& world, const std::vector<cons
         builder.SetTime(animate ? now : 0.0);
         builder.DepthRows(depthRows_);
         builder.Solid(solid_, playDepth_);
+        // 通関の扉は演出の秒で閉じる（プレビューでも同じ姿）。
+        if (intro_ && intro_->ending && intro_->time >= intro_->closeStart) { builder.GoalClosing(intro_->time - intro_->closeStart); }
         mirrorFor(builder, room->second);
         builder.Device(device, device.id == snapshot.checkpointId, now - memory->second.changed);
         if (device.kind == Rules::DeviceKind::Laser) {
@@ -365,8 +367,8 @@ void Screen3DStage::SubmitParts(HIKARI::WorldView& world, const std::vector<cons
     // オープニングの砂嵐の板：窓の 2〜4 段目に暗い・普通・明るい板を一枚ずつ。毎フレーム縦に跳ばし、ノイズを動かす。
     // 板は窓の倍の高さで、どこへ跳んでも窓を覆う。1 段目は板を置かず、キャプチャの暗い地のまま（黒い画面）。
     if (const auto& noise = WindowOf(ViewKind::Far); introStatic_ && noise.valid) {
-        // タイトル待ちとスペース直後の乱れの間は、2・3 段目に仮タイトルの板を置く（パソコンの画面の比に近い 3:2）。
-        const bool title = intro_ && intro_->time < intro_->titleOff + .3;
+        // タイトル待ちとスペース直後の乱れの間（通関では目覚めから）は、2・3 段目に仮タイトルの板を置く（パソコンの画面の比に近い 3:2）。
+        const bool title = intro_ && (intro_->ending ? intro_->time >= intro_->revealTime : intro_->time < intro_->titleOff + .3);
         const auto plane = [&](std::string_view guid, uint64_t instance, double cx, double bottom, double width, double height) {
             PartRequest request{};
             request.ownerObjectHandle = cameras_[static_cast<size_t>(ViewKind::Sharp)].handle.value;

@@ -12,6 +12,7 @@ void DeviceIcon(IEditorWorkspaceUi& ui, std::string_view kind, EditorWorkspacePo
     if (kind == "OneWay" || kind == "Bridge") { d.w = 2; }
     if (kind == "Laser") { d.direction = "Right"; }
     if (kind == "Spikes") { d.w = 2; }
+    if (kind == "Goal") { d.w = 2; d.h = 3; }
     MapCanvasView v;
     v.tile = (std::min)((size.x - 16) / static_cast<float>(d.w + .5), (size.y - 24) / static_cast<float>(d.h + .5));
     v.tile = std::clamp(v.tile, 6.0f, 26.0f);

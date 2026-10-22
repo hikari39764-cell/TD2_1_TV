@@ -244,6 +244,21 @@ void Exploration::ClearEcho() {
     snapshotDirty_ = true;
 }
 
+bool Exploration::Teleport(std::string_view region) {
+    const auto* room = FindRegion(region);
+    if (!room || !room->placement.worldPlaced) return false;
+    ClearEcho();
+    const auto& p = room->placement;
+    auto& body = state_.player;
+    body.rect.x = room->definition.spawn.x + static_cast<double>(p.worldX); body.rect.y = room->definition.spawn.y + static_cast<double>(p.worldY);
+    body.vx = body.vy = body.walkVx = body.reboundTime = 0; body.reboundDirection = 0;
+    body.grounded = false; body.dead = false; body.supportId.clear();
+    state_.dash.reset(); state_.bounce.reset(); state_.deathRemaining = 0;
+    state_.checkpointId.clear(); state_.checkpointPosition = {body.rect.x, body.rect.y};
+    activeRegion_ = std::string(region); snapshotDirty_ = true;
+    return true;
+}
+
 bool Exploration::StepBack(std::string_view region, int direction) {
     calls_.push_back({"back", std::string(region), direction});
     const auto* from = FindRegion(region);

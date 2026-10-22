@@ -18,7 +18,8 @@ const char* TestEntryRegion() {
 }
 
 void GameSession::OnGameStarted(HIKARI::WorldView&) {
-    exploration_ = {}; regions_ = {}; camera_.Reset(); machines_ = {}; introChecked_ = false;
+    exploration_ = {}; regions_ = {}; camera_.Reset(); machines_ = {}; introChecked_ = ending_ = false;
+    initialSources_.clear(); initialMachines_ = {};
     sceneActive_ = leftHeld_ = rightHeld_ = false;
     previewEntryObject_ = 0; previewSpawn_.reset(); previewEntryRegion_.clear(); previewStates_.clear();
     recording_ = recordClosed_ = false; record_ = {};
@@ -37,7 +38,7 @@ void GameSession::OnSceneEntered(HIKARI::WorldView& world) {
 }
 
 void GameSession::OnSceneExiting(HIKARI::WorldView& world) {
-    intro_.Stop(world); introChecked_ = false;
+    intro_.Stop(world); introChecked_ = ending_ = false;
     camera_.Stop(world);
     FinishRecord();
     sceneActive_ = false;
@@ -92,6 +93,7 @@ void GameSession::SyncRegions(HIKARI::WorldView& world) {
             return;
         }
         auto machines = machines_.Sync(world, regions_, sources);
+        initialSources_ = sources; initialMachines_ = machines;
         const auto error = exploration_.Initialize(std::move(sources), std::move(machines.mechanisms), std::move(machines.slides),
                                                    std::move(machines.stacks), std::move(machines.carousels), previewEntry, previewSpawn_);
         if (!error.empty()) { std::fprintf(stderr, "[TD2 configuration] %s\n", error.c_str()); return; }
@@ -133,12 +135,15 @@ void GameSession::Update(HIKARI::WorldView& world, const HIKARI::FrameContext& f
     // オープニングの演出：最初の Play のフレームで始め（「この画面から」の試遊は除く）、終わるまで規則を進めない。
     // スペースは演出を始めるだけで、ダッシュにはならない。カメラは演出が動かし、焦点だけは画面に合わせて追う。
     if (!introChecked_) { introChecked_ = true; (void)intro_.Begin(world, previewSpawn_.has_value() || previewEntryObject_ != 0 || TestEntryRegion()); }
-    // 開発用：エディタの Play の時だけ、K でオープニングを飛ばす（出荷したゲームでは効かない）。
-    if (HIKARI::GameProjectInputActionState skip{}; world.GetRuntimeSession().GetHostKind() == HIKARI::GameProjectRuntimeHostKind::EditorPreview &&
-        input.GetAction("Gameplay.DevSkipIntro", skip) && skip.pressed) {
-        intro_.Skip(world);
+    // 開発用：エディタの Play の時だけ、K でオープニングを飛ばし、O でゴールの部屋へ移る（出荷したゲームでは効かない）。
+    if (world.GetRuntimeSession().GetHostKind() == HIKARI::GameProjectRuntimeHostKind::EditorPreview) {
+        HIKARI::GameProjectInputActionState skip{}, goal{};
+        if (input.GetAction("Gameplay.DevSkipIntro", skip) && skip.pressed) { intro_.Skip(world); }
+        if (!ending_ && input.GetAction("Gameplay.DevGoal", goal) && goal.pressed) { intro_.Skip(world); TeleportToGoal(world); }
     }
-    if (intro_.Update(world, buttons.action.pressed)) {
+    const bool cinematic = intro_.Update(world, buttons.action.pressed);
+    if (intro_.TakeEndingFinished()) { RestartFromTitle(world); }
+    if (cinematic) {
         camera_.Update(world, exploration_, regions_, 0.f, 0.0, std::isfinite(frame.gameDt) ? std::max(0.0, double(frame.gameDt)) : 0.0);
         return;
     }
@@ -157,6 +162,7 @@ void GameSession::Update(HIKARI::WorldView& world, const HIKARI::FrameContext& f
     if (recording_) record_.frames.push_back({frameSeconds, static_cast<uint8_t>((left ? 1 : 0) | (right ? 2 : 0) | (buttons.action.held ? 4 : 0) | (remaining <= 0 ? 8 : 0) |
                                                                   (buttons.action.pressed ? 16 : 0) | (buttons.action.released ? 32 : 0))});
     uint32_t sliceIndex = 0;
+    std::string goalRegion;
     const auto takeCalls = [this, &sliceIndex] {
         for (auto& call : exploration_.TakeCalls()) if (recording_) record_.calls.push_back({recordFrame_, sliceIndex, call.kind, call.region, call.direction});
     };
@@ -166,6 +172,9 @@ void GameSession::Update(HIKARI::WorldView& world, const HIKARI::FrameContext& f
         for (const auto& region : output.regions)
             for (const auto& event : region.output.events)
                 if (recording_ && event.kind == Rules::EventKind::PlayerDied) record_.deaths.push_back({recordFrame_, region.regionId});
+        for (const auto& region : output.regions)
+            for (const auto& event : region.output.events)
+                if (event.kind == Rules::EventKind::GoalReached && goalRegion.empty()) goalRegion = region.regionId;
         for (const auto& region : output.regions)
             for (const auto& event : region.output.events) {
                 const auto name = Rules::EventName(event.kind);
@@ -182,6 +191,8 @@ void GameSession::Update(HIKARI::WorldView& world, const HIKARI::FrameContext& f
         takeCalls();
         ++sliceIndex;
         buttons.action.pressed = buttons.action.released = false; remaining -= slice;
+        // ゴールの扉に入ったら、その刻みで世界を止めて通関の演出へ移る。
+        if (!goalRegion.empty()) { StartEnding(world, goalRegion); return; }
     }
     machines_.Update(world, exploration_, regions_, camera_, frameSeconds);
     camera_.Update(world, exploration_, regions_, moveValid ? move.x : 0.f, frameSeconds,
@@ -194,6 +205,48 @@ void GameSession::Update(HIKARI::WorldView& world, const HIKARI::FrameContext& f
     else if (recording_ && recordFrame_ % 600 == 0) { (void)AppendPlayRecord(LastPlayPath(), record_, recordCursor_, false); }
     traceSeconds_ += std::max(0.0, double(frame.gameDt));
     Trace(world, frame.frameIndex);
+}
+
+void GameSession::StartEnding(HIKARI::WorldView& world, const std::string& region) {
+    FinishRecord();
+    HIKARI::GameProjectFloat3 eye{}, look{};
+    (void)camera_.StartOffset(world, exploration_, regions_, region, eye, look);
+    const auto camera = regions_.cameras.find(region);
+    ending_ = intro_.BeginEnding(world, regions_.Television(region), camera != regions_.cameras.end() ? camera->second : 0, eye, look);
+    std::fprintf(stderr, "[TD2 ending] goal region=%s cinematic=%d\n", region.c_str(), ending_);
+    if (!ending_) { RestartFromTitle(world); }
+}
+
+void GameSession::RestartFromTitle(HIKARI::WorldView& world) {
+    ending_ = false;
+    auto sources = initialSources_;
+    auto machines = initialMachines_;
+    exploration_ = {};
+    const auto error = exploration_.Initialize(std::move(sources), std::move(machines.mechanisms), std::move(machines.slides),
+                                               std::move(machines.stacks), std::move(machines.carousels));
+    if (!error.empty()) { std::fprintf(stderr, "[TD2 configuration] restart failed: %s\n", error.c_str()); return; }
+    (void)exploration_.TakeCalls();
+    camera_.Stop(world); camera_.Reset();
+    camera_.SyncBindings(world); camera_.SyncAreas(world);
+    camera_.Initialize(world, exploration_, regions_);
+    // 試遊の記録は最初の一回だけ（戻った後の分は残さない）。
+    recording_ = false; recordClosed_ = true;
+    introChecked_ = true;
+    (void)intro_.Begin(world, false);
+    std::fprintf(stderr, "[TD2 world] restarted from title entry=%s\n", exploration_.ActiveRegion().c_str());
+}
+
+void GameSession::TeleportToGoal(HIKARI::WorldView& world) {
+    std::string target;
+    for (const auto& [id, room] : exploration_.Regions()) {
+        if (!room.placement.worldPlaced) continue;
+        if (std::any_of(room.definition.devices.begin(), room.definition.devices.end(), [](const auto& d) { return d.kind == Rules::DeviceKind::Goal; })) { target = id; break; }
+    }
+    if (target.empty() || !exploration_.Teleport(target)) { std::fprintf(stderr, "[TD2 dev] no goal room\n"); return; }
+    camera_.Jump(world, exploration_, regions_, target);
+    // 瞬間移動した試遊は解法にならないので、記録を書き終えずに捨てる（編集器は書き終わった記録だけ読む）。
+    recording_ = false; recordClosed_ = true;
+    std::fprintf(stderr, "[TD2 dev] teleported to goal region=%s\n", target.c_str());
 }
 
 // 状態の記録は 1 秒ごと（検証で細かく見たい時は TD2_TRACE_SECONDS で間隔を変える）。

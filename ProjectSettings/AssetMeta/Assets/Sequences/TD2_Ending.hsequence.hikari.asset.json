@@ -1,0 +1,10 @@
+{
+  "displayName": "通关演出",
+  "guid": "9c62dec10b53453a8f7a803c431d2674",
+  "importSettings": {},
+  "importerId": "SequenceAssetImporter",
+  "importerVersion": 3,
+  "metaVersion": 1,
+  "sourcePath": "Assets/Sequences/TD2_Ending.hsequence",
+  "type": "Sequence"
+}

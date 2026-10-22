@@ -66,6 +66,7 @@ inline EditorWorkspaceColor DeviceColor(std::string_view kind) {
     if (kind == "Spring") { return {.96f, .72f, .24f, 1}; }
     if (kind == "Collectible") { return {.94f, .42f, .66f, 1}; }
     if (kind == "Decal") { return {.55f, .6f, .62f, 1}; }
+    if (kind == "Goal") { return {.62f, .95f, .82f, 1}; }
     return {.48f, .65f, .71f, 1};
 }
 
@@ -119,6 +120,10 @@ inline void DrawDeviceGlyph(IEditorWorkspaceUi& ui, const DeviceDraft& d, const 
         if (d.kind == "Solid") { line(.12f, .12f, .88f, .12f); }
         else if (d.kind == "Door") {
             line(.5f, .05f, .5f, .95f); ui.CanvasCircle(p(.65f, .54f), unit * .06f, c, stroke);
+        } else if (d.kind == "Goal") {
+            // ゴール：門の枠の中に光る画面。
+            ui.CanvasFill(p(.18f, .14f), p(.82f, .92f), {c.r * .75f, c.g * .75f, c.b * .75f, 1});
+            line(.08f, 1, .08f, .06f); line(.92f, 1, .92f, .06f); line(.02f, .06f, .98f, .06f);
         } else if (d.kind == "LockWall") {
             const auto center = p(.5f, .5f);
             ui.CanvasCircle({center.x, center.y - unit * .11f}, unit * .16f, c, stroke);

@@ -124,6 +124,8 @@ public:
     bool StepBack(std::string_view region, int direction);
     // 残影を消す（大区域を出た時。前の箱庭の装置を押したまま残さない）。
     void ClearEcho();
+    // 開発用：プレイヤーをその区域の出生点へ移す（残影は消し、速さと復活点も合わせる）。世界地図に無い区域なら false。
+    bool Teleport(std::string_view region);
     // 試遊を途中の状態から始める：踏み方に関係なく切り替わる機構（切り替え式・自動往復）をその状態へ置く。
     bool SetMechanismState(std::string_view id, int state);
     // 外から呼ばれた ClearEcho と StepBack の記録（試遊の記録が受け取って消す）。

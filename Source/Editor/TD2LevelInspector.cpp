@@ -211,7 +211,7 @@ void LevelEditor::DrawDeviceInspector(EditorWorkspaceHostContext& ctx) {
     if (d->kind == "Laser") { EditFloat(ui, "td2.device.range", "射程", d->range, .125f, 128); }
     if (d->kind == "Spring") { DrawSpring(ui, *d); }
     if (d->kind == "Decal") { DrawDecal(ui, *d); }
-    if (d->kind == "Laser" || d->kind == "Door" || d->kind == "Bridge") { ui.Checkbox("td2.device.invert", "通電で閉じる（逆）", &d->inverted); }
+    if (d->kind == "Laser" || d->kind == "Door" || d->kind == "Bridge" || d->kind == "Goal") { ui.Checkbox("td2.device.invert", "通電で閉じる（逆）", &d->inverted); }
     if (d->kind == "Plate") {
         if (ui.Selectable("td2.device.latch.off", "踏んでいる間だけ通電", !d->latch)) { d->latch = false; }
         if (ui.Selectable("td2.device.latch.on", "踏むたびに切り替え", d->latch)) { d->latch = true; }
@@ -240,7 +240,7 @@ void LevelEditor::DrawPlateLinks(EditorWorkspaceHostContext& ctx) {
     const auto* d = model_.devices.Selected();
     if (!d) { return; }
     ui.Separator();
-    ui.Text(d->targets.empty() ? "まだつないでいません：「配線」でこの板から扉・レーザー・橋・仕掛けへドラッグ" : "つなぎ先");
+    ui.Text(d->targets.empty() ? "まだつないでいません：「配線」でこの板から扉・レーザー・橋・ゴール・仕掛けへドラッグ" : "つなぎ先");
     const std::string region = model_.draft.region.regionId;
     std::string removing;
     for (const auto& target : d->targets) {

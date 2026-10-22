@@ -524,8 +524,10 @@ public:
         for (size_t i = 0; i < d.devices.size(); ++i) {
             const auto& dev = d.devices[i]; auto& state = s.devices[i];
             if (dev.kind != DeviceKind::Door && dev.kind != DeviceKind::Laser && dev.kind != DeviceKind::Bridge &&
-                dev.kind != DeviceKind::Mechanism) continue;
-            const bool active = linked.contains(dev.id) ? (dev.inverted ? !powered.contains(dev.id) : powered.contains(dev.id)) : dev.kind == DeviceKind::Laser;
+                dev.kind != DeviceKind::Mechanism && dev.kind != DeviceKind::Goal) continue;
+            // つながっていない光線と通関の扉は動いたまま（開いたまま）、ほかは止まったまま。
+            const bool active = linked.contains(dev.id) ? (dev.inverted ? !powered.contains(dev.id) : powered.contains(dev.id))
+                                                        : dev.kind == DeviceKind::Laser || dev.kind == DeviceKind::Goal;
             // 門と伸縮橋は実体に戻る瞬間に重なる体を挟む。
             const bool closing = state.active && !active && (dev.kind == DeviceKind::Door || dev.kind == DeviceKind::Bridge);
             if (state.active != active) Event(EventKind::DeviceChanged, dev.id, active ? "active" : "inactive", dev.rect);
@@ -646,6 +648,14 @@ public:
                 }
                 continue;
             }
+            // 通関の扉：開いている扉の真ん中へ本体が入った時に一度だけ知らせる（pressed は入った印、戻さない）。
+            if (dev.kind == DeviceKind::Goal) {
+                const Rect inside{dev.rect.x + dev.rect.w * .3, dev.rect.y, dev.rect.w * .4, dev.rect.h};
+                if (state.active && !state.pressed && !s.player.dead && Overlap(s.player.rect, inside)) {
+                    state.pressed = true; Event(EventKind::GoalReached, dev.id, {}, dev.rect);
+                }
+                continue;
+            }
             if (dev.kind != DeviceKind::Checkpoint) continue;
             const bool playerContact = !s.player.dead && Overlap(s.player.rect, dev.rect);
             const bool echoContact = s.echo && Overlap(s.echo->rect, dev.rect);
@@ -760,7 +770,7 @@ std::string_view EventName(EventKind event) {
     case E::DeviceChanged: return "DeviceChanged"; case E::CheckpointActivated: return "CheckpointActivated";
     case E::PlayerDied: return "PlayerDied"; case E::PlayerRespawned: return "PlayerRespawned";
     case E::SpringLaunched: return "SpringLaunched"; case E::CollectibleTaken: return "CollectibleTaken";
-    case E::EchoSwapped: return "EchoSwapped";
+    case E::EchoSwapped: return "EchoSwapped"; case E::GoalReached: return "GoalReached";
     }
     return "Unknown";
 }
@@ -788,8 +798,8 @@ std::string ValidateWorld(const WorldDefinition& d) {
         // 「区域ID/装置ID」は別のテレビの装置。世界を組んだ後に検査する。
         if (it == d.devices.end() && d.chunks.empty() && target.find('/') != std::string::npos) continue;
         if (it == d.devices.end() || (it->kind != DeviceKind::Door && it->kind != DeviceKind::Laser && it->kind != DeviceKind::Bridge &&
-                                      it->kind != DeviceKind::Mechanism))
-            return "plate targets must reference an existing door, bridge, laser or mechanism";
+                                      it->kind != DeviceKind::Mechanism && it->kind != DeviceKind::Goal))
+            return "plate targets must reference an existing door, bridge, laser, goal or mechanism";
     }
     return {};
 }
@@ -868,7 +878,8 @@ WorldSnapshot BuildSnapshot(const WorldDefinition& d, const WorldState& s) {
             snapshot.charge = std::clamp(state.charge / std::max(0.05, dev.delay), 0.0, 1.0);
             snapshot.cooldown = std::clamp(state.cooldown / std::clamp(dev.cooldown, 3.0, 30.0), 0.0, 1.0);
         }
-        snapshot.powered = dev.kind == DeviceKind::Plate ? state.active
+        // 通関の扉の灯は開いている間（つながっていなくても）点ける。
+        snapshot.powered = dev.kind == DeviceKind::Plate || dev.kind == DeviceKind::Goal ? state.active
                          : linked.contains(dev.id) && (dev.inverted ? !state.active : state.active);
         snapshot.variant = dev.variant; snapshot.latch = dev.latch; snapshot.depth = dev.depth;
         snapshot.world = dev.kind == DeviceKind::Plate && std::any_of(dev.targets.begin(), dev.targets.end(), IsMachineTarget);

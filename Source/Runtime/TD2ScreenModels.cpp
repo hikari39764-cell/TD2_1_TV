@@ -516,6 +516,36 @@ void StagePartBuilder::Device(const Rules::DeviceSnapshot& d, bool checkpoint, d
         Outline(x - .34 * r.w, r.y + .62, x + .34 * r.w, bottom, open, true);
         break;
     }
+    // 通関の扉：柱と楣（上にアンテナ）の枠に、光る画面を嵌めた門。開いている間は画面が白く光り、閉じている（通電していない）
+    // 間は左右の戸が画面の前で閉じる。本体が入ると戸が閉じ、合わせ目の光が縦の線から点になって消える（ブラウン管の電源を切った時）。
+    // 戸と画面は斜めに切っていない平らな板なので、立体の組では奥行きの分だけ右上へずらす。
+    case Rules::DeviceKind::Goal: {
+        const double k = (std::min)(r.w / 2, r.h / 3);            // 幅 2・高さ 3 の形のまま矩形に収める
+        constexpr double kHalf = .62, kLow = .2, kTall = 2.28;      // 画面の半幅・下端・高さ（枠の中、1 マス = 1）
+        constexpr double kScreenDepth = -.55, kLeafDepth = -.46;
+        const auto smooth = [](double t) { t = std::clamp(t, 0.0, 1.0); return t * t * (3 - 2 * t); };
+        const bool entered = d.pressed || goalClosing_ >= 0;
+        const double closing = goalClosing_ >= 0 ? goalClosing_ : 1e3;
+        // 戸の開き（1 = 開いた）。入った後は 0.15〜0.75 秒で閉じる。通電の切り替えは 0.35 秒。
+        const double open = entered ? 1 - smooth((closing - .15) / .6) : d.active ? smooth(since / .35) : 1 - smooth(since / .35);
+        Add("Goal_Frame", x, bottom, k, k);
+        const double sx = projection_.ShiftX(kScreenDepth), sy = projection_.ShiftY(kScreenDepth);
+        const double cy = bottom - (kLow + kTall * .5) * k;
+        const bool lit = d.active && (!entered || closing < .75);
+        Add("Goal_Screen", x + sx, cy + sy, 2 * kHalf * k, kTall * k, kScreenDepth, {}, -1, lit);
+        Add("Goal_ScreenOff", x + sx, cy + sy, 2 * kHalf * k, kTall * k, kScreenDepth - .01, {}, -1, !lit);
+        const double lx = projection_.ShiftX(kLeafDepth), ly = projection_.ShiftY(kLeafDepth), leaf = kHalf * k * (1 - open);
+        const double leafBottom = bottom - kLow * k;
+        Add("Goal_LeafL", x - kHalf * k + lx, leafBottom + ly, (std::max)(leaf, .001), kTall * k, kLeafDepth, {}, 0, leaf > .002);
+        Add("Goal_LeafR", x + kHalf * k + lx, leafBottom + ly, (std::max)(leaf, .001), kTall * k, kLeafDepth, {}, 0, leaf > .002);
+        // 閉じた合わせ目の光：0.75〜0.95 秒で縦の線が点に縮み、1.05 秒までに消える。
+        const double seam = closing - .75;
+        const double line = seam < .2 ? 1 - smooth(seam / .2) * .97 : .03 * (1 - smooth((seam - .2) / .1));
+        const double fx = projection_.ShiftX(kLeafDepth + .02), fy = projection_.ShiftY(kLeafDepth + .02);
+        Add("Goal_Screen", x + fx, cy + fy, .06 * k, (std::max)(kTall * line, .001) * k, kLeafDepth + .02, {}, -1, entered && seam >= 0 && seam < .3);
+        Lamp(x, bottom - 2.62 * k, d.powered && !entered, since);
+        break;
+    }
     case Rules::DeviceKind::Laser: Add(std::string("Laser_") + std::string(DirectionName(d.direction)), x, bottom, r.w, r.h); break;
     // 危険：回る赤い丸鋸（マスごとに一枚）。刃の中心を付いている面の縁に置き、半分を地形に沈める（向きは中心の置き方だけ）。
     // 刃は斜めに切っていないので、立体の組では刃の奥行き（0.3）の分だけ右上へずらして溝の中に合わせる。
