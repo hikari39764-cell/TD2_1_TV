@@ -83,6 +83,7 @@ void LevelEditor::SetUpNewRoom(EditorWorkspaceHostContext& ctx, const std::strin
         }
     }
     Generate(ctx, true, false, {}, regionId, nullptr, false);
+    SetNote("カメラを自動で置きました（左の「カメラ」の「選ぶ」から動かせます）");
 }
 
 void LevelEditor::ToggleArea(EditorWorkspaceHostContext& ctx, const std::string& regionId) {

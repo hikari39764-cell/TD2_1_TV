@@ -92,6 +92,11 @@ TravelKey SampleTravel(const std::vector<TravelKey>&, double t);
 
 // 作り直し。areaName が空なら全部の大区域。force は作者の調整も上書きする。
 struct GenerateReport { int written = 0, kept = 0, failed = 0; std::vector<std::string> notes; };
+// テレビの向きが「裏」か：地図で隣り合うテレビ（世界に無ければ 3D で一番近い、世界に置いたテレビ）と逆を向いている。
+bool IsBackFacing(const LayoutSnapshot&, std::string_view regionId);
+// テレビを裏返す：画面の中心を通る縦の軸で 180° 回し、区域カメラも同じ軸で回して反対側から同じ構図で撮る（一回の取り消し）。
+// 自動のカメラは回した後も自動のまま（記録を新しい姿勢に合わせる）。
+bool FlipTelevision(EditorWorkspaceHostContext&, LayoutSnapshot&, std::string_view regionId, std::string& error);
 bool GenerateCameras(EditorWorkspaceHostContext&, LayoutSnapshot&, std::string_view areaName, std::string_view onlyRegion,
                      bool force, GenerateReport&, std::string& error);
 bool GenerateTravels(EditorWorkspaceHostContext&, LayoutSnapshot&, std::string_view areaName, const LayoutEdge* onlyEdge,

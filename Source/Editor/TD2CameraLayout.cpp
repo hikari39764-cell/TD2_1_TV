@@ -654,6 +654,60 @@ bool InScope(const LayoutSnapshot& snap, std::string_view regionId, std::string_
 }
 }
 
+bool IsBackFacing(const LayoutSnapshot& snap, std::string_view regionId) {
+    const auto* self = snap.Room(regionId);
+    if (!self) { return false; }
+    // 画面の向き：テレビのモデルは +Z 側に画面がある。
+    const auto forward = [](const LayoutRoom& r) { return Normalize(Rotate(r.tv.rotation, {0, 0, 1})); };
+    const auto placement = [](const LayoutRoom& r) { return RegionPlacement{r.regionId, r.cols, r.rows, r.placed, r.worldX, r.worldY}; };
+    Vec3 sum{};
+    int count = 0;
+    if (self->placed) {
+        for (const auto& other : snap.rooms) {
+            if (&other == self || !other.placed || !FindSharedWorldEdge(placement(*self), placement(other))) { continue; }
+            sum = Add(sum, forward(other)); ++count;
+        }
+    }
+    if (!count) {
+        const LayoutRoom* nearest = nullptr;
+        double best = 1e18;
+        for (const auto& other : snap.rooms) {
+            if (&other == self || !other.placed) { continue; }
+            const auto d = Sub(other.tv.position, self->tv.position);
+            if (const double distance = Dot(d, d); distance < best) { best = distance; nearest = &other; }
+        }
+        if (nearest) { sum = forward(*nearest); count = 1; }
+    }
+    return count && Dot(sum, sum) > 1e-6 && Dot(forward(*self), Normalize(sum)) < -.3;
+}
+
+bool FlipTelevision(EditorWorkspaceHostContext& ctx, LayoutSnapshot& snap, std::string_view regionId, std::string& error) {
+    const auto* room = snap.Room(regionId);
+    if (!room || !room->tvObject) { error = "テレビが見つかりません"; return false; }
+    const auto pivot = ScreenPoint(*room);
+    // 縦の軸で 180° 回す：位置は軸について点対称、向きは横の角に 180° を足して傾き（roll）の向きを返す。
+    const auto turn = [&](const LayoutTransform& t) {
+        LayoutTransform out = t;
+        out.position = {2 * pivot[0] - t.position[0], t.position[1], 2 * pivot[2] - t.position[2]};
+        out.rotation = {t.rotation[0], std::fmod(t.rotation[1] + 360.0, 360.0) - 180.0, -t.rotation[2]};
+        return out;
+    };
+    Json commands = Json::array(), memos = Json::array();
+    const auto add = [&](uint64_t id, const LayoutTransform& before) {
+        const auto expected = snap.transformJson.find(id);
+        if (expected == snap.transformJson.end()) { return; }
+        const auto next = TransformJson(turn(before));
+        commands.push_back({{"objectId", id}, {"expected", expected->second}, {"position", next["position"]}, {"rotation", next["rotation"]}});
+    };
+    add(room->tvObject, room->tv);
+    if (room->cameraId) {
+        add(room->cameraId, room->camera);
+        if (!CameraEdited(*room)) { memos.push_back(PropertyCommand(room->objectId, room->componentId, "cameraAuto", CameraMemo(turn(room->camera)))); }
+    }
+    if (!ApplyTransforms(ctx, snap, commands, error) || !Transact(ctx, memos, error)) { return false; }
+    return LoadLayout(ctx, snap, error);
+}
+
 bool GenerateCameras(EditorWorkspaceHostContext& ctx, LayoutSnapshot& snap, std::string_view areaName, std::string_view onlyRegion,
                      bool force, GenerateReport& report, std::string& error) {
     // 1. カメラの無い区域にはカメラを作る（自動のカメラとして以後は作り直せる）。

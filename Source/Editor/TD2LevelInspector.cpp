@@ -135,8 +135,8 @@ void LevelEditor::DrawRoomInspector(EditorWorkspaceHostContext& ctx) {
     if (!room) { return; }
     auto& s = model_.draft;
     const auto before = s;
-    // いつも出すのは名前・大きさ・向き・試遊・開始テレビだけ。3D の付き方・カメラ・画面は「詳細」に畳む。
-    ui.Text(ShortChoiceLabel(room->object.name, 18) + "  " + std::to_string(s.region.cols) + "×" + std::to_string(s.region.rows) + (BackFacing(*room) ? "  · 裏" : ""));
+    // いつも出すのは名前・大きさ・試遊・開始テレビ・向き・カメラだけ。3D の付き方と画面は「詳細」に畳む。
+    ui.Text(ShortChoiceLabel(room->object.name, 18) + "  " + std::to_string(s.region.cols) + "×" + std::to_string(s.region.rows));
     if (s.worldPlaced) {
         if (ui.Button("td2.room.play", "▶ この画面から")) { if (model_.Commit(ctx)) { pickingStart_ = true; FitRoom(s); } }
     } else { ui.Text("地図の右の「未配置」から地図へドラッグ"); }
@@ -147,11 +147,14 @@ void LevelEditor::DrawRoomInspector(EditorWorkspaceHostContext& ctx) {
     if (!ResizeCells(previous, s.region)) { s.region = previous; model_.error = "大きさを変えられません"; }
     if (s != before) { propertyPending_ = true; }
     ui.Separator();
+    const auto regionId = s.region.regionId;
+    DrawRoomFacing(ctx, *room);
+    DrawRoomCamera(ctx, regionId);
+    if (model_.Current() != room) { return; }   // 裏返し・カメラの作り直しで区域を読み直した
+    ui.Separator();
     ui.Checkbox("td2.room.advanced", "詳細", &screenSettings_);
     if (!screenSettings_) { return; }
     DrawRoomStage(ctx, *room);
-    ui.Separator();
-    DrawRoomCamera(ctx, s.region.regionId);
     ui.Separator();
     DrawScreenBinding(ctx);
     if (s.worldPlaced && ui.Button("td2.room.remove", "世界から外す")) { s.worldPlaced = false; model_.Commit(ctx); }
@@ -166,25 +169,58 @@ void LevelEditor::DrawScreenBinding(EditorWorkspaceHostContext& ctx) {
     if (EditFloat(ui, "td2.room.brightness", "画面の明るさ", brightness, .5f, 4.0f)) { s.screenBrightness = static_cast<float>(brightness); propertyPending_ = true; }
 }
 
+// カメラ：世界に置いたテレビには、初めて置いた時に自動のカメラが付く。「選ぶ」でそのカメラを選び、ビューポートの
+// 「カメラを操作」で動かすと、その画がこの区域のカメラになる（作者が動かしたカメラは作り直しても残る）。
 void LevelEditor::DrawRoomCamera(EditorWorkspaceHostContext& ctx, const std::string& regionId) {
     auto& ui = *ctx.ui;
     EnsureLayout(ctx);
     const auto* room = layoutValid_ ? layout_.Room(regionId) : nullptr;
-    std::string state = "カメラ";
-    if (room) {
-        state += !room->cameraId ? "：なし" : room->cameraLocked ? "：固定" : room->cameraAuto.empty() ? "：手置き" : CameraEdited(*room) ? "：手直し" : "：自動";
-        if (const auto* area = layout_.AreaOf(regionId)) { state += " · " + ShortChoiceLabel(area->name, 10); }
+    if (!room || !room->placed) { return; }
+    if (!room->cameraId) {
+        ui.Text("カメラ：なし");
+        ui.SameLine();
+        if (ui.Button("td2.room.camera.generate", "作る")) { Generate(ctx, true, false, {}, regionId, nullptr, false); }
+        return;
     }
+    const bool edited = room->cameraLocked || CameraEdited(*room);
+    std::string state = std::string("カメラ：") + (room->cameraLocked ? "固定" : room->cameraAuto.empty() ? "手置き" : edited ? "手直し" : "自動");
+    if (const auto* area = layout_.AreaOf(regionId)) { state += " · " + ShortChoiceLabel(area->name, 8); }
     ui.Text(state);
-    if (ui.Button("td2.room.camera.view", "カメラを見る")) {
-        if (model_.Commit(ctx)) { const auto* item = model_.Current(); OpenRegionCamera(ctx, regionId, item ? item->object.name : regionId, model_.error); layoutStale_ = true; }
+    const uint64_t camera = room->cameraId;
+    if (ui.Button("td2.room.camera.select", "選ぶ")) {
+        if (Execute(ctx, "scene.object.select", {{"objectId", camera}}).ok) {
+            model_.sceneSelection = camera;
+            SetNote("ビューポートの上の「カメラを操作」で動かすと、その画がこのテレビのカメラになります");
+        }
     }
     ui.SameLine();
     // 生成の後は layout_ が作り直されて room が指す先が消えるので、すぐ戻る。
-    if (ui.Button("td2.room.camera.generate", room && room->cameraId ? "位置から作り直す" : "カメラを作る")) { Generate(ctx, true, false, {}, regionId, nullptr, false); return; }
-    if (room && room->cameraId && (room->cameraLocked || CameraEdited(*room))) {
-        if (ui.Button("td2.room.camera.reset", "自動に戻す")) { Generate(ctx, true, false, {}, regionId, nullptr, true); return; }
+    if (edited) { if (ui.Button("td2.room.camera.reset", "自動に戻す")) { Generate(ctx, true, false, {}, regionId, nullptr, true); } }
+    else if (ui.Button("td2.room.camera.generate", "作り直す")) { Generate(ctx, true, false, {}, regionId, nullptr, false); }
+}
+
+void LevelEditor::DrawRoomFacing(EditorWorkspaceHostContext& ctx, const RoomItem& room) {
+    auto& ui = *ctx.ui;
+    EnsureLayout(ctx);
+    if (!layoutValid_ || !layout_.Room(room.settings.region.regionId)) { return; }
+    const bool back = BackFacing(room);
+    const auto regionId = room.settings.region.regionId;
+    ui.Text("向き");
+    ui.SameLine();
+    if (ui.Button("td2.room.facing.front", back ? "表" : "● 表") && back) { FlipRoom(ctx, regionId); return; }
+    ui.SameLine();
+    if (ui.Button("td2.room.facing.back", back ? "● 裏" : "裏") && !back) { FlipRoom(ctx, regionId); return; }
+}
+
+void LevelEditor::FlipRoom(EditorWorkspaceHostContext& ctx, const std::string& regionId) {
+    if (!model_.Commit(ctx) || !EnsureLayout(ctx, true)) { return; }
+    if (!FlipTelevision(ctx, layout_, regionId, model_.error)) { return; }
+    // 3D で隣に付けていたテレビは、裏返すと付き方が変わるので自由配置にする。
+    if (const auto* item = model_.Current(); item && item->settings.region.regionId == regionId && !model_.draft.stageAnchor.empty()) {
+        model_.draft.stageAnchor.clear(); model_.Commit(ctx);
     }
+    ++layoutVersion_; MarkSceneChanged(); followResync_ = true;
+    SetNote("3D でテレビとカメラを裏返しました");
 }
 
 // ---------------------------------------------------------------- 装置

@@ -103,6 +103,9 @@ private:
     void DrawObjectInspector(EditorWorkspaceHostContext& ctx);
     void DrawRoomStage(EditorWorkspaceHostContext& ctx, const RoomItem& room);
     void DrawRoomCamera(EditorWorkspaceHostContext& ctx, const std::string& regionId);
+    // 向き：表（地図で隣り合うテレビと同じ向き）か裏か。押すと 3D でテレビとカメラを裏返す。
+    void DrawRoomFacing(EditorWorkspaceHostContext& ctx, const RoomItem& room);
+    void FlipRoom(EditorWorkspaceHostContext& ctx, const std::string& regionId);
     void DrawPlateLinks(EditorWorkspaceHostContext& ctx);
     void DrawScreenBinding(EditorWorkspaceHostContext& ctx);
     void RefreshChapters(EditorWorkspaceHostContext& ctx);

@@ -818,38 +818,8 @@ void LevelEditor::DrawToolHint(IEditorWorkspaceUi& ui, const EditorWorkspaceCanv
 bool LevelEditor::BackFacing(const RoomItem& room) {
     if (!layoutValid_) { return false; }
     if (const uint64_t key = layoutVersion_ * 1000003u + model_.revision; key != backKey_) { back_.clear(); backKey_ = key; }
-    const auto id = room.object.objectId;
-    if (const auto found = back_.find(id); found != back_.end()) { return found->second; }
-    // 画面の向き：テレビのモデルは +Z 側に画面がある。
-    const auto facing = [this](const RoomItem& r) { return layout_.Room(r.settings.region.regionId); };
-    const auto forward = [](const LayoutRoom& l) { return Math::Normalize(Math::QRotate(Math::QFromEulerDeg(l.tv.rotation), {0, 0, 1})); };
-    const auto* self = facing(room);
-    bool& back = back_[id];
-    back = false;
-    if (!self) { return false; }
-    Vec3 sum{};
-    int count = 0;
-    if (room.settings.worldPlaced) {
-        for (const auto& other : model_.rooms) {
-            if (other.object.objectId == id || !other.settings.worldPlaced || !FindSharedWorldEdge(Placement(room.settings), Placement(other.settings))) { continue; }
-            if (const auto* l = facing(other)) { sum = Math::Add(sum, forward(*l)); ++count; }
-        }
-    }
-    // 地図で隣が無い（まだ置いていない等）時は、世界に置いたテレビのうち 3D で一番近いものと比べる。
-    if (!count) {
-        const LayoutRoom* nearest = nullptr;
-        double best = 1e18;
-        for (const auto& other : model_.rooms) {
-            if (other.object.objectId == id || !other.settings.worldPlaced) { continue; }
-            const auto* l = facing(other);
-            if (!l) { continue; }
-            const auto d = Math::Sub(l->tv.position, self->tv.position);
-            if (const double distance = Math::Dot(d, d); distance < best) { best = distance; nearest = l; }
-        }
-        if (nearest) { sum = forward(*nearest); count = 1; }
-    }
-    if (!count || Math::Dot(sum, sum) < 1e-6) { return false; }
-    back = Math::Dot(forward(*self), Math::Normalize(sum)) < -.3;
-    return back;
+    const auto [it, fresh] = back_.try_emplace(room.object.objectId, false);
+    if (fresh) { it->second = IsBackFacing(layout_, room.settings.region.regionId); }
+    return it->second;
 }
 }
