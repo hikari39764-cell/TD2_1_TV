@@ -30,6 +30,11 @@
     "1 玩法/关卡/0 书桌/机位",
     "1 玩法/关卡/0 书桌/机构",
     "1 玩法/关卡/0 书桌/电视",
+    "1 玩法/关卡/0.5 交换入门",
+    "1 玩法/关卡/0.5 交换入门/布景",
+    "1 玩法/关卡/0.5 交换入门/机位",
+    "1 玩法/关卡/0.5 交换入门/机构",
+    "1 玩法/关卡/0.5 交换入门/电视",
     "1 玩法/关卡/1 货架",
     "1 玩法/关卡/1 货架/布景",
     "1 玩法/关卡/1 货架/机位",
@@ -70,6 +75,9 @@
     "1 玩法/关卡/8 终章/机位",
     "1 玩法/关卡/8 终章/机构",
     "1 玩法/关卡/8 终章/电视",
+    "1 玩法/关卡/9 测试",
+    "1 玩法/关卡/9 测试/机位",
+    "1 玩法/关卡/9 测试/电视",
     "1 玩法/关卡/演出",
     "1 玩法/镜头与演出",
     "2 工厂布景",
@@ -11060,14 +11068,14 @@
       "sourcePrefabId": "",
       "transform": {
         "position": [
-          3.119999885559082,
-          1.1890000104904175,
-          4.920300006866455
+          3.1920738220214844,
+          1.045891284942627,
+          4.544923305511475
         ],
         "rotationEulerDeg": [
-          6.877600193023682,
-          180.0,
-          0.0
+          -173.12232971191406,
+          -5.008955668017734e-06,
+          -179.99989318847656
         ],
         "scale": [
           1.0,
@@ -11621,7 +11629,7 @@
         }
       ],
       "editorFolder": "1 玩法/关卡/1 货架/布景",
-      "editorLocked": false,
+      "editorLocked": true,
       "editorVisible": true,
       "enabled": true,
       "id": 11124,
@@ -11630,7 +11638,7 @@
       "sourcePrefabId": "",
       "transform": {
         "position": [
-          7.199999809265137,
+          9.199999809265137,
           0.0,
           1.0
         ],
@@ -11669,7 +11677,7 @@
       "sourcePrefabId": "",
       "transform": {
         "position": [
-          9.600000381469727,
+          11.600000381469727,
           0.0,
           1.0
         ],
@@ -11708,7 +11716,7 @@
       "sourcePrefabId": "",
       "transform": {
         "position": [
-          6.0,
+          8.0,
           0.0,
           1.0
         ],
@@ -11747,7 +11755,7 @@
       "sourcePrefabId": "",
       "transform": {
         "position": [
-          8.399999618530273,
+          10.399999618530273,
           0.0,
           1.0
         ],
@@ -11786,7 +11794,7 @@
       "sourcePrefabId": "",
       "transform": {
         "position": [
-          10.800000190734863,
+          12.800000190734863,
           0.0,
           1.0
         ],
@@ -11834,7 +11842,7 @@
       "sourcePrefabId": "",
       "transform": {
         "position": [
-          7.150000095367432,
+          9.149999618530273,
           1.0199999809265137,
           4.550000190734863
         ],
@@ -11881,8 +11889,8 @@
             "spawnY": 0.5,
             "tilePixels": 64,
             "worldPlaced": true,
-            "worldX": 34,
-            "worldY": 6
+            "worldX": 59,
+            "worldY": 16
           },
           "type": "TD2.Region"
         }
@@ -11897,7 +11905,7 @@
       "sourcePrefabId": "",
       "transform": {
         "position": [
-          6.599999904632568,
+          8.600000381469727,
           0.0,
           1.100000023841858
         ],
@@ -11945,7 +11953,7 @@
       "sourcePrefabId": "",
       "transform": {
         "position": [
-          8.5,
+          10.5,
           1.059999942779541,
           4.75
         ],
@@ -11983,7 +11991,7 @@
             },
             "cells": "111111111111000000000001000000000001000000000001100000000000100000000000111111111111",
             "cols": 12,
-            "devices": "r2cp Checkpoint 0 5 1 1\nr2lift Plate 3 5 2 1 targets=mech/r2lift\n",
+            "devices": "r2cp Checkpoint 0 5 1 1\nr2lift Plate 3 5 2 1 targets=mech/r2lift\ndecal_A Decal 4 2 2 1 variant=spaceHold\n",
             "entryRegion": false,
             "regionId": "td2.r2",
             "rows": 7,
@@ -11992,8 +12000,8 @@
             "spawnY": 0.5,
             "tilePixels": 64,
             "worldPlaced": true,
-            "worldX": 46,
-            "worldY": 5
+            "worldX": 71,
+            "worldY": 15
           },
           "type": "TD2.Region"
         }
@@ -12008,7 +12016,7 @@
       "sourcePrefabId": "",
       "transform": {
         "position": [
-          7.800000190734863,
+          9.800000190734863,
           0.07999999821186066,
           1.6200000047683716
         ],
@@ -12056,7 +12064,7 @@
       "sourcePrefabId": "",
       "transform": {
         "position": [
-          9.619999885559082,
+          11.619999885559082,
           1.9800000190734863,
           5.150000095367432
         ],
@@ -12103,8 +12111,8 @@
             "spawnY": 0.5,
             "tilePixels": 64,
             "worldPlaced": true,
-            "worldX": 58,
-            "worldY": -1
+            "worldX": 83,
+            "worldY": 9
           },
           "type": "TD2.Region"
         }
@@ -12119,7 +12127,7 @@
       "sourcePrefabId": "",
       "transform": {
         "position": [
-          9.0,
+          11.0,
           1.4299999475479126,
           1.100000023841858
         ],
@@ -12158,7 +12166,7 @@
       "sourcePrefabId": "",
       "transform": {
         "position": [
-          11.619999885559082,
+          13.619999885559082,
           1.375,
           1.2999999523162842
         ],
@@ -12206,7 +12214,7 @@
       "sourcePrefabId": "",
       "transform": {
         "position": [
-          10.449999809265137,
+          12.449999809265137,
           1.059999942779541,
           4.75
         ],
@@ -12253,8 +12261,8 @@
             "spawnY": 0.5,
             "tilePixels": 64,
             "worldPlaced": true,
-            "worldX": 70,
-            "worldY": 6
+            "worldX": 95,
+            "worldY": 16
           },
           "type": "TD2.Region"
         }
@@ -12269,8 +12277,8 @@
       "sourcePrefabId": "",
       "transform": {
         "position": [
-          10.199999809265137,
-          0.41813981533050537,
+          12.199999809265137,
+          0.4180000126361847,
           1.6200000047683716
         ],
         "rotationEulerDeg": [
@@ -12308,7 +12316,7 @@
       "sourcePrefabId": "",
       "transform": {
         "position": [
-          11.619999885559082,
+          13.619999885559082,
           0.0,
           1.2999999523162842
         ],
@@ -12347,8 +12355,8 @@
       "sourcePrefabId": "",
       "transform": {
         "position": [
-          6.5,
-          1.4299999475479126,
+          7.25,
+          2.630000114440918,
           1.2599999904632568
         ],
         "rotationEulerDeg": [
@@ -12386,7 +12394,7 @@
       "sourcePrefabId": "",
       "transform": {
         "position": [
-          7.400000095367432,
+          9.399999618530273,
           1.4299999475479126,
           1.2599999904632568
         ],
@@ -12425,7 +12433,7 @@
       "sourcePrefabId": "",
       "transform": {
         "position": [
-          6.699999809265137,
+          8.699999809265137,
           2.630000114440918,
           1.2599999904632568
         ],
@@ -12464,7 +12472,7 @@
       "sourcePrefabId": "",
       "transform": {
         "position": [
-          7.800000190734863,
+          9.800000190734863,
           2.630000114440918,
           1.2599999904632568
         ],
@@ -12503,7 +12511,7 @@
       "sourcePrefabId": "",
       "transform": {
         "position": [
-          7.800000190734863,
+          9.800000190734863,
           2.630000114440918,
           1.2599999904632568
         ],
@@ -12542,7 +12550,7 @@
       "sourcePrefabId": "",
       "transform": {
         "position": [
-          6.400000095367432,
+          8.399999618530273,
           3.8299999237060547,
           1.2599999904632568
         ],
@@ -12581,7 +12589,7 @@
       "sourcePrefabId": "",
       "transform": {
         "position": [
-          7.599999904632568,
+          9.600000381469727,
           3.8299999237060547,
           1.2599999904632568
         ],
@@ -12620,7 +12628,7 @@
       "sourcePrefabId": "",
       "transform": {
         "position": [
-          9.0,
+          11.0,
           2.630000114440918,
           1.2599999904632568
         ],
@@ -12659,7 +12667,7 @@
       "sourcePrefabId": "",
       "transform": {
         "position": [
-          10.100000381469727,
+          12.100000381469727,
           2.630000114440918,
           1.2599999904632568
         ],
@@ -12698,7 +12706,7 @@
       "sourcePrefabId": "",
       "transform": {
         "position": [
-          9.300000190734863,
+          11.300000190734863,
           3.8299999237060547,
           1.2599999904632568
         ],
@@ -12737,7 +12745,7 @@
       "sourcePrefabId": "",
       "transform": {
         "position": [
-          9.300000190734863,
+          11.300000190734863,
           3.8299999237060547,
           1.2599999904632568
         ],
@@ -12776,7 +12784,7 @@
       "sourcePrefabId": "",
       "transform": {
         "position": [
-          10.300000190734863,
+          12.300000190734863,
           3.8299999237060547,
           1.2599999904632568
         ],
@@ -12815,7 +12823,7 @@
       "sourcePrefabId": "",
       "transform": {
         "position": [
-          6.900000095367432,
+          8.899999618530273,
           5.03000020980835,
           1.2599999904632568
         ],
@@ -12854,7 +12862,7 @@
       "sourcePrefabId": "",
       "transform": {
         "position": [
-          9.800000190734863,
+          11.800000190734863,
           5.03000020980835,
           1.2599999904632568
         ],
@@ -12893,7 +12901,7 @@
       "sourcePrefabId": "",
       "transform": {
         "position": [
-          8.600000381469727,
+          10.600000381469727,
           0.0,
           1.100000023841858
         ],
@@ -12932,7 +12940,7 @@
       "sourcePrefabId": "",
       "transform": {
         "position": [
-          9.399999618530273,
+          11.399999618530273,
           0.0,
           1.100000023841858
         ],
@@ -12971,7 +12979,7 @@
       "sourcePrefabId": "",
       "transform": {
         "position": [
-          11.350000381469727,
+          13.350000381469727,
           0.0,
           2.049999952316284
         ],
@@ -13010,7 +13018,7 @@
       "sourcePrefabId": "",
       "transform": {
         "position": [
-          8.75,
+          10.75,
           5.03000020980835,
           1.100000023841858
         ],
@@ -13049,7 +13057,7 @@
       "sourcePrefabId": "",
       "transform": {
         "position": [
-          7.199999809265137,
+          9.199999809265137,
           5.03000020980835,
           1.100000023841858
         ],
@@ -13167,7 +13175,7 @@
       "sourcePrefabId": "",
       "transform": {
         "position": [
-          8.399999618530273,
+          10.399999618530273,
           4.900000095367432,
           4.800000190734863
         ],
@@ -13237,54 +13245,6 @@
         ],
         "rotationEulerDeg": [
           50.33219909667969,
-          0.0,
-          0.0
-        ],
-        "scale": [
-          1.0,
-          1.0,
-          1.0
-        ]
-      }
-    },
-    {
-      "components": [
-        {
-          "id": 1,
-          "properties": {
-            "autoHash": "",
-            "cameraObject": {
-              "$hikariRef": "SceneObject",
-              "id": 3
-            },
-            "keepAuthored": true,
-            "regionA": "td2.d3",
-            "regionB": "td2.r1",
-            "seconds": 2.2,
-            "sequenceAssetGuid": "0435e8b88fe2cb6682ff2ae54bedaafd",
-            "sequenceSlotName": "Camera",
-            "speed": 0.4545,
-            "style": "auto"
-          },
-          "type": "TD2.RegionSequence"
-        }
-      ],
-      "editorFolder": "1 玩法/关卡/演出",
-      "editorLocked": false,
-      "editorVisible": true,
-      "enabled": true,
-      "id": 11162,
-      "name": "切换 d3 ↔ r1",
-      "parent": null,
-      "sourcePrefabId": "",
-      "transform": {
-        "position": [
-          0.0,
-          0.0,
-          0.0
-        ],
-        "rotationEulerDeg": [
-          0.0,
           0.0,
           0.0
         ],
@@ -13374,8 +13334,8 @@
             "spawnY": 0.5,
             "tilePixels": 64,
             "worldPlaced": true,
-            "worldX": 83,
-            "worldY": 9
+            "worldX": 108,
+            "worldY": 19
           },
           "type": "TD2.Region"
         }
@@ -13524,8 +13484,8 @@
             "spawnY": 0.5,
             "tilePixels": 64,
             "worldPlaced": true,
-            "worldX": 95,
-            "worldY": 9
+            "worldX": 120,
+            "worldY": 19
           },
           "type": "TD2.Region"
         }
@@ -13722,8 +13682,8 @@
             "spawnY": 0.5,
             "tilePixels": 64,
             "worldPlaced": true,
-            "worldX": 107,
-            "worldY": 9
+            "worldX": 132,
+            "worldY": 19
           },
           "type": "TD2.Region"
         }
@@ -13863,7 +13823,7 @@
             },
             "cells": "111111111111100000000001100000000001100000000001000000000000000000000000111111111111",
             "cols": 12,
-            "devices": "q3cp Checkpoint 1 5 1 1\nq3plate Plate 8 5 2 1 targets=mech/turn\nq3exit Decal 9 2 2 2 variant=exit\n",
+            "devices": "q3cp Checkpoint 1 5 1 1\nq3plate Plate 8 6 2 0.125 targets=mech/turn\nq3exit Decal 9 2 2 2 variant=exit\n",
             "entryRegion": false,
             "regionId": "td2.q3",
             "rows": 7,
@@ -13872,8 +13832,8 @@
             "spawnY": 0.5,
             "tilePixels": 64,
             "worldPlaced": true,
-            "worldX": 119,
-            "worldY": 2
+            "worldX": 144,
+            "worldY": 11
           },
           "type": "TD2.Region"
         }
@@ -14022,8 +13982,8 @@
             "spawnY": 0.5,
             "tilePixels": 64,
             "worldPlaced": true,
-            "worldX": 132,
-            "worldY": 2
+            "worldX": 156,
+            "worldY": 10
           },
           "type": "TD2.Region"
         }
@@ -14211,8 +14171,8 @@
             "spawnY": 0.5,
             "tilePixels": 64,
             "worldPlaced": true,
-            "worldX": 131,
-            "worldY": 10
+            "worldX": 156,
+            "worldY": 18
           },
           "type": "TD2.Region"
         }
@@ -14298,7 +14258,7 @@
             "objectMovesC": "",
             "regionMoves": "",
             "regionMovesC": "",
-            "regionOffsets": "td2.q_b -1 0",
+            "regionOffsets": "td2.q_b 0 0",
             "regionOffsetsC": "",
             "seconds": 1.4,
             "settle": 0.0,
@@ -14988,7 +14948,7 @@
             "rangeX": 0.2,
             "rangeY": 0.15,
             "regionSeconds": 1.2,
-            "regions": "td2.q1,td2.q2,td2.q2b,td2.q3,td2.q_b,td2.q_c"
+            "regions": "td2.q1,td2.q2,td2.q2b,td2.q3,td2.q_b,td2.q_c,td2.region.11431"
           },
           "type": "TD2.CameraArea"
         }
@@ -15409,7 +15369,7 @@
             },
             "cells": "1111111111111100000000000100000000000010000000000001000000000000111001110000011100111000001110011100000111001110000011100111111111",
             "cols": 13,
-            "devices": "s1trap Door 2 5 2 1\ns1spikes Spikes 5 4 2 1 dir=Up\ns1plate Plate 7 8 2 1 targets=s1trap\nhold Decal 8 6 4 2 variant=spaceHold\ns1pit Spikes 11 8 1 1 dir=Up\ns1cp Checkpoint 1 4 1 1\n",
+            "devices": "s1trap Door 2 5 2 1\ns1spikes Spikes 5 4 2 1\ns1plate Plate 7 8 2 1 targets=s1trap\ns1pit Spikes 11 8 1 1\ns1cp Checkpoint 1 4 1 1\n",
             "entryRegion": false,
             "regionId": "td2.s1",
             "rows": 10,
@@ -15418,8 +15378,8 @@
             "spawnY": 0.5,
             "tilePixels": 64,
             "worldPlaced": true,
-            "worldX": 143,
-            "worldY": 11
+            "worldX": 168,
+            "worldY": 19
           },
           "type": "TD2.Region"
         }
@@ -15529,8 +15489,8 @@
             "spawnY": 0.5,
             "tilePixels": 64,
             "worldPlaced": true,
-            "worldX": 144,
-            "worldY": 21
+            "worldX": 169,
+            "worldY": 29
           },
           "type": "TD2.Region"
         }
@@ -15679,8 +15639,8 @@
             "spawnY": 0.5,
             "tilePixels": 64,
             "worldPlaced": true,
-            "worldX": 156,
-            "worldY": 18
+            "worldX": 181,
+            "worldY": 26
           },
           "type": "TD2.Region"
         }
@@ -15829,8 +15789,8 @@
             "spawnY": 0.5,
             "tilePixels": 64,
             "worldPlaced": true,
-            "worldX": 168,
-            "worldY": 17
+            "worldX": 193,
+            "worldY": 27
           },
           "type": "TD2.Region"
         }
@@ -16018,8 +15978,8 @@
             "spawnY": 0.5,
             "tilePixels": 64,
             "worldPlaced": true,
-            "worldX": 181,
-            "worldY": 18
+            "worldX": 206,
+            "worldY": 28
           },
           "type": "TD2.Region"
         }
@@ -16168,8 +16128,8 @@
             "spawnY": 0.5,
             "tilePixels": 64,
             "worldPlaced": true,
-            "worldX": 156,
-            "worldY": 309
+            "worldX": 181,
+            "worldY": 319
           },
           "type": "TD2.Region"
         }
@@ -16369,8 +16329,8 @@
             "spawnY": 0.5,
             "tilePixels": 64,
             "worldPlaced": true,
-            "worldX": 193,
-            "worldY": 19
+            "worldX": 218,
+            "worldY": 29
           },
           "type": "TD2.Region"
         }
@@ -17018,8 +16978,8 @@
             "spawnY": 0.5,
             "tilePixels": 64,
             "worldPlaced": true,
-            "worldX": 206,
-            "worldY": 18
+            "worldX": 231,
+            "worldY": 28
           },
           "type": "TD2.Region"
         }
@@ -17168,8 +17128,8 @@
             "spawnY": 0.5,
             "tilePixels": 64,
             "worldPlaced": true,
-            "worldX": 218,
-            "worldY": 15
+            "worldX": 243,
+            "worldY": 25
           },
           "type": "TD2.Region"
         }
@@ -17318,8 +17278,8 @@
             "spawnY": 0.5,
             "tilePixels": 64,
             "worldPlaced": true,
-            "worldX": 231,
-            "worldY": 18
+            "worldX": 256,
+            "worldY": 28
           },
           "type": "TD2.Region"
         }
@@ -17468,8 +17428,8 @@
             "spawnY": 0.5,
             "tilePixels": 64,
             "worldPlaced": true,
-            "worldX": 243,
-            "worldY": 17
+            "worldX": 268,
+            "worldY": 27
           },
           "type": "TD2.Region"
         }
@@ -17657,8 +17617,8 @@
             "spawnY": 0.5,
             "tilePixels": 64,
             "worldPlaced": true,
-            "worldX": 256,
-            "worldY": 15
+            "worldX": 281,
+            "worldY": 25
           },
           "type": "TD2.Region"
         }
@@ -17858,8 +17818,8 @@
             "spawnY": 0.5,
             "tilePixels": 64,
             "worldPlaced": true,
-            "worldX": 269,
-            "worldY": 18
+            "worldX": 294,
+            "worldY": 28
           },
           "type": "TD2.Region"
         }
@@ -18008,8 +17968,8 @@
             "spawnY": 0.5,
             "tilePixels": 64,
             "worldPlaced": true,
-            "worldX": 281,
-            "worldY": 18
+            "worldX": 306,
+            "worldY": 28
           },
           "type": "TD2.Region"
         }
@@ -18119,8 +18079,8 @@
             "spawnY": 0.5,
             "tilePixels": 64,
             "worldPlaced": true,
-            "worldX": 293,
-            "worldY": 18
+            "worldX": 318,
+            "worldY": 28
           },
           "type": "TD2.Region"
         }
@@ -18898,8 +18858,8 @@
             "spawnY": 0.5,
             "tilePixels": 64,
             "worldPlaced": true,
-            "worldX": 305,
-            "worldY": 15
+            "worldX": 330,
+            "worldY": 25
           },
           "type": "TD2.Region"
         }
@@ -19255,8 +19215,8 @@
             "spawnY": 0.5,
             "tilePixels": 64,
             "worldPlaced": true,
-            "worldX": 317,
-            "worldY": 13
+            "worldX": 342,
+            "worldY": 23
           },
           "type": "TD2.Region"
         }
@@ -19366,8 +19326,8 @@
             "spawnY": 0.5,
             "tilePixels": 64,
             "worldPlaced": true,
-            "worldX": 329,
-            "worldY": 13
+            "worldX": 354,
+            "worldY": 23
           },
           "type": "TD2.Region"
         }
@@ -19477,8 +19437,8 @@
             "spawnY": 0.5,
             "tilePixels": 64,
             "worldPlaced": true,
-            "worldX": 317,
-            "worldY": 20
+            "worldX": 342,
+            "worldY": 30
           },
           "type": "TD2.Region"
         }
@@ -19779,12 +19739,12 @@
       "sourcePrefabId": "",
       "transform": {
         "position": [
-          -4.400000095367432,
-          5.400000095367432,
-          -7.0
+          -4.158666610717773,
+          5.329870223999023,
+          -7.0902099609375
         ],
         "rotationEulerDeg": [
-          43.26430130004883,
+          -1.1444091796875e-05,
           -90.0,
           0.0
         ],
@@ -19922,8 +19882,8 @@
             "spawnY": 0.5,
             "tilePixels": 64,
             "worldPlaced": true,
-            "worldX": 341,
-            "worldY": 13
+            "worldX": 366,
+            "worldY": 23
           },
           "type": "TD2.Region"
         }
@@ -20072,8 +20032,8 @@
             "spawnY": 0.5,
             "tilePixels": 64,
             "worldPlaced": true,
-            "worldX": 353,
-            "worldY": 13
+            "worldX": 378,
+            "worldY": 23
           },
           "type": "TD2.Region"
         }
@@ -20183,8 +20143,8 @@
             "spawnY": 0.5,
             "tilePixels": 64,
             "worldPlaced": true,
-            "worldX": 353,
-            "worldY": 20
+            "worldX": 378,
+            "worldY": 30
           },
           "type": "TD2.Region"
         }
@@ -20376,8 +20336,8 @@
             "spawnY": 0.5,
             "tilePixels": 64,
             "worldPlaced": true,
-            "worldX": 365,
-            "worldY": 20
+            "worldX": 390,
+            "worldY": 30
           },
           "type": "TD2.Region"
         }
@@ -20487,8 +20447,8 @@
             "spawnY": 0.5,
             "tilePixels": 64,
             "worldPlaced": true,
-            "worldX": 365,
-            "worldY": 27
+            "worldX": 390,
+            "worldY": 37
           },
           "type": "TD2.Region"
         }
@@ -20637,8 +20597,8 @@
             "spawnY": 0.5,
             "tilePixels": 64,
             "worldPlaced": true,
-            "worldX": 377,
-            "worldY": 27
+            "worldX": 402,
+            "worldY": 37
           },
           "type": "TD2.Region"
         }
@@ -20748,8 +20708,8 @@
             "spawnY": 0.5,
             "tilePixels": 64,
             "worldPlaced": true,
-            "worldX": 377,
-            "worldY": 20
+            "worldX": 402,
+            "worldY": 30
           },
           "type": "TD2.Region"
         }
@@ -20859,8 +20819,8 @@
             "spawnY": 0.5,
             "tilePixels": 64,
             "worldPlaced": true,
-            "worldX": 377,
-            "worldY": 13
+            "worldX": 402,
+            "worldY": 23
           },
           "type": "TD2.Region"
         }
@@ -21052,8 +21012,8 @@
             "spawnY": 0.5,
             "tilePixels": 64,
             "worldPlaced": true,
-            "worldX": 389,
-            "worldY": 20
+            "worldX": 414,
+            "worldY": 30
           },
           "type": "TD2.Region"
         }
@@ -21202,8 +21162,8 @@
             "spawnY": 0.5,
             "tilePixels": 64,
             "worldPlaced": true,
-            "worldX": 389,
-            "worldY": 13
+            "worldX": 414,
+            "worldY": 23
           },
           "type": "TD2.Region"
         }
@@ -21313,8 +21273,8 @@
             "spawnY": 0.5,
             "tilePixels": 64,
             "worldPlaced": true,
-            "worldX": 401,
-            "worldY": 27
+            "worldX": 426,
+            "worldY": 37
           },
           "type": "TD2.Region"
         }
@@ -21424,8 +21384,8 @@
             "spawnY": 0.5,
             "tilePixels": 64,
             "worldPlaced": true,
-            "worldX": 401,
-            "worldY": 20
+            "worldX": 426,
+            "worldY": 30
           },
           "type": "TD2.Region"
         }
@@ -21535,8 +21495,8 @@
             "spawnY": 0.5,
             "tilePixels": 64,
             "worldPlaced": true,
-            "worldX": 401,
-            "worldY": 13
+            "worldX": 426,
+            "worldY": 23
           },
           "type": "TD2.Region"
         }
@@ -21728,8 +21688,8 @@
             "spawnY": 0.5,
             "tilePixels": 64,
             "worldPlaced": true,
-            "worldX": 413,
-            "worldY": 27
+            "worldX": 438,
+            "worldY": 37
           },
           "type": "TD2.Region"
         }
@@ -22284,8 +22244,8 @@
             "spawnY": 0.5,
             "tilePixels": 64,
             "worldPlaced": true,
-            "worldX": 425,
-            "worldY": 27
+            "worldX": 450,
+            "worldY": 37
           },
           "type": "TD2.Region"
         }
@@ -22434,8 +22394,8 @@
             "spawnY": 0.5,
             "tilePixels": 64,
             "worldPlaced": true,
-            "worldX": 437,
-            "worldY": 27
+            "worldX": 462,
+            "worldY": 37
           },
           "type": "TD2.Region"
         }
@@ -22584,8 +22544,8 @@
             "spawnY": 0.5,
             "tilePixels": 64,
             "worldPlaced": true,
-            "worldX": 462,
-            "worldY": 27
+            "worldX": 487,
+            "worldY": 37
           },
           "type": "TD2.Region"
         }
@@ -22734,8 +22694,8 @@
             "spawnY": 0.5,
             "tilePixels": 64,
             "worldPlaced": true,
-            "worldX": 450,
-            "worldY": 27
+            "worldX": 475,
+            "worldY": 37
           },
           "type": "TD2.Region"
         }
@@ -22845,8 +22805,8 @@
             "spawnY": 0.5,
             "tilePixels": 64,
             "worldPlaced": true,
-            "worldX": 450,
-            "worldY": 388
+            "worldX": 475,
+            "worldY": 398
           },
           "type": "TD2.Region"
         }
@@ -22956,8 +22916,8 @@
             "spawnY": 0.5,
             "tilePixels": 64,
             "worldPlaced": true,
-            "worldX": 511,
-            "worldY": 48
+            "worldX": 536,
+            "worldY": 58
           },
           "type": "TD2.Region"
         }
@@ -23058,7 +23018,7 @@
             },
             "cells": "111111111111100000000001100000000001000000000000000000000000000000000000111111111111",
             "cols": 12,
-            "devices": "fwspikes Spikes 5 5 2 1 dir=Up\n",
+            "devices": "fwspikes Spikes 5 5 2 1\n",
             "entryRegion": false,
             "regionId": "td2.zw",
             "rows": 7,
@@ -23067,8 +23027,8 @@
             "spawnY": 0.5,
             "tilePixels": 64,
             "worldPlaced": true,
-            "worldX": 450,
-            "worldY": 398
+            "worldX": 475,
+            "worldY": 408
           },
           "type": "TD2.Region"
         }
@@ -23164,7 +23124,7 @@
         }
       ],
       "editorFolder": "1 玩法/关卡/7 转柱/布景",
-      "editorLocked": false,
+      "editorLocked": true,
       "editorVisible": true,
       "enabled": true,
       "id": 11357,
@@ -23268,8 +23228,8 @@
             "spawnY": 0.5,
             "tilePixels": 64,
             "worldPlaced": true,
-            "worldX": 498,
-            "worldY": 48
+            "worldX": 523,
+            "worldY": 58
           },
           "type": "TD2.Region"
         }
@@ -23776,8 +23736,8 @@
             "spawnY": 0.5,
             "tilePixels": 64,
             "worldPlaced": true,
-            "worldX": 486,
-            "worldY": 48
+            "worldX": 511,
+            "worldY": 58
           },
           "type": "TD2.Region"
         }
@@ -23926,8 +23886,8 @@
             "spawnY": 0.5,
             "tilePixels": 64,
             "worldPlaced": true,
-            "worldX": 474,
-            "worldY": 48
+            "worldX": 499,
+            "worldY": 58
           },
           "type": "TD2.Region"
         }
@@ -24052,7 +24012,7 @@
             "objectMovesC": "",
             "regionMoves": "",
             "regionMovesC": "",
-            "regionOffsets": "td2.f1b -12 -2 @td2.d1",
+            "regionOffsets": "td2.f1b 500 38 @td2.d1",
             "regionOffsetsC": "",
             "seconds": 7.0,
             "settle": 0.0,
@@ -25521,7 +25481,7 @@
       "sourcePrefabId": "",
       "transform": {
         "position": [
-          7.440000057220459,
+          9.4399995803833,
           0.8960000276565552,
           1.6200000047683716
         ],
@@ -25560,7 +25520,7 @@
       "sourcePrefabId": "",
       "transform": {
         "position": [
-          8.15999984741211,
+          10.15999984741211,
           0.8960000276565552,
           1.6200000047683716
         ],
@@ -25599,7 +25559,7 @@
       "sourcePrefabId": "",
       "transform": {
         "position": [
-          7.800000190734863,
+          9.800000190734863,
           6.25,
           1.6200000047683716
         ],
@@ -25638,8 +25598,8 @@
       "sourcePrefabId": "",
       "transform": {
         "position": [
-          9.84000015258789,
-          1.0255999565124512,
+          11.84000015258789,
+          1.0260000228881836,
           1.6200000047683716
         ],
         "rotationEulerDeg": [
@@ -25677,8 +25637,8 @@
       "sourcePrefabId": "",
       "transform": {
         "position": [
-          10.5600004196167,
-          1.0255999565124512,
+          12.5600004196167,
+          1.0260000228881836,
           1.6200000047683716
         ],
         "rotationEulerDeg": [
@@ -25716,7 +25676,7 @@
       "sourcePrefabId": "",
       "transform": {
         "position": [
-          10.199999809265137,
+          12.199999809265137,
           6.25,
           1.6200000047683716
         ],
@@ -25943,7 +25903,7 @@
             "objectMovesC": "",
             "regionMoves": "",
             "regionMovesC": "",
-            "regionOffsets": "td2.q2 0 7; td2.q2b 0 -7",
+            "regionOffsets": "td2.q2 0 7; td2.q2b 0 -8",
             "regionOffsetsC": "td2.q2 0 -7; td2.q2b 0 7",
             "seconds": 1.2,
             "settle": 0.6,
@@ -26095,7 +26055,7 @@
       "sourcePrefabId": "",
       "transform": {
         "position": [
-          9.520000457763672,
+          11.520000457763672,
           1.4700000286102295,
           0.9200000166893005
         ],
@@ -26288,9 +26248,9 @@
       "sourcePrefabId": "",
       "transform": {
         "position": [
-          2.0169084072113037,
+          1.5768272876739502,
           0.0,
-          3.0751290321350098
+          2.8544881343841553
         ],
         "rotationEulerDeg": [
           0.0,
@@ -26414,7 +26374,7 @@
       "sourcePrefabId": "",
       "transform": {
         "position": [
-          7.433300018310547,
+          9.432999610900879,
           0.9399999976158142,
           1.6200000047683716
         ],
@@ -26605,6 +26565,7 @@
               "id": 11115
             },
             "enabled": true,
+            "endingAssetGuid": "9c62dec10b53453a8f7a803c431d2674",
             "lightning1": {
               "$hikariRef": "SceneObject",
               "id": 11423
@@ -26766,6 +26727,1382 @@
         "rotationEulerDeg": [
           0.0,
           200.0,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "components": [
+        {
+          "id": 1,
+          "properties": {
+            "assetId": "e5a1324c54ef74f37ae319784887244a",
+            "castShadow": true,
+            "receiveShadow": true,
+            "visible": true
+          },
+          "type": "ModelComponent"
+        },
+        {
+          "id": 2,
+          "properties": {
+            "cameraAuto": "",
+            "cameraObject": {
+              "$hikariRef": "SceneObject",
+              "id": 11428
+            },
+            "cells": "000000000000000000000000000000000000000000000000000000000000000000000000111111111111",
+            "cols": 12,
+            "devices": "goal_A Goal 8 3 2 3\n",
+            "entryRegion": false,
+            "regionId": "td2.goaltest",
+            "rows": 7,
+            "screenBrightness": 2.2,
+            "spawnX": 1.1875,
+            "spawnY": 5.125,
+            "tilePixels": 64,
+            "worldPlaced": true,
+            "worldX": 565,
+            "worldY": 10
+          },
+          "type": "TD2.Region"
+        }
+      ],
+      "editorFolder": "1 玩法/关卡/9 测试/电视",
+      "editorLocked": false,
+      "editorVisible": true,
+      "enabled": true,
+      "id": 11427,
+      "name": "区域 td2.goaltest（测试终点）",
+      "parent": null,
+      "sourcePrefabId": "",
+      "transform": {
+        "position": [
+          14.0,
+          0.0,
+          3.5999999046325684
+        ],
+        "rotationEulerDeg": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "scale": [
+          0.800000011920929,
+          0.800000011920929,
+          0.800000011920929
+        ]
+      }
+    },
+    {
+      "components": [
+        {
+          "id": 1,
+          "properties": {
+            "depthOfField": {
+              "enabled": true,
+              "farBlurRadius1080pPixels": 12.0,
+              "farTransition": 2.5,
+              "focusDistance": 2.64,
+              "focusRange": 0.93,
+              "nearBlurRadius1080pPixels": 8.0,
+              "nearTransition": 0.6
+            },
+            "enabled": true,
+            "farClip": 500.0,
+            "nearClip": 0.05,
+            "verticalFovDegrees": 26.0
+          },
+          "type": "CameraComponent"
+        }
+      ],
+      "editorFolder": "1 玩法/关卡/9 测试/机位",
+      "editorLocked": false,
+      "editorVisible": true,
+      "enabled": true,
+      "id": 11428,
+      "name": "区域机位 td2.goaltest",
+      "parent": null,
+      "sourcePrefabId": "",
+      "transform": {
+        "position": [
+          14.180000305175781,
+          0.6200000047683716,
+          5.599999904632568
+        ],
+        "rotationEulerDeg": [
+          6.877600193023682,
+          180.0,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "components": [
+        {
+          "id": 1,
+          "properties": {
+            "bindings": [
+              {
+                "sceneObjectId": {
+                  "$hikariRef": "SceneObject",
+                  "id": 3
+                },
+                "slotName": "Camera"
+              },
+              {
+                "sceneObjectId": {
+                  "$hikariRef": "SceneObject",
+                  "id": 11427
+                },
+                "slotName": "Goal"
+              },
+              {
+                "sceneObjectId": {
+                  "$hikariRef": "SceneObject",
+                  "id": 11428
+                },
+                "slotName": "GoalCamera"
+              }
+            ],
+            "channel": "Cinematics",
+            "channelPolicy": "ReplaceIfHigherOrEqual",
+            "enabled": true,
+            "holdAtEnd": false,
+            "loop": false,
+            "ownerSlotName": "Owner",
+            "playOnStart": false,
+            "playbackRate": 1.0,
+            "priority": 0,
+            "restartIfPlaying": true,
+            "sequenceAssetGuid": "9c62dec10b53453a8f7a803c431d2674",
+            "startTimeSeconds": 0.0,
+            "stopOnDisable": true
+          },
+          "type": "SequencePlayerComponent"
+        }
+      ],
+      "editorFolder": "1 玩法/镜头与演出",
+      "editorLocked": false,
+      "editorVisible": true,
+      "enabled": true,
+      "id": 11429,
+      "name": "TD2 通关演出 预览绑定",
+      "parent": null,
+      "sourcePrefabId": "",
+      "transform": {
+        "position": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "rotationEulerDeg": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "components": [
+        {
+          "id": 1,
+          "properties": {
+            "assetId": "b24723c95921133bed99946ede180b39",
+            "materialSetAssetGuid": ""
+          },
+          "type": "ModelComponent"
+        },
+        {
+          "id": 2,
+          "properties": {
+            "cameraAuto": "5.330 1.904 4.893 9.44 168.00 0.00",
+            "cameraObject": {
+              "$hikariRef": "SceneObject",
+              "id": 11434
+            },
+            "cells": "11111111111110000000000001000000000000111111111000011111111100000111111110000011111111111111111111111111",
+            "cols": 13,
+            "devices": "k1cp Checkpoint 1 2 1 1\nk1s Spikes 4 2 2 1\nk1hold Decal 8 1 4 2 variant=spaceHold\n",
+            "entryRegion": false,
+            "regionId": "td2.k1",
+            "rows": 8,
+            "screenBrightness": 2.200000047683716,
+            "spawnX": 1.1875,
+            "spawnY": 2.125,
+            "stageAnchor": "",
+            "tilePixels": 64,
+            "worldPlaced": true,
+            "worldX": 34,
+            "worldY": 9
+          },
+          "type": "TD2.Region"
+        }
+      ],
+      "editorFolder": "1 玩法/关卡/0.5 交换入门/电视",
+      "editorLocked": false,
+      "editorVisible": true,
+      "enabled": true,
+      "id": 11430,
+      "name": "区域 td2.k1",
+      "parent": null,
+      "sourcePrefabId": "",
+      "transform": {
+        "position": [
+          5.949999809265137,
+          1.3819046020507813,
+          2.3499999046325684
+        ],
+        "rotationEulerDeg": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "scale": [
+          0.6800000071525574,
+          0.6800000071525574,
+          0.6800000071525574
+        ]
+      }
+    },
+    {
+      "components": [
+        {
+          "id": 1,
+          "properties": {
+            "assetId": "e5a1324c54ef74f37ae319784887244a",
+            "materialSetAssetGuid": ""
+          },
+          "type": "ModelComponent"
+        },
+        {
+          "id": 2,
+          "properties": {
+            "cameraAuto": "6.445 2.160 5.360 6.45 168.00 0.00",
+            "cameraObject": {
+              "$hikariRef": "SceneObject",
+              "id": 11435
+            },
+            "cells": "111111111111100000000001000000000000000000000000111111111111111111111111111111111111",
+            "cols": 12,
+            "devices": "k2cp Checkpoint 1 3 1 1\nk2s Spikes 5 3 2 1\n",
+            "entryRegion": false,
+            "regionId": "td2.k2",
+            "rows": 7,
+            "screenBrightness": 2.200000047683716,
+            "spawnX": 1.1875,
+            "spawnY": 3.125,
+            "stageAnchor": "",
+            "tilePixels": 64,
+            "worldPlaced": true,
+            "worldX": 47,
+            "worldY": 11
+          },
+          "type": "TD2.Region"
+        }
+      ],
+      "editorFolder": "1 玩法/关卡/0.5 交换入门/电视",
+      "editorLocked": false,
+      "editorVisible": true,
+      "enabled": true,
+      "id": 11431,
+      "name": "区域 td2.k2",
+      "parent": null,
+      "sourcePrefabId": "",
+      "transform": {
+        "position": [
+          7.300000190734863,
+          1.5099999904632568,
+          1.6200000047683716
+        ],
+        "rotationEulerDeg": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "components": [
+        {
+          "id": 1,
+          "properties": {
+            "assetId": "28aa6fabccdc0527b4833a67e3818076",
+            "materialSetAssetGuid": ""
+          },
+          "type": "ModelComponent"
+        },
+        {
+          "id": 2,
+          "properties": {
+            "cameraAuto": "7.745 2.080 4.840 6.45 168.00 0.00",
+            "cameraObject": {
+              "$hikariRef": "SceneObject",
+              "id": 11447
+            },
+            "cells": "111111111111100000000001100000000001100000000001000000000001000000000001111111111111",
+            "cols": 12,
+            "devices": "k3hold Decal 3 1 4 2 variant=spaceHold\nk3plate Plate 8 5 2 1 targets=mech/k2drop\n",
+            "entryRegion": false,
+            "regionId": "td2.k3",
+            "rows": 7,
+            "screenBrightness": 2.200000047683716,
+            "spawnX": 1.1875,
+            "spawnY": 5.125,
+            "stageAnchor": "",
+            "tilePixels": 64,
+            "worldPlaced": true,
+            "worldX": 59,
+            "worldY": 9
+          },
+          "type": "TD2.Region"
+        }
+      ],
+      "editorFolder": "1 玩法/关卡/0.5 交换入门/电视",
+      "editorLocked": false,
+      "editorVisible": true,
+      "enabled": true,
+      "id": 11432,
+      "name": "区域 td2.k3",
+      "parent": null,
+      "sourcePrefabId": "",
+      "transform": {
+        "position": [
+          8.600000381469727,
+          1.4299999475479126,
+          1.100000023841858
+        ],
+        "rotationEulerDeg": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "components": [
+        {
+          "id": 1,
+          "properties": {
+            "assetId": "7b636e5a9a3f788d8e8fb95076c21d91",
+            "castShadow": true,
+            "receiveShadow": true,
+            "visible": true
+          },
+          "type": "ModelComponent"
+        }
+      ],
+      "editorFolder": "1 玩法/关卡/0.5 交换入门/布景",
+      "editorLocked": false,
+      "editorVisible": true,
+      "enabled": true,
+      "id": 11433,
+      "name": "AV 推车 K1",
+      "parent": null,
+      "sourcePrefabId": "",
+      "transform": {
+        "position": [
+          5.949999809265137,
+          0.0,
+          2.3499999046325684
+        ],
+        "rotationEulerDeg": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "components": [
+        {
+          "id": 1,
+          "properties": {
+            "depthOfField": {
+              "enabled": true,
+              "farBlurRadius1080pPixels": 12.0,
+              "farTransition": 2.5,
+              "focusDistance": 3.1500000953674316,
+              "focusRange": 1.2430000305175781,
+              "nearBlurRadius1080pPixels": 8.0,
+              "nearTransition": 0.6000000238418579
+            },
+            "enabled": true,
+            "farClip": 2000.0,
+            "nearClip": 0.10000000149011612,
+            "verticalFovDegrees": 26.0
+          },
+          "type": "CameraComponent"
+        }
+      ],
+      "editorFolder": "1 玩法/关卡/0.5 交换入门/机位",
+      "editorLocked": false,
+      "editorVisible": true,
+      "enabled": true,
+      "id": 11434,
+      "name": "区域カメラ td2.k1",
+      "parent": null,
+      "sourcePrefabId": "",
+      "transform": {
+        "position": [
+          5.900000095367432,
+          1.9800000190734863,
+          5.5
+        ],
+        "rotationEulerDeg": [
+          5.690000057220459,
+          174.63999938964844,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "components": [
+        {
+          "id": 1,
+          "properties": {
+            "depthOfField": {
+              "enabled": true,
+              "farBlurRadius1080pPixels": 12.0,
+              "farTransition": 2.5,
+              "focusDistance": 3.75,
+              "focusRange": 1.2430000305175781,
+              "nearBlurRadius1080pPixels": 8.0,
+              "nearTransition": 0.6000000238418579
+            },
+            "enabled": true,
+            "farClip": 2000.0,
+            "nearClip": 0.10000000149011612,
+            "verticalFovDegrees": 26.0
+          },
+          "type": "CameraComponent"
+        }
+      ],
+      "editorFolder": "1 玩法/关卡/0.5 交换入门/机位",
+      "editorLocked": false,
+      "editorVisible": true,
+      "enabled": true,
+      "id": 11435,
+      "name": "区域カメラ td2.k2",
+      "parent": null,
+      "sourcePrefabId": "",
+      "transform": {
+        "position": [
+          6.444499969482422,
+          2.1600000858306885,
+          5.360099792480469
+        ],
+        "rotationEulerDeg": [
+          6.452000141143799,
+          168.0,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "components": [
+        {
+          "id": 1,
+          "properties": {
+            "balance": false,
+            "cameraLift": 0.0,
+            "cameraPull": 0.0,
+            "dwell": 0.0,
+            "mechanismId": "k2drop",
+            "objectDeltas": "11431 0 -1.43 0 0 0 0; 11445 0 -1.43 0 0 0 0; 11446 0 -1.43 0 0 0 0",
+            "objectDeltasC": "",
+            "parts": "",
+            "recipe": "",
+            "regionOffsets": "td2.k2 0 7",
+            "regionOffsetsC": "",
+            "seconds": 1.600000023841858,
+            "settle": 0.0,
+            "toggle": false
+          },
+          "type": "TD2.Mechanism"
+        }
+      ],
+      "editorFolder": "1 玩法/关卡/0.5 交换入门/机构",
+      "editorLocked": false,
+      "editorVisible": true,
+      "enabled": true,
+      "id": 11441,
+      "name": "机构 k2drop",
+      "parent": null,
+      "sourcePrefabId": "",
+      "transform": {
+        "position": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "rotationEulerDeg": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "components": [
+        {
+          "id": 1,
+          "properties": {
+            "assetId": "b9cce14e5ce97dde1317877582be2626",
+            "castShadow": true,
+            "receiveShadow": true,
+            "visible": true
+          },
+          "type": "ModelComponent"
+        }
+      ],
+      "editorFolder": "1 玩法/关卡/0.5 交换入门/布景",
+      "editorLocked": false,
+      "editorVisible": true,
+      "enabled": true,
+      "id": 11442,
+      "name": "货架端框 K",
+      "parent": null,
+      "sourcePrefabId": "",
+      "transform": {
+        "position": [
+          6.599999904632568,
+          0.0,
+          1.0
+        ],
+        "rotationEulerDeg": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "components": [
+        {
+          "id": 1,
+          "properties": {
+            "assetId": "cc23db686b3eaebc048c2629bb538a10",
+            "castShadow": true,
+            "receiveShadow": true,
+            "visible": true
+          },
+          "type": "ModelComponent"
+        }
+      ],
+      "editorFolder": "1 玩法/关卡/0.5 交换入门/布景",
+      "editorLocked": true,
+      "editorVisible": true,
+      "enabled": true,
+      "id": 11443,
+      "name": "货架 窄跨 K",
+      "parent": null,
+      "sourcePrefabId": "",
+      "transform": {
+        "position": [
+          7.300000190734863,
+          0.0,
+          1.0
+        ],
+        "rotationEulerDeg": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "scale": [
+          0.583299994468689,
+          1.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "components": [
+        {
+          "id": 1,
+          "properties": {
+            "assetId": "f6cc2855a981cc5c2f42c87370107aa2",
+            "castShadow": true,
+            "receiveShadow": true,
+            "visible": true
+          },
+          "type": "ModelComponent"
+        }
+      ],
+      "editorFolder": "1 玩法/关卡/0.5 交换入门/布景",
+      "editorLocked": false,
+      "editorVisible": true,
+      "enabled": true,
+      "id": 11444,
+      "name": "卷扬箱 K2",
+      "parent": null,
+      "sourcePrefabId": "",
+      "transform": {
+        "position": [
+          7.300000190734863,
+          6.25,
+          1.6200000047683716
+        ],
+        "rotationEulerDeg": [
+          0.0,
+          180.0,
+          0.0
+        ],
+        "scale": [
+          0.44999998807907104,
+          1.2000000476837158,
+          1.0
+        ]
+      }
+    },
+    {
+      "components": [
+        {
+          "id": 1,
+          "properties": {
+            "assetId": "4385e0e8ee74d06c5da7f2a12f61ec22",
+            "castShadow": true,
+            "receiveShadow": true,
+            "visible": true
+          },
+          "type": "ModelComponent"
+        }
+      ],
+      "editorFolder": "1 玩法/关卡/0.5 交换入门/布景",
+      "editorLocked": false,
+      "editorVisible": true,
+      "enabled": true,
+      "id": 11445,
+      "name": "吊链 K2 1",
+      "parent": null,
+      "sourcePrefabId": "",
+      "transform": {
+        "position": [
+          6.940000057220459,
+          2.3259999752044678,
+          1.6200000047683716
+        ],
+        "rotationEulerDeg": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          6.104000091552734,
+          1.0
+        ]
+      }
+    },
+    {
+      "components": [
+        {
+          "id": 1,
+          "properties": {
+            "assetId": "4385e0e8ee74d06c5da7f2a12f61ec22",
+            "castShadow": true,
+            "receiveShadow": true,
+            "visible": true
+          },
+          "type": "ModelComponent"
+        }
+      ],
+      "editorFolder": "1 玩法/关卡/0.5 交换入门/布景",
+      "editorLocked": false,
+      "editorVisible": true,
+      "enabled": true,
+      "id": 11446,
+      "name": "吊链 K2 2",
+      "parent": null,
+      "sourcePrefabId": "",
+      "transform": {
+        "position": [
+          7.659999847412109,
+          2.3259999752044678,
+          1.6200000047683716
+        ],
+        "rotationEulerDeg": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          6.104000091552734,
+          1.0
+        ]
+      }
+    },
+    {
+      "components": [
+        {
+          "id": 1,
+          "properties": {
+            "depthOfField": {
+              "enabled": true,
+              "farBlurRadius1080pPixels": 12.0,
+              "farTransition": 2.5,
+              "focusDistance": 3.950000047683716,
+              "focusRange": 1.2430000305175781,
+              "nearBlurRadius1080pPixels": 8.0,
+              "nearTransition": 0.6000000238418579
+            },
+            "enabled": true,
+            "farClip": 2000.0,
+            "nearClip": 0.10000000149011612,
+            "verticalFovDegrees": 26.0
+          },
+          "type": "CameraComponent"
+        }
+      ],
+      "editorFolder": "1 玩法/关卡/0.5 交换入门/机位",
+      "editorLocked": false,
+      "editorVisible": true,
+      "enabled": true,
+      "id": 11447,
+      "name": "区域カメラ td2.k3",
+      "parent": null,
+      "sourcePrefabId": "",
+      "transform": {
+        "position": [
+          8.25,
+          1.75,
+          5.300000190734863
+        ],
+        "rotationEulerDeg": [
+          6.25,
+          182.7899932861328,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "components": [
+        {
+          "id": 1,
+          "properties": {
+            "aimFollow": 0.10000000149011612,
+            "aimSeconds": 1.100000023841858,
+            "bank": 1.0,
+            "breathe": 0.009999999776482582,
+            "breatheAngle": 0.15000000596046448,
+            "cameraLift": 0.25,
+            "followX": 0.20000000298023224,
+            "followY": 0.30000001192092896,
+            "frameFill": 0.30000001192092896,
+            "handheld": 0.30000001192092896,
+            "lookAhead": 0.30000001192092896,
+            "lookCarry": 0.550000011920929,
+            "maxPitch": 1.5,
+            "maxYaw": 1.5,
+            "orbitDegrees": 12.0,
+            "positionSeconds": 0.8999999761581421,
+            "rangeX": 0.20000000298023224,
+            "rangeY": 0.3499999940395355,
+            "regionSeconds": 1.2000000476837158,
+            "regions": "td2.k1,td2.k2,td2.k3"
+          },
+          "type": "TD2.CameraArea"
+        }
+      ],
+      "editorFolder": "1 玩法/关卡/0.5 交换入门/机位",
+      "editorLocked": false,
+      "editorVisible": true,
+      "enabled": true,
+      "id": 11448,
+      "name": "镜头大区域 0.5 交换入门",
+      "parent": null,
+      "sourcePrefabId": "",
+      "transform": {
+        "position": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "rotationEulerDeg": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "components": [
+        {
+          "id": 1,
+          "properties": {
+            "assetId": "58cb0d8de92b47ffa9a53005bcd71955",
+            "castShadow": true,
+            "receiveShadow": true,
+            "visible": true
+          },
+          "type": "ModelComponent"
+        },
+        {
+          "id": 2,
+          "properties": {
+            "litModel": "5ceec717b6334b88bd8c43bf75deb8da",
+            "plate": "td2.k3/k3plate",
+            "target": "mech/k2drop"
+          },
+          "type": "TD2.SignalCable"
+        }
+      ],
+      "editorFolder": "1 玩法/关卡/0.5 交换入门/布景",
+      "editorLocked": false,
+      "editorVisible": true,
+      "enabled": true,
+      "id": 11449,
+      "name": "信号线 K3→K2 继ぎ目",
+      "parent": null,
+      "sourcePrefabId": "",
+      "transform": {
+        "position": [
+          8.300000190734863,
+          1.4500000476837158,
+          0.41999998688697815
+        ],
+        "rotationEulerDeg": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "components": [
+        {
+          "id": 1,
+          "properties": {
+            "assetId": "f44d0d50355a4ab497fe58a8ac7455a0",
+            "castShadow": true,
+            "receiveShadow": true,
+            "visible": true
+          },
+          "type": "ModelComponent"
+        },
+        {
+          "id": 2,
+          "properties": {
+            "litModel": "9c1ebe2d625143abb7defb769e3c7ba2",
+            "plate": "td2.k3/k3plate",
+            "target": "mech/k2drop"
+          },
+          "type": "TD2.SignalCable"
+        }
+      ],
+      "editorFolder": "1 玩法/关卡/0.5 交换入门/布景",
+      "editorLocked": false,
+      "editorVisible": true,
+      "enabled": true,
+      "id": 11450,
+      "name": "信号线 K3→K2",
+      "parent": null,
+      "sourcePrefabId": "",
+      "transform": {
+        "position": [
+          8.300000190734863,
+          1.4500000476837158,
+          0.41999998688697815
+        ],
+        "rotationEulerDeg": [
+          0.0,
+          -90.0,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.6200000047683716
+        ]
+      }
+    },
+    {
+      "components": [
+        {
+          "id": 1,
+          "properties": {
+            "assetId": "58cb0d8de92b47ffa9a53005bcd71955",
+            "castShadow": true,
+            "receiveShadow": true,
+            "visible": true
+          },
+          "type": "ModelComponent"
+        },
+        {
+          "id": 2,
+          "properties": {
+            "litModel": "5ceec717b6334b88bd8c43bf75deb8da",
+            "plate": "td2.k3/k3plate",
+            "target": "mech/k2drop"
+          },
+          "type": "TD2.SignalCable"
+        }
+      ],
+      "editorFolder": "1 玩法/关卡/0.5 交换入门/布景",
+      "editorLocked": false,
+      "editorVisible": true,
+      "enabled": true,
+      "id": 11451,
+      "name": "信号线 K3→K2 继ぎ目",
+      "parent": null,
+      "sourcePrefabId": "",
+      "transform": {
+        "position": [
+          6.679999828338623,
+          1.4500000476837158,
+          0.41999998688697815
+        ],
+        "rotationEulerDeg": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "components": [
+        {
+          "id": 1,
+          "properties": {
+            "assetId": "f44d0d50355a4ab497fe58a8ac7455a0",
+            "castShadow": true,
+            "receiveShadow": true,
+            "visible": true
+          },
+          "type": "ModelComponent"
+        },
+        {
+          "id": 2,
+          "properties": {
+            "litModel": "9c1ebe2d625143abb7defb769e3c7ba2",
+            "plate": "td2.k3/k3plate",
+            "target": "mech/k2drop"
+          },
+          "type": "TD2.SignalCable"
+        }
+      ],
+      "editorFolder": "1 玩法/关卡/0.5 交换入门/布景",
+      "editorLocked": false,
+      "editorVisible": true,
+      "enabled": true,
+      "id": 11452,
+      "name": "信号线 K3→K2",
+      "parent": null,
+      "sourcePrefabId": "",
+      "transform": {
+        "position": [
+          6.679999828338623,
+          1.4500000476837158,
+          0.41999998688697815
+        ],
+        "rotationEulerDeg": [
+          -90.0,
+          0.0,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          4.949999809265137
+        ]
+      }
+    },
+    {
+      "components": [
+        {
+          "id": 1,
+          "properties": {
+            "assetId": "58cb0d8de92b47ffa9a53005bcd71955",
+            "castShadow": true,
+            "receiveShadow": true,
+            "visible": true
+          },
+          "type": "ModelComponent"
+        },
+        {
+          "id": 2,
+          "properties": {
+            "litModel": "5ceec717b6334b88bd8c43bf75deb8da",
+            "plate": "td2.k3/k3plate",
+            "target": "mech/k2drop"
+          },
+          "type": "TD2.SignalCable"
+        }
+      ],
+      "editorFolder": "1 玩法/关卡/0.5 交换入门/布景",
+      "editorLocked": false,
+      "editorVisible": true,
+      "enabled": true,
+      "id": 11453,
+      "name": "信号线 K3→K2 继ぎ目",
+      "parent": null,
+      "sourcePrefabId": "",
+      "transform": {
+        "position": [
+          6.679999828338623,
+          6.400000095367432,
+          0.41999998688697815
+        ],
+        "rotationEulerDeg": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "components": [
+        {
+          "id": 1,
+          "properties": {
+            "assetId": "f44d0d50355a4ab497fe58a8ac7455a0",
+            "castShadow": true,
+            "receiveShadow": true,
+            "visible": true
+          },
+          "type": "ModelComponent"
+        },
+        {
+          "id": 2,
+          "properties": {
+            "litModel": "9c1ebe2d625143abb7defb769e3c7ba2",
+            "plate": "td2.k3/k3plate",
+            "target": "mech/k2drop"
+          },
+          "type": "TD2.SignalCable"
+        }
+      ],
+      "editorFolder": "1 玩法/关卡/0.5 交换入门/布景",
+      "editorLocked": false,
+      "editorVisible": true,
+      "enabled": true,
+      "id": 11454,
+      "name": "信号线 K3→K2",
+      "parent": null,
+      "sourcePrefabId": "",
+      "transform": {
+        "position": [
+          6.679999828338623,
+          6.400000095367432,
+          0.41999998688697815
+        ],
+        "rotationEulerDeg": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.2000000476837158
+        ]
+      }
+    },
+    {
+      "components": [
+        {
+          "id": 1,
+          "properties": {
+            "assetId": "58cb0d8de92b47ffa9a53005bcd71955",
+            "castShadow": true,
+            "receiveShadow": true,
+            "visible": true
+          },
+          "type": "ModelComponent"
+        },
+        {
+          "id": 2,
+          "properties": {
+            "litModel": "5ceec717b6334b88bd8c43bf75deb8da",
+            "plate": "td2.k3/k3plate",
+            "target": "mech/k2drop"
+          },
+          "type": "TD2.SignalCable"
+        }
+      ],
+      "editorFolder": "1 玩法/关卡/0.5 交换入门/布景",
+      "editorLocked": false,
+      "editorVisible": true,
+      "enabled": true,
+      "id": 11455,
+      "name": "信号线 K3→K2 继ぎ目",
+      "parent": null,
+      "sourcePrefabId": "",
+      "transform": {
+        "position": [
+          6.679999828338623,
+          6.400000095367432,
+          1.6200000047683716
+        ],
+        "rotationEulerDeg": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "components": [
+        {
+          "id": 1,
+          "properties": {
+            "assetId": "f44d0d50355a4ab497fe58a8ac7455a0",
+            "castShadow": true,
+            "receiveShadow": true,
+            "visible": true
+          },
+          "type": "ModelComponent"
+        },
+        {
+          "id": 2,
+          "properties": {
+            "litModel": "9c1ebe2d625143abb7defb769e3c7ba2",
+            "plate": "td2.k3/k3plate",
+            "target": "mech/k2drop"
+          },
+          "type": "TD2.SignalCable"
+        }
+      ],
+      "editorFolder": "1 玩法/关卡/0.5 交换入门/布景",
+      "editorLocked": false,
+      "editorVisible": true,
+      "enabled": true,
+      "id": 11456,
+      "name": "信号线 K3→K2",
+      "parent": null,
+      "sourcePrefabId": "",
+      "transform": {
+        "position": [
+          6.679999828338623,
+          6.400000095367432,
+          1.6200000047683716
+        ],
+        "rotationEulerDeg": [
+          0.0,
+          90.0,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          0.18000000715255737
+        ]
+      }
+    },
+    {
+      "components": [
+        {
+          "id": 1,
+          "properties": {
+            "assetId": "58cb0d8de92b47ffa9a53005bcd71955",
+            "castShadow": true,
+            "receiveShadow": true,
+            "visible": true
+          },
+          "type": "ModelComponent"
+        },
+        {
+          "id": 2,
+          "properties": {
+            "litModel": "5ceec717b6334b88bd8c43bf75deb8da",
+            "plate": "td2.k3/k3plate",
+            "target": "mech/k2drop"
+          },
+          "type": "TD2.SignalCable"
+        }
+      ],
+      "editorFolder": "1 玩法/关卡/0.5 交换入门/布景",
+      "editorLocked": false,
+      "editorVisible": true,
+      "enabled": true,
+      "id": 11457,
+      "name": "信号线 K3→K2 继ぎ目",
+      "parent": null,
+      "sourcePrefabId": "",
+      "transform": {
+        "position": [
+          6.860000133514404,
+          6.400000095367432,
+          1.6200000047683716
+        ],
+        "rotationEulerDeg": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "components": [
+        {
+          "id": 1,
+          "properties": {
+            "cameraObject": {
+              "$hikariRef": "SceneObject",
+              "id": 3
+            },
+            "keepAuthored": true,
+            "regionA": "td2.d3",
+            "regionB": "td2.k1",
+            "seconds": 2.200000047683716,
+            "sequenceAssetGuid": "32446114bd7197a945c3cb6fd8fa00e0",
+            "sequenceSlotName": "Camera",
+            "speed": 0.4544999897480011,
+            "style": "auto"
+          },
+          "type": "TD2.RegionSequence"
+        }
+      ],
+      "editorFolder": "1 玩法/关卡/演出",
+      "editorLocked": false,
+      "editorVisible": true,
+      "enabled": true,
+      "id": 11458,
+      "name": "切换 d3 ↔ k1",
+      "parent": null,
+      "sourcePrefabId": "",
+      "transform": {
+        "position": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "rotationEulerDeg": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ]
+      }
+    },
+    {
+      "components": [
+        {
+          "id": 1,
+          "properties": {
+            "cameraObject": {
+              "$hikariRef": "SceneObject",
+              "id": 3
+            },
+            "keepAuthored": true,
+            "regionA": "td2.k2",
+            "regionB": "td2.r1",
+            "seconds": 2.0,
+            "sequenceAssetGuid": "9dd1c8dc5614aa44937d787f38251339",
+            "sequenceSlotName": "Camera",
+            "speed": 0.5,
+            "style": "auto"
+          },
+          "type": "TD2.RegionSequence"
+        }
+      ],
+      "editorFolder": "1 玩法/关卡/演出",
+      "editorLocked": false,
+      "editorVisible": true,
+      "enabled": true,
+      "id": 11459,
+      "name": "切换 k2 ↔ r1",
+      "parent": null,
+      "sourcePrefabId": "",
+      "transform": {
+        "position": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "rotationEulerDeg": [
+          0.0,
+          0.0,
           0.0
         ],
         "scale": [
