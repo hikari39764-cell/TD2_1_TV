@@ -11,9 +11,21 @@
 namespace TD2 {
 namespace {
 // 診断用（環境変数 TD2_TEST_ENTRY に区域 ID）：オープニングを飛ばし、その区域の出生点から始める（無窓の検証用）。
+// 「区域 ID@x,y」と書けば区域内のその位置から始める（試遊の記録を同じ入口から流し直す時）。
+const std::string& TestEntryText() {
+    static const std::string text = [] { const char* value = std::getenv("TD2_TEST_ENTRY"); return std::string(value ? value : ""); }();
+    return text;
+}
 const char* TestEntryRegion() {
-    static const char* region = std::getenv("TD2_TEST_ENTRY");
-    return region;
+    static const std::string region = TestEntryText().substr(0, TestEntryText().find('@'));
+    return region.empty() ? nullptr : region.c_str();
+}
+std::optional<Rules::Vec2> TestEntrySpawn() {
+    const auto at = TestEntryText().find('@');
+    if (at == std::string::npos) { return std::nullopt; }
+    double x = 0, y = 0;
+    if (std::sscanf(TestEntryText().c_str() + at + 1, "%lf,%lf", &x, &y) != 2) { return std::nullopt; }
+    return Rules::Vec2{x, y};
 }
 }
 
@@ -34,6 +46,7 @@ void GameSession::OnSceneEntered(HIKARI::WorldView& world) {
         if (!spawn || !entry.userData) { std::fprintf(stderr, "[TD2 configuration] invalid test spawn\n"); return; }
         previewEntryObject_ = entry.userData; previewSpawn_ = Rules::Vec2{spawn->x, spawn->y};
     }
+    if (!previewSpawn_ && TestEntryRegion()) { previewSpawn_ = TestEntrySpawn(); }
     sceneActive_ = true; SyncRegions(world);
 }
 

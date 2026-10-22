@@ -24383,7 +24383,7 @@
             "orthographicHeight": 10.0,
             "pixelSnap": false,
             "pixelsPerUnit": 64.0,
-            "verticalFovDegrees": 19.0
+            "verticalFovDegrees": 24.0
           },
           "type": "CameraComponent"
         }

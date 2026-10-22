@@ -25,6 +25,26 @@ constexpr double kFarVisible = .0002, kFarMaxRows = 128;
 // 遠くの組の細かさ（1 マスの texel）：足しても kFarGoodTexels を保てる組が無ければ空いた組に分ける。画面ごとに要る細かさは
 // 画面上の画素だが、kFarMinTexels より粗くはしない。
 constexpr double kFarGoodTexels = 20, kFarMinTexels = 8;
+// 窓の目が追う速さ（臨界減衰のばねの時間）。速さも途切れないので、行き先が跳んでも画面の中の角度は滑らかに回り始めて止まる。
+constexpr double kEyeSeconds = .45;
+// 鮮明の窓が表せる目の向きの正接（横）。大区域の窓で見ている角度をそのまま写せる余白を取る（足りないと部屋を移る瞬間に跳ぶ）。
+constexpr double kSharpEyeTan = .3;
+// 臨界減衰のばね（Unity の SmoothDamp と同じ近似）。dt が 0 なら動かさない。
+void Spring(double& value, double& velocity, double target, double seconds, double dt) {
+    if (dt <= 0) { return; }
+    const double omega = 2.0 / seconds, x = omega * dt;
+    const double decay = 1.0 / (1.0 + x + .48 * x * x + .235 * x * x * x);
+    const double change = value - target, temp = (velocity + omega * change) * dt;
+    velocity = (velocity - omega * temp) * decay;
+    value = target + (change + temp) * decay;
+}
+// 余白の端で緩やかに止める。7 割まではそのまま（ほかの窓と同じ角度を写す）、そこから先だけ縮める。
+double SoftLimit(double value, double limit) {
+    if (limit <= 0) { return 0.0; }
+    const double knee = limit * .7, size = std::abs(value);
+    if (size <= knee) { return value; }
+    return std::copysign(knee + (limit - knee) * std::tanh((size - knee) / (limit - knee)), value);
+}
 // 窓のキャプチャの大きさを決める。行数はカメラの正投影の高さ（マス）で固定し、列数は縦横比から求め直す。
 // 2048 texel を超える時は精細度を下げる。
 void FitWindow(double rows, double wantedCols, int density, double& outCols, int& outDensity, uint32_t& width, uint32_t& height) {
@@ -84,9 +104,8 @@ void Screen3DStage::AimWindow(Window& window, const std::array<double, 4>& box, 
     const double dx = offset[0], dy = offset[1];
     // 透視の窓：余白を取った窓の中心（目の真正面）をその目の位置へずらす。正面の面（判定の面）はどこから見ても
     // 切り出しにぴったり写り、奥ほど目の側へずれて見える。余白の端へ近づくほど緩やかに止める。
-    const auto soft = [](double value, double limit) { return limit > 0 ? limit * std::tanh(value / limit) : 0.0; };
-    const double ox = soft(dx, (window.cols - w) * .5 - .25);
-    const double oy = soft(dy, (window.rows - h) * .5 - .25);
+    const double ox = SoftLimit(dx, (window.cols - w) * .5 - .25);
+    const double oy = SoftLimit(dy, (window.rows - h) * .5 - .25);
     // 切り出しの左上をゲーム画素の格子に合わせる（ピクセルの描き方で絵が揺らがない）。
     const double pixel = double((std::max)(1, window.density / kGamePixelsPerCell)) / window.density;
     const double left = std::round((window.cols * .5 - w * .5 - ox) / pixel) * pixel;
@@ -101,13 +120,13 @@ void Screen3DStage::PlaceWindows(const std::vector<const StageRoom*>& rooms, con
     for (const auto* room : rooms) { if (room->placed && room->regionId == frame.activeRegion) { active = room; } }
     if (!active) { for (const auto* room : rooms) { if (room->placed) { active = room; break; } } }
     if (!active) { return; }
-    // 大区域が替わったら遠くの組を選び直す。同じ大区域の間は遠くの組に入れた部屋を外さない（部屋の出し入れのたびに
-    // 部品と画面の割り当てを作り直すと、エンジンが GPU のシーンを作り直して画が止まる）。大区域の窓の目は替わっても
-    // そのまま新しい行き先へ移す（跨ぐ瞬間に画面の角度が跳ばない）。
+    // 大区域が替わったら、写った部屋の記録だけを忘れる（前の大区域で写った部屋をいつまでも遠くの窓に残さない）。
+    // 同じ大区域の間は遠くの組に入れた部屋を外さない（部屋の出し入れのたびに部品と画面の割り当てを作り直すと、エンジンが
+    // GPU のシーンを作り直して画が止まる）。どの組に入れたかと組の目は大区域を跨いでも残す（選び直すと、跨ぐ瞬間に
+    // 背景の画面が別の組へ移って角度がそろって跳ぶ）。
     const std::string area = frame.areaRooms.empty() ? frame.activeRegion : frame.areaRooms.front();
-    if (area != groupArea_) {
-        groupArea_ = area; groupEyeValid_ = {}; farSeen_.clear(); farGroup_.clear(); farNeed_.clear();
-    }
+    groupEyeReset_ = area != groupArea_;
+    if (area != groupArea_) { groupArea_ = area; farSeen_.clear(); }
     // 大区域：操作中の部屋の周りの同じカメラの大区域の部屋。
     PlaceArea(rooms, active, frame);
     // 鮮明：操作中の部屋だけを中央に撮る。
@@ -123,9 +142,17 @@ void Screen3DStage::PlaceWindows(const std::vector<const StageRoom*>& rooms, con
             FitWindow(window.rows, maxCols, kSharpTexelsPerCell, window.cols, window.density, window.width, window.height);
             window.x = active->x + r.cols * .5 - window.cols * .5; window.y = active->y + r.rows * .5 - window.rows * .5;
         } else {
-            window.rows = std::ceil(window.rows * kLensMargin);
-            FitWindow(window.rows, maxCols * kLensMargin, kSharpTexelsPerCell, window.cols, window.density, window.width, window.height);
-            window.distance = window.rows * projection_.scale * .5 / std::tan(lens.verticalFov * .5);
+            // 目は大区域の窓と同じ距離に置く（窓を移っても奥行きの見え方が同じ）。行数はその距離で透視カメラの画角が覆う高さ、
+            // 列数は大区域の窓で見ている横の角度（kSharpEyeTan まで）をそのまま写せる幅。
+            const double tanHalf = std::tan(lens.verticalFov * .5);
+            const auto& areaWindow = WindowOf(ViewKind::Area);
+            double rows = std::ceil(window.rows * kLensMargin);
+            if (areaWindow.valid && areaWindow.lens >= 0) { rows = (std::max)(rows, std::ceil(2 * areaWindow.distance / projection_.scale * tanHalf)); }
+            window.rows = rows;
+            const double eyeReach = rows * .5 / tanHalf;
+            FitWindow(window.rows, (std::max)(maxCols * kLensMargin, maxCols + 2 * (eyeReach * kSharpEyeTan + .25)), kSharpTexelsPerCell,
+                      window.cols, window.density, window.width, window.height);
+            window.distance = window.rows * projection_.scale * .5 / tanHalf;
             window.lens = static_cast<int>(ViewKind::Sharp);
             // 目：大区域の窓があればその目から見た角度で撮る（同じ大区域のテレビが一つの目で舞台を見るので、テレビが窓を
             // 移っても角度が跳ばない）。回された部屋と大区域の窓が無い時は、部屋を外のカメラが見る角度そのもの。
@@ -150,6 +177,7 @@ void Screen3DStage::PlaceArea(const std::vector<const StageRoom*>& rooms, const 
     auto& window = windows_[index];
     window = {};
     members_[index].clear();
+    areaClampMoved_ = 0;
     // 候補：同じカメラの大区域の部屋と、世界地図でそれに接する部屋（次の大区域の入口など）、画に写っているほかの部屋
     // （大区域を移った直後の前の大区域の部屋など）。預け場所の部屋は除く。収まるかどうかは下で目立つ順に決める。
     const auto parked = [](const StageRoom* room) { return room->x <= -50000 || room->y <= -50000; };
@@ -202,19 +230,44 @@ void Screen3DStage::PlaceArea(const std::vector<const StageRoom*>& rooms, const 
         wanted.push_back(room); box = next;
     }
     // 目＝窓の中心（地図のマス。y は下向き。透視カメラは窓の中心の正面にいる）。行き先は、組を外のカメラと同じ角度で
-    // 見る位置（EyeOffset）を、組が窓に収まる範囲へ寄せた所。目は行き先へ視差と同じ速さで移す。組が替わって外接が
+    // 見る位置（EyeOffset）を、組が窓に収まる範囲へ寄せた所。目は行き先へばねで移す。組が替わって外接が
     // 跳んでも目は跳ばないので、窓の中の画面（操作中の部屋と、いま出た部屋）の角度は連続する。操作中の部屋は必ず窓に入れる。
     const auto offset = EyeOffset(window, box, wanted);
     const auto soft = [](double value, double limit) { return limit > 0 ? limit * std::tanh(value / limit) : 0.0; };
-    const std::array<double, 2> target{
+    std::array<double, 2> target{
         (box[0] + box[2]) * .5 + soft(offset[0], (window.cols - (box[2] - box[0])) * .5 - .25),
         (box[1] + box[3]) * .5 - soft(offset[1], (window.rows - (box[3] - box[1])) * .5 - .25)};
-    if (!areaEyeValid_) { areaEye_ = target; areaEyeValid_ = true; }
-    else { for (size_t k = 0; k < 2; ++k) { areaEye_[k] += (target[k] - areaEye_[k]) * parallaxFollow_; } }
+    // 行き先の範囲：操作中の部屋は必ず窓に入れ、続けて、いま窓に入っていて画に写っている部屋と目を向けたい組の部屋を、
+    // 写っている割合の大きい順に入れられるだけ入れる。目に押し出された部屋は遠くの窓へ移り、角度が大きく跳ぶので、
+    // 目立つ画面ほど窓に残す。格子への丸めで縁からはみ出さないよう、0.1 マス内側で数える。
     const auto& r = active->Region();
-    const auto keep = [](double value, double low, double high) { return low <= high ? std::clamp(value, low, high) : (low + high) * .5; };
+    std::array<double, 2> low{active->x + r.cols - window.cols * .5, active->y + r.rows - window.rows * .5};
+    std::array<double, 2> high{active->x + window.cols * .5, active->y + window.rows * .5};
+    std::vector<std::pair<double, const StageRoom*>> keepers;
+    for (const auto* room : candidates) {
+        const auto seen = seen_.find(room->regionId);
+        const double coverage = seen == seen_.end() ? 0.0 : seen->second.coverage;
+        const bool was = std::find(areaMembers_.begin(), areaMembers_.end(), room->regionId) != areaMembers_.end();
+        const bool aimed = std::find(wanted.begin(), wanted.end(), room) != wanted.end();
+        if ((was && coverage > kFarVisible) || aimed) { keepers.emplace_back(coverage, room); }
+    }
+    std::stable_sort(keepers.begin(), keepers.end(), [](const auto& a, const auto& b) { return a.first > b.first; });
+    for (const auto& [coverage, room] : keepers) {
+        const auto& g = room->Region();
+        const std::array<double, 2> lo{(std::max)(low[0], room->x + g.cols - window.cols * .5 + .1), (std::max)(low[1], room->y + g.rows - window.rows * .5 + .1)};
+        const std::array<double, 2> hi{(std::min)(high[0], room->x + window.cols * .5 - .1), (std::min)(high[1], room->y + window.rows * .5 - .1)};
+        if (lo[0] <= hi[0] && lo[1] <= hi[1]) { low = lo; high = hi; }
+    }
+    for (size_t k = 0; k < 2; ++k) { if (low[k] <= high[k]) { target[k] = std::clamp(target[k], low[k], high[k]); } }
+    if (!areaEyeValid_) { areaEye_ = target; areaEyeVelocity_ = {}; areaEyeValid_ = true; }
+    else { for (size_t k = 0; k < 2; ++k) { Spring(areaEye_[k], areaEyeVelocity_[k], target[k], kEyeSeconds, stageDt_); } }
+    // 操作中の部屋が窓からはみ出す時だけ目を押し戻す（その向きのばねの速さは捨てる）。
+    const auto keep = [](double value, double lo, double hi) { return lo <= hi ? std::clamp(value, lo, hi) : (lo + hi) * .5; };
+    const auto glided = areaEye_;
     areaEye_[0] = keep(areaEye_[0], active->x + r.cols - window.cols * .5, active->x + window.cols * .5);
     areaEye_[1] = keep(areaEye_[1], active->y + r.rows - window.rows * .5, active->y + window.rows * .5);
+    for (size_t k = 0; k < 2; ++k) { if (areaEye_[k] != glided[k]) { areaEyeVelocity_[k] = 0; } }
+    areaClampMoved_ = std::hypot(areaEye_[0] - glided[0], areaEye_[1] - glided[1]);
     // 切り出しの左上をゲーム画素の格子に合わせる（ピクセルの描き方で絵が揺らがない）。丸めで操作中の部屋がはみ出さないよう、
     // 格子の内側へ寄せる。
     const double pixel = double((std::max)(1, window.density / kGamePixelsPerCell)) / window.density;
@@ -247,7 +300,8 @@ void Screen3DStage::PlaceGroup(ViewKind kind, const std::vector<const StageRoom*
     const auto index = static_cast<size_t>(kind);
     auto& window = windows_[index];
     window = {};
-    if (members.empty()) { return; }
+    // 空の組の目は忘れる（次に部屋が入った時はその場所から始める。写っている画面が無いので跳びは見えない）。
+    if (members.empty()) { groupEyeValid_[index] = false; return; }
     for (const auto* room : members) { members_[index].push_back(room->regionId); }
     const auto box = GroupBox(members, nullptr);
     const auto& lens = lensCameras_[index];
@@ -260,28 +314,40 @@ void Screen3DStage::PlaceGroup(ViewKind kind, const std::vector<const StageRoom*
         window.valid = true;
         return;
     }
-    window.rows = GroupRows(box, width, height);
-    window.cols = window.rows * width / height;
-    window.width = width; window.height = height;
-    window.density = (std::max)(1, static_cast<int>(std::floor(height / window.rows)));
-    window.lens = static_cast<int>(index);
-    window.distance = window.rows * projection_.scale * .5 / std::tan(lens.verticalFov * .5);
-    // 目（地図のマス。y は下向き）の行き先は組が替わった時だけ決め直す（背景の小さな画面は視差が見えず、手持ちの揺れで
-    // 毎フレーム動かすと画面の中がちらつく）。目は行き先へ視差と同じ速さで移す（決め直しで跳ばすと、組の画面がそろって
-    // 角度を変える）。
+    // 目（地図のマス。y は下向き）＝窓の中心。行き先は組が替わった時だけ決め直す（背景の小さな画面は視差が見えず、手持ちの
+    // 揺れで毎フレーム動かすと画面の中がちらつく）。目と窓の高さ（＝目から舞台までの距離）はどちらもばねで行き先へ移す。
+    // 外接から窓を決め直すと、組の画面がそろって角度と奥行きを一度に変える。
+    const double tanHalf = std::tan(lens.verticalFov * .5), aspect = double(width) / height;
+    const double wantRows = GroupRows(box, width, height);
     const std::array<double, 2> center{(box[0] + box[2]) * .5, (box[1] + box[3]) * .5};
     if (!groupEyeValid_[index] || groupEyeBox_[index] != box) {
-        const auto offset = EyeOffset(window, box, members);
-        groupTarget_[index] = {center[0] + offset[0], center[1] - offset[1]};
+        Window aim = window; aim.rows = wantRows; aim.distance = wantRows * projection_.scale * .5 / tanHalf;
+        const auto offset = EyeOffset(aim, box, members);
+        groupTarget_[index] = {center[0] + SoftLimit(offset[0], (wantRows * aspect - (box[2] - box[0])) * .5 - .25),
+                               center[1] - SoftLimit(offset[1], (wantRows - (box[3] - box[1])) * .5 - .25)};
         groupEyeBox_[index] = box;
-        if (!groupEyeValid_[index]) { groupEye_[index] = groupTarget_[index]; groupEyeValid_[index] = true; }
+        if (!groupEyeValid_[index]) {
+            groupEye_[index] = groupTarget_[index]; groupEyeVelocity_[index] = {};
+            groupRows_[index] = wantRows; groupRowsVelocity_[index] = 0; groupEyeValid_[index] = true;
+        }
     }
     auto& eye = groupEye_[index];
-    for (size_t k = 0; k < 2; ++k) {
-        eye[k] += (groupTarget_[index][k] - eye[k]) * parallaxFollow_;
-        if (std::abs(groupTarget_[index][k] - eye[k]) < 1e-3) { eye[k] = groupTarget_[index][k]; }
-    }
-    AimWindow(window, box, {eye[0] - center[0], center[1] - eye[1]});
+    for (size_t k = 0; k < 2; ++k) { Spring(eye[k], groupEyeVelocity_[index][k], groupTarget_[index][k], kEyeSeconds, stageDt_); }
+    auto& rows = groupRows_[index];
+    Spring(rows, groupRowsVelocity_[index], wantRows, kEyeSeconds, stageDt_);
+    // 目が行き先へ向かう途中でも組の部屋がはみ出さない高さは保つ（足りない時だけ窓を広げ、その速さは捨てる）。
+    const double need = (std::max)(2 * ((std::max)(eye[0] - box[0], box[2] - eye[0]) + .25) / aspect,
+                                   2 * ((std::max)(eye[1] - box[1], box[3] - eye[1]) + .25));
+    if (rows < need) { rows = need; groupRowsVelocity_[index] = 0; }
+    window.rows = rows; window.cols = rows * aspect;
+    window.width = width; window.height = height;
+    window.density = (std::max)(1, static_cast<int>(std::floor(height / rows)));
+    window.lens = static_cast<int>(index);
+    window.distance = rows * projection_.scale * .5 / tanHalf;
+    // 切り出しの左上をゲーム画素の格子に合わせる（ピクセルの描き方で絵が揺らがない）。
+    const double pixel = double((std::max)(1, window.density / kGamePixelsPerCell)) / window.density;
+    window.x = std::round((eye[0] - window.cols * .5) / pixel) * pixel;
+    window.y = std::round((eye[1] - window.rows * .5) / pixel) * pixel;
     window.valid = true;
 }
 

@@ -449,7 +449,7 @@ void Screen3DStage::Render(HIKARI::WorldView& world, const std::vector<StageRoom
         const double dt = lastParallaxTime_ < 0 ? 0.0 : std::clamp(now - lastParallaxTime_, 0.0, .1);
         lastParallaxTime_ = now;
         const double follow = dt > 0 ? 1 - std::exp(-dt / .25) : 1.0;
-        parallaxFollow_ = follow;
+        parallaxFollow_ = follow; stageDt_ = dt;
         // プレイヤーのいる部屋は、目がプレイヤーの後を少し追う（部屋の中央からの位置に比例して正接を足す）。外のカメラが
         // 止まっていても、歩くと奥の大広間が窓に対してずれ、奥行きが見える。回された部屋は画面の上の位置で数える。
         std::string playerRoom;
@@ -559,7 +559,7 @@ void Screen3DStage::Render(HIKARI::WorldView& world, const std::vector<StageRoom
 
     // 5〜7. キャプチャと画面の割り当て、イベント、部品、エフェクト。
     if (!SyncCaptures(world, shown, flashAmount_ * fade(flashStart_, kFlashSeconds))) { return; }
-    if (!frame.authoring) { TraceFrame(); }
+    if (!frame.authoring) { TraceFrame(); TraceAngles(shown, frame); }
     // 編集中は出来事が無いので効果を消す。ただしオープニングのプレビューでは主人公の登場を出す（登場の前へ巻き戻すと消す）。
     if (frame.simulated) { worldEffects_.Observe(*frame.snapshot); }
     else if (!intro_ || intro_->time < intro_->arriveTime) { worldEffects_.Reset(); }
@@ -662,6 +662,48 @@ void Screen3DStage::TraceFrame() {
         std::fprintf(stderr, "[TD2 screen-trace] n=%zu moved=%d %s\n", traceFrame_, moved, state.c_str());
         traceLast_ = state;
     }
+}
+
+void Screen3DStage::TraceAngles(const std::vector<Assigned>& shown, const StageFrame& frame) {
+    static const bool enabled = std::getenv("TD2_ANGLE_TRACE") != nullptr;
+    if (!enabled) { return; }
+    // 画面の中の角度：部屋の中心が窓の目（窓の中心の正面）から見てどちらへずれているか（正接）。正投影の窓は 0。
+    // 1 フレームで 0.25° 以上変われば「跳び」、速さが 1 フレームで 0.05°/フレーム 以上変われば「急発進」として記録する。
+    constexpr double kDegrees = 57.29577951308232, kJump = .25, kKick = .05;
+    const bool activeChanged = !traceActive_.empty() && traceActive_ != frame.activeRegion;
+    traceActive_ = frame.activeRegion;
+    std::map<std::string, AngleSample, std::less<>> next;
+    for (const auto& [room, kind] : shown) {
+        const auto seen = seen_.find(room->regionId);
+        if (seen == seen_.end() || seen->second.coverage <= .0002) { continue; }
+        const auto& window = WindowOf(kind);
+        const auto& r = room->Region();
+        AngleSample s; s.kind = "SAFG"[static_cast<size_t>(kind)]; s.x = room->x; s.y = room->y; s.frame = frame_;
+        if (window.lens >= 0 && window.distance > 0) {
+            const double reach = window.distance / projection_.scale;
+            s.tx = std::atan((room->x + r.cols * .5 - (window.x + window.cols * .5)) / reach) * kDegrees;
+            s.ty = std::atan(((window.y + window.rows * .5) - (room->y + r.rows * .5)) / reach) * kDegrees;
+        }
+        const auto old = traceAngles_.find(room->regionId);
+        if (old != traceAngles_.end() && old->second.frame + 1 == frame_) {
+            s.vx = s.tx - old->second.tx; s.vy = s.ty - old->second.ty;
+            const double step = std::hypot(s.vx, s.vy), kick = std::hypot(s.vx - old->second.vx, s.vy - old->second.vy);
+            if (step >= kJump || kick >= kKick) {
+                std::string cause;
+                if (old->second.kind != s.kind) { cause += std::string("window:") + old->second.kind + ">" + s.kind + " "; }
+                if (old->second.x != s.x || old->second.y != s.y) { cause += "moved "; }
+                if (kind == ViewKind::Area && areaClampMoved_ > 1e-6) { cause += "clamp:" + std::to_string(areaClampMoved_).substr(0, 5) + " "; }
+                if (groupEyeReset_ && (kind == ViewKind::Far || kind == ViewKind::Far2)) { cause += "reset "; }
+                if (activeChanged) { cause += "active "; }
+                if (cause.empty()) { cause = "eye "; }
+                std::fprintf(stderr, "[TD2 angle-trace] n=%zu %s region=%s cov=%.3f %c step=%.2f kick=%.3f %sactive=%s at=%.2f,%.2f d=%.2f,%.2f\n", frame_,
+                             step >= kJump ? "jump" : "kick", room->regionId.c_str(), seen->second.coverage, s.kind, step, kick,
+                             cause.c_str(), frame.activeRegion.c_str(), s.tx, s.ty, s.vx, s.vy);
+            }
+        }
+        next[room->regionId] = s;
+    }
+    traceAngles_ = std::move(next);
 }
 
 bool Screen3DStage::SyncCaptures(HIKARI::WorldView& world, const std::vector<Assigned>& screens, double flash) {

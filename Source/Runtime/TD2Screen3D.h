@@ -215,6 +215,9 @@ private:
     std::array<std::array<double, 2>, kViewKinds> groupTarget_{};
     std::array<std::array<double, 4>, kViewKinds> groupEyeBox_{};
     std::array<bool, kViewKinds> groupEyeValid_{};
+    // 遠くの組の目の速さ、窓の行数（目から舞台までの距離が決まる）とその速さ。どれもばねで追い、組が替わっても跳ばさない。
+    std::array<std::array<double, 2>, kViewKinds> groupEyeVelocity_{};
+    std::array<double, kViewKinds> groupRows_{}, groupRowsVelocity_{};
     // 今の大区域で写ったテレビ、入れた遠くの組（大区域が替わるまで外さない）、要る細かさ（ゆっくり下げる）。
     std::set<std::string, std::less<>> farSeen_;
     std::map<std::string, double, std::less<>> farNeed_;
@@ -222,9 +225,10 @@ private:
     std::string groupArea_;                       // 組の窓を決めた大区域（その大区域の最初の部屋の ID）
     // 大区域の窓に入れている部屋と、窓の中心に置く目（地図のマス）。視差と同じ速さ（parallaxFollow_）でなめらかに追う。
     std::vector<std::string> areaMembers_;
-    std::array<double, 2> areaEye_{};
+    std::array<double, 2> areaEye_{}, areaEyeVelocity_{};
     bool areaEyeValid_ = false;
     double parallaxFollow_ = 1;
+    double stageDt_ = 0;   // このフレームの秒（窓の目のばねに使う）
     // このフレームのオープニング（無ければ null）と、砂嵐の窓を使っているか。砂嵐を出す区域のテレビは全部の部屋から選ぶ。
     const IntroScreens* intro_ = nullptr;
     bool introStatic_ = false;
@@ -263,5 +267,13 @@ private:
     size_t traceFrame_ = 0; std::string traceLast_; std::map<uint64_t, HIKARI::GameProjectSceneCaptureSourceRect> traceRects_;
     size_t frame_ = 0;   // Play のフレーム数（診断の記録用）
     std::map<std::string, bool, std::less<>> traceProtect_;   // 診断用：前のフレームの保護
+    // 診断用（環境変数 TD2_ANGLE_TRACE がある時だけ）：写っている画面の中の透視の角度が 1 フレームで大きく変わったら、
+    // 理由（窓の乗り換え・部屋の移動・目の押し戻し・目の決め直し）と一緒に記録する。
+    void TraceAngles(const std::vector<Assigned>& shown, const StageFrame& frame);
+    struct AngleSample { char kind = '?'; double x = 0, y = 0, tx = 0, ty = 0, vx = 0, vy = 0; size_t frame = 0; };
+    std::map<std::string, AngleSample, std::less<>> traceAngles_;
+    std::string traceActive_;
+    double areaClampMoved_ = 0;   // このフレームに大区域の目を部屋の範囲へ押し戻した量（マス）
+    bool groupEyeReset_ = false;  // このフレームに遠くの組の目を決め直した（大区域が替わった）
 };
 }
