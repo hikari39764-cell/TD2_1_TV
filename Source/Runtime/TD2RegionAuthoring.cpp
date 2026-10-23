@@ -23,6 +23,7 @@ bool ParseDevices(std::string_view text, std::vector<Rules::DeviceDefinition>& d
             if (key == "dir") { device.direction = static_cast<Rules::Direction>(DeviceText::IndexOf(kDirectionNames, value)); }
             else if (key == "invert") { device.inverted = value == "1"; }
             else if (key == "latch") { device.latch = value == "1"; }
+            else if (key == "all") { device.all = value == "1"; }
             else if (key == "range") { device.range = number; }
             // バネの強さ（マス/秒）・溜めと冷却の秒数、貼り絵の図案と不透明度。
             else if (key == "power") { device.power = number; }

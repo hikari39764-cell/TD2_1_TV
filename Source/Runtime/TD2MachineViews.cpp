@@ -7,6 +7,7 @@
 #include <algorithm>
 #include <cmath>
 #include <cstdio>
+#include <cstdlib>
 #include <cstring>
 
 namespace TD2 {
@@ -14,7 +15,40 @@ namespace {
 using F3 = HIKARI::GameProjectFloat3;
 // 大きく回る転台で、カメラがテレビと一緒に回り込む割合（切り替えの前後で同じ向きに動き続ける）。
 constexpr float kTurnOrbit = .24f;
+// 信号線の材質の色：素の色と、通電した時の色・発光（前の光る版のモデルと同じ値）。点く・消える時は kCableFadeSeconds で移る。
+constexpr F3 kCableBase{.2f, .045f, .12f}, kCableLitBase{1, .3f, .62f}, kCableGlow{1, .26f, .6f};
+constexpr float kCableGlowStrength = 4, kCableFadeSeconds = .12f;
 constexpr float kPiF = static_cast<float>(Math::kPi);
+// 跳ぶ乗り物の段取り：進みの最初と最後の kHopRise で上り下りし、横へ運ぶのは kHopHold から 1 - kHopHold の間。
+// 向きは横へ kHopTurn 運んでから回し始める。
+constexpr float kHopRise = .3f, kHopHold = .18f, kHopTurn = .2f;
+// 乗り物が浮いている高さのうち、カメラが一緒に上がる割合（残りは見上げる）。
+constexpr float kRideCameraRise = .45f;
+// 乗り物のカメラが横へ膨らみ始める進み（棚を越えるまでは膨らまない）。
+constexpr float kRideBulgeAfter = .3f;
+
+// 見る向き（ローカル +Z）と上から作る回転。
+HIKARI::GameProjectQuaternion LookRotation(const F3& forward, const F3& up) {
+    const auto z = Math::Normalize(ToVec3(forward));
+    const auto x = Math::Normalize(Math::Cross(ToVec3(up), z));
+    const auto y = Math::Cross(z, x);
+    const double m00 = x[0], m01 = y[0], m02 = z[0], m10 = x[1], m11 = y[1], m12 = z[1], m20 = x[2], m21 = y[2], m22 = z[2];
+    Math::Quat q;
+    if (const double trace = m00 + m11 + m22; trace > 0) {
+        const double k = .5 / std::sqrt(trace + 1);
+        q = {(m21 - m12) * k, (m02 - m20) * k, (m10 - m01) * k, .25 / k};
+    } else if (m00 > m11 && m00 > m22) {
+        const double k = 2 * std::sqrt(1 + m00 - m11 - m22);
+        q = {.25 * k, (m01 + m10) / k, (m02 + m20) / k, (m21 - m12) / k};
+    } else if (m11 > m22) {
+        const double k = 2 * std::sqrt(1 + m11 - m00 - m22);
+        q = {(m01 + m10) / k, .25 * k, (m12 + m21) / k, (m02 - m20) / k};
+    } else {
+        const double k = 2 * std::sqrt(1 + m22 - m00 - m11);
+        q = {(m02 + m20) / k, (m12 + m21) / k, .25 * k, (m10 - m01) / k};
+    }
+    return ToQuaternion(q);
+}
 
 // テレビが base から pose へ動いた分だけ、付いている物の位置をずらす。
 F3 Follow(const F3& attached, const F3& pose, const F3& base) {
@@ -131,12 +165,13 @@ void MachineViews::SyncMechanisms(HIKARI::WorldView& world, const RegionObjects&
                 std::fprintf(stderr, "[TD2 mechanism] %s missing object=%llu\n", source.id.c_str(), static_cast<unsigned long long>(id));
                 continue;
             }
-            item.handle = object.GetHandle(); item.b = item.c = item.a;
+            item.sceneId = id; item.handle = object.GetHandle(); item.b = item.c = item.a;
             for (const auto* list : {&authored.deltas, &authored.deltasC}) for (const auto& delta : *list) {
                 if (delta.object != id) continue;
                 const auto pose = deltaPose(delta, item.a, item);
                 if (!pose) { std::fprintf(stderr, "[TD2 configuration] mechanism %s missing anchor=%llu\n", source.id.c_str(), static_cast<unsigned long long>(delta.anchor)); continue; }
                 (list == &authored.deltas ? item.b : item.c) = *pose;
+                item.from = static_cast<float>(delta.from); item.to = static_cast<float>(delta.to); item.lift = static_cast<float>(delta.lift);
             }
             // その場で画面の向きの軸に回すだけ（倒立）なら、区域カメラは動かさない（カメラまで逆さにしない）。
             const auto& qa = item.a.rotation; const auto& qb = item.b.rotation;
@@ -154,10 +189,20 @@ void MachineViews::SyncMechanisms(HIKARI::WorldView& world, const RegionObjects&
                 if (!cameraObject.IsValid() || !cameraObject.GetLocalTransform(pose)) continue;
                 MechanismAttachment attachment{cameraObject.GetHandle(), view.objects.size(), Relative(item.a, pose)};
                 // 状態 A と B の向きの差が 120°以上なら、カメラは途中で向こう側へ切り替える。
+                // 乗り物は人を乗せて運ぶので切り替えず、テレビと一緒に回り込んで画面を正面に保つ。
                 const float dot = std::abs(qa.x * qb.x + qa.y * qb.y + qa.z * qb.z + qa.w * qb.w);
-                attachment.turn = 2.f * std::acos(std::clamp(dot, 0.f, 1.f)) >= 120.f * kPiF / 180.f;
+                attachment.turn = !source.ride && 2.f * std::acos(std::clamp(dot, 0.f, 1.f)) >= 120.f * kPiF / 180.f;
                 const auto& r = attachment.relative.position;
                 attachment.reach = std::sqrt(r.x * r.x + r.y * r.y + r.z * r.z);
+                if (source.ride) {
+                    // 乗り物：カメラの視線の先（テレビまでの距離）を狙う点としてテレビに付けておく。
+                    // 膨らむ向きは、動きの真ん中でテレビの画面が向く水平の向き。
+                    attachment.ride = true;
+                    attachment.aim = Mad(r, QRotate(attachment.relative.rotation, {0, 0, 1}), attachment.reach);
+                    const auto mid = QRotate(QSlerp(item.a.rotation, item.b.rotation, .5f), r);
+                    const float flat = std::sqrt(mid.x * mid.x + mid.z * mid.z);
+                    if (flat > 1e-4f) attachment.side = {mid.x / flat, 0, mid.z / flat};
+                }
                 view.attached.push_back(attachment);
             }
             view.objects.push_back(item);
@@ -174,17 +219,44 @@ void MachineViews::UpdateMechanisms(const Frame& frame, Writes& writes) {
         auto& view = mechanisms_[i];
         const double progress = runtimes[i].progress;
         if (progress == view.written) continue;
+        // 診断（環境変数 TD2_SPIKE_EVENTS）：機構が動き出した・止まった時を出す。
+        if (static const bool spikeEvents = std::getenv("TD2_SPIKE_EVENTS") != nullptr; spikeEvents) {
+            const bool wasRest = view.written == std::round(view.written), atRest = progress == std::round(progress);
+            if (wasRest != atRest) {
+                std::fprintf(stderr, "[TD2 mech] %s %s progress=%.2f\n", runtimes[i].source.id.c_str(), atRest ? "stop" : "start", progress);
+            }
+        }
         view.written = progress;
         // 両端でゆっくり止まる。転台は四元数で回し、吊り台は直線で運ぶ。天秤の状態 -1 側は c へ向かう。
         const bool sideC = progress < 0;
-        const float e = Math::SmoothStep(static_cast<float>(std::abs(progress)));
+        // 物体ごとの進み：自分の区間の中だけで 0→1 に進む（戻りは同じ区間を逆にたどるので、順番も逆になる）。
+        const auto eased = [&progress](const MechanismObject& object) {
+            const float t = (static_cast<float>(std::abs(progress)) - object.from) / std::max(object.to - object.from, 1e-3f);
+            return Math::SmoothStep(std::clamp(t, 0.f, 1.f));
+        };
         std::vector<HIKARI::GameProjectTransform> poses;
+        std::vector<float> eases, alongs;   // 物体ごとの進みと、跳ぶ物の横へ運ぶ進み
         for (size_t k = 0; k < view.objects.size(); ++k) {
             const auto& object = view.objects[k];
+            const float e = eased(object);
+            eases.push_back(e); alongs.push_back(e);
             const auto& end = sideC ? object.c : object.b;
             auto pose = object.a;
-            pose.position = Lerp(object.a.position, end.position, e);
-            pose.rotation = QSlerp(object.a.rotation, end.rotation, e);
+            if (object.lift != 0) {
+                // 跳ぶ乗り物：先に真上へ浮き上がり、高いところで運んで回し、最後に降りる（棚や塔を上から越える）。
+                // 負の高さは「先に落ちてから滑る」：最初に真下へ落ち、横へ運ぶにつれて残りの落差へなじむ（終わりで跳ね上がらない）。
+                const float along = Math::SmoothStep(std::clamp((e - kHopHold) / (1.f - (object.lift > 0 ? 2.f : 1.f) * kHopHold), 0.f, 1.f));
+                const float first = Math::SmoothStep(std::clamp(e / kHopRise, 0.f, 1.f));
+                const float up = object.lift > 0 ? first * Math::SmoothStep(std::clamp((1.f - e) / kHopRise, 0.f, 1.f)) : first * (1.f - along);
+                alongs.back() = along;
+                pose.position = Lerp(object.a.position, end.position, along);
+                pose.position.y += object.lift * up;
+                // 向きは渡り始めてから変える（浮いてすぐ回ると、付いたカメラが棚の上へ振れる）。
+                pose.rotation = QSlerp(object.a.rotation, end.rotation, Math::SmoothStep(std::clamp((along - kHopTurn) / (1.f - kHopTurn), 0.f, 1.f)));
+            } else {
+                pose.position = Lerp(object.a.position, end.position, e);
+                pose.rotation = QSlerp(object.a.rotation, end.rotation, e);
+            }
             if (object.pivot) {
                 // 中心を動かさずに回す（途中も画面の中心が同じ所に留まる）。
                 const auto& c = object.center;
@@ -204,11 +276,28 @@ void MachineViews::UpdateMechanisms(const Frame& frame, Writes& writes) {
         //   表も裏も見えない折り返しの瞬間に転台の向こう側へ切り替え、後半も同じ向きへ回り続けて落ち着く（動きが途切れない）。
         //   前後とも画面へわずかに寄り、切り替えを動きの中に隠す。
         // ・それ以外（吊り台など）：一緒に運び、途中だけ上へ持ち上げて視線の後ろへ引く（両端では元の構図に戻る）。
-        const float arc = std::sin(e * kPiF);
         for (const auto& attached : view.attached) {
             const auto& object = view.objects[attached.parent];
+            const float e = eases[attached.parent], arc = std::sin(e * kPiF);
             HIKARI::GameProjectTransform pose;
-            if (attached.turn) {
+            if (attached.ride) {
+                // 乗り物：自分のテレビが群れの一台として浮いて見えるよう、カメラは貼り付かずに群れの外から見る。
+                // 始めの構図から終わりの構図へ進みながら、浮いた高さの一部だけ一緒に上がって少し見上げ、
+                // 渡る途中は持ち上がって画面が向く側へ膨らむ（真ん中で群れの横から画面を正面に見る）。いつも自分の画面を狙う。
+                const auto& tv = poses[attached.parent];
+                const auto aimAt = Mad(tv.position, QRotate(tv.rotation, attached.aim), 1.f);
+                const float along = alongs[attached.parent], w = Math::SmoothStep(along);
+                const auto start = Attach(object.a, attached.relative).position;
+                const auto end = Attach(object.b, attached.relative).position;
+                // 浮いている高さ（両端を結ぶ線からの持ち上がり）の一部だけ一緒に上がり、残りは見上げる。
+                const float hop = tv.position.y - Lerp(object.a.position, object.b.position, along).y;
+                const float lift = view.cameraLift * std::sin(w * kPiF);
+                const float out = view.cameraPull * std::sin(std::clamp((w - kRideBulgeAfter) / (1.f - kRideBulgeAfter), 0.f, 1.f) * kPiF);
+                pose = Attach(tv, attached.relative);
+                pose.position = Lerp(start, end, w);
+                pose.position = {pose.position.x + attached.side.x * out, pose.position.y + lift + kRideCameraRise * hop, pose.position.z + attached.side.z * out};
+                pose.rotation = LookRotation(Sub(aimAt, pose.position), {0, 1, 0});
+            } else if (attached.turn) {
                 // カメラを載せる仮のテレビの姿勢：前半は回転の一部、後半は終わりから同じ割だけ手前。
                 auto carrier = poses[attached.parent];
                 carrier.rotation = QSlerp(object.a.rotation, object.b.rotation, e < .5f ? kTurnOrbit * e : 1.f - kTurnOrbit * (1.f - e));
@@ -442,27 +531,34 @@ void MachineViews::UpdateCarousels(const Frame& frame, Writes& writes) {
 // ---------------------------------------------------------------- 信号線
 void MachineViews::SyncCables(HIKARI::WorldView& world) {
     ForEach<SignalCableComponent>(world, kSignalCableComponentType, [&](HIKARI::ObjectView object, SignalCableComponent& component) {
-        HIKARI::GameProjectModelAppearance appearance{};
-        if (component.Plate().empty() || component.LitModel().empty() || !object.GetModel().TryGetAppearance(appearance)) return;
-        cables_.push_back({object.GetHandle(), component.Plate(), appearance.assetId, component.LitModel()});
+        if (component.Plate().empty()) return;
+        cables_.push_back({object.GetHandle(), component.Plate()});
     });
     std::fprintf(stderr, "[TD2 cable] count=%zu\n", cables_.size());
 }
 
-void MachineViews::UpdateCables(HIKARI::WorldView& world, Rules::Exploration& exploration) {
+void MachineViews::UpdateCables(HIKARI::WorldView& world, Rules::Exploration& exploration, double seconds) {
     if (cables_.empty()) return;
     const auto& devices = exploration.Snapshot().devices;
+    const float step = seconds > 0 ? static_cast<float>(seconds) / kCableFadeSeconds : 1;
     for (auto& cable : cables_) {
         const auto plate = std::find_if(devices.begin(), devices.end(), [&](const auto& d) { return d.id == cable.plate; });
-        const bool lit = plate != devices.end() && plate->powered;
-        if (lit == cable.shown) continue;
-        const auto& asset = lit ? cable.lit : cable.normal;
-        HIKARI::GameProjectModelAppearance appearance{};
+        const float target = plate != devices.end() && plate->powered ? 1.f : 0.f;
+        if (cable.glow == target) continue;
+        cable.glow = target > cable.glow ? std::min(target, cable.glow + step) : std::max(target, cable.glow - step);
+        // 材質の色と発光だけを書き換える（モデル・部品・骨は触らないので GPU のシーンは作り直されない）。
+        const float g = cable.glow;
+        const auto mix = [g](F3 a, F3 b) { return F3{a.x + (b.x - a.x) * g, a.y + (b.y - a.y) * g, a.z + (b.z - a.z) * g}; };
         const auto object = world.FindObject(cable.handle);
-        if (!object.IsValid() || !object.GetModel().TryGetAppearance(appearance) || asset.size() >= sizeof(appearance.assetId)) continue;
-        std::memset(appearance.assetId, 0, sizeof(appearance.assetId));
-        std::memcpy(appearance.assetId, asset.data(), asset.size());
-        if (object.GetModel().ApplyAppearance(appearance).Accepted()) cable.shown = lit;
+        if (!object.IsValid() || !object.GetModel().SetMaterialColorOverride(0, mix(kCableBase, kCableLitBase), 1, kCableGlow, kCableGlowStrength * g).Accepted()) {
+            // 材質セットの付いていない線は材質の上書きを持たないので光らせない（毎フレーム試さない）。
+            std::fprintf(stderr, "[TD2 cable] %s: no runtime material override, stays unlit\n", cable.plate.c_str());
+            cable.glow = target;
+            continue;
+        }
+        if (static const bool spikeEvents = std::getenv("TD2_SPIKE_EVENTS") != nullptr; spikeEvents && g == target) {
+            std::fprintf(stderr, "[TD2 cable] %s -> %s\n", cable.plate.c_str(), target > 0 ? "lit" : "normal");
+        }
     }
 }
 
@@ -480,6 +576,6 @@ void MachineViews::Update(HIKARI::WorldView& world, Rules::Exploration& explorat
     writes.clear(); UpdateSlides(frame, writes, seconds); Commit(world, writes, "slide");
     writes.clear(); UpdateStacks(frame, writes, seconds); Commit(world, writes, "stack");
     writes.clear(); UpdateCarousels(frame, writes); Commit(world, writes, "carousel");
-    UpdateCables(world, exploration);
+    UpdateCables(world, exploration, seconds);
 }
 }

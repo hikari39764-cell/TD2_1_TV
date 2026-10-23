@@ -8,7 +8,6 @@ namespace TD2 {
 inline constexpr std::string_view kStageLightComponentType = "TD2.StageLight";
 
 // 役：主光（左上の手前から、影を落とす）、補光（右手前の弱い光）、背光（奥の上から手前へ、縁を光らせる）。
-enum class StageLightRole : int { Key = 0, Fill = 1, Back = 2 };
 inline constexpr int kStageLightRoleCount = 3;
 
 struct StageLightSettings {
@@ -23,7 +22,7 @@ class StageLightComponent final : public HIKARI::IGameComponent {
 public:
     const StageLightSettings& Settings() const noexcept { return settings_; }
     void DescribeProperties(HIKARI::PropertyFields& fields) override {
-        // 名前はシーンに保存されるので変えない。並びは StageLightRole の順。
+        // 名前はシーンに保存されるので変えない。並びは役の番号（主光 0・補光 1・背光 2）の順。
         static constexpr std::string_view kRoles[]{"キー", "フィル", "バック"};
         fields.Choice("role", "役", settings_.role, kRoles);
         fields.Float("offsetX", "横の位置", settings_.offsetX, -3, 3);

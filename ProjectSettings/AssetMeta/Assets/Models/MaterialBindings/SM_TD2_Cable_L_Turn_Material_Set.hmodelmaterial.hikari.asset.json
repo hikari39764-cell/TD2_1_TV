@@ -1,0 +1,13 @@
+{
+  "displayName": "SM_TD2_Cable_L_Turn_Material_Set",
+  "guid": "b7a6ee4c3c2c4cb0b4fe09811a719c2e",
+  "importSettings": {
+    "runtimeLoader": "ModelMaterialBindingAsset",
+    "sourceAuthoritative": true
+  },
+  "importerId": "ModelMaterialBindingImporter",
+  "importerVersion": 1,
+  "metaVersion": 1,
+  "sourcePath": "Assets/Models/MaterialBindings/SM_TD2_Cable_L_Turn_Material_Set.hmodelmaterial",
+  "type": "ModelMaterialBinding"
+}

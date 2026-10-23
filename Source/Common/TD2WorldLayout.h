@@ -68,6 +68,8 @@ struct RegionSequenceBinding {
     uint64_t cameraObject = 0;
     // 再生の倍速（エンジンの演出は最短 1 秒なので、短い切り替えは倍速で流す）。
     float speed = 1.0f;
+    // 歩いて越えても A/D で止めず、最後まで自動で流す（超現実の切り替え）。演出の間も画面の中は動き続ける。
+    bool autoPlay = false;
 
     bool operator==(const RegionSequenceBinding&) const = default;
 };

@@ -1,0 +1,13 @@
+{
+  "displayName": "SM_TD2_CableSeg_Material_Set",
+  "guid": "541cec22717f47cdb77333322b9b2c74",
+  "importSettings": {
+    "runtimeLoader": "ModelMaterialBindingAsset",
+    "sourceAuthoritative": true
+  },
+  "importerId": "ModelMaterialBindingImporter",
+  "importerVersion": 1,
+  "metaVersion": 1,
+  "sourcePath": "Assets/Models/MaterialBindings/SM_TD2_CableSeg_Material_Set.hmodelmaterial",
+  "type": "ModelMaterialBinding"
+}

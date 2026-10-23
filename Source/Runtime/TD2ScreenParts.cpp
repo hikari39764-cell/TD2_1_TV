@@ -3,18 +3,25 @@
 #include "TD2StageProjection.h"
 #include "TD2ScreenKitAssets.h"
 #include "TD2StageLight.h"
+#include "TD2Transform.h"
 #include "HIKARI/Project/ActionViews.h"
 #include "HIKARI/Project/WorldQuery.h"
 #include "HIKARI/Project/PresentationViews.h"
 #include <algorithm>
+#include <array>
 #include <cmath>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
+#include <set>
 
 namespace TD2 {
 namespace {
 using namespace Stage3D;
 // 舞台の部品（部屋の背景・地形・装置・人形）と舞台の灯の提出。
-// 舞台の部品の数の目安。工場の物体（約 400）と合わせ、エンジンの 1 フレームの上限 2048 に余裕を残す。
-constexpr size_t kPartWarning = 1400;
+// 舞台の部品の数の目安。部品は材質ごとに GPU のシーンの面を使い、工場の物体と合わせてエンジンの上限（16384 面）を超えると
+// 画面全体の描画が止まる。
+constexpr size_t kPartWarning = 7000;
 // 瞬間移動の残像が足元へ潰れて消えるまでの秒数。
 constexpr double kSmearSeconds = 0.12;
 // 跳ね返りの残影を足元から現す秒数（ルールの予告と同じ 0.16 秒）と、回収の光跡が消える秒数。
@@ -29,7 +36,6 @@ void Screen3DStage::SyncStageLights(HIKARI::WorldView& world, const std::vector<
     // 時計の無い時（編集中など）は待たずに切り替える。
     const double dt = now > 0 ? std::clamp(now - stageLightTime_, 0.0, .1) : kFade;
     stageLightTime_ = now;
-    static const bool trace = std::getenv("TD2_LIGHT_TRACE") != nullptr;
     std::array<std::vector<HIKARI::ObjectView>, kStageLightRoleCount> pools;
     std::map<uint64_t, StageLightSettings> settings;
     const HIKARI::ComponentTypeId types[]{HIKARI::MakeComponentTypeId(kStageLightComponentType)};
@@ -66,13 +72,7 @@ void Screen3DStage::SyncStageLights(HIKARI::WorldView& world, const std::vector<
         if (!t.room.empty() && shownRoom(t.room) == shown.end()) { t.room.clear(); t.weight = 0; }
         if (t.room != t.target) {
             t.weight = std::max(0.0, t.weight - dt / kFade);
-            if (t.weight <= 0) {
-                if (trace) {
-                    std::fprintf(stderr, "[TD2 light-trace] light=%llu %s -> %s shown=%zu\n", static_cast<unsigned long long>(object.GetHandle().value),
-                                 t.room.c_str(), t.target.c_str(), shown.size());
-                }
-                t.room = t.target;
-            }
+            if (t.weight <= 0) { t.room = t.target; }
         } else if (!t.room.empty()) { t.weight = std::min(1.0, t.weight + dt / kFade); }
         const auto at = t.room.empty() ? shown.end() : shownRoom(t.room);
         const bool use = at != shown.end();
@@ -178,13 +178,22 @@ void Screen3DStage::SubmitParts(HIKARI::WorldView& world, const std::vector<cons
             return room != self && wx >= room->linkX && wy >= room->linkY && wx < room->linkX + r.cols && wy < room->linkY + r.rows;
         });
     };
+    // 描く部屋：Play は世界に置いた全部の部屋（仕掛けで預け場所へ離した部屋も、離れた所でそのまま出す）。写っているか・
+    // 預けたかで部品を出し入れすると、エンジンが GPU のシーンを作り直して画が止まる（部屋ごとに数百の面が出入りする）。
+    // 写らない部屋の部品はどのキャプチャにも入らない。編集中は窓に収めた部屋。
+    std::vector<const StageRoom*> drawn;
+    if (animate) {
+        for (const auto* room : rooms) { if (room->placed) { drawn.push_back(room); } }
+    } else {
+        for (const auto& item : shown) { drawn.push_back(item.room); }
+    }
     std::map<std::string_view, const StageRoom*> byRegion;
-    for (const auto& item : shown) { byRegion.emplace(item.room->regionId, item.room); }
+    for (const auto* room : drawn) { byRegion.emplace(room->regionId, room); }
 
     // 背景と地形：部屋と周り 1 マスの占有が変わった時だけ作り直し、毎フレームは作った要求をそのまま出す。
     std::vector<char> occupancy, linked;
-    for (const auto& item : shown) {
-        const auto& room = *item.room; const auto& r = room.Region();
+    for (const auto* drawnRoom : drawn) {
+        const auto& room = *drawnRoom; const auto& r = room.Region();
         const int width = r.cols + 2, height = r.rows + 2;
         occupancy.assign(static_cast<size_t>(width * height), 0);
         linked.assign(static_cast<size_t>(width * height), 1);
@@ -195,7 +204,9 @@ void Screen3DStage::SubmitParts(HIKARI::WorldView& world, const std::vector<cons
         for (int j = 0; j < height; ++j) for (int i = 0; i < width; ++i) {
             const bool inside = i > 0 && j > 0 && i <= r.cols && j <= r.rows;
             const auto [wx, wy] = worldCell(i, j);
-            occupancy[static_cast<size_t>(j * width + i)] = inside ? r.cells[CellIndex(r, i - 1, j - 1)] == '1' : solidAt(wx, wy);
+            // Play では周り 1 マスを隣に関係なく埋まり扱いにする。隣の部屋が仕掛けで動くと継ぎ目の部品の数が変わり、
+            // 新しい部品が出るたびにエンジンが GPU のシーンを作り直して画が止まっていた（画面の縁の継ぎ目だけの違い）。
+            occupancy[static_cast<size_t>(j * width + i)] = inside ? r.cells[CellIndex(r, i - 1, j - 1)] == '1' : (animate || solidAt(wx, wy));
             if (!inside) { linked[static_cast<size_t>(j * width + i)] = roomAt(wx, wy, &room); }
         }
         for (const auto& device : snapshot.devices) if (device.kind == Rules::DeviceKind::Solid && device.solid) {
@@ -212,12 +223,20 @@ void Screen3DStage::SubmitParts(HIKARI::WorldView& world, const std::vector<cons
             snapshot.devices, room.regionId, room.y, r.rows);
         windowSpans_[room.regionId] = span;
         auto& cache = roomParts_[room.regionId];
+        // 編集中は毎フレーム出す（Play で残した要求が残っていれば消す）。
+        if (!animate && !cache.retained.empty()) {
+            for (const auto& [owner, id] : cache.retained) { models.Remove(owner, id); }
+            cache.retained.clear(); cache.retainedValid = false;
+        }
         if (cache.occupancy != occupancy || cache.linked != linked || cache.x != room.x || cache.y != room.y || cache.palette != palette ||
             cache.scale != projection_.scale || cache.pitch != projection_.pitch || cache.yaw != projection_.yaw || cache.compact != !animate ||
             cache.hall != hall_ || cache.depthRows != depthRows_ || cache.playDepth != playDepth_ ||
             !(cache.window == span)) {
+            auto retained = std::move(cache.retained);
+            auto series = std::move(cache.series), hallSeries = std::move(cache.hallSeries);
             cache = {occupancy, linked, room.x, room.y, palette, projection_.scale, projection_.pitch, projection_.yaw, !animate, hall_,
                      depthRows_, playDepth_, span, {}};
+            cache.retained = std::move(retained); cache.hallSeries = std::move(hallSeries);
             StagePartBuilder builder{projection_, palette, room.owner.value, cache.parts};
             builder.Compact(!animate);
             builder.UseHall(hall_);
@@ -226,37 +245,97 @@ void Screen3DStage::SubmitParts(HIKARI::WorldView& world, const std::vector<cons
             builder.Backdrop(room.x, room.y, r.cols, r.rows, span);
             builder.Terrain(room.x, room.y, r.cols, r.rows, occupancy);
             builder.Edges(room.x, room.y, r.cols, r.rows, occupancy, linked);
+            // 仕掛けで部屋が動くと隣との境の地形の部品の数が変わる。減った分は隠した部品で埋め、組を減らさない
+            // （組が変わるとエンジンが GPU のシーンを作り直して画が止まる）。
+            // 診断（環境変数 TD2_SPIKE_EVENTS）：作り直した部屋と、部品の数が前より増えたか（増えると GPU のシーンを作り直す）。
+            static const bool spikeEvents = std::getenv("TD2_SPIKE_EVENTS") != nullptr;
+            size_t before = 0, after = 0;
+            if (spikeEvents) { for (const auto& item : series) { before += item.second.count; } }
+            builder.PadSeries(series);
+            cache.series = builder.Counts();
+            if (spikeEvents) {
+                for (const auto& item : cache.series) { after += item.second.count; }
+                std::fprintf(stderr, "[TD2 parts] rebuild room=%s parts=%zu series %zu->%zu\n", room.regionId.c_str(), cache.parts.size(), before, after);
+            }
             failed_ += builder.Failed();
         }
-        for (const auto& request : cache.parts) { submit(request); }
+        if (!animate) { for (const auto& request : cache.parts) { submit(request); } }
     }
-    std::erase_if(roomParts_, [&](const auto& item) { return !byRegion.contains(item.first); });
+    std::erase_if(roomParts_, [&](const auto& item) {
+        if (byRegion.contains(item.first)) { return false; }
+        for (const auto& [owner, id] : item.second.retained) { models.Remove(owner, id); }
+        return true;
+    });
 
     // 窓の向こうの大広間：外のカメラが画面を見る角度（なめらかにした正接）だけ奥の層をずらす。編集中は出さない。
+    // 透視で撮る時は本当の透視で奥の層がずれるので、手で付ける視差は足さない（向きが 0 のまま変わらず、作った部品を使い回す）。
     if (animate && hall_) {
-        for (const auto& item : shown) {
-            const auto& room = *item.room; const auto& r = room.Region();
+        for (const auto* drawnRoom : drawn) {
+            const auto& room = *drawnRoom; const auto& r = room.Region();
             const auto eye = parallax_.find(room.regionId);
             double ex = eye != parallax_.end() ? eye->second[0] : 0.0, ey = eye != parallax_.end() ? eye->second[1] : 0.0;
-            // 診断用（環境変数 TD2_PARALLAX_FORCE="x,y" がある時だけ）：全部の画面を同じ角度で見たことにする（比較の撮影用）。
-            static const char* forced = std::getenv("TD2_PARALLAX_FORCE");
-            if (forced) { (void)std::sscanf(forced, "%lf,%lf", &ex, &ey); }
             // 回されたテレビは画面の右・上が絵の左・下になる。
             if (room.flipped) { ex = -ex; ey = -ey; }
-            // 透視の窓で撮る部屋は本当の透視で奥の層がずれるので、手で付ける視差は足さない。
-            if (WindowOf(item.kind).lens >= 0) { ex = ey = 0; }
-            StagePartBuilder builder{projection_, palette, room.owner.value, frameParts_};
-            builder.UseHall(true);
-            builder.DepthRows(depthRows_);
-            builder.Solid(solid_, playDepth_);
-            builder.Hall(room.regionId, room.x, room.y, r.cols, r.rows, windowSpans_[room.regionId], ex * parallaxGain_, ey * parallaxGain_);
-            failed_ += builder.Failed();
+            if (perspective_) { ex = ey = 0; }
+            auto& cache = roomParts_[room.regionId];
+            const std::array<double, 2> look{ex * parallaxGain_, ey * parallaxGain_};
+            if (!cache.hallValid || cache.hallEye != look) {
+                cache.hallParts.clear(); cache.hallEye = look; cache.hallValid = true; cache.retainedValid = false;
+                StagePartBuilder builder{projection_, palette, room.owner.value, cache.hallParts};
+                builder.UseHall(true);
+                builder.DepthRows(depthRows_);
+                builder.Solid(solid_, playDepth_);
+                builder.Hall(room.regionId, room.x, room.y, r.cols, r.rows, windowSpans_[room.regionId], look[0], look[1]);
+                builder.PadSeries(cache.hallSeries);
+                cache.hallSeries = builder.Counts();
+                failed_ += builder.Failed();
+            }
+        }
+    }
+    // Play：部屋の背景・地形・大広間は残しておく要求（retain）で一度だけ出し、作り直した時だけ出し直す（数千の動かない部品を
+    // 毎フレーム出してエンジンに比べ直させない）。出し直しで減った部品は消す。
+    if (animate) {
+        for (const auto* drawnRoom : drawn) {
+            auto& cache = roomParts_[drawnRoom->regionId];
+            if (!cache.retainedValid) {
+                std::vector<std::pair<uint64_t, uint64_t>> ids;
+                std::unordered_map<uint64_t, PartRequest> submitted;
+                for (const auto* list : {&cache.parts, &cache.hallParts}) for (auto request : *list) {
+                    request.retain = 1;
+                    const auto last = cache.submitted.find(request.instanceId);
+                    const bool same = last != cache.submitted.end() && std::memcmp(&last->second, &request, sizeof(request)) == 0;
+                    if (same || models.Submit(request)) {
+                        ids.emplace_back(request.ownerObjectHandle, request.instanceId); submitted.emplace(request.instanceId, request);
+                    } else { ++failed_; }
+                }
+                std::sort(ids.begin(), ids.end());
+                for (const auto& old : cache.retained) { if (!std::binary_search(ids.begin(), ids.end(), old)) { models.Remove(old.first, old.second); } }
+                cache.submitted = std::move(submitted);
+                cache.retained = std::move(ids); cache.retainedValid = true;
+            }
+            accepted_ += cache.retained.size();
         }
     }
 
-    // 装置と光線：描く部屋の装置だけ。状態で変わる部品は全部出し、表示だけを切り替える。
+    // 装置と光線：描く部屋の装置だけ（Play は全部の部屋）。状態で変わる部品は全部出し、表示だけを切り替える。
     // 通電・実体が変わった時刻は描かない部屋の装置も覚える（後で画面に入った時に古い変化を動かし直さない）。
-    // 編集中は時刻が進まないので、動きを付けず最終の姿にする。
+    // 編集中は時刻が進まないので、動きを付けず最終の姿にする。Play でも画に写らない部屋の装置は時刻を止める（回る・脈打つ
+    // 部品が毎フレーム GPU のシーンを書き直させない。写る前に画の外側で動き出すので、止めた所は見えない）。
+    std::set<std::string_view> seenRooms;
+    for (const auto& item : shown) { seenRooms.insert(item.room->regionId); }
+    // 回す機構のある部屋の装置は回さない：テレビの今の傾き（画面の外から見て反時計回りの角）の分だけ逆に回して描き、
+    // テレビと地形が回っている途中も、回り終えた後も、装置は正立して同じ所に見える。
+    std::map<std::string_view, double> roomTurn;
+    for (const auto* drawnRoom : drawn) {
+        HIKARI::GameProjectTransform tv{};
+        if (!drawnRoom->flippable || !world.FindSceneObject(drawnRoom->configuration.screenObject).GetWorldTransform(tv)) { continue; }
+        const auto right = QRotate(tv.rotation, {1, 0, 0}), up = QRotate(tv.rotation, {0, 1, 0});
+        // 置いたままの傾きからの差（-π〜π）。
+        roomTurn[drawnRoom->regionId] = std::remainder(std::atan2(right.y, up.y) - drawnRoom->restTurn, 2 * 3.14159265358979323846);
+    }
+    // 骨つきの物体で演じる装置（Play だけ）。演じた装置は焼いた部品を出さない。
+    const bool actors = animate && devices_.Acquire(world);
+    if (actors) { devices_.BeginFrame(); } else { devices_.Park(world); }
     for (const auto& device : snapshot.devices) {
         // バネは使えるようになった時刻も覚える（満ちた瞬間に矢印を弾ませる）。
         const bool ready = device.kind == Rules::DeviceKind::Spring && device.cooldown <= 0;
@@ -271,20 +350,34 @@ void Screen3DStage::SubmitParts(HIKARI::WorldView& world, const std::vector<cons
         const auto room = byRegion.find(std::string_view(device.id).substr(0, slash));
         if (slash == std::string::npos || room == byRegion.end()) { continue; }
         StagePartBuilder builder{projection_, palette, room->second->owner.value, frameParts_};
-        builder.SetTime(animate ? now : 0.0);
+        builder.SetTime(animate && seenRooms.contains(room->first) ? now : 0.0);
         builder.DepthRows(depthRows_);
         builder.Solid(solid_, playDepth_);
         // 通関の扉は演出の秒で閉じる（プレビューでも同じ姿）。
         if (intro_ && intro_->ending && intro_->time >= intro_->closeStart) { builder.GoalClosing(intro_->time - intro_->closeStart); }
-        mirrorFor(builder, room->second);
-        builder.Device(device, device.id == snapshot.checkpointId, now - memory->second.changed);
-        if (device.kind == Rules::DeviceKind::Laser) {
-            const auto beam = std::find_if(snapshot.beams.begin(), snapshot.beams.end(), [&](const Rules::BeamState& b) { return b.sourceId == device.id; });
-            builder.Beam(device, beam == snapshot.beams.end() ? nullptr : &*beam);
+        if (const auto turn = roomTurn.find(room->first); turn != roomTurn.end()) {
+            const auto& r = room->second->Region();
+            builder.Turn(room->second->x + r.cols * .5, room->second->y + r.rows * .5, turn->second);
+        } else {
+            mirrorFor(builder, room->second);
         }
+        const Rules::BeamState* beam = nullptr;
+        if (device.kind == Rules::DeviceKind::Laser) {
+            const auto found = std::find_if(snapshot.beams.begin(), snapshot.beams.end(), [&](const Rules::BeamState& b) { return b.sourceId == device.id; });
+            if (found != snapshot.beams.end()) { beam = &*found; }
+        }
+        const double since = now - memory->second.changed;
+        if (actors && devices_.Draw(world, builder, device, beam, checkpoint, since, seenRooms.contains(room->first))) {
+            // 光線の発射器は形が変わらないので焼いた部品のまま。
+            if (device.kind == Rules::DeviceKind::Laser) { builder.LaserBody(device); failed_ += builder.Failed(); }
+            continue;
+        }
+        builder.Device(device, checkpoint, since);
+        if (device.kind == Rules::DeviceKind::Laser) { builder.Beam(device, beam); }
         failed_ += builder.Failed();
     }
 
+    if (actors) { devices_.EndFrame(world); }
     // 人物・残影・予告・瞬間移動の残像：世界に一組ずつ（持ち主は舞台カメラ）。部屋の境に立つ体も一つで、
     // 両側のテレビの切り出しにそれぞれ写る。
     StagePartBuilder global{projection_, palette, cameras_[static_cast<size_t>(ViewKind::Sharp)].handle.value, frameParts_};
@@ -366,25 +459,30 @@ void Screen3DStage::SubmitParts(HIKARI::WorldView& world, const std::vector<cons
     for (const auto& request : frameParts_) { submit(request); }
     // オープニングの砂嵐の板：窓の 2〜4 段目に暗い・普通・明るい板を一枚ずつ。毎フレーム縦に跳ばし、ノイズを動かす。
     // 板は窓の倍の高さで、どこへ跳んでも窓を覆う。1 段目は板を置かず、キャプチャの暗い地のまま（黒い画面）。
-    if (const auto& noise = WindowOf(ViewKind::Far); introStatic_ && noise.valid) {
+    if (const auto& noise = WindowOf(ViewKind::Noise); introStatic_ && noise.valid) {
         // タイトル待ちとスペース直後の乱れの間（通関では目覚めから）は、2・3 段目に仮タイトルの板を置く（パソコンの画面の比に近い 3:2）。
         const bool title = intro_ && (intro_->ending ? intro_->time >= intro_->revealTime : intro_->time < intro_->titleOff + .3);
-        const auto plane = [&](std::string_view guid, uint64_t instance, double cx, double bottom, double width, double height) {
+        // 出す板の組はいつも同じにする（タイトルの板と砂嵐の板を出し入れすると、モデルの組が変わって GPU のシーンが
+        // 作り直しになり、演出の始まりで引っかかる）。使わない板は舞台カメラに写らない下へ退ける。
+        constexpr float kPlaneHide = 2000.0f;
+        const auto plane = [&](std::string_view guid, uint64_t instance, double cx, double bottom, double width, double height, bool shown) {
             PartRequest request{};
             request.ownerObjectHandle = cameras_[static_cast<size_t>(ViewKind::Sharp)].handle.value;
             request.instanceId = instance;
             std::memcpy(request.model.assetGuid, guid.data(), guid.size());
             request.worldTransform.position = projection_.Point(cx, bottom, 0);
+            if (!shown) { request.worldTransform.position.y -= kPlaneHide; }
             request.worldTransform.scale = {static_cast<float>(width * projection_.scale), static_cast<float>(height * projection_.scale), 1.0f};
             request.castShadow = 0; request.receiveShadow = 0; request.visible = 1;
             submit(request);
         };
-        if (title) { plane(kTitleCardGuid, 0x5A71C0DE20ull, noise.x + noise.cols * .5, noise.y + noise.rows, noise.cols * .5, noise.rows); }
+        plane(kTitleCardGuid, 0x5A71C0DE20ull, noise.x + noise.cols * .5, noise.y + noise.rows, noise.cols * .5, noise.rows, title);
         // 真っ白：黒い段の下の方。光の点：黒い段の上の小さな白い点。
-        plane(kWhitePlaneGuid, 0x5A71C0DE11ull, noise.x + noise.cols * .125, noise.y + noise.rows, noise.cols * .24, noise.rows * .4);
-        plane(kWhitePlaneGuid, 0x5A71C0DE12ull, noise.x + noise.cols * .125, noise.y + noise.rows * (kNoiseDot + .01), noise.cols * .012, noise.rows * .02);
+        plane(kWhitePlaneGuid, 0x5A71C0DE11ull, noise.x + noise.cols * .125, noise.y + noise.rows, noise.cols * .24, noise.rows * .4, true);
+        plane(kWhitePlaneGuid, 0x5A71C0DE12ull, noise.x + noise.cols * .125, noise.y + noise.rows * (kNoiseDot + .01), noise.cols * .012, noise.rows * .02, true);
         for (size_t band = 1; band <= kStaticPlaneGuids.size(); ++band) {
-            if (title && band <= 2) { continue; }
+            // タイトルの間の 2・3 段目はタイトルの板が映るので、砂嵐の板は退けておく。
+            const bool shown = !(title && band <= 2);
             const auto guid = kStaticPlaneGuids[band - 1];
             PartRequest request{};
             request.ownerObjectHandle = cameras_[static_cast<size_t>(ViewKind::Sharp)].handle.value;
@@ -398,6 +496,7 @@ void Screen3DStage::SubmitParts(HIKARI::WorldView& world, const std::vector<cons
             // 板の下端は窓の下端から（板の高さ − 窓の高さ）までの間。どこにあっても窓を覆う。
             const double bottom = noise.y + noise.rows + (height - noise.rows) * jump;
             request.worldTransform.position = projection_.Point(cx, bottom, 0);
+            if (!shown) { request.worldTransform.position.y -= kPlaneHide; }
             request.worldTransform.scale = {static_cast<float>(noise.cols * .25 * projection_.scale), static_cast<float>(height * projection_.scale), 1.0f};
             request.castShadow = 0; request.receiveShadow = 0; request.visible = 1;
             submit(request);
@@ -412,10 +511,9 @@ void Screen3DStage::SubmitParts(HIKARI::WorldView& world, const std::vector<cons
         line.castShadow = 0; line.receiveShadow = 0; line.visible = 1;
         submit(line);
     }
-    // エンジンの 1 フレームの描画物体は 2048 まで（工場の物体と合わせて超えると画面全体の描画が止まる）。
-    // 舞台の部品が多すぎる時は一度だけ知らせる。
-    if (static bool warned = false; !warned && submitted_.size() > kPartWarning) {
-        std::fprintf(stderr, "[TD2 Screen3D] stage parts=%zu exceed %zu; the engine frame may reject drawing\n", submitted_.size(), kPartWarning);
+    // 舞台の部品が多すぎる時は一度だけ知らせる（GPU のシーンの面の上限に近づく）。
+    if (static bool warned = false; !warned && accepted_ > kPartWarning) {
+        std::fprintf(stderr, "[TD2 Screen3D] stage parts=%zu exceed %zu; the engine frame may reject drawing\n", accepted_, kPartWarning);
         warned = true;
     }
 }

@@ -1,0 +1,10 @@
+{
+  "displayName": "BGM_Stage",
+  "guid": "1e3aa77e326a46f699d1e1a83da425de",
+  "importSettings": {},
+  "importerId": "AudioAssetImporter",
+  "importerVersion": 1,
+  "metaVersion": 1,
+  "sourcePath": "Assets/Audio/BGM/BGM_Stage.wav",
+  "type": "Audio"
+}

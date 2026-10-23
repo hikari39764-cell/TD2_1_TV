@@ -182,6 +182,10 @@ public:
     // 開発用の早送り：タイトル待ちでも流している途中でも、終わった時と同じ姿へ戻してゲームを始める。
     void Skip(HIKARI::WorldView& world);
     const IntroScreens& Screens() const noexcept { return screens_; }
+    // 今の段（音の受け渡しに使う）：タイトル待ち・オープニングを流している・通関の演出を流している。
+    bool TitleWait() const noexcept { return phase_ == Phase::Title; }
+    bool Opening() const noexcept { return phase_ == Phase::Playing; }
+    bool EndingPlaying() const noexcept { return phase_ == Phase::Ending; }
 
 private:
     enum class Phase { None, Title, Playing, Ending, Preview, Done };
@@ -218,6 +222,9 @@ private:
     void DriveDepthOfField(HIKARI::WorldView& world, double scale = 1);
     // 映画の黒帯：黒帯の範囲の始めに上下から入り、終わりに退く。画面の比に合わせて毎フレーム出す。
     void DriveLetterbox(HIKARI::WorldView& world, double t) const;
+    // タイトル待ちの間、演出で使う UI のテクスチャ（黒帯・タイトル・白）を見えない 1 画素で毎フレーム出しておく
+    // （初めて出したフレームに読み込みで 0.1 秒ほど止まるのを、演出の外へ移す）。
+    void WarmUi(HIKARI::WorldView& world) const;
     // 暗転の中のタイトル：点 → 横線 → 全面と点き、しばらく映って、逆の順に消える。
     void DriveTitleCard(HIKARI::WorldView& world, double t) const;
     // 灯・小物・色調整・カメラを作者の状態へ戻す（演出は止めない）。

@@ -1,0 +1,10 @@
+{
+  "displayName": "SE_Phone",
+  "guid": "d420af507f944309b588fc98b4fb3cea",
+  "importSettings": {},
+  "importerId": "AudioAssetImporter",
+  "importerVersion": 1,
+  "metaVersion": 1,
+  "sourcePath": "Assets/Audio/SE/SE_Phone.mp3",
+  "type": "Audio"
+}

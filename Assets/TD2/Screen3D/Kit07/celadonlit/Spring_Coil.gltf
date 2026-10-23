@@ -1,108 +1,108 @@
 {
-	"asset":{
-		"generator":"Khronos glTF Blender I/O v5.1.20",
-		"version":"2.0"
-	},
-	"scene":0,
-	"scenes":[
-		{
-			"name":"Scene",
-			"nodes":[
-				0
-			]
-		}
-	],
-	"nodes":[
-		{
-			"mesh":0,
-			"name":"Spring_Coil_baked"
-		}
-	],
-	"materials":[
-		{
-			"doubleSided":true,
-			"name":"K07L_celadon_graphite",
-			"pbrMetallicRoughness":{
-				"baseColorFactor":[
-					0.05448027700185776,
-					0.109461709856987,
-					0.10224173218011856,
-					1
-				],
-				"metallicFactor":0,
-				"roughnessFactor":0.550000011920929
-			}
-		}
-	],
-	"meshes":[
-		{
-			"name":"Spring_Coil.003",
-			"primitives":[
-				{
-					"attributes":{
-						"POSITION":0,
-						"NORMAL":1
-					},
-					"indices":2,
-					"material":0
-				}
-			]
-		}
-	],
-	"accessors":[
-		{
-			"bufferView":0,
-			"componentType":5126,
-			"count":1164,
-			"max":[
-				0.24199999868869781,
-				0.2018292248249054,
-				-0.1080000102519989
-			],
-			"min":[
-				-0.24199999868869781,
-				0.005670767277479172,
-				-0.5920000076293945
-			],
-			"type":"VEC3"
-		},
-		{
-			"bufferView":1,
-			"componentType":5126,
-			"count":1164,
-			"type":"VEC3"
-		},
-		{
-			"bufferView":2,
-			"componentType":5123,
-			"count":1176,
-			"type":"SCALAR"
-		}
-	],
-	"bufferViews":[
-		{
-			"buffer":0,
-			"byteLength":13968,
-			"byteOffset":0,
-			"target":34962
-		},
-		{
-			"buffer":0,
-			"byteLength":13968,
-			"byteOffset":13968,
-			"target":34962
-		},
-		{
-			"buffer":0,
-			"byteLength":2352,
-			"byteOffset":27936,
-			"target":34963
-		}
-	],
-	"buffers":[
-		{
-			"byteLength":30288,
-			"uri":"Spring_Coil.bin"
-		}
-	]
+  "asset": {
+    "generator": "TD2 spring kit (temporary script)",
+    "version": "2.0"
+  },
+  "scene": 0,
+  "scenes": [
+    {
+      "name": "Scene",
+      "nodes": [
+        0
+      ]
+    }
+  ],
+  "nodes": [
+    {
+      "mesh": 0,
+      "name": "Spring_Coil"
+    }
+  ],
+  "materials": [
+    {
+      "doubleSided": true,
+      "name": "K07L_celadon_panel",
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          0.5029,
+          0.6584,
+          0.6105,
+          1
+        ],
+        "metallicFactor": 0,
+        "roughnessFactor": 0.55
+      }
+    }
+  ],
+  "meshes": [
+    {
+      "name": "Spring_Coil",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 0,
+            "NORMAL": 1
+          },
+          "indices": 2,
+          "material": 0
+        }
+      ]
+    }
+  ],
+  "accessors": [
+    {
+      "bufferView": 0,
+      "componentType": 5126,
+      "count": 120,
+      "type": "VEC3",
+      "min": [
+        -0.34884905801410104,
+        0.011577058363951568,
+        -0.5
+      ],
+      "max": [
+        0.34884905801410104,
+        0.19592294163604845,
+        -0.2
+      ]
+    },
+    {
+      "bufferView": 1,
+      "componentType": 5126,
+      "count": 120,
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 2,
+      "componentType": 5123,
+      "count": 180,
+      "type": "SCALAR"
+    }
+  ],
+  "bufferViews": [
+    {
+      "buffer": 0,
+      "byteOffset": 0,
+      "byteLength": 1440,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 1440,
+      "byteLength": 1440,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 2880,
+      "byteLength": 360,
+      "target": 34963
+    }
+  ],
+  "buffers": [
+    {
+      "byteLength": 3240,
+      "uri": "Spring_Coil.bin"
+    }
+  ]
 }

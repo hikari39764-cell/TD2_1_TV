@@ -39,6 +39,10 @@ public:
         // 0 より大きいと圧力板に関係なく往復し続ける（時機を計る仕掛け）。
         fields.Float("dwell", "自動往復の停止秒数", dwell_, 0.f, 20.f);
         fields.Float("settle", "踏み続けて動くまでの秒数", settle_, 0.f, 2.f);
+        // 乗り物：動くテレビに入って着地すると、その人を乗せて反対の端へ運ぶ（圧力板はいらない）。
+        fields.Bool("ride", "乗ると動く", ride_);
+        // 乗り場の区域（カンマ区切り）。空なら動くテレビ自身に乗る。書けば、そこに入ると一度だけ状態 B へ動く（降ってくる道）。
+        fields.Text("rideFrom", "乗り場", rideFrom_);
         // 乗っている区域カメラを、動きの途中だけ持ち上げて引く（吊り台など）。120°以上回る転台では使わず、
         // 画面が真横を向いた瞬間に向こう側のカメラへ切り替える。
         fields.Float("cameraLift", "途中のカメラの持ち上げ", cameraLift_, 0.f, 4.f);
@@ -59,15 +63,16 @@ public:
     bool BuildSource(MechanismAuthoring& out, std::string& error) const {
         out = {};
         auto& s = out.source;
-        s.id = id_; s.toggle = toggle_; s.balance = balance_; s.seconds = seconds_; s.dwell = dwell_; s.settle = settle_;
+        s.id = id_; s.toggle = toggle_; s.balance = balance_; s.seconds = seconds_; s.dwell = dwell_; s.settle = settle_; s.ride = ride_;
+        s.rideFrom = MachineText::ParseNames(rideFrom_);
         if (id_.empty()) { error = "仕掛け ID が空です"; return false; }
         return MachineText::ParseOffsets(regionOffsets_, out.offsets, error) && MachineText::ParseOffsets(regionOffsetsC_, out.offsetsC, error) &&
                MachineText::ParseDeltas(objectDeltas_, out.deltas, error) && MachineText::ParseDeltas(objectDeltasC_, out.deltasC, error);
     }
 
 private:
-    std::string id_, regionOffsets_, objectDeltas_, regionOffsetsC_, objectDeltasC_, recipe_, parts_;
-    bool toggle_ = false, balance_ = false;
+    std::string id_, rideFrom_, regionOffsets_, objectDeltas_, regionOffsetsC_, objectDeltasC_, recipe_, parts_;
+    bool toggle_ = false, balance_ = false, ride_ = false;
     float seconds_ = 0.8f, dwell_ = 0.f, settle_ = 0.f, cameraLift_ = 1.5f, cameraPull_ = 1.0f;
 };
 

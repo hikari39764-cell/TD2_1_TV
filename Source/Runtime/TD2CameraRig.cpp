@@ -9,10 +9,11 @@ using F3 = HIKARI::GameProjectFloat3;
 using Math::Vec3;
 using Math::kPi;
 
-// 前の向きから右（前 × 世界の上）と上（右 × 前）を作る。前がほぼ 0 か真上・真下なら false で、right と up は変えない。
-bool SideAxes(const Vec3& forward, Vec3& right, Vec3& up) {
+// 前の向きから右（前 × 基準の上）と上（右 × 前）を作る。基準の上は区域カメラの上（ふつうは世界の上、倒立した大区域では下）。
+// 前がほぼ 0 か基準の上と平行なら false で、right と up は変えない。
+bool SideAxes(const Vec3& forward, const Vec3& reference, Vec3& right, Vec3& up) {
     if (Math::Dot(forward, forward) < 1e-18) { return false; }
-    const Vec3 f = Math::Normalize(forward), candidate = Math::Cross(f, {0, 1, 0});
+    const Vec3 f = Math::Normalize(forward), candidate = Math::Cross(f, reference);
     if (Math::Dot(candidate, candidate) < 1e-18) { return false; }
     right = Math::Normalize(candidate);
     up = Math::Cross(right, f);
@@ -37,11 +38,12 @@ F3 CameraRig::Forward(const HIKARI::GameProjectTransform& transform) {
     return ToF3(Math::Normalize(Math::QRotate(ToQuat(transform.rotation), {0, 0, 1})));
 }
 
-void CameraRig::Snap(const F3& eye, const F3& look, float verticalFovRadians) {
-    baseEye_.Snap(ToVec3(eye)); baseLook_.Snap(ToVec3(look));
+void CameraRig::Snap(const F3& eye, const F3& look, float verticalFovRadians, const F3& up) {
+    baseEye_.Snap(ToVec3(eye)); baseLook_.Snap(ToVec3(look)); baseUp_.Snap(ToVec3(up));
     offset_.Snap({}); aim_.Snap({}); roll_.Snap({});
     fov_ = verticalFovRadians; fovVelocity_ = 0;
-    last_ = {eye, look, {0, 1, 0}, verticalFovRadians};
+    (void)SideAxes(Math::Sub(baseLook_.value, baseEye_.value), baseUp_.value, right_, up_);
+    last_ = {eye, look, ToF3(up_), verticalFovRadians};
     ready_ = true;
 }
 
@@ -77,12 +79,12 @@ void CameraRig::Breath(const CameraAreaSettings& area, double time, F3& eyeOffse
     BreathAlong(area, time, right_, up_, std::sqrt(Math::Dot(d, d)), eyeOffset, lookOffset, roll);
 }
 
-void CameraRig::BreathAround(const CameraAreaSettings& area, double time, const F3& eye, const F3& look, F3& eyeOffset,
-                             F3& lookOffset, double& roll) {
-    // 追従の Update と同じ取り方（前 × 世界の上 = 右、右 × 前 = 上）。
+void CameraRig::BreathAround(const CameraAreaSettings& area, double time, const F3& eye, const F3& look, const F3& reference,
+                             F3& eyeOffset, F3& lookOffset, double& roll) {
+    // 追従の Update と同じ取り方（前 × 基準の上 = 右、右 × 前 = 上）。
     const Vec3 forward{look.x - eye.x, look.y - eye.y, look.z - eye.z};
     Vec3 right{1, 0, 0}, up{0, 1, 0};
-    (void)SideAxes(forward, right, up);
+    (void)SideAxes(forward, ToVec3(reference), right, up);
     BreathAlong(area, time, right, up, std::sqrt(Math::Dot(forward, forward)), eyeOffset, lookOffset, roll);
 }
 
@@ -105,10 +107,11 @@ CameraRigPose CameraRig::Update(const CameraRegionFrame& frame, const CameraArea
     if (!ready_) { Snap(frame.eye, frame.look, frame.verticalFovRadians); }
     baseEye_.Step(ToVec3(frame.eye), area.regionSeconds, dt);
     baseLook_.Step(ToVec3(frame.look), area.regionSeconds, dt);
+    baseUp_.Step(ToVec3(frame.up), area.regionSeconds, dt);
     fov_ = Math::CriticalDamp(fov_, frame.verticalFovRadians, fovVelocity_, area.regionSeconds, dt);
     const Vec3 forward = Math::Sub(baseLook_.value, baseEye_.value);
     const double distance = std::sqrt(Math::Dot(forward, forward));
-    (void)SideAxes(forward, right_, up_);
+    (void)SideAxes(forward, baseUp_.value, right_, up_);
     // 2. プレイヤーの方へ平行移動し、残りの差の一部だけ注視を振る（どちらも上限内）。
     // プレイヤーがいない時（死亡中など）は今の位置を保つ。
     if (present) {

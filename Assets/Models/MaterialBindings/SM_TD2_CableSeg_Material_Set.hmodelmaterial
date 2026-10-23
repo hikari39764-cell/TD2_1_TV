@@ -1,0 +1,11 @@
+{
+  "bindings": [
+    {
+      "materialAssetGuid": "43632b6732e34c26aee3ed75ba9cbdc8",
+      "slotId": "f4502341556e0fb9"
+    }
+  ],
+  "displayName": "SM_TD2_CableSeg Material Set",
+  "modelAssetGuid": "f44d0d50355a4ab497fe58a8ac7455a0",
+  "version": 1
+}

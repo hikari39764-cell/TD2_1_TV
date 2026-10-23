@@ -1,0 +1,10 @@
+{
+  "displayName": "BGM_Title",
+  "guid": "14cd97829b714f37ad170262c54ac555",
+  "importSettings": {},
+  "importerId": "AudioAssetImporter",
+  "importerVersion": 1,
+  "metaVersion": 1,
+  "sourcePath": "Assets/Audio/BGM/BGM_Title.mp3",
+  "type": "Audio"
+}

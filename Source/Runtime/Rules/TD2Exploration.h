@@ -25,6 +25,8 @@ struct MechanismSource {
     double seconds = 1.5;     // 状態の間を動く秒数
     double dwell = 0.0;       // 0 より大きければ圧力板に関係なく自動で往復し、両端でこの秒数だけ止まる
     double settle = 0.0;      // 踏み続け式・天秤：踏まれ方がこの秒数変わらなかった時だけ動き出す（走り抜けでは動かない）
+    bool ride = false;        // 乗り物：動く部屋に外から入り、部屋の中に収まって着地したら反対の端へ向かう（圧力板は見ない）
+    std::vector<std::string> rideFrom;   // 乗り場：空なら動く部屋そのもの。書けばそこへ入って着地した時に状態 1 へ動き、戻らない（道が降ってくる）
     std::vector<MechanismMove> moves;    // 状態 1
     std::vector<MechanismMove> movesC;   // 状態 -1（天秤だけ）
 };
@@ -37,6 +39,7 @@ struct MechanismRuntime {
     double progress = 0.0;                // 今の状態（-1〜1。動いている間は途中の値）
     double rest = 0.0;                    // 自動往復で、端に着いてから止まっている秒数
     int pending = 0; double pendingTime = 0.0;   // settle の間、待っている次の状態と経過秒
+    bool rideArmed = false;               // 乗り物：外から乗り込んだばかりで、着地を待っている
 };
 // スロットの並んだ棚。メンバーの部屋の圧力板（targets=slide/区域ID）を踏むと、その部屋が隣の空いたスロットへ滑る。
 // 空きが隣に無ければ動かず、blockedCount が増える（揺れの合図）。
@@ -124,6 +127,9 @@ public:
     bool StepBack(std::string_view region, int direction);
     // 残影を消す（大区域を出た時。前の箱庭の装置を押したまま残さない）。
     void ClearEcho();
+    // 宝石（収集物）の拾った数と世界にある数。拾った物は死んでも戻らない。
+    struct CollectibleCount { int taken = 0, total = 0; };
+    CollectibleCount Collectibles() const;
     // 開発用：プレイヤーをその区域の出生点へ移す（残影は消し、速さと復活点も合わせる）。世界地図に無い区域なら false。
     bool Teleport(std::string_view region);
     // 試遊を途中の状態から始める：踏み方に関係なく切り替わる機構（切り替え式・自動往復）をその状態へ置く。

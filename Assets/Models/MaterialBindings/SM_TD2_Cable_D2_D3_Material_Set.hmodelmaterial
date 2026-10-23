@@ -1,0 +1,11 @@
+{
+  "bindings": [
+    {
+      "materialAssetGuid": "43632b6732e34c26aee3ed75ba9cbdc8",
+      "slotId": "f4502341556e0fb9"
+    }
+  ],
+  "displayName": "SM_TD2_Cable_D2_D3 Material Set",
+  "modelAssetGuid": "cda5ad68202879b2b905404f051f1df2",
+  "version": 1
+}

@@ -247,7 +247,12 @@ void LevelEditor::DrawDeviceInspector(EditorWorkspaceHostContext& ctx) {
     if (d->kind == "Laser") { EditFloat(ui, "td2.device.range", "射程", d->range, .125f, 128); }
     if (d->kind == "Spring") { DrawSpring(ui, *d); }
     if (d->kind == "Decal") { DrawDecal(ui, *d); }
-    if (d->kind == "Laser" || d->kind == "Door" || d->kind == "Bridge" || d->kind == "Goal") { ui.Checkbox("td2.device.invert", "通電で閉じる（逆）", &d->inverted); }
+    if (d->kind == "Laser" || d->kind == "Door" || d->kind == "Bridge" || d->kind == "Goal") {
+        ui.Checkbox("td2.device.invert", "通電で閉じる（逆）", &d->inverted);
+        // つながる板が二枚以上ある時の動き方（全部で動けば、二か所を同時に押さえる謎になる）。
+        bool all = d->Extra("all") == "1";
+        if (ui.Checkbox("td2.device.all", "つながる板の全部で動く", &all)) { d->SetExtra("all", all ? "1" : ""); }
+    }
     if (d->kind == "Plate") {
         if (ui.Selectable("td2.device.latch.off", "踏んでいる間だけ通電", !d->latch)) { d->latch = false; }
         if (ui.Selectable("td2.device.latch.on", "踏むたびに切り替え", d->latch)) { d->latch = true; }

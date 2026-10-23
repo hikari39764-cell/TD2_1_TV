@@ -1,5 +1,6 @@
 #include "TD2ScreenModels.h"
 #include "TD2ScreenKitAssets.h"
+#include "../Common/TD2Math.h"
 #include <algorithm>
 #include <array>
 #include <cmath>
@@ -57,27 +58,38 @@ int BundleOf(int left) { return left >= 8 ? 8 : left >= 4 ? 4 : left >= 2 ? 2 : 
 void StagePartBuilder::Begin(std::string_view key) {
     semantic_ = 1469598103934665603ull;
     for (const unsigned char c : key) { semantic_ = (semantic_ ^ c) * 1099511628211ull; }
-    partIndex_ = 0;
+}
+
+void StagePartBuilder::PadSeries(const SeriesCounts& previous) {
+    const uint64_t semantic = semantic_;
+    for (const auto& [key, series] : previous) {
+        const auto found = series_.find(key);
+        for (size_t i = found != series_.end() ? found->second.count : 0; i < series.count; ++i) {
+            semantic_ = series.semantic;
+            Add(series.part, kParkX, kParkY, 1, 1, 0, {}, -1, false);
+        }
+    }
+    semantic_ = semantic;
 }
 
 bool StagePartBuilder::Add(std::string_view part, double x, double bottomY, double width, double height, double depth,
                            HIKARI::GameProjectQuaternion rotation, double leanPivot, bool visible) {
     const auto guid = ScreenKitGuid(part, palette_);
     PartRequest request{};
-    request.ownerObjectHandle = owner_; request.instanceId = semantic_ ^ (++partIndex_ * 0x9e3779b97f4a7c15ull);
-    if (!request.instanceId) { request.instanceId = 1; }
+    // ID：系列（意味名と部品名）の鍵と、系列の中の順番。
+    uint64_t key = semantic_;
+    for (const unsigned char c : part) { key = (key ^ c) * 1099511628211ull; }
+    auto& series = series_[key];
+    if (series.part.empty()) { series.semantic = semantic_; series.part = std::string(part); }
+    uint64_t id = key ^ (++series.count * 0x9e3779b97f4a7c15ull);
+    id ^= id >> 31; id *= 0xBF58476D1CE4E5B9ull; id ^= id >> 29;
+    request.ownerObjectHandle = owner_; request.instanceId = id ? id : 1;
     if (guid.empty() || guid.size() >= sizeof(request.model.assetGuid)) { ++failed_; return false; }
     std::memcpy(request.model.assetGuid, guid.data(), guid.size());
     // 俯角と側角を両方付けた時の傾きは部品の中ほどで釣り合わせ、マスの中心からのずれを上下に半分ずつにする。
     // 光線は中心が原点なのでずらさない。
     const double pivot = leanPivot >= 0 ? leanPivot : (part == "LaserBeam" ? 0.0 : height * .5);
-    request.worldTransform = Place(x, bottomY, depth, rotation, pivot);
-    rotation = request.worldTransform.rotation;
-    const bool quarterTurn = std::abs(std::abs(rotation.z) - .70710678f) < .0001f && rotation.x == 0 && rotation.y == 0;
-    // 正面の 1 マスが像でもちょうど 1 マスになるよう、俯角で縦、側角で横の縮みを補う。90°回した部品は軸を入れ替える。
-    const double pitchCos = std::cos(projection_.pitch), yawCos = std::cos(projection_.yaw);
-    request.worldTransform.scale = {static_cast<float>(width * projection_.scale / (quarterTurn ? pitchCos : yawCos)),
-        static_cast<float>(height * projection_.scale / (quarterTurn ? yawCos : pitchCos)), static_cast<float>(projection_.scale * partDepth_)};
+    request.worldTransform = PartPose(x, bottomY, width, height, depth, rotation, pivot);
     // 陰影は部品に焼いてあり、キャプチャは灯も影も使わない。visible=0 にするとシーンの作り直しになるので、
     // 表示したまま舞台カメラに写らない所へ退ける。
     request.castShadow = 0; request.receiveShadow = 0; request.visible = 1;
@@ -86,14 +98,29 @@ bool StagePartBuilder::Add(std::string_view part, double x, double bottomY, doub
     return true;
 }
 
+HIKARI::GameProjectTransform StagePartBuilder::PartPose(double x, double bottomY, double width, double height, double depth,
+                                                      HIKARI::GameProjectQuaternion rotation, double pivot) const {
+    auto pose = Place(x, bottomY, depth, rotation, pivot);
+    const auto& turned = pose.rotation;
+    const bool quarterTurn = std::abs(std::abs(turned.z) - .70710678f) < .0001f && turned.x == 0 && turned.y == 0;
+    // 正面の 1 マスが像でもちょうど 1 マスになるよう、俯角で縦、側角で横の縮みを補う。90°回した部品は軸を入れ替える。
+    const double pitchCos = std::cos(projection_.pitch), yawCos = std::cos(projection_.yaw);
+    pose.scale = {static_cast<float>(width * projection_.scale / (quarterTurn ? pitchCos : yawCos)),
+        static_cast<float>(height * projection_.scale / (quarterTurn ? yawCos : pitchCos)), static_cast<float>(projection_.scale * partDepth_)};
+    return pose;
+}
+
 HIKARI::GameProjectTransform StagePartBuilder::Place(double x, double bottomY, double depth, HIKARI::GameProjectQuaternion rotation,
                                                     double pivot) const {
     if (mirror_) {
-        // 点対称に移すと部品は原点から下へ伸びるので、傾きの釣り合いも下向きに取る。
-        x = 2 * mirrorX_ - x; bottomY = 2 * mirrorY_ - bottomY; pivot = -pivot;
-        const auto half = RotateZ(kPi);
-        rotation = {half.w * rotation.x - half.z * rotation.y, half.w * rotation.y + half.z * rotation.x,
-                    half.w * rotation.z + half.z * rotation.w, half.w * rotation.w - half.z * rotation.z};
+        // 中心について画面の上で時計回りに turn_ 回す（地図の y は下向き）。180° なら点対称で、部品は原点から下へ伸びるので
+        // 傾きの釣り合いも下向きに取る。
+        const double dx = x - mirrorX_, dy = bottomY - mirrorY_, c = std::cos(turn_), s = std::sin(turn_);
+        x = mirrorX_ + dx * c - dy * s; bottomY = mirrorY_ + dx * s + dy * c;
+        if (c < 0) { pivot = -pivot; }
+        const auto spin = RotateZ(-turn_);
+        rotation = {spin.w * rotation.x - spin.z * rotation.y, spin.w * rotation.y + spin.z * rotation.x,
+                    spin.w * rotation.z + spin.z * rotation.w, spin.w * rotation.w - spin.z * rotation.z};
     }
     HIKARI::GameProjectTransform pose{};
     pose.position = projection_.Point(x + projection_.Lean() * pivot, bottomY, depth);
@@ -523,11 +550,10 @@ void StagePartBuilder::Device(const Rules::DeviceSnapshot& d, bool checkpoint, d
         const double k = (std::min)(r.w / 2, r.h / 3);            // 幅 2・高さ 3 の形のまま矩形に収める
         constexpr double kHalf = .62, kLow = .2, kTall = 2.28;      // 画面の半幅・下端・高さ（枠の中、1 マス = 1）
         constexpr double kScreenDepth = -.55, kLeafDepth = -.46;
-        const auto smooth = [](double t) { t = std::clamp(t, 0.0, 1.0); return t * t * (3 - 2 * t); };
         const bool entered = d.pressed || goalClosing_ >= 0;
         const double closing = goalClosing_ >= 0 ? goalClosing_ : 1e3;
         // 戸の開き（1 = 開いた）。入った後は 0.15〜0.75 秒で閉じる。通電の切り替えは 0.35 秒。
-        const double open = entered ? 1 - smooth((closing - .15) / .6) : d.active ? smooth(since / .35) : 1 - smooth(since / .35);
+        const double open = entered ? 1 - Math::Smoothstep((closing - .15) / .6) : d.active ? Math::Smoothstep(since / .35) : 1 - Math::Smoothstep(since / .35);
         Add("Goal_Frame", x, bottom, k, k);
         const double sx = projection_.ShiftX(kScreenDepth), sy = projection_.ShiftY(kScreenDepth);
         const double cy = bottom - (kLow + kTall * .5) * k;
@@ -540,13 +566,13 @@ void StagePartBuilder::Device(const Rules::DeviceSnapshot& d, bool checkpoint, d
         Add("Goal_LeafR", x + kHalf * k + lx, leafBottom + ly, (std::max)(leaf, .001), kTall * k, kLeafDepth, {}, 0, leaf > .002);
         // 閉じた合わせ目の光：0.75〜0.95 秒で縦の線が点に縮み、1.05 秒までに消える。
         const double seam = closing - .75;
-        const double line = seam < .2 ? 1 - smooth(seam / .2) * .97 : .03 * (1 - smooth((seam - .2) / .1));
+        const double line = seam < .2 ? 1 - Math::Smoothstep(seam / .2) * .97 : .03 * (1 - Math::Smoothstep((seam - .2) / .1));
         const double fx = projection_.ShiftX(kLeafDepth + .02), fy = projection_.ShiftY(kLeafDepth + .02);
         Add("Goal_Screen", x + fx, cy + fy, .06 * k, (std::max)(kTall * line, .001) * k, kLeafDepth + .02, {}, -1, entered && seam >= 0 && seam < .3);
         Lamp(x, bottom - 2.62 * k, d.powered && !entered, since);
         break;
     }
-    case Rules::DeviceKind::Laser: Add(std::string("Laser_") + std::string(DirectionName(d.direction)), x, bottom, r.w, r.h); break;
+    case Rules::DeviceKind::Laser: LaserBody(d); break;
     // 危険：回る赤い丸鋸（マスごとに一枚）。刃の中心を付いている面の縁に置き、半分を地形に沈める（向きは中心の置き方だけ）。
     // 刃は斜めに切っていないので、立体の組では刃の奥行き（0.3）の分だけ右上へずらして溝の中に合わせる。
     // 隣り合う刃は回る角度を少しずらす（同じ姿の歯が並ぶと止まって見える）。
@@ -600,6 +626,21 @@ void StagePartBuilder::Device(const Rules::DeviceSnapshot& d, bool checkpoint, d
             Add("Spring_PadHot", px, padBottom, 1, 1, 0, {}, 0, hot || flash);
             Add("Spring_PadOff", px, padBottom, 1, 1, 0, {}, 0, cooling);
             Add("Spring_PadFill", px, padBottom - kPad, fill, 1, 0, {}, 0, cooling);
+        }
+        // 弾簧の印：踏み板の上に浮かぶ光る緑の「^」（当たりは無い）。押し板と同じ平たい形に見えないよう、上へ飛ぶ向きを示す。
+        // ゆっくり上下し、溜めている間は速く跳ね、冷却中は隠す。幅が 2 マス以上なら二つ並べる。
+        {
+            const double rate = hot ? 9.0 : 2.6, lift = hot ? .07 : .045;
+            const double bob = lift * (.5 + .5 * std::sin(time_ * rate + r.x * 1.7));
+            const double padTop = bottom - kBase - kCoil * squeeze - kPad;
+            const int arrows = r.w >= 2 ? 2 : 1;
+            // 二段の「^^」：下は大きく、上は小さく。上の段は少し遅れて跳ねる。
+            const double bob2 = lift * (.5 + .5 * std::sin(time_ * rate + r.x * 1.7 - .9));
+            for (int k = 0; k < arrows; ++k) {
+                const double ax = r.x + r.w * (k + .5) / arrows;
+                Add("Spring_Arrow", ax, padTop - .16 - bob, 1, 1, 0, {}, 0, !cooling);
+                Add("Spring_Arrow", ax, padTop - .48 - bob2, .75, .75, 0, {}, 0, !cooling);
+            }
         }
         break;
     }
@@ -679,6 +720,12 @@ void StagePartBuilder::Device(const Rules::DeviceSnapshot& d, bool checkpoint, d
         Add("FX_Ring", x, bottom, .4, .4, .15, {}, -1, !d.solid);
         break;
     }
+}
+
+void StagePartBuilder::LaserBody(const Rules::DeviceSnapshot& laser) {
+    Begin("device/" + laser.id);
+    const auto& r = laser.rect;
+    Add(std::string("Laser_") + std::string(DirectionName(laser.direction)), r.x + r.w * .5, r.y + r.h, r.w, r.h);
 }
 
 void StagePartBuilder::Beam(const Rules::DeviceSnapshot& laser, const Rules::BeamState* beam) {

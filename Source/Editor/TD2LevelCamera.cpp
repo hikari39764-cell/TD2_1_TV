@@ -215,6 +215,7 @@ void LevelEditor::DrawEdgeInspector(EditorWorkspaceHostContext& ctx) {
         double seconds = edgeDraft_.seconds;
         if (EditFloat(ui, "td2.edge.seconds", "秒数", seconds, .4f, 10.f)) { edgeDraft_.seconds = seconds; changed = true; }
         changed |= ui.Checkbox("td2.edge.keep", "手直しを残す", &edgeDraft_.keepAuthored);
+        changed |= ui.Checkbox("td2.edge.auto", "自動で流す", &edgeDraft_.autoPlay);
         if (changed) { edgeDraftPending_ = true; }
         if (edgeDraftPending_ && !ui.GetInteraction().editing) {
             std::string error;

@@ -1,0 +1,336 @@
+{
+ "asset": {
+  "generator": "Khronos glTF Blender I/O v5.1.20",
+  "version": "2.0"
+ },
+ "scene": 0,
+ "scenes": [
+  {
+   "name": "Scene",
+   "nodes": [
+    3
+   ]
+  }
+ ],
+ "nodes": [
+  {
+   "name": "Chevron"
+  },
+  {
+   "children": [
+    0
+   ],
+   "name": "Root"
+  },
+  {
+   "mesh": 0,
+   "name": "SM_TD2_Dev_ExitArrow",
+   "skin": 0
+  },
+  {
+   "children": [
+    2,
+    1
+   ],
+   "name": "SM_TD2_Dev_ExitArrow_Rig"
+  }
+ ],
+ "animations": [
+  {
+   "channels": [
+    {
+     "sampler": 0,
+     "target": {
+      "node": 1,
+      "path": "translation"
+     }
+    },
+    {
+     "sampler": 1,
+     "target": {
+      "node": 1,
+      "path": "rotation"
+     }
+    },
+    {
+     "sampler": 2,
+     "target": {
+      "node": 1,
+      "path": "scale"
+     }
+    },
+    {
+     "sampler": 3,
+     "target": {
+      "node": 0,
+      "path": "translation"
+     }
+    },
+    {
+     "sampler": 4,
+     "target": {
+      "node": 0,
+      "path": "rotation"
+     }
+    },
+    {
+     "sampler": 5,
+     "target": {
+      "node": 0,
+      "path": "scale"
+     }
+    }
+   ],
+   "name": "Push",
+   "samplers": [
+    {
+     "input": 6,
+     "interpolation": "STEP",
+     "output": 7
+    },
+    {
+     "input": 6,
+     "interpolation": "STEP",
+     "output": 8
+    },
+    {
+     "input": 6,
+     "interpolation": "STEP",
+     "output": 9
+    },
+    {
+     "input": 10,
+     "interpolation": "LINEAR",
+     "output": 11
+    },
+    {
+     "input": 6,
+     "interpolation": "STEP",
+     "output": 8
+    },
+    {
+     "input": 6,
+     "interpolation": "STEP",
+     "output": 9
+    }
+   ]
+  }
+ ],
+ "materials": [
+  {
+   "doubleSided": true,
+   "emissiveFactor": [
+    0.1946178376674652,
+    0.6938717365264893,
+    0.06847816705703735
+   ],
+   "name": "K07E_celadon_go_light",
+   "pbrMetallicRoughness": {
+    "baseColorFactor": [
+     0.1946178376674652,
+     0.6938717365264893,
+     0.06847816705703735,
+     1
+    ],
+    "metallicFactor": 0,
+    "roughnessFactor": 0.550000011920929
+   }
+  }
+ ],
+ "meshes": [
+  {
+   "name": "Exit_Chevron.001",
+   "primitives": [
+    {
+     "attributes": {
+      "POSITION": 0,
+      "NORMAL": 1,
+      "JOINTS_0": 2,
+      "WEIGHTS_0": 3
+     },
+     "indices": 4,
+     "material": 0
+    }
+   ]
+  }
+ ],
+ "skins": [
+  {
+   "inverseBindMatrices": 5,
+   "joints": [
+    1,
+    0
+   ],
+   "name": "SM_TD2_Dev_ExitArrow_Rig"
+  }
+ ],
+ "accessors": [
+  {
+   "bufferView": 0,
+   "componentType": 5126,
+   "count": 672,
+   "max": [
+    0.46000003814697266,
+    0.3500000238418579,
+    0
+   ],
+   "min": [
+    -0.5600000023841858,
+    -0.3500000238418579,
+    -0.029999999329447746
+   ],
+   "type": "VEC3"
+  },
+  {
+   "bufferView": 1,
+   "componentType": 5126,
+   "count": 672,
+   "type": "VEC3"
+  },
+  {
+   "bufferView": 2,
+   "componentType": 5121,
+   "count": 672,
+   "type": "VEC4"
+  },
+  {
+   "bufferView": 3,
+   "componentType": 5126,
+   "count": 672,
+   "type": "VEC4"
+  },
+  {
+   "bufferView": 4,
+   "componentType": 5123,
+   "count": 1008,
+   "type": "SCALAR"
+  },
+  {
+   "bufferView": 5,
+   "componentType": 5126,
+   "count": 2,
+   "type": "MAT4"
+  },
+  {
+   "bufferView": 6,
+   "componentType": 5126,
+   "count": 2,
+   "max": [
+    1.4
+   ],
+   "min": [
+    0
+   ],
+   "type": "SCALAR"
+  },
+  {
+   "bufferView": 7,
+   "componentType": 5126,
+   "count": 2,
+   "type": "VEC3"
+  },
+  {
+   "bufferView": 8,
+   "componentType": 5126,
+   "count": 2,
+   "type": "VEC4"
+  },
+  {
+   "bufferView": 9,
+   "componentType": 5126,
+   "count": 2,
+   "type": "VEC3"
+  },
+  {
+   "bufferView": 10,
+   "componentType": 5126,
+   "count": 85,
+   "max": [
+    1.4
+   ],
+   "min": [
+    0
+   ],
+   "type": "SCALAR"
+  },
+  {
+   "bufferView": 11,
+   "componentType": 5126,
+   "count": 85,
+   "type": "VEC3"
+  }
+ ],
+ "bufferViews": [
+  {
+   "buffer": 0,
+   "byteLength": 8064,
+   "byteOffset": 0,
+   "target": 34962
+  },
+  {
+   "buffer": 0,
+   "byteLength": 8064,
+   "byteOffset": 8064,
+   "target": 34962
+  },
+  {
+   "buffer": 0,
+   "byteLength": 2688,
+   "byteOffset": 16128,
+   "target": 34962
+  },
+  {
+   "buffer": 0,
+   "byteLength": 10752,
+   "byteOffset": 18816,
+   "target": 34962
+  },
+  {
+   "buffer": 0,
+   "byteLength": 2016,
+   "byteOffset": 29568,
+   "target": 34963
+  },
+  {
+   "buffer": 0,
+   "byteLength": 128,
+   "byteOffset": 31584
+  },
+  {
+   "buffer": 0,
+   "byteLength": 8,
+   "byteOffset": 31712
+  },
+  {
+   "buffer": 0,
+   "byteLength": 24,
+   "byteOffset": 31720
+  },
+  {
+   "buffer": 0,
+   "byteLength": 32,
+   "byteOffset": 31744
+  },
+  {
+   "buffer": 0,
+   "byteLength": 24,
+   "byteOffset": 31776
+  },
+  {
+   "buffer": 0,
+   "byteLength": 340,
+   "byteOffset": 31800
+  },
+  {
+   "buffer": 0,
+   "byteLength": 1020,
+   "byteOffset": 32140
+  }
+ ],
+ "buffers": [
+  {
+   "byteLength": 33160,
+   "uri": "SM_TD2_Dev_ExitArrow.bin"
+  }
+ ]
+}

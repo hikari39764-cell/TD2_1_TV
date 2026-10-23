@@ -1,0 +1,13 @@
+{
+  "displayName": "SM_TD2_CableJoint_Material_Set",
+  "guid": "b2335d4861014da985d8d3f31d49fdc9",
+  "importSettings": {
+    "runtimeLoader": "ModelMaterialBindingAsset",
+    "sourceAuthoritative": true
+  },
+  "importerId": "ModelMaterialBindingImporter",
+  "importerVersion": 1,
+  "metaVersion": 1,
+  "sourcePath": "Assets/Models/MaterialBindings/SM_TD2_CableJoint_Material_Set.hmodelmaterial",
+  "type": "ModelMaterialBinding"
+}

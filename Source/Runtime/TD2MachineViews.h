@@ -25,6 +25,11 @@ public:
     MachineSources Sync(HIKARI::WorldView& world, const RegionObjects& objects, std::vector<Rules::RegionSource>& regions);
     // 仕掛けの進みを物体へ書く。操作中のテレビが動いたら、追従カメラの基準も同じだけ運ぶ。
     void Update(HIKARI::WorldView& world, Rules::Exploration& exploration, const RegionObjects& objects, CameraDirector& camera, double seconds);
+    // 機構で動かす物体の、置いたままの姿勢（状態 0）。機構に出てこない物体なら nullptr。
+    const HIKARI::GameProjectTransform* RestPose(uint64_t sceneObject) const {
+        for (const auto& view : mechanisms_) for (const auto& object : view.objects) if (object.sceneId == sceneObject) return &object.a;
+        return nullptr;
+    }
 
 private:
     using Transform = HIKARI::GameProjectTransform;
@@ -34,9 +39,11 @@ private:
     using Placements = std::map<std::string, RegionPlacement, std::less<>>;
 
     // 機構で動かす物体の状態 0・1・-1（天秤のもう一方）の姿勢。pivot はその点を中心に回す。
-    struct MechanismObject { Handle handle{}; Transform a{}, b{}, c{}; bool pivot = false; HIKARI::GameProjectFloat3 center{}; };
+    // from / to は全体の進みのうちこの物体が動く区間（作者の ~始め-終わり）。
+    struct MechanismObject { uint64_t sceneId = 0; Handle handle{}; Transform a{}, b{}, c{}; bool pivot = false; HIKARI::GameProjectFloat3 center{}; float from = 0, to = 1, lift = 0; };
     // 動くテレビに付いて行く区域カメラ。turn は大きく回る転台（途中で向こう側へ切り替える）、reach はテレビまでの距離。
-    struct MechanismAttachment { Handle handle{}; size_t parent = 0; Transform relative{}; bool turn = false; float reach = 0; };
+    // ride は乗り物（群れの外から自分の画面を狙う）、aim はテレビから見た狙う点、side は途中で膨らむ向き。
+    struct MechanismAttachment { Handle handle{}; size_t parent = 0; Transform relative{}; bool turn = false, ride = false; float reach = 0; HIKARI::GameProjectFloat3 aim{}, side{}; };
     struct MechanismView {
         std::vector<MechanismObject> objects;
         std::vector<MechanismAttachment> attached;
@@ -58,8 +65,8 @@ private:
     // 回転柱と一緒に回る物（面のテレビ・柱の胴・回転盤）と、面に付いた区域カメラ。柱の軸のまわりに回す。
     struct CarouselPart { Handle handle{}, tv{}; Transform pose{}; bool camera = false; };
     struct CarouselView { HIKARI::GameProjectFloat3 pivot{}; size_t count = 4; std::vector<CarouselPart> parts; double written = -1; };
-    // 信号線：つながった圧力板の通電で、光る版と元のモデルを差し替える。
-    struct SignalCable { Handle handle{}; std::string plate, normal, lit; bool shown = false; };
+    // 信号線：つながった圧力板の通電で、材質の色と発光を変える。glow は今の光り具合（0 素 〜 1 点灯）。
+    struct SignalCable { Handle handle{}; std::string plate; float glow = 0; };
     // メンバーの世界地図の位置とテレビの今の位置。
     struct MemberPlace { int x = 0, y = 0; HIKARI::GameProjectFloat3 position{}; };
 
@@ -83,7 +90,7 @@ private:
     void UpdateSlides(const Frame& frame, Writes& writes, double seconds);
     void UpdateStacks(const Frame& frame, Writes& writes, double seconds);
     void UpdateCarousels(const Frame& frame, Writes& writes);
-    void UpdateCables(HIKARI::WorldView& world, Rules::Exploration& exploration);
+    void UpdateCables(HIKARI::WorldView& world, Rules::Exploration& exploration, double seconds);
 
     std::vector<MechanismView> mechanisms_;
     std::vector<SlideView> slides_;

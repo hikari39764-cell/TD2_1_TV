@@ -10,8 +10,11 @@
 #include "TD2TravelComponents.h"
 #include "TD2ScreenFx.h"
 #include "TD2ScreenStyle.h"
+#include "TD2ScreenTone.h"
+#include "TD2Sound.h"
 #include "TD2StageLight.h"
 #include "TD2StageActor.h"
+#include "TD2DeviceActor.h"
 #include "TD2Intro.h"
 #include <array>
 #include <chrono>
@@ -59,8 +62,11 @@ public:
             context.RegisterComponent<TD2::SignalCableComponent>({.typeName = TD2::kSignalCableComponentType, .displayName = "TD2 信号線", .category = "TD2"}) &&
             context.RegisterComponent<TD2::CameraAreaComponent>({.typeName = TD2::kCameraAreaComponentType, .displayName = "TD2 カメラの大区域", .category = "TD2"}) &&
             context.RegisterComponent<TD2::ScreenStyleComponent>({.typeName = TD2::kScreenStyleComponentType, .displayName = "TD2 画面の描き方", .category = "TD2"}) &&
+            context.RegisterComponent<TD2::ScreenToneComponent>({.typeName = TD2::kScreenToneComponentType, .displayName = "TD2 画面の色調", .category = "TD2"}) &&
+            context.RegisterComponent<TD2::SoundComponent>({.typeName = TD2::kSoundComponentType, .displayName = "TD2 音", .category = "TD2"}) &&
             context.RegisterComponent<TD2::StageLightComponent>({.typeName = TD2::kStageLightComponentType, .displayName = "TD2 舞台の灯", .category = "TD2"}) &&
             context.RegisterComponent<TD2::StageActorComponent>({.typeName = TD2::kStageActorComponentType, .displayName = "TD2 舞台の人形", .category = "TD2"}) &&
+            context.RegisterComponent<TD2::DeviceActorComponent>({.typeName = TD2::kDeviceActorComponentType, .displayName = "TD2 舞台の装置", .category = "TD2"}) &&
             context.RegisterComponent<TD2::IntroComponent>({.typeName = TD2::kIntroComponentType, .displayName = "TD2 オープニング", .category = "TD2"}) &&
             context.RegisterComponent<TD2::ScreenFxComponent>({.typeName = TD2::kScreenFxComponentType, .displayName = "TD2 画面のエフェクト", .category = "TD2"}) &&
             context.RegisterSystem<TD2::ScreenPresentationSystem>({.systemId = TD2::kScreenSystemId, .displayName = "TD2 画面の表示"}) &&

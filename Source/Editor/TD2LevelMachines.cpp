@@ -582,8 +582,10 @@ void LevelEditor::DrawMachineInspector(EditorWorkspaceHostContext& ctx) {
     bool changed = false, motion = false;
     if (m->kind == MachineKind::Mechanism && kind != RecipeKind::Custom) {
         if (!m->balance && m->dwell <= 0) {
-            if (ui.Selectable("td2.machine.toggle.off", "踏んでいる間だけ動く", !after.toggle)) { after.toggle = false; changed = true; }
-            if (ui.Selectable("td2.machine.toggle.on", "踏むたびに切り替え", after.toggle)) { after.toggle = true; changed = true; }
+            if (ui.Selectable("td2.machine.toggle.off", "踏んでいる間だけ動く", !after.toggle && !after.ride)) { after.toggle = false; after.ride = false; changed = true; }
+            if (ui.Selectable("td2.machine.toggle.on", "踏むたびに切り替え", after.toggle && !after.ride)) { after.toggle = true; after.ride = false; changed = true; }
+            // 乗り物：動くテレビに入って着地すると運ばれる（区域間の移動に使う）。
+            if (ui.Selectable("td2.machine.ride", "乗ると動く", after.ride)) { after.ride = true; after.toggle = false; changed = true; }
         }
         changed |= EditFloat(ui, "td2.machine.seconds", "秒数", after.seconds, .2f, 8);
         if (kind == RecipeKind::Turn) {
@@ -661,7 +663,7 @@ void LevelEditor::DrawMachineInspector(EditorWorkspaceHostContext& ctx) {
     // 連なる圧力板と、動かない理由。
     ui.Separator();
     const auto plates = PlatesFor(*m, checkInput_);
-    if (plates.empty() && m->dwell <= 0) { ui.Text("圧力板がまだありません：「配線」で圧力板から地図の仕掛けのアイコンへドラッグ"); }
+    if (plates.empty() && m->dwell <= 0 && !m->ride) { ui.Text("圧力板がまだありません：「配線」で圧力板から地図の仕掛けのアイコンへドラッグ"); }
     for (const auto& plate : plates) {
         const auto region = plate.substr(0, plate.find('/'));
         if (ui.Selectable("td2.machine.plate." + plate, "圧力板 · " + ShortChoiceLabel(RoomName(region), 12))) {

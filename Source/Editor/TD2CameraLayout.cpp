@@ -313,7 +313,7 @@ bool LoadLayout(EditorWorkspaceHostContext& ctx, LayoutSnapshot& snap, std::stri
     for (const auto& s : summaries) {
         const auto componentId = componentOf(s, kRegionSequenceComponentType);
         if (!componentId) { continue; }
-        const auto fields = Describe(ctx, s.id, componentId, {"regionA", "regionB", "sequenceAssetGuid", "speed", "style", "seconds", "keepAuthored", "autoHash"}, error);
+        const auto fields = Describe(ctx, s.id, componentId, {"regionA", "regionB", "sequenceAssetGuid", "speed", "style", "seconds", "keepAuthored", "autoPlay", "autoHash"}, error);
         if (!fields.is_array()) { return false; }
         const auto ra = TextField(fields, "regionA"), rb = TextField(fields, "regionB");
         for (auto& e : snap.edges) {
@@ -326,6 +326,7 @@ bool LoadLayout(EditorWorkspaceHostContext& ctx, LayoutSnapshot& snap, std::stri
             e.style = TextField(fields, "style"); if (e.style.empty()) { e.style = "auto"; }
             e.seconds = NumberField(fields, "seconds", e.speed > 0 ? 1 / e.speed : 3);
             e.keepAuthored = BoolField(fields, "keepAuthored");
+            e.autoPlay = BoolField(fields, "autoPlay");
             e.autoHash = TextField(fields, "autoHash");
         }
     }
@@ -755,7 +756,7 @@ bool GenerateTravels(EditorWorkspaceHostContext& ctx, LayoutSnapshot& snap, std:
         if (!edge.between || !edge.passable) { continue; }
         if (onlyEdge && !((onlyEdge->a == edge.a && onlyEdge->b == edge.b) || (onlyEdge->a == edge.b && onlyEdge->b == edge.a))) { continue; }
         // 画面で選んだ辺の設定（様式・秒数）は、まだ記録が無い辺でもここで使う。
-        if (onlyEdge) { edge.style = onlyEdge->style; edge.seconds = onlyEdge->seconds; edge.keepAuthored = onlyEdge->keepAuthored; }
+        if (onlyEdge) { edge.style = onlyEdge->style; edge.seconds = onlyEdge->seconds; edge.keepAuthored = onlyEdge->keepAuthored; edge.autoPlay = onlyEdge->autoPlay; }
         if (!onlyEdge && !areaName.empty() && !InScope(snap, edge.a, areaName) && !InScope(snap, edge.b, areaName)) { continue; }
         // 縦の辺（落下・跳躍）は大区域の外でも自動で流れるので、手動の演出は横の辺だけに作る。
         const auto* a = snap.Room(edge.a); const auto* b = snap.Room(edge.b);
@@ -815,6 +816,7 @@ bool GenerateTravels(EditorWorkspaceHostContext& ctx, LayoutSnapshot& snap, std:
                                      set("speed", Round(1 / seconds, 1e-4)), set("seconds", seconds), set("autoHash", hash)});
         commands.push_back(set("style", edge.style.empty() ? std::string("auto") : edge.style));
         commands.push_back(set("keepAuthored", edge.keepAuthored));
+        commands.push_back(set("autoPlay", edge.autoPlay));
         // 実行用カメラ（演出の Camera スロット）は既存の境界と同じゲームカメラを使う。
         for (const auto& other : snap.edges) {
             if (other.bindingObject && other.bindingObject != object) {
@@ -862,7 +864,7 @@ bool WriteEdgeSettings(EditorWorkspaceHostContext& ctx, const LayoutEdge& edge, 
     const double seconds = std::clamp(edge.seconds, .4, 10.0);
     const auto set = [&](std::string_view id, const Json& value) { return PropertyCommand(edge.bindingObject, edge.bindingComponent, id, value); };
     return Transact(ctx, Json::array({set("style", edge.style), set("seconds", seconds), set("speed", Round(1 / seconds, 1e-4)),
-                                      set("keepAuthored", edge.keepAuthored)}), error);
+                                      set("keepAuthored", edge.keepAuthored), set("autoPlay", edge.autoPlay)}), error);
 }
 
 bool EdgeTrialSpawn(const LayoutSnapshot& snap, const LayoutEdge& edge, bool fromA, double& x, double& y, uint64_t& roomObject) {

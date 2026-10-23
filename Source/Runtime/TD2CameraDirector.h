@@ -101,6 +101,5 @@ private:
     bool initialized_ = false;
     double time_ = 0, focusDistance_ = 0;
     double swapBoost_ = 0;   // 交換の直後、区域カメラの乗り換えを速めている残り秒
-    std::string traceFocus_;   // 最後に焦点を合わせた画面
 };
 }

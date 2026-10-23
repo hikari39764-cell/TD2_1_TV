@@ -52,6 +52,7 @@ void GameSession::OnSceneEntered(HIKARI::WorldView& world) {
 
 void GameSession::OnSceneExiting(HIKARI::WorldView& world) {
     intro_.Stop(world); introChecked_ = ending_ = false;
+    sound_.Stop(world);
     camera_.Stop(world);
     FinishRecord();
     sceneActive_ = false;
@@ -154,8 +155,27 @@ void GameSession::Update(HIKARI::WorldView& world, const HIKARI::FrameContext& f
         if (input.GetAction("Gameplay.DevSkipIntro", skip) && skip.pressed) { intro_.Skip(world); }
         if (!ending_ && input.GetAction("Gameplay.DevGoal", goal) && goal.pressed) { intro_.Skip(world); TeleportToGoal(world); }
     }
+    // 開発用（環境変数 TD2_TOUR="区域,区域,…"）：TD2_TOUR_FRAMES フレームごとに次の区域の出生点へ移り、カメラもそこから
+    // 追従し直す。無頭の実行で区域カメラの写りを順に撮るためのもので、変数が無ければ何もしない。
+    static const std::string tour = [] { const char* v = std::getenv("TD2_TOUR"); return std::string(v ? v : ""); }();
+    if (!tour.empty()) {
+        static const int period = [] { const char* v = std::getenv("TD2_TOUR_FRAMES"); return v ? std::max(10, std::atoi(v)) : 90; }();
+        if (tourFrame_++ % period == 0) {
+            size_t start = 0;
+            for (size_t i = 0; i < tourIndex_; ++i) { start = tour.find(',', start); start = start == std::string::npos ? tour.size() : start + 1; }
+            const auto end = tour.find(',', start);
+            const auto region = start < tour.size() ? tour.substr(start, end == std::string::npos ? std::string::npos : end - start) : std::string{};
+            if (!region.empty() && exploration_.Teleport(region)) {
+                intro_.Skip(world); camera_.Jump(world, exploration_, regions_, region);
+                std::fprintf(stderr, "[TD2 tour] frame=%llu region=%s\n", static_cast<unsigned long long>(frame.frameIndex), region.c_str());
+            }
+            ++tourIndex_;
+        }
+    }
     const bool cinematic = intro_.Update(world, buttons.action.pressed);
     if (intro_.TakeEndingFinished()) { RestartFromTitle(world); }
+    // 音：段ごとの BGM・環境音の受け渡しと足音（演出の間も毎フレーム）。
+    sound_.Update(world, intro_, exploration_.State().player, !cinematic && remaining > 0, frameSeconds);
     if (cinematic) {
         camera_.Update(world, exploration_, regions_, 0.f, 0.0, std::isfinite(frame.gameDt) ? std::max(0.0, double(frame.gameDt)) : 0.0);
         return;
@@ -189,7 +209,14 @@ void GameSession::Update(HIKARI::WorldView& world, const HIKARI::FrameContext& f
             for (const auto& event : region.output.events)
                 if (event.kind == Rules::EventKind::GoalReached && goalRegion.empty()) goalRegion = region.regionId;
         for (const auto& region : output.regions)
+            for (const auto& event : region.output.events)
+                if (event.kind == Rules::EventKind::CollectibleTaken) {
+                    const auto count = exploration_.Collectibles();
+                    std::fprintf(stderr, "[TD2 gem] taken=%d total=%d at=%s\n", count.taken, count.total, region.regionId.c_str());
+                }
+        for (const auto& region : output.regions)
             for (const auto& event : region.output.events) {
+                sound_.OnEvent(world, event);
                 const auto name = Rules::EventName(event.kind);
                 std::fprintf(stderr, "[TD2 event] region=%s event=%.*s subject=%s x=%.4f y=%.4f sim=%.4f detail=%s\n", region.regionId.c_str(),
                     static_cast<int>(name.size()), name.data(), event.subjectId.c_str(), event.position.x, event.position.y, event.simulationTime,

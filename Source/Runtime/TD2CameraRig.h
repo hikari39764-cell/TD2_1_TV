@@ -62,6 +62,8 @@ private:
 // 区域ひとつの基準と画面の位置（プレイヤーの 2D 位置を 3D の画面上の点へ移す）。
 struct CameraRegionFrame {
     HIKARI::GameProjectFloat3 eye{}, look{};                    // 区域カメラの目と注視点（注視点は画面の中心の深さ）
+    // 区域カメラの上の向き。倒立した大区域（天井に逆さに吊ったテレビ）は区域カメラを 180° 傾けて置き、追従もその上を保つ。
+    HIKARI::GameProjectFloat3 up{0, 1, 0};
     float verticalFovRadians = .4538f;
     HIKARI::GameProjectTransform screen{};                      // テレビのワールド変換
     HIKARI::GameProjectFloat3 screenCenter{0, .4f, .28f};       // テレビのローカルでの画面の中心
@@ -84,7 +86,8 @@ public:
     static HIKARI::GameProjectFloat3 Forward(const HIKARI::GameProjectTransform& transform);
 
     // 基準をこの姿勢へ置き直す（ずれは 0 から寄せ直す）。復活と演出の終わりに使う。
-    void Snap(const HIKARI::GameProjectFloat3& eye, const HIKARI::GameProjectFloat3& look, float verticalFovRadians);
+    void Snap(const HIKARI::GameProjectFloat3& eye, const HIKARI::GameProjectFloat3& look, float verticalFovRadians,
+              const HIKARI::GameProjectFloat3& up = {0, 1, 0});
     bool Ready() const noexcept { return ready_; }
     // 基準のカメラを from から to への剛体の動きで運ぶ（乗っているテレビが回る・動く間、画面との位置関係を保つ）。
     void Carry(const HIKARI::GameProjectTransform& from, const HIKARI::GameProjectTransform& to);
@@ -96,8 +99,8 @@ public:
                 HIKARI::GameProjectFloat3& lookOffset, double& roll) const;
     // 与えたカメラ（目と注視点）の向きで揺らす版。切り替え中は描いているカメラの向きで揺らし、終了時に揺れの向きが跳ばないようにする。
     static void BreathAround(const CameraAreaSettings& area, double time, const HIKARI::GameProjectFloat3& eye,
-                             const HIKARI::GameProjectFloat3& look, HIKARI::GameProjectFloat3& eyeOffset,
-                             HIKARI::GameProjectFloat3& lookOffset, double& roll);
+                             const HIKARI::GameProjectFloat3& look, const HIKARI::GameProjectFloat3& up,
+                             HIKARI::GameProjectFloat3& eyeOffset, HIKARI::GameProjectFloat3& lookOffset, double& roll);
     const CameraRigPose& Last() const noexcept { return last_; }
 
 private:
@@ -109,7 +112,8 @@ private:
             for (size_t i = 0; i < 3; ++i) { value[i] = Math::CriticalDamp(value[i], target[i], velocity[i], seconds, dt); }
         }
     };
-    Spring baseEye_, baseLook_, offset_, aim_, roll_;
+    // baseUp_ は区域カメラの上の向き（乗り換えの間は位置と同じ速さで寄せる）。
+    Spring baseEye_, baseLook_, baseUp_, offset_, aim_, roll_;
     Math::Vec3 right_{1, 0, 0}, up_{0, 1, 0};
     CameraRigPose last_{};
     // 画角（ラジアン）とその速さ。区域カメラの画角が違っても、位置と同じ速さで寄せる（乗り換えの瞬間に画がズームしない）。

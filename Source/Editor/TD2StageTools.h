@@ -60,11 +60,6 @@ uint64_t CreateStageModel(EditorWorkspaceHostContext&, std::string_view path, st
 bool SetStagePose(EditorWorkspaceHostContext&, uint64_t objectId, const Pose&, std::string& error);
 // like と同じシーンのフォルダーへ入れる（like がフォルダーに無ければ何もしない）。
 void JoinFolderOf(EditorWorkspaceHostContext&, uint64_t objectId, uint64_t like);
-// 筐体の大きさ（縮尺込み、m）。表にあるテレビは表の寸法、それ以外は外接箱。
-double StageWidth(const StageObject&);
-double StageHeight(const StageObject&);
-// anchor の隣に置く姿勢。向きは anchor と同じ。side：1 右・-1 左（anchor の X 方向）、2 上・-2 下。
-Pose PoseBeside(const StageObject& anchor, double width, double height, int side, double gap = .12);
 // 編集カメラの注視点の床に、カメラの方を向けて置く姿勢。
 bool PoseAtView(EditorWorkspaceHostContext&, Pose&, std::string& error);
 }

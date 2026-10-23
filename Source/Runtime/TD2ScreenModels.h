@@ -3,13 +3,17 @@
 // Add の x は中心、bottomY は下辺のマス。作った要求は呼び手がエンジンへ出す（出さなかった部品は消える）。
 // 性能のための決まり：
 // ・部品の組（持ち主・ID・モデル）は状態で変えない。見た目が状態で変わる部品は全部出しておき、
-// 使わないものは決まった退避位置へ置く。組や表示が変わるとエンジンが GPU のシーン全体を作り直す（10〜25 ms）。
+// 使わないものは決まった退避位置へ置く。組や表示が変わるとエンジンが GPU のシーン全体を作り直す（数十 ms）。
+// ・ID は系列（意味名と部品名）と系列の中の順番で決まる。地形のように作り直すと数が変わる部品は、前より少ない系列を
+// 隠した部品で前の数まで埋め（PadSeries）、組を減らさない。
 // ・退避位置は部品ごとに固定する（装置はその場の下、人物と演出は世界の外の一点）。
 #include "Rules/TD2Rules.h"
 #include "TD2StageProjection.h"
 #include "HIKARI/Project/PresentationTypes.h"
 #include <cstdint>
+#include <string>
 #include <string_view>
+#include <unordered_map>
 #include <vector>
 
 namespace TD2 {
@@ -31,8 +35,10 @@ public:
     void Begin(std::string_view key);
     // 180° 回された部屋の中の物を描く時：(cx, cy)（世界のマス）について点対称に置き、部品も 180° 回す。
     // 回されたテレビの画面は絵ごと逆さに写るので、規則の上で正立している物が画面でも正立して見える。
-    void Mirror(double cx, double cy) { mirror_ = true; mirrorX_ = cx; mirrorY_ = cy; }
-    void NoMirror() { mirror_ = false; }
+    void Mirror(double cx, double cy) { Turn(cx, cy, kPi); }
+    // (cx, cy) について、画面の上で時計回りに angle（ラジアン）回して置く（回るテレビの中で装置を正立に保つ）。
+    void Turn(double cx, double cy, double angle) { mirror_ = angle != 0; mirrorX_ = cx; mirrorY_ = cy; turn_ = angle; }
+    void NoMirror() { mirror_ = false; turn_ = 0; }
     // 編集中（全部の部屋を一度に写す）は目盛りの線と、つながった口の鎧戸を出さない（描画物体の上限に収める）。
     void Compact(bool on) { compact_ = on; }
     // 後ろの壁を窓にして、その向こうに大広間を描くか（立体で編集中でない時）。窓のある時は壁の目盛りを出さない。
@@ -50,12 +56,16 @@ public:
     void BakedActors(bool on) { bakedActors_ = on; }
     // 通関の扉へ入ってからの秒（通関の演出が数える。負なら演出が無く、入った瞬間に閉じた姿にする）。
     void GoalClosing(double seconds) { goalClosing_ = seconds; }
+    double GoalClosingTime() const noexcept { return goalClosing_; }
     // leanPivot は傾きを釣り合わせる高さ（部品の下辺から、マス）。負なら部品の高さの中ほど。
     bool Add(std::string_view part, double x, double bottomY, double width = 1, double height = 1, double depth = 0,
              HIKARI::GameProjectQuaternion rotation = {}, double leanPivot = -1, bool visible = true);
     // Add と同じ置き方（回された部屋の点対称・投影・傾きの釣り合い）で舞台の位置と向きだけを求める（縮尺は呼び手）。
     // pivot は傾きを釣り合わせる高さ（マス）。
     HIKARI::GameProjectTransform Place(double x, double bottomY, double depth, HIKARI::GameProjectQuaternion rotation, double pivot = 0) const;
+    // Add が部品に付けるのと同じ位置・向き・縮尺（幅 width・高さ height マスの部品）。骨つきの物体を部品の代わりに置く時に使う。
+    HIKARI::GameProjectTransform PartPose(double x, double bottomY, double width, double height, double depth,
+                                          HIKARI::GameProjectQuaternion rotation, double pivot) const;
     // 1 マスの舞台上の長さと、写し方（斜投影のずれ）。
     double StageScale() const { return projection_.scale; }
     const StageProjection& Projection() const { return projection_; }
@@ -76,12 +86,20 @@ public:
     // 装置一つ（世界のマス）。状態で変わる部品は全部出し、表示だけを切り替える。since は通電・実体が最後に変わってからの
     // 実秒（変わっていなければ大きな値）。扉・橋の出入りと通電灯の点灯をこれで動かす。
     void Device(const Rules::DeviceSnapshot& device, bool checkpoint, double since);
+    // 光線の発射器だけ（骨つきの物体が棒と火花を演じる時に、変わらない本体を焼いた部品で出す）。
+    void LaserBody(const Rules::DeviceSnapshot& laser);
     // 光線一組（棒と当たりの火花）。beam が無い時は発射器の場所で隠す。
     void Beam(const Rules::DeviceSnapshot& laser, const Rules::BeamState* beam);
     // 人物：姿勢と向きのモデルを全部出し、今の一つだけを rect に立たせる（shown=false なら全部退避）。
     // grow は縦の伸び（足元を固定。残影が足元から現れる時に 0→1）。
     void Actor(const Rules::BodyState& body, const Rules::Rect& rect, bool echo, double time, bool shown, double grow = 1.0);
     size_t Failed() const noexcept { return failed_; }
+    // 系列（意味名と部品名）ごとの部品の数。
+    struct Series { uint64_t semantic = 0; std::string part; size_t count = 0; };
+    using SeriesCounts = std::unordered_map<uint64_t, Series>;
+    const SeriesCounts& Counts() const noexcept { return series_; }
+    // previous の数に足りない系列を、退避した部品で埋める（ID とモデルは前と同じ）。
+    void PadSeries(const SeriesCounts& previous);
 
 private:
     // 仕掛けの通電灯（点灯・消灯の二つを出して片方だけ見せる）。点いた直後は灯が一度膨らみ、光の粒が散る。
@@ -92,7 +110,8 @@ private:
     int palette_ = 0;
     uint64_t owner_ = 0;
     std::vector<PartRequest>& out_;
-    uint64_t semantic_ = 1, partIndex_ = 0;
+    uint64_t semantic_ = 1;
+    SeriesCounts series_;
     // 実体の地形の面の目地（Terrain から呼ぶ。並びは Terrain と同じ）。
     void SolidSeams(int x, int y, int cols, int rows, const std::vector<char>& occupancy);
     // 後ろの壁の奥行き（マス）。奥行きの格子の分だけ奥へ下がる。
@@ -106,7 +125,7 @@ private:
     int depthRows_ = 0;
     // partDepth_ は Add の奥行きの倍率（実体の箱を部屋の奥まで伸ばす間だけ 1 以外）。
     double actorScale_ = 1, partDepth_ = 1, playDepth_ = 0;
-    double mirrorX_ = 0, mirrorY_ = 0, time_ = 0, goalClosing_ = -1;
+    double mirrorX_ = 0, mirrorY_ = 0, turn_ = 0, time_ = 0, goalClosing_ = -1;
     size_t failed_ = 0;
 };
 }

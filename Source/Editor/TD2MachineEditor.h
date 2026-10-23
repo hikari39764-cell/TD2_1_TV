@@ -18,7 +18,8 @@ struct Machine {
     uint64_t objectId = 0, componentId = 0;
     std::string objectName, id;
     // 機構
-    bool toggle = false, balance = false;
+    bool toggle = false, balance = false, ride = false;
+    std::vector<std::string> rideFrom;   // 乗り場（空なら動くテレビ自身）
     double seconds = .8, dwell = 0, settle = 0, cameraLift = 1.5, cameraPull = 1;
     std::vector<MachineRegionOffset> offsets, offsetsC;
     std::vector<MachineObjectDelta> deltas, deltasC;

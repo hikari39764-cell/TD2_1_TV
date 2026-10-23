@@ -21,6 +21,14 @@
 
 namespace TD2 {
 namespace {
+// UI の論理の大きさ（取れなければ 1920×1080）。黒帯・タイトル・まぶたの帯をこの大きさで置く。
+std::pair<float, float> UiSize(HIKARI::WorldView& world) {
+    HIKARI::GameProjectCameraViewSnapshot view{};
+    if (world.GetCamera().TryGetViewSnapshot(view) && view.uiLogicalWidth > 0 && view.uiLogicalHeight > 0) {
+        return {static_cast<float>(view.uiLogicalWidth), static_cast<float>(view.uiLogicalHeight)};
+    }
+    return {1920.f, 1080.f};
+}
 // シーンの物体の ID を探す上限（灯と装飾テレビをオープニングの始めに一度だけ集める）。
 constexpr uint64_t kScanLimit = 40000;
 // 0〜1 の決まった乱数（灯ごと・刻みごとに同じ値）。
@@ -330,6 +338,7 @@ bool IntroDirector::Update(HIKARI::WorldView& world, bool start) {
     }
     if (phase_ == Phase::Title) {
         DriveDepthOfField(world);
+        WarmUi(world);
         if (start && world.GetSequence().Resume(playback_)) { phase_ = Phase::Playing; std::fprintf(stderr, "[TD2 intro] start\n"); }
         return true;
     }
@@ -408,14 +417,9 @@ void IntroDirector::DriveDepthOfField(HIKARI::WorldView& world, double scale) {
 void IntroDirector::DriveLetterbox(HIKARI::WorldView& world, double t) const {
     if (!(settings_.letterbox > 0)) { return; }
     // 黒帯の範囲の始めから 1 秒で入り、終わりまでの 0.8 秒で退く（なめらかに）。
-    const auto ease = [](double x) { x = std::clamp(x, 0.0, 1.0); return x * x * (3 - 2 * x); };
-    const double amount = ease((t - screens_.letterboxIn) / 1.0) * (1 - ease((t - (screens_.letterboxOut - .8)) / .8));
+    const double amount = Math::Smoothstep((t - screens_.letterboxIn) / 1.0) * (1 - Math::Smoothstep((t - (screens_.letterboxOut - .8)) / .8));
     if (amount <= 0) { return; }
-    float width = 1920, height = 1080;
-    HIKARI::GameProjectCameraViewSnapshot view{};
-    if (world.GetCamera().TryGetViewSnapshot(view) && view.uiLogicalWidth > 0 && view.uiLogicalHeight > 0) {
-        width = static_cast<float>(view.uiLogicalWidth); height = static_cast<float>(view.uiLogicalHeight);
-    }
+    const auto [width, height] = UiSize(world);
     // 帯の太さは 16:9 の画面で letterbox の比になる割合に揃える（編集器の縦長なゲームビューでも帯が太くなりすぎない）。
     const double bar = height * (std::max)(0.0, 1.0 - 16.0 / 9.0 / settings_.letterbox) * .5 * amount;
     if (bar < .5) { return; }
@@ -430,15 +434,21 @@ void IntroDirector::DriveLetterbox(HIKARI::WorldView& world, double t) const {
     (void)ui.SubmitSprite(kLetterboxTexture, request);
 }
 
+void IntroDirector::WarmUi(HIKARI::WorldView& world) const {
+    HIKARI::GameProjectUiSpriteRequest request{};
+    request.sourceId = 0x7D214Cu; request.order = -100000;
+    request.referenceWidth = 1920; request.referenceHeight = 1080;
+    request.width = 1; request.height = 1;
+    request.tint = {1, 1, 1, .004f};
+    const auto ui = world.GetUi();
+    for (const auto texture : {kLetterboxTexture, kTitleTexture, kWhiteTexture}) { (void)ui.SubmitSprite(texture, request); }
+}
+
 void IntroDirector::DriveTitleCard(HIKARI::WorldView& world, double t) const {
     // 点灯 0.42 秒（点 0.12・線 0.16・開く 0.14）、映る titleHold 秒、消灯 0.36 秒（閉じる・線・点 各 0.12）。
     const double on = t - screens_.titleIn, off = on - kTitleOnSeconds - screens_.titleHold;
     if (on < 0 || off >= kTitleOffSeconds) { return; }
-    float width = 1920, height = 1080;
-    HIKARI::GameProjectCameraViewSnapshot view{};
-    if (world.GetCamera().TryGetViewSnapshot(view) && view.uiLogicalWidth > 0 && view.uiLogicalHeight > 0) {
-        width = static_cast<float>(view.uiLogicalWidth); height = static_cast<float>(view.uiLogicalHeight);
-    }
+    const auto [width, height] = UiSize(world);
     // 黒帯の内側に 16:9 で収める。
     const double bar = settings_.letterbox > 0 ? height * (std::max)(0.0, 1.0 - 16.0 / 9.0 / settings_.letterbox) * .5 : 0.0;
     const double cardW = (std::min)(double(width), (height - 2 * bar) * 16 / 9), cardH = cardW * 9 / 16;
@@ -453,11 +463,10 @@ void IntroDirector::DriveTitleCard(HIKARI::WorldView& world, double t) const {
         request.tint = {brightness, brightness, brightness, 1};
         (void)ui.SubmitSprite(texture, request);
     };
-    const auto ease = [](double x) { x = std::clamp(x, 0.0, 1.0); return x * x * (3 - 2 * x); };
     if (off < 0) {
-        if (on < .12) { const double d = line * (1 + 2 * ease(on / .12)); put(kWhiteTexture, d, d, 1); }
-        else if (on < .28) { put(kWhiteTexture, line * 3 + (cardW - line * 3) * ease((on - .12) / .16), line, 1); }
-        else if (on < kTitleOnSeconds) { put(kTitleTexture, cardW, line + (cardH - line) * ease((on - .28) / .14), .95f); }
+        if (on < .12) { const double d = line * (1 + 2 * Math::Smoothstep(on / .12)); put(kWhiteTexture, d, d, 1); }
+        else if (on < .28) { put(kWhiteTexture, line * 3 + (cardW - line * 3) * Math::Smoothstep((on - .12) / .16), line, 1); }
+        else if (on < kTitleOnSeconds) { put(kTitleTexture, cardW, line + (cardH - line) * Math::Smoothstep((on - .28) / .14), .95f); }
         else {
             // 映っている間はわずかにちらつく。
             const auto tick = static_cast<uint32_t>(t * 12);
@@ -465,9 +474,9 @@ void IntroDirector::DriveTitleCard(HIKARI::WorldView& world, double t) const {
         }
         return;
     }
-    if (off < .12) { put(kTitleTexture, cardW, line + (cardH - line) * (1 - ease(off / .12)), .95f); }
-    else if (off < .24) { put(kWhiteTexture, line * 3 + (cardW - line * 3) * (1 - ease((off - .12) / .12)), line, 1); }
-    else { const double d = line * 3 * (1 - ease((off - .24) / .12)); if (d > .5) { put(kWhiteTexture, d, d, 1); } }
+    if (off < .12) { put(kTitleTexture, cardW, line + (cardH - line) * (1 - Math::Smoothstep(off / .12)), .95f); }
+    else if (off < .24) { put(kWhiteTexture, line * 3 + (cardW - line * 3) * (1 - Math::Smoothstep((off - .12) / .12)), line, 1); }
+    else { const double d = line * 3 * (1 - Math::Smoothstep((off - .24) / .12)); if (d > .5) { put(kWhiteTexture, d, d, 1); } }
 }
 
 double IntroDirector::EndingLamp(const Lamp& lamp, double t) const {
@@ -497,18 +506,13 @@ double IntroDirector::EndingLamp(const Lamp& lamp, double t) const {
 void IntroDirector::DriveEyelids(HIKARI::WorldView& world, double t) const {
     if (t < screens_.blackTime) { return; }
     // まぶたの開き（0 閉じ、1 開いた）：目覚めの 0.8 秒後から薄く開き、一度閉じかけてから、ゆっくり開ききる。
-    const auto ease = [](double x) { x = std::clamp(x, 0.0, 1.0); return x * x * (3 - 2 * x); };
     const double u = t - screens_.revealTime;
     double open = 0;
-    if (u >= .8) { open = .35 * ease((u - .8) / .7); }
-    if (u >= 1.7) { open = .35 - .3 * ease((u - 1.7) / .25); }
-    if (u >= 1.95) { open = .05 + .95 * ease((u - 1.95) / 1.4); }
+    if (u >= .8) { open = .35 * Math::Smoothstep((u - .8) / .7); }
+    if (u >= 1.7) { open = .35 - .3 * Math::Smoothstep((u - 1.7) / .25); }
+    if (u >= 1.95) { open = .05 + .95 * Math::Smoothstep((u - 1.95) / 1.4); }
     if (open >= .999) { return; }
-    float width = 1920, height = 1080;
-    HIKARI::GameProjectCameraViewSnapshot view{};
-    if (world.GetCamera().TryGetViewSnapshot(view) && view.uiLogicalWidth > 0 && view.uiLogicalHeight > 0) {
-        width = static_cast<float>(view.uiLogicalWidth); height = static_cast<float>(view.uiLogicalHeight);
-    }
+    const auto [width, height] = UiSize(world);
     // UI は仕上げの後に描くので、上下の黒は本当の黒になる（色調整では漫画の仕上げの紙の色が残る）。
     const double lid = height * .5 * (1 - open);
     HIKARI::GameProjectUiSpriteRequest request{};
@@ -524,8 +528,7 @@ void IntroDirector::DriveEyelids(HIKARI::WorldView& world, double t) const {
 
 void IntroDirector::DriveStartOffset(HIKARI::WorldView& world, double t) const {
     // 区域カメラから始まる演出を、扉に入った時の追従の画からなめらかに受け継ぐ。
-    const double u = std::clamp(t / 1.2, 0.0, 1.0);
-    const auto w = static_cast<float>(1 - u * u * (3 - 2 * u));
+    const auto w = static_cast<float>(1 - Math::Smoothstep(t / 1.2));
     if (w <= 0) { return; }
     HIKARI::GameProjectCameraModifier modifier{};
     modifier.sourceId = 0x7D214Au; modifier.priority = 60; modifier.applyDuringOverride = 1;
@@ -561,10 +564,6 @@ void IntroDirector::DriveBlack(HIKARI::WorldView& world, double t) {
 
 void IntroDirector::DriveLights(HIKARI::WorldView& world, double t) {
     const auto& s = screens_;
-    // TD2_INTRO_TRACE があれば 0.25 秒ごとに灯の送り先の数を出す（調整用）。
-    static const bool trace = std::getenv("TD2_INTRO_TRACE") != nullptr;
-    static double lastTrace = -1;
-    int accepted = 0, rejected = 0;
     for (auto& lamp : lamps_) {
         const auto object = world.FindObject(lamp.handle);
         if (!object.IsValid()) { continue; }
@@ -641,17 +640,9 @@ void IntroDirector::DriveLights(HIKARI::WorldView& world, double t) {
         }
         if (patch.fieldMask == 0) { continue; }
         if (object.GetLight().ApplyPatch(patch).Accepted()) {
-            ++accepted;
             if (patch.fieldMask & HIKARI::GameProjectLightPatchFields(HIKARI::GameProjectLightPatchField::Intensity)) { lamp.sent = static_cast<float>(intensity); }
             if (lamp.lightning) { lamp.enabled = enabled; }
-        } else {
-            ++rejected;
         }
-    }
-    if (trace && (t - lastTrace >= .25 || t < lastTrace)) {
-        lastTrace = t;
-        const auto& probe = lamps_.empty() ? Lamp{} : lamps_.front();
-        std::fprintf(stderr, "[TD2 intro] t=%.2f lamps=%zu ok=%d ng=%d first base=%.2f sent=%.2f\n", t, lamps_.size(), accepted, rejected, probe.base, probe.sent);
     }
 }
 

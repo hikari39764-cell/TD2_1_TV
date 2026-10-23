@@ -77,9 +77,9 @@
       "name": "K07_celadon_link_light",
       "pbrMetallicRoughness": {
         "baseColorFactor": [
-          0.15896083414554596,
-          0.6514056324958801,
-          0.8879231214523315,
+          0.170645,
+          0.406448,
+          1.0,
           1
         ],
         "metallicFactor": 0,

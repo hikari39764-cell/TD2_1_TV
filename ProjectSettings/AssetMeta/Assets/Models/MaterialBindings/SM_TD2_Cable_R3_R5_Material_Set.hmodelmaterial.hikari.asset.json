@@ -1,0 +1,13 @@
+{
+  "displayName": "SM_TD2_Cable_R3_R5_Material_Set",
+  "guid": "ed397f6dc9314a77b3c4f2a78b2cdfd7",
+  "importSettings": {
+    "runtimeLoader": "ModelMaterialBindingAsset",
+    "sourceAuthoritative": true
+  },
+  "importerId": "ModelMaterialBindingImporter",
+  "importerVersion": 1,
+  "metaVersion": 1,
+  "sourcePath": "Assets/Models/MaterialBindings/SM_TD2_Cable_R3_R5_Material_Set.hmodelmaterial",
+  "type": "ModelMaterialBinding"
+}

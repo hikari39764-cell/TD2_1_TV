@@ -1,12 +1,16 @@
 #include "TD2ScreenPresenter.h"
 #include "TD2GameSession.h"
 #include "TD2RegionComponent.h"
+#include "TD2ScreenTone.h"
+#include "TD2Transform.h"
 #include "HIKARI/Project/ActionViews.h"
 #include "HIKARI/Project/GameFlowViews.h"
 #include "HIKARI/Project/WorldQuery.h"
 #include <algorithm>
 #include <cstdlib>
 #include <chrono>
+#include <set>
+#include <cmath>
 #include <cstdio>
 #include <map>
 
@@ -63,6 +67,13 @@ void ScreenPresentationSystem::Update(HIKARI::WorldView& world, const HIKARI::Fr
             }
         });
     if (!styles.Succeeded()) { status_ = "3D の描き方の部品を読めない"; stage_.Release(world); ReportStatus(); return; }
+    // 色調：区域の物体に付いたものはその部屋の、ほかの物体に付いたもの（最初の一つ）は全部の画面の既定。
+    // どれが区域の物体かは部屋を読んでから分かるので、ここでは全部を覚えておく。
+    std::vector<std::pair<uint64_t, ScreenToneSettings>> tones;
+    const HIKARI::ComponentTypeId toneTypes[]{HIKARI::MakeComponentTypeId(kScreenToneComponentType)};
+    (void)world.ForEachComponents<ScreenToneComponent>(toneTypes, HIKARI::GameProjectWorldQueryAnchor::FirstRequiredTerm,
+        [&tones](HIKARI::ObjectView object, ScreenToneComponent& tone) { tones.emplace_back(object.GetHandle().value, tone.Settings()); });
+    std::set<uint64_t> regionObjects;
     // エフェクト設定は最初の一つだけ使う。無ければ既定値。
     ScreenFxSettings fx; bool foundFx = false;
     const HIKARI::ComponentTypeId fxTypes[]{HIKARI::MakeComponentTypeId(kScreenFxComponentType)};
@@ -91,12 +102,22 @@ void ScreenPresentationSystem::Update(HIKARI::WorldView& world, const HIKARI::Fr
             if (const auto own = localStyles.find(object.GetHandle().value); own != localStyles.end()) {
                 room.style = own->second; room.style.captureCameraObject = globalStyle.captureCameraObject;
             }
+            regionObjects.insert(object.GetHandle().value);
             if (session) {
                 const auto* runtime = session->FindRegion(placement.regionId);
                 if (!runtime) { return; }
                 room.x = runtime->placement.worldX; room.y = runtime->placement.worldY; room.region = &runtime->definition.region;
                 room.linkX = room.x; room.linkY = room.y;
                 room.flipped = runtime->flipped;
+                for (const auto& mechanism : session->Mechanisms()) {
+                    for (const auto* moves : {&mechanism.source.moves, &mechanism.source.movesC}) {
+                        for (const auto& move : *moves) { if (move.flip && move.regionId == placement.regionId) { room.flippable = true; } }
+                    }
+                }
+                if (const auto* rest = room.flippable ? session->RestPose(room.configuration.screenObject) : nullptr) {
+                    const auto right = QRotate(rest->rotation, {1, 0, 0}), up = QRotate(rest->rotation, {0, 1, 0});
+                    room.restTurn = std::atan2(right.y, up.y);
+                }
                 rooms_.push_back(std::move(room));
                 return;
             }
@@ -108,13 +129,18 @@ void ScreenPresentationSystem::Update(HIKARI::WorldView& world, const HIKARI::Fr
             authored.push_back({definition.devices, definition.spawn, region.IsEntryRegion()});
         });
     if (!regions.Succeeded()) { status_ = "区域の 3D データを読めない"; stage_.Release(world); ReportStatus(); return; }
+    // 色調を部屋と共有設定へ写す。
+    for (const auto& [handle, tone] : tones) { if (!regionObjects.contains(handle)) { globalStyle.tone = tone; break; } }
+    for (auto& room : rooms_) {
+        const auto own = std::find_if(tones.begin(), tones.end(), [&](const auto& t) { return t.first == room.owner.value; });
+        room.style.tone = own != tones.end() ? own->second : globalStyle.tone;
+    }
 
     StageFrame stage;
     stage.authoring = !playing;
     if (session) {
         stage.snapshot = &session->Snapshot(); stage.activeRegion = session->ActiveRegion(); stage.simulated = true;
         (void)session->TravelRooms(stage.travelFrom, stage.travelTo);
-        stage.areaRooms = session->AreaRooms(stage.activeRegion);
         if (session->Intro().active) { stage.intro = &session->Intro(); }
     } else {
         if (!playing) {

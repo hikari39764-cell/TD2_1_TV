@@ -66,31 +66,37 @@ ScreenOnCamera ProjectScreen(const HIKARI::GameProjectCameraPose& pose, const HI
     out.eyeY = (up.x * ex + up.y * ey + up.z * ez) / along;
     const auto c = basis.ToView(center);
     out.centerX = c.first; out.centerY = c.second;
-    // 四隅を画へ写し、画の枠（-1〜1）で切り取った多角形の面積を画の面積（4）で割る。
+    // 四隅を画へ写し、画の枠（-limit〜limit）で切り取った多角形の面積を画の面積（4）で割る。
     constexpr std::pair<double, double> kCorners[]{{-.5, -.5}, {.5, -.5}, {.5, .5}, {-.5, .5}};
-    std::vector<std::pair<double, double>> poly;
-    for (const auto& [a, b] : kCorners) { poly.push_back(basis.ToView(TransformPoint(tv, {s.centerX + a * s.width, s.centerY + b * s.height, s.centerZ}))); }
-    for (int edge = 0; edge < 4 && !poly.empty(); ++edge) {
-        const int axis = edge / 2; const double sign = edge % 2 ? -1.0 : 1.0;   // x≤1, x≥-1, y≤1, y≥-1 の順
-        const auto inside = [&](const std::pair<double, double>& q) { return sign * (axis ? q.second : q.first) <= 1; };
-        std::vector<std::pair<double, double>> clipped;
+    std::vector<std::pair<double, double>> corners;
+    for (const auto& [a, b] : kCorners) { corners.push_back(basis.ToView(TransformPoint(tv, {s.centerX + a * s.width, s.centerY + b * s.height, s.centerZ}))); }
+    const auto clippedArea = [&](double limit) {
+        auto poly = corners;
+        for (int edge = 0; edge < 4 && !poly.empty(); ++edge) {
+            const int axis = edge / 2; const double sign = edge % 2 ? -limit : limit;   // x≤L, x≥-L, y≤L, y≥-L の順
+            const auto inside = [&](const std::pair<double, double>& q) { return (sign > 0 ? 1 : -1) * (axis ? q.second : q.first) <= limit; };
+            std::vector<std::pair<double, double>> clipped;
+            for (size_t i = 0; i < poly.size(); ++i) {
+                const auto& a = poly[i]; const auto& b = poly[(i + 1) % poly.size()];
+                if (inside(a)) { clipped.push_back(a); }
+                if (inside(a) != inside(b)) {
+                    const double va = axis ? a.second : a.first, vb = axis ? b.second : b.first;
+                    const double t = (sign - va) / (vb - va);
+                    clipped.push_back({a.first + (b.first - a.first) * t, a.second + (b.second - a.second) * t});
+                }
+            }
+            poly = std::move(clipped);
+        }
+        double area = 0;
         for (size_t i = 0; i < poly.size(); ++i) {
             const auto& a = poly[i]; const auto& b = poly[(i + 1) % poly.size()];
-            if (inside(a)) { clipped.push_back(a); }
-            if (inside(a) != inside(b)) {
-                const double va = axis ? a.second : a.first, vb = axis ? b.second : b.first;
-                const double t = (sign - va) / (vb - va);
-                clipped.push_back({a.first + (b.first - a.first) * t, a.second + (b.second - a.second) * t});
-            }
+            area += a.first * b.second - b.first * a.second;
         }
-        poly = std::move(clipped);
-    }
-    double area = 0;
-    for (size_t i = 0; i < poly.size(); ++i) {
-        const auto& a = poly[i]; const auto& b = poly[(i + 1) % poly.size()];
-        area += a.first * b.second - b.first * a.second;
-    }
-    out.coverage = std::abs(area) * .5 / 4;
+        return std::abs(area) * .5 / 4;
+    };
+    out.coverage = clippedArea(1.0);
+    // 画の縁から 3 割外まで（カメラが振れた時に入ってくる画面を先に撮る）。
+    out.reach = clippedArea(1.3);
     return out;
 }
 

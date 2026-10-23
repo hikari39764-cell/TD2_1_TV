@@ -112,6 +112,7 @@ bool CameraDirector::RegionFrame(HIKARI::WorldView& world, const Rules::Explorat
     float depth = toCenter.x * forward.x + toCenter.y * forward.y + toCenter.z * forward.z;
     if (!(depth > .3f)) depth = 3.f;
     out.eye = pose.position; out.look = Mad(pose.position, forward, depth);
+    out.up = ToF3(Math::Normalize(Math::QRotate(ToQuat(pose.rotation), {0, 1, 0})));
     HIKARI::GameProjectCameraLens lens{};
     if (world.GetCamera().GetAuthoredLens(cameraObject.GetHandle().value, lens) && lens.verticalFovRadians > 0) {
         out.verticalFovRadians = lens.verticalFovRadians;
@@ -160,7 +161,7 @@ bool CameraDirector::StartOffset(HIKARI::WorldView& world, const Rules::Explorat
 
 void CameraDirector::Snap(HIKARI::WorldView& world, const Rules::Exploration& exploration, const RegionObjects& objects, std::string_view region) {
     CameraRegionFrame frame;
-    if (RegionFrame(world, exploration, objects, region, frame)) rig_.Snap(frame.eye, frame.look, frame.verticalFovRadians);
+    if (RegionFrame(world, exploration, objects, region, frame)) rig_.Snap(frame.eye, frame.look, frame.verticalFovRadians, frame.up);
 }
 
 void CameraDirector::OnCrossing(HIKARI::WorldView& world, Rules::Exploration& exploration, const RegionObjects& objects,
@@ -212,6 +213,8 @@ bool CameraDirector::StartTravel(HIKARI::WorldView& world, const Rules::Explorat
     });
     if (found == bindings_.end() || found->sequenceAssetGuid.empty()) return false;
     const auto& binding = *found;
+    // 自動で流す切り替えは、地面を歩いて越えても A/D で止めない。
+    if (binding.autoPlay) manual = false;
     const bool reverse = from == binding.regionB;
     const float speed = std::clamp(binding.speed, .1f, 8.f);
     const auto started = PlayBoundSequence(world, binding, reverse ? -speed : speed);
@@ -287,7 +290,7 @@ void CameraDirector::UpdateTravel(HIKARI::WorldView& world, Rules::Exploration& 
     HIKARI::GameProjectCameraPose rendered{};
     if (world.GetCamera().GetRenderedPose(rendered)) {
         CameraRig::BreathAround(AreaOf(travel.to), time_, Mad(rendered.eye, travel.appliedEye, -1.f),
-                                Mad(rendered.target, travel.appliedLook, -1.f), breathEye, breathLook, handRoll);
+                                Mad(rendered.target, travel.appliedLook, -1.f), rendered.up, breathEye, breathLook, handRoll);
     } else {
         rig_.Breath(AreaOf(travel.to), time_, breathEye, breathLook, handRoll);
     }
@@ -314,7 +317,7 @@ void CameraDirector::FinishTravel(HIKARI::WorldView& world, const Rules::Explora
     StopTravel(world);
     // 演出の終わりの画からそのまま追従を始める。描いた画には演出へ足した揺れが入っており、追従も同じ揺れを足すので、
     // 基準はそのずれを引いた所に置く（引かないと最初のフレームで少し跳ぶ）。
-    if (haveRendered) rig_.Snap(Mad(rendered.eye, appliedEye, -1.f), Mad(rendered.target, appliedLook, -1.f), rendered.verticalFovRadians);
+    if (haveRendered) rig_.Snap(Mad(rendered.eye, appliedEye, -1.f), Mad(rendered.target, appliedLook, -1.f), rendered.verticalFovRadians, rendered.up);
     else Snap(world, exploration, objects, region);
     std::fprintf(stderr, "[TD2 camera] travel finished at %s\n", region.c_str());
     if (!pending.empty() && pending != region && !SameArea(region, pending)) (void)StartTravel(world, exploration, objects, region, pending, false, 0);
@@ -387,7 +390,6 @@ void CameraDirector::Focus(HIKARI::WorldView& world, const Rules::Exploration& e
     HIKARI::GameProjectCameraPose pose{};
     if (!camera.GetRenderedPose(pose)) { return; }
     double best = 0, depth = 0, travelWeight = 0, travelDepth = 0;
-    std::string focusRegion;
     for (const auto& [region, handle] : objects.televisions) {
         // 切り替え中は出る部屋と入る部屋の画面だけを見る（途中で遠くの画面に焦点が飛ばないように）。
         const bool travelRoom = travel_ && (region == travel_->from || region == travel_->to);
@@ -400,17 +402,11 @@ void CameraDirector::Focus(HIKARI::WorldView& world, const Rules::Exploration& e
         const auto seen = ProjectScreen(pose, tv, geometry->second);
         const double score = seen.coverage / (1 + 1.5 * (seen.centerX * seen.centerX + seen.centerY * seen.centerY));
         if (seen.depth <= .1) { continue; }
-        if (score > best) { best = score; depth = seen.depth; focusRegion = region; }
+        if (score > best) { best = score; depth = seen.depth; }
         if (travelRoom) { travelWeight += score; travelDepth += score * seen.depth; }
     }
     // 二台の奥行きを目立ち具合で混ぜ、連続に移す。
     if (travel_ && travelWeight > 0) { depth = travelDepth / travelWeight; }
-    // 診断用（環境変数 TD2_SCREEN_TRACE）：焦点の画面が替わったフレームを記録する。
-    static const bool trace = std::getenv("TD2_SCREEN_TRACE") != nullptr;
-    if (trace && focusRegion != traceFocus_) {
-        std::fprintf(stderr, "[TD2 focus-trace] region=%s depth=%.3f travel=%.3f\n", focusRegion.c_str(), depth, travel_ ? travel_->progress : -1.0);
-        traceFocus_ = focusRegion;
-    }
     if (!(best > 0)) {
         // 画面が一つも写っていない時は、操作中の区域の画面の奥行きを保つ。
         CameraRegionFrame frame;

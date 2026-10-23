@@ -29,6 +29,8 @@ struct DeviceDefinition {
     bool inverted = false;
     // Plate：踏むたびに入・切が切り替わる（離しても保つ）。false は踏んでいる間だけ通電。
     bool latch = false;
+    // 圧力板につながる装置：つながる板の全部が通電した時だけ動く（二か所を同時に押さえる謎）。false はどれか一つで動く。
+    bool all = false;
     Direction direction = Direction::Up;
     double range = 20.0;
     // Spring：基礎の打ち上げ速度（マス/秒）、溜める秒数、発射後の冷却秒数（3〜30）。
@@ -122,8 +124,8 @@ struct DeviceSnapshot {
     Rect rect;
     Direction direction = Direction::Up;
     bool active = false, pressed = false, solid = false;
-    // 表示用：Spring の溜め（0〜1）と冷却の残り（1→0）。Decal の図案。
-    double charge = 0.0, cooldown = 0.0;
+    // 表示用：Spring の溜め（0〜1）と冷却の残り（1→0）、溜めと冷却にかかる秒数（骨つきの物体の動作の長さに使う）。
+    double charge = 0.0, cooldown = 0.0, chargeSeconds = 0.0, cooldownSeconds = 0.0;
     // 表示用：通電しているか（扉・橋・光線は反転前の値、つながっていなければ false）。圧力板は通電を出しているか。
     // 圧力板とその先の仕掛けの灯を同時に点け、どれとどれがつながっているかを見せる。
     bool powered = false;

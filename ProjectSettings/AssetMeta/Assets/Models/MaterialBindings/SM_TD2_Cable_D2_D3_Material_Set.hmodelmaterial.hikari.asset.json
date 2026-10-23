@@ -1,0 +1,13 @@
+{
+  "displayName": "SM_TD2_Cable_D2_D3_Material_Set",
+  "guid": "8c60d09d86a9435bb33204beae5c4e6f",
+  "importSettings": {
+    "runtimeLoader": "ModelMaterialBindingAsset",
+    "sourceAuthoritative": true
+  },
+  "importerId": "ModelMaterialBindingImporter",
+  "importerVersion": 1,
+  "metaVersion": 1,
+  "sourcePath": "Assets/Models/MaterialBindings/SM_TD2_Cable_D2_D3_Material_Set.hmodelmaterial",
+  "type": "ModelMaterialBinding"
+}

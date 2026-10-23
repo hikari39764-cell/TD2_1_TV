@@ -156,8 +156,7 @@ void LevelEditor::RouteCables(EditorWorkspaceHostContext& ctx, const std::string
         uint64_t component = 0;
         for (const auto& c : added.data.value("addedComponents", Json::array())) { if (c.value("type", "") == kSignalCableType) { component = ObjectId(c.value("componentId", Json{})); } }
         if (!component) { break; }
-        Json commands = Json::array({PropertyCommand(id, component, "plate", plate), PropertyCommand(id, component, "target", target),
-                                     PropertyCommand(id, component, "litModel", std::string(piece.joint ? kCableJointLit : kCableSegmentLit))});
+        Json commands = Json::array({PropertyCommand(id, component, "plate", plate), PropertyCommand(id, component, "target", target)});
         if (!Transact(ctx, commands, model_.error)) { break; }
         ++made;
     }

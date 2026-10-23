@@ -244,6 +244,16 @@ void Exploration::ClearEcho() {
     snapshotDirty_ = true;
 }
 
+Exploration::CollectibleCount Exploration::Collectibles() const {
+    CollectibleCount count;
+    for (size_t i = 0; i < world_.devices.size() && i < state_.devices.size(); ++i) {
+        if (world_.devices[i].kind != DeviceKind::Collectible) continue;
+        ++count.total;
+        if (state_.devices[i].active) ++count.taken;
+    }
+    return count;
+}
+
 bool Exploration::Teleport(std::string_view region) {
     const auto* room = FindRegion(region);
     if (!room || !room->placement.worldPlaced) return false;
@@ -283,7 +293,17 @@ ExplorationOutput Exploration::Step(const InputState& input, double seconds) {
     ExplorationOutput out;
     if (!Ready()) return out;
     // 部屋の切り替え（カメラの演出）中も操作は効く。
-    auto result = StepRules(world_, state_, input, seconds);
+    // ただし自分のいる部屋が回っている間は、歩き・冲刺・交換を受け付けない（回り終わった時、止まった所から点対称に運ばれる）。
+    const auto here = RegionAt(state_.player.rect);
+    const bool turning = !here.empty() && std::any_of(mechanisms_.begin(), mechanisms_.end(), [&](const MechanismRuntime& m) {
+        if (!m.moving) return false;
+        const auto targets = TargetsFor(m, m.target);
+        return std::any_of(targets.begin(), targets.end(), [&](const MechanismMove& move) {
+            return move.regionId == here && move.flip != regions_.at(here).flipped;
+        });
+    });
+    if (turning) { state_.actionArmed = false; state_.blinkBuffer = 0; state_.pendingActionPressed = state_.pendingActionReleased = false; }
+    auto result = StepRules(world_, state_, turning ? InputState{} : input, seconds);
     UpdateMechanisms(seconds);
     UpdateSlides(seconds);
     UpdateStacks(seconds);
@@ -294,6 +314,16 @@ ExplorationOutput Exploration::Step(const InputState& input, double seconds) {
     if (!current.empty() && current != activeRegion_) {
         out.transitions.push_back({respawn ? "respawn" : swapped ? "swap" : "crossed", activeRegion_, current, {state_.player.rect.x, state_.player.rect.y}});
         activeRegion_ = current;
+        // 乗り物：外から動く部屋へ入ったら、着地して収まるのを待って動き出す（復活でそこに出た時は動かさない）。
+        if (!respawn) {
+            for (auto& m : mechanisms_) {
+                if (!m.source.ride || m.moving) continue;
+                // 乗り込む前に降りた（ほかの部屋へ出た）時は待ちをやめる。
+                m.rideArmed = m.source.rideFrom.empty()
+                    ? std::any_of(m.origins.begin(), m.origins.end(), [&](const MechanismMove& o) { return o.regionId == current; })
+                    : std::find(m.source.rideFrom.begin(), m.source.rideFrom.end(), current) != m.source.rideFrom.end();
+            }
+        }
     }
     Record(std::move(result), out); snapshotDirty_ = true;
     return out;
@@ -307,6 +337,16 @@ void Exploration::UpdateMechanisms(double seconds) {
             // 自動往復：端で dwell 秒止まったら反対の端へ向かう（圧力板は見ない）。
             if (!m.moving && std::abs(m.progress - m.target) < 1e-9 && (m.rest += seconds) >= m.source.dwell) {
                 m.target = m.target ? 0 : 1; m.rest = 0;
+            }
+        } else if (m.source.ride) {
+            // 乗り込んだ部屋の中に体が全部収まって着地したら、反対の端へ向かう（入口をまたいだまま動かない）。
+            const auto* region = m.rideArmed ? FindRegion(activeRegion_) : nullptr;
+            if (region && !m.moving && std::abs(m.progress - m.target) < 1e-9 && state_.player.grounded && !state_.player.dead) {
+                const auto& p = region->placement;
+                const auto& b = state_.player.rect;
+                if (b.x >= p.worldX && b.y >= p.worldY && b.x + b.w <= p.worldX + p.cols && b.y + b.h <= p.worldY + p.rows) {
+                    m.target = m.source.rideFrom.empty() ? (m.target ? 0 : 1) : 1; m.rideArmed = false;
+                }
             }
         } else if (m.source.toggle) { if (powered && !m.powered) m.target = m.target ? 0 : 1; }
         else {
@@ -452,6 +492,8 @@ void Exploration::UpdateStacks(double seconds) {
         }
         isolate(false);
         if (MoveRegions(moves)) s.at = s.to; else s.to = s.at;
+        // 移した後の配置で境界を作り直す（切り離しを解く時は移す前の配置で作るので、落ちた先の口が塞がったままになる）。
+        BuildBoundaries();
         snapshotDirty_ = true;
         const int finished = s.phase;
         s.phase = 0; s.progress = 0;
@@ -543,14 +585,11 @@ bool Exploration::MoveRegions(const std::vector<MechanismMove>& targets) {
             map(point); state_.checkpointPosition = {point.x, point.y};
         }
         if (inside(spawnIn)) { Rect point{world_.spawn.x, world_.spawn.y, .625, .875}; map(point); world_.spawn = {point.x, point.y}; }
+        // 装置は回さない：部屋が回っても画面の上の位置と向きのまま（弾簧は上を向いたまま）。部屋ごと動く分だけ運ぶ。
         for (auto& device : world_.devices) {
             const auto owner = deviceOwners_.find(device.id);
             if (owner == deviceOwners_.end() || owner->second != move.regionId) continue;
-            map(device.rect);
-            if (flip) {
-                device.direction = device.direction == Direction::Up ? Direction::Down : device.direction == Direction::Down ? Direction::Up
-                                 : device.direction == Direction::Left ? Direction::Right : Direction::Left;
-            }
+            device.rect.x += move.worldX - old.worldX; device.rect.y += move.worldY - old.worldY;
         }
         for (auto& chunk : world_.chunks) {
             if (chunk.region.regionId != move.regionId) continue;

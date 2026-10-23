@@ -6,6 +6,8 @@
 
 namespace TD2::Math {
 inline constexpr double kPi = 3.14159265358979323846;
+// 0〜1 へ丸めた三次のなめらかな立ち上がり（始めと終わりの傾きが 0）。
+inline double Smoothstep(double x) { x = std::clamp(x, 0.0, 1.0); return x * x * (3 - 2 * x); }
 
 using Vec3 = std::array<double, 3>;
 using Quat = std::array<double, 4>;   // x, y, z, w

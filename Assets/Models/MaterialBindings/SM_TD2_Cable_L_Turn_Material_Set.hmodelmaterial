@@ -1,0 +1,11 @@
+{
+  "bindings": [
+    {
+      "materialAssetGuid": "43632b6732e34c26aee3ed75ba9cbdc8",
+      "slotId": "f4502341556e0fb9"
+    }
+  ],
+  "displayName": "SM_TD2_Cable_L_Turn Material Set",
+  "modelAssetGuid": "e5887190163aeee0a27e8affd67abb6b",
+  "version": 1
+}

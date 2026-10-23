@@ -48,6 +48,7 @@ struct LayoutEdge {
     std::string sequenceGuid, style = "auto", autoHash;
     double seconds = 3, speed = 1;
     bool keepAuthored = false;
+    bool autoPlay = false;                                    // A/D で止めずに最後まで流す
 };
 
 struct LayoutBox { Vec3 lo{}, hi{}; uint64_t objectId = 0; std::string name; };

@@ -26,12 +26,16 @@ struct MachineRegionOffset {
     bool flip = false, park = false;
     bool operator==(const MachineRegionOffset&) const = default;
 };
-// 物体のずれ：物体ID dx dy dz rx ry rz [cx cy cz] [@錨の物体ID]。
+// 物体のずれ：物体ID dx dy dz rx ry rz [cx cy cz] [@錨の物体ID] [~始め-終わり] [^高さ]。
 // 基準（状態 A、錨があればその物体）の向きで測った位置（m）と、基準に後から掛ける回転（度）。cx cy cz は回す中心。
+// ~始め-終わり は全体の進み（0〜1）のうちこの物体が動く区間。先にどく物と後から入る物がぶつからないよう順番を付ける。
+// ^高さ は跳ぶ乗り物の高さ（m）。先にこの高さまで浮き上がり、高いところで運んで、最後に降りる（棚や塔を上から越える）。
+// 負の高さは落ちる乗り物：先にその分だけ真下へ落ち、横へ運ぶにつれて終わりの高さへなじむ。
 struct MachineObjectDelta {
     uint64_t object = 0, anchor = 0;
     std::array<double, 3> position{}, rotation{}, pivot{};
     bool hasPivot = false;
+    double from = 0, to = 1, lift = 0;
     bool operator==(const MachineObjectDelta&) const = default;
 };
 
@@ -121,7 +125,25 @@ inline bool ParseDeltas(const std::string& text, std::vector<MachineObjectDelta>
             fail("物体の行：物体ID dx dy dz rx ry rz [cx cy cz] [@基準の物体]"); continue;
         }
         std::vector<std::string> rest;
-        for (std::string token; values >> token;) { rest.push_back(token); }
+        bool timed = true;
+        for (std::string token; values >> token;) {
+            // 動く区間は位置を問わず読む（~0.4-1）。
+            if (token.size() > 1 && token[0] == '~') {
+                const auto dash = token.find('-', 2);
+                try {
+                    if (dash == std::string::npos) { throw 0; }
+                    delta.from = std::stod(token.substr(1, dash - 1)); delta.to = std::stod(token.substr(dash + 1));
+                } catch (...) { timed = false; }
+                if (!(delta.from >= 0 && delta.from < delta.to && delta.to <= 1)) { timed = false; }
+                continue;
+            }
+            if (token.size() > 1 && token[0] == '^') {
+                try { delta.lift = std::stod(token.substr(1)); } catch (...) { timed = false; }
+                continue;
+            }
+            rest.push_back(token);
+        }
+        if (!timed) { fail("動く区間は ~始め-終わり（0 以上 1 以下、始め < 終わり）、弧は ^高さ"); continue; }
         size_t i = 0;
         if (rest.size() >= 3 && rest[0][0] != '@') {
             try { for (size_t k = 0; k < 3; ++k) { delta.pivot[k] = std::stod(rest[k]); } }
@@ -147,6 +169,8 @@ inline std::string FormatDeltas(const std::vector<MachineObjectDelta>& deltas) {
         for (const double v : d.rotation) { out += " " + Number(v); }
         if (d.hasPivot) { for (const double v : d.pivot) { out += " " + Number(v); } }
         if (d.anchor) { out += " @" + std::to_string(d.anchor); }
+        if (d.from > 0 || d.to < 1) { out += " ~" + Number(d.from) + "-" + Number(d.to); }
+        if (d.lift != 0) { out += " ^" + Number(d.lift); }
     }
     return out;
 }

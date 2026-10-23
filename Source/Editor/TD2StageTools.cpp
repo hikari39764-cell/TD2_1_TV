@@ -112,26 +112,6 @@ void JoinFolderOf(EditorWorkspaceHostContext& ctx, uint64_t objectId, uint64_t l
     }
 }
 
-double StageWidth(const StageObject& o) {
-    if (o.television) { return o.television->width * std::abs(o.pose.scale[0]); }
-    // 回っている物体の外接箱は幅より広いので、横の二辺の小さい方を使う。
-    return o.hasBounds ? (std::min)(o.hi[0] - o.lo[0], o.hi[2] - o.lo[2]) : 1.0;
-}
-
-double StageHeight(const StageObject& o) {
-    if (o.television) { return o.television->height * std::abs(o.pose.scale[1]); }
-    return o.hasBounds ? o.hi[1] - o.lo[1] : 1.0;
-}
-
-Pose PoseBeside(const StageObject& anchor, double width, double height, int side, double gap) {
-    // 筐体の原点は底面の中心。横は anchor の X 方向に幅の半分ずつ、上下は高さで離す。
-    MachineObjectDelta d;
-    if (side == 1 || side == -1) { d.position = {side * (StageWidth(anchor) * .5 + width * .5 + gap), 0, 0}; }
-    else if (side == 2) { d.position = {0, StageHeight(anchor) + gap, 0}; }
-    else { d.position = {0, -(height + gap), 0}; }
-    return ApplyDelta(anchor.pose, anchor.pose, d);
-}
-
 bool PoseAtView(EditorWorkspaceHostContext& ctx, Pose& pose, std::string& error) {
     const auto state = Execute(ctx, "editor.state", Json::object());
     if (!state.ok) { error = state.error; return false; }

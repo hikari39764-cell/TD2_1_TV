@@ -493,7 +493,8 @@ public:
     }
 
     std::string Switches() {
-        std::unordered_set<std::string> linked, powered;
+        // unpowered はつながる板のうち一枚でも通電していない装置（all の装置はここに入ると動かない）。
+        std::unordered_set<std::string> linked, powered, unpowered;
         for (size_t i = 0; i < d.devices.size(); ++i) {
             const auto& dev = d.devices[i]; auto& state = s.devices[i];
             if (dev.kind != DeviceKind::Plate) continue;
@@ -518,7 +519,7 @@ public:
                 Event(EventKind::PlateChanged, dev.id, state.active ? "latched" : "unlatched", dev.rect);
             }
             state.pressed = pressed;
-            for (const auto& target : dev.targets) { linked.insert(target); if (state.active) powered.insert(target); }
+            for (const auto& target : dev.targets) { linked.insert(target); if (state.active) powered.insert(target); else unpowered.insert(target); }
         }
         std::string death;
         for (size_t i = 0; i < d.devices.size(); ++i) {
@@ -526,7 +527,8 @@ public:
             if (dev.kind != DeviceKind::Door && dev.kind != DeviceKind::Laser && dev.kind != DeviceKind::Bridge &&
                 dev.kind != DeviceKind::Mechanism && dev.kind != DeviceKind::Goal) continue;
             // つながっていない光線と通関の扉は動いたまま（開いたまま）、ほかは止まったまま。
-            const bool active = linked.contains(dev.id) ? (dev.inverted ? !powered.contains(dev.id) : powered.contains(dev.id))
+            const bool on = powered.contains(dev.id) && !(dev.all && unpowered.contains(dev.id));
+            const bool active = linked.contains(dev.id) ? (dev.inverted ? !on : on)
                                                         : dev.kind == DeviceKind::Laser || dev.kind == DeviceKind::Goal;
             // 門と伸縮橋は実体に戻る瞬間に重なる体を挟む。
             const bool closing = state.active && !active && (dev.kind == DeviceKind::Door || dev.kind == DeviceKind::Bridge);
@@ -877,6 +879,7 @@ WorldSnapshot BuildSnapshot(const WorldDefinition& d, const WorldState& s) {
         if (dev.kind == DeviceKind::Spring) {
             snapshot.charge = std::clamp(state.charge / std::max(0.05, dev.delay), 0.0, 1.0);
             snapshot.cooldown = std::clamp(state.cooldown / std::clamp(dev.cooldown, 3.0, 30.0), 0.0, 1.0);
+            snapshot.chargeSeconds = std::max(0.05, dev.delay); snapshot.cooldownSeconds = std::clamp(dev.cooldown, 3.0, 30.0);
         }
         // 通関の扉の灯は開いている間（つながっていなくても）点ける。
         snapshot.powered = dev.kind == DeviceKind::Plate || dev.kind == DeviceKind::Goal ? state.active

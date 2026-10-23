@@ -1,0 +1,15 @@
+{
+  "displayName": "TD2P_Signal_Material",
+  "guid": "43632b6732e34c26aee3ed75ba9cbdc8",
+  "importSettings": {
+    "cookMaterial": true,
+    "outputFormat": "HMAT",
+    "shaderModel": "PBR",
+    "sourceFormat": ".material.json"
+  },
+  "importerId": "MaterialImporter",
+  "importerVersion": 8,
+  "metaVersion": 1,
+  "sourcePath": "Assets/Materials/TD2P_Signal_Material.material.json",
+  "type": "Material"
+}

@@ -2,3 +2,6 @@
 
 # 小さなテスト素材を一律に LFS 化しない。
 # 大きなバイナリは容量と用途を確認し、必要なパスだけ LFS に追加する。
+
+# 道中の BGM（36 MB の wav）だけ LFS にする。
+Assets/Audio/BGM/BGM_Stage.wav filter=lfs diff=lfs merge=lfs -text

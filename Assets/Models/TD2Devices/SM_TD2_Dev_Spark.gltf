@@ -1,0 +1,459 @@
+{
+ "asset": {
+  "generator": "Khronos glTF Blender I/O v5.1.20",
+  "version": "2.0"
+ },
+ "scene": 0,
+ "scenes": [
+  {
+   "name": "Scene",
+   "nodes": [
+    3
+   ]
+  }
+ ],
+ "nodes": [
+  {
+   "name": "Spark",
+   "translation": [
+    0,
+    0.05999999865889549,
+    0
+   ]
+  },
+  {
+   "children": [
+    0
+   ],
+   "name": "Root"
+  },
+  {
+   "mesh": 0,
+   "name": "SM_TD2_Dev_Spark",
+   "skin": 0
+  },
+  {
+   "children": [
+    2,
+    1
+   ],
+   "name": "SM_TD2_Dev_Spark_Rig"
+  }
+ ],
+ "animations": [
+  {
+   "channels": [
+    {
+     "sampler": 0,
+     "target": {
+      "node": 1,
+      "path": "translation"
+     }
+    },
+    {
+     "sampler": 1,
+     "target": {
+      "node": 1,
+      "path": "rotation"
+     }
+    },
+    {
+     "sampler": 2,
+     "target": {
+      "node": 1,
+      "path": "scale"
+     }
+    },
+    {
+     "sampler": 3,
+     "target": {
+      "node": 0,
+      "path": "translation"
+     }
+    },
+    {
+     "sampler": 4,
+     "target": {
+      "node": 0,
+      "path": "rotation"
+     }
+    },
+    {
+     "sampler": 5,
+     "target": {
+      "node": 0,
+      "path": "scale"
+     }
+    }
+   ],
+   "name": "On",
+   "samplers": [
+    {
+     "input": 6,
+     "interpolation": "STEP",
+     "output": 7
+    },
+    {
+     "input": 6,
+     "interpolation": "STEP",
+     "output": 8
+    },
+    {
+     "input": 6,
+     "interpolation": "STEP",
+     "output": 9
+    },
+    {
+     "input": 6,
+     "interpolation": "STEP",
+     "output": 10
+    },
+    {
+     "input": 6,
+     "interpolation": "STEP",
+     "output": 8
+    },
+    {
+     "input": 11,
+     "interpolation": "LINEAR",
+     "output": 12
+    }
+   ]
+  },
+  {
+   "channels": [
+    {
+     "sampler": 0,
+     "target": {
+      "node": 1,
+      "path": "translation"
+     }
+    },
+    {
+     "sampler": 1,
+     "target": {
+      "node": 1,
+      "path": "rotation"
+     }
+    },
+    {
+     "sampler": 2,
+     "target": {
+      "node": 1,
+      "path": "scale"
+     }
+    },
+    {
+     "sampler": 3,
+     "target": {
+      "node": 0,
+      "path": "translation"
+     }
+    },
+    {
+     "sampler": 4,
+     "target": {
+      "node": 0,
+      "path": "rotation"
+     }
+    },
+    {
+     "sampler": 5,
+     "target": {
+      "node": 0,
+      "path": "scale"
+     }
+    }
+   ],
+   "name": "Off",
+   "samplers": [
+    {
+     "input": 13,
+     "interpolation": "STEP",
+     "output": 7
+    },
+    {
+     "input": 13,
+     "interpolation": "STEP",
+     "output": 8
+    },
+    {
+     "input": 13,
+     "interpolation": "STEP",
+     "output": 9
+    },
+    {
+     "input": 13,
+     "interpolation": "STEP",
+     "output": 10
+    },
+    {
+     "input": 13,
+     "interpolation": "STEP",
+     "output": 8
+    },
+    {
+     "input": 13,
+     "interpolation": "STEP",
+     "output": 14
+    }
+   ]
+  }
+ ],
+ "materials": [
+  {
+   "doubleSided": true,
+   "emissiveFactor": [
+    0.8631572127342224,
+    0.9386857151985168,
+    0.9046611785888672
+   ],
+   "name": "K07E_celadon_glow",
+   "pbrMetallicRoughness": {
+    "baseColorFactor": [
+     0.8631572127342224,
+     0.9386857151985168,
+     0.9046611785888672,
+     1
+    ],
+    "metallicFactor": 0,
+    "roughnessFactor": 0.550000011920929
+   }
+  }
+ ],
+ "meshes": [
+  {
+   "name": "FX_Shard.001",
+   "primitives": [
+    {
+     "attributes": {
+      "POSITION": 0,
+      "NORMAL": 1,
+      "JOINTS_0": 2,
+      "WEIGHTS_0": 3
+     },
+     "indices": 4,
+     "material": 0
+    }
+   ]
+  }
+ ],
+ "skins": [
+  {
+   "inverseBindMatrices": 5,
+   "joints": [
+    1,
+    0
+   ],
+   "name": "SM_TD2_Dev_Spark_Rig"
+  }
+ ],
+ "accessors": [
+  {
+   "bufferView": 0,
+   "componentType": 5126,
+   "count": 24,
+   "max": [
+    0.04800000041723251,
+    0.12239999324083328,
+    0.4000000059604645
+   ],
+   "min": [
+    -0.04800000041723251,
+    -0.002399997552856803,
+    -0.4000000059604645
+   ],
+   "type": "VEC3"
+  },
+  {
+   "bufferView": 1,
+   "componentType": 5126,
+   "count": 24,
+   "type": "VEC3"
+  },
+  {
+   "bufferView": 2,
+   "componentType": 5121,
+   "count": 24,
+   "type": "VEC4"
+  },
+  {
+   "bufferView": 3,
+   "componentType": 5126,
+   "count": 24,
+   "type": "VEC4"
+  },
+  {
+   "bufferView": 4,
+   "componentType": 5123,
+   "count": 24,
+   "type": "SCALAR"
+  },
+  {
+   "bufferView": 5,
+   "componentType": 5126,
+   "count": 2,
+   "type": "MAT4"
+  },
+  {
+   "bufferView": 6,
+   "componentType": 5126,
+   "count": 2,
+   "max": [
+    0.4
+   ],
+   "min": [
+    0
+   ],
+   "type": "SCALAR"
+  },
+  {
+   "bufferView": 7,
+   "componentType": 5126,
+   "count": 2,
+   "type": "VEC3"
+  },
+  {
+   "bufferView": 8,
+   "componentType": 5126,
+   "count": 2,
+   "type": "VEC4"
+  },
+  {
+   "bufferView": 9,
+   "componentType": 5126,
+   "count": 2,
+   "type": "VEC3"
+  },
+  {
+   "bufferView": 10,
+   "componentType": 5126,
+   "count": 2,
+   "type": "VEC3"
+  },
+  {
+   "bufferView": 11,
+   "componentType": 5126,
+   "count": 25,
+   "max": [
+    0.4
+   ],
+   "min": [
+    0
+   ],
+   "type": "SCALAR"
+  },
+  {
+   "bufferView": 12,
+   "componentType": 5126,
+   "count": 25,
+   "type": "VEC3"
+  },
+  {
+   "bufferView": 13,
+   "componentType": 5126,
+   "count": 2,
+   "max": [
+    0.016666666666666666
+   ],
+   "min": [
+    0
+   ],
+   "type": "SCALAR"
+  },
+  {
+   "bufferView": 14,
+   "componentType": 5126,
+   "count": 2,
+   "type": "VEC3"
+  }
+ ],
+ "bufferViews": [
+  {
+   "buffer": 0,
+   "byteLength": 288,
+   "byteOffset": 0,
+   "target": 34962
+  },
+  {
+   "buffer": 0,
+   "byteLength": 288,
+   "byteOffset": 288,
+   "target": 34962
+  },
+  {
+   "buffer": 0,
+   "byteLength": 96,
+   "byteOffset": 576,
+   "target": 34962
+  },
+  {
+   "buffer": 0,
+   "byteLength": 384,
+   "byteOffset": 672,
+   "target": 34962
+  },
+  {
+   "buffer": 0,
+   "byteLength": 48,
+   "byteOffset": 1056,
+   "target": 34963
+  },
+  {
+   "buffer": 0,
+   "byteLength": 128,
+   "byteOffset": 1104
+  },
+  {
+   "buffer": 0,
+   "byteLength": 8,
+   "byteOffset": 1232
+  },
+  {
+   "buffer": 0,
+   "byteLength": 24,
+   "byteOffset": 1240
+  },
+  {
+   "buffer": 0,
+   "byteLength": 32,
+   "byteOffset": 1264
+  },
+  {
+   "buffer": 0,
+   "byteLength": 24,
+   "byteOffset": 1296
+  },
+  {
+   "buffer": 0,
+   "byteLength": 24,
+   "byteOffset": 1320
+  },
+  {
+   "buffer": 0,
+   "byteLength": 100,
+   "byteOffset": 1344
+  },
+  {
+   "buffer": 0,
+   "byteLength": 300,
+   "byteOffset": 1444
+  },
+  {
+   "buffer": 0,
+   "byteLength": 8,
+   "byteOffset": 1744
+  },
+  {
+   "buffer": 0,
+   "byteLength": 24,
+   "byteOffset": 1752
+  }
+ ],
+ "buffers": [
+  {
+   "byteLength": 1776,
+   "uri": "SM_TD2_Dev_Spark.bin"
+  }
+ ]
+}

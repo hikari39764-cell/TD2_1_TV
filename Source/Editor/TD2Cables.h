@@ -1,14 +1,13 @@
 #pragma once
 // 画面の外の信号線：圧力板のテレビから、それが動かす仕掛けまで床と台の縁に沿って引く。
-// 線は直管と継ぎ目の部品を並べたもので、一本ずつ TD2.SignalCable を付け、通電した時に光る版へ替える。
+// 線は直管と継ぎ目の部品を並べたもので、一本ずつ TD2.SignalCable を付ける。通電した時はモデルの材質セットが作る材質の
+// 上書きの発光を上げる（モデルは入れ替えない）。
 #include "TD2CameraLayout.h"
 #include "TD2MachineEditor.h"
 
 namespace TD2::Editor {
 inline constexpr std::string_view kCableSegmentPath = "TD2Props/SM_TD2_CableSeg.gltf";
 inline constexpr std::string_view kCableJointPath = "TD2Props/SM_TD2_CableJoint.gltf";
-inline constexpr std::string_view kCableSegmentLit = "9c1ebe2d625143abb7defb769e3c7ba2";
-inline constexpr std::string_view kCableJointLit = "5ceec717b6334b88bd8c43bf75deb8da";
 inline constexpr std::string_view kSignalCableType = "TD2.SignalCable";
 
 // 線の通り道（折れ線）。from は板のテレビの後ろの足元、to は仕掛けの部品か動くテレビの後ろ。

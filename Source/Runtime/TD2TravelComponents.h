@@ -15,6 +15,7 @@ public:
         f.Text("sequenceSlotName", "カメラスロット", binding_.sequenceSlotName);
         f.SceneObject("cameraObject", "スロットのカメラ", binding_.cameraObject);
         f.Float("speed", "再生速度", binding_.speed, .1f, 4.f);
+        f.Bool("autoPlay", "自動で流す", binding_.autoPlay);
         // 以下はエディタの自動生成用（実行時は使わない）。世界地図で辺を選ぶと編集できる。
         f.Text("style", "生成の型", style_);
         f.Float("seconds", "秒数", seconds_, .4f, 10.f);

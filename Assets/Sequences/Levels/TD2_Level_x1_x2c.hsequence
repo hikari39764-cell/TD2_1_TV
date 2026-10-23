@@ -1,0 +1,258 @@
+{
+  "assetType": "Sequence",
+  "displayName": "x1 ↔ x2c",
+  "formatVersion": 5,
+  "guid": "5b96d97ceedc4741aaa56434f660a1ce",
+  "sequence": {
+    "bindings": [
+      {
+        "id": 1,
+        "name": "游戏摄像机",
+        "required": true,
+        "slotName": "Camera",
+        "targetKind": "slot"
+      },
+      {
+        "id": 2,
+        "name": "区域机位 td2.x1",
+        "required": true,
+        "sceneObjectId": 11274,
+        "targetKind": "sceneObject"
+      },
+      {
+        "id": 3,
+        "name": "区域机位 td2.x2c",
+        "required": true,
+        "sceneObjectId": 11282,
+        "targetKind": "sceneObject"
+      }
+    ],
+    "durationSeconds": 2.5,
+    "id": 1,
+    "name": "x1 ↔ x2c",
+    "screenEffects": [
+      {
+        "amount": {
+          "keys": [],
+          "value": 0.08
+        },
+        "color": [
+          1,
+          1,
+          1
+        ],
+        "duration": 1.6,
+        "enabled": true,
+        "fadeIn": 0.0,
+        "fadeOut": 0.0,
+        "id": 1,
+        "kind": 13,
+        "name": "回る",
+        "start": 0.4,
+        "weight": {
+          "keys": [
+            [
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            [
+              0.8,
+              1.0,
+              0.0,
+              0.0
+            ],
+            [
+              1.6,
+              0.0,
+              0.0,
+              0.0
+            ]
+          ],
+          "value": 1.0
+        }
+      }
+    ],
+    "tracks": [
+      {
+        "clips": [
+          {
+            "camera": {
+              "aimWeight": {
+                "keys": [],
+                "value": 1.0
+              },
+              "anchor": 0,
+              "base": {
+                "customTangents": 0,
+                "far": 500.0,
+                "fov": 26.0,
+                "inFovTangent": 0.0,
+                "inTangent": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "interpolation": "spline",
+                "near": 0.05,
+                "outFovTangent": 0.0,
+                "outTangent": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "position": [
+                  -14.476,
+                  5.56,
+                  -10.0
+                ],
+                "reference": 0,
+                "rotation": [
+                  -0.706277,
+                  -0.034252,
+                  -0.706277,
+                  0.034252
+                ],
+                "time": 0.0
+              },
+              "keys": [
+                {
+                  "customTangents": 0,
+                  "far": 500.0,
+                  "fov": 0.0,
+                  "inFovTangent": 0.0,
+                  "inTangent": [
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  "interpolation": "spline",
+                  "near": 0.05,
+                  "outFovTangent": 0.0,
+                  "outTangent": [
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  "position": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "reference": 2,
+                  "rotation": [
+                    0,
+                    0,
+                    0,
+                    1
+                  ],
+                  "time": 0.0
+                },
+                {
+                  "customTangents": 0,
+                  "far": 500.0,
+                  "fov": 30.0,
+                  "inFovTangent": 0.0,
+                  "inTangent": [
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  "interpolation": "spline",
+                  "near": 0.05,
+                  "outFovTangent": 0.0,
+                  "outTangent": [
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  "position": [
+                    -12.6,
+                    4.2,
+                    -8.8
+                  ],
+                  "reference": 0,
+                  "rotation": [
+                    0.508755,
+                    0.438134,
+                    0.4836,
+                    0.56155
+                  ],
+                  "time": 1.25
+                },
+                {
+                  "customTangents": 0,
+                  "far": 500.0,
+                  "fov": 0.0,
+                  "inFovTangent": 0.0,
+                  "inTangent": [
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  "interpolation": "spline",
+                  "near": 0.05,
+                  "outFovTangent": 0.0,
+                  "outTangent": [
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  "position": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "reference": 3,
+                  "rotation": [
+                    0,
+                    0,
+                    0,
+                    1
+                  ],
+                  "time": 2.5
+                }
+              ],
+              "lookAt": 0,
+              "motion": [],
+              "name": "Shot",
+              "pivotDistance": 5.0,
+              "rail": {
+                "loop": false,
+                "points": []
+              },
+              "railT": {
+                "keys": [],
+                "value": 0.0
+              },
+              "targetOffset": [
+                0.0,
+                0.0,
+                0.0
+              ],
+              "timing": {
+                "keys": [],
+                "value": 0.0
+              },
+              "useScenePose": false
+            },
+            "cameraBindingId": 1,
+            "durationSeconds": 2.5,
+            "effects": [],
+            "id": 1,
+            "sourceOffsetSeconds": 0.0,
+            "startTimeSeconds": 0.0,
+            "transition": {
+              "durationSeconds": 0.0,
+              "mode": "cut"
+            }
+          }
+        ],
+        "enabled": true,
+        "id": 1,
+        "type": "cameraCut"
+      }
+    ]
+  }
+}

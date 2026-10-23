@@ -1,4 +1,5 @@
 #pragma once
+#include "TD2ScreenTone.h"
 #include "HIKARI/Project/GameComponent.h"
 #include <string_view>
 
@@ -50,6 +51,8 @@ struct ScreenStyleSettings {
     // 編集中に舞台を撮る正投影カメラ（詰めて並べた地図の二組。二つ目は未配置の地図）。主の高さが舞台の縮尺を決める。
     uint64_t captureCameraObject = 0;
     uint64_t unplacedCameraObject = 0;
+    // 色調（TD2.ScreenTone から写す。この部品の欄ではない）。
+    ScreenToneSettings tone;
 };
 
 class ScreenStyleComponent final : public HIKARI::IGameComponent {

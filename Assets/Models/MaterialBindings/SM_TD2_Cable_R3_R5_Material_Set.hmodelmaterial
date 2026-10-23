@@ -1,0 +1,11 @@
+{
+  "bindings": [
+    {
+      "materialAssetGuid": "43632b6732e34c26aee3ed75ba9cbdc8",
+      "slotId": "f4502341556e0fb9"
+    }
+  ],
+  "displayName": "SM_TD2_Cable_R3_R5 Material Set",
+  "modelAssetGuid": "a1f6e56fadf04dfc3a35cfdfb18b1297",
+  "version": 1
+}

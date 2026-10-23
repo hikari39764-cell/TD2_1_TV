@@ -8,7 +8,7 @@
 namespace TD2 {
 // 立体の組の部品に焼いた斜投影：奥へ 1 マスで右と上へずれる量（マス）。
 inline constexpr double kScreenKitOblique = 0.4;
-inline constexpr std::array<std::string_view, 135> kScreenKitParts{
+inline constexpr std::array<std::string_view, 136> kScreenKitParts{
     "Backdrop",
     "Backdrop_GridH1",
     "Backdrop_GridH2",
@@ -107,6 +107,7 @@ inline constexpr std::array<std::string_view, 135> kScreenKitParts{
     "Solid_RodY",
     "Solid_RodZ",
     "Spikes_Saw",
+    "Spring_Arrow",
     "Spring_Base",
     "Spring_Coil",
     "Spring_Pad",
@@ -146,7 +147,7 @@ inline constexpr std::array<std::string_view, 135> kScreenKitParts{
     "Window_FrameV",
 };
 inline constexpr int kScreenKitEdit = 0, kScreenKitPlay = 1;
-inline constexpr std::array<std::array<std::string_view, 135>, 2> kScreenKitGuids{{
+inline constexpr std::array<std::array<std::string_view, 136>, 2> kScreenKitGuids{{
     {{
         "b85a47b90dc63e32e6bf846f06dc2a43",
         "be23a86a4c6bf4b1e24ebb9b798f6c27",
@@ -246,6 +247,7 @@ inline constexpr std::array<std::array<std::string_view, 135>, 2> kScreenKitGuid
         "19287963a0f36b60eafffe06d76e1e5f",
         "d75f12d35a291de97fa2c062cf5e137f",
         "b69c5905420b39695d2417aa230610ad",
+        "60eddcf7b5594b12a6275c4c25636b10",
         "8b8a9fb4a70e5b1d1b8621b6c90ecbb9",
         "55a44a8b81a3d7557a2607cd3997ae63",
         "45f26f5b8a4c5af4392a3141dcdb482f",
@@ -383,6 +385,7 @@ inline constexpr std::array<std::array<std::string_view, 135>, 2> kScreenKitGuid
         "519fff12b3821793e8e7d4117f970d52",
         "9528997d1f2b86beb6ade76e0e67a58e",
         "fa59ed3d69f4dc4c4e861ef736ba0c75",
+        "20a859c8dd4a409c934b12ed72925b40",
         "3dd6281d2b06c852988f93ffa2aa3df1",
         "3722c6b699c59a3b1228810c49cf20e5",
         "39e8e8cb4d6d8ac487d48ab7696d36cb",

@@ -49,15 +49,4 @@ inline float TextWidth(std::string_view text) {
     return width;
 }
 
-struct EditorChoice { std::string id, label; bool selected = false; };
-
-// 候補を全部並べる（ページ送りなし）。長い一覧は検索欄で絞る。
-inline int DrawChoices(IEditorWorkspaceUi& ui, const std::vector<EditorChoice>& choices) {
-    if (choices.empty()) { ui.Text("選べるものがありません"); return -1; }
-    int chosen = -1;
-    for (size_t i = 0; i < choices.size(); ++i) {
-        if (ui.Selectable(choices[i].id, ShortChoiceLabel(choices[i].label, 24), choices[i].selected)) { chosen = static_cast<int>(i); }
-    }
-    return chosen;
-}
 }

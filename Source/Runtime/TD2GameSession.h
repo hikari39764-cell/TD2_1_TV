@@ -4,6 +4,7 @@
 #include "TD2CameraDirector.h"
 #include "TD2MachineViews.h"
 #include "TD2Intro.h"
+#include "TD2Sound.h"
 #include "../Common/TD2PlayRecord.h"
 #include "HIKARI/Project/GameProjectSession.h"
 #include "HIKARI/Project/FrameContext.h"
@@ -25,6 +26,10 @@ public:
     void Update(HIKARI::WorldView& world, const HIKARI::FrameContext& frame);
     const RegionRuntime* FindRegion(std::string_view id) const { return exploration_.FindRegion(id); }
     const std::string& ActiveRegion() const noexcept { return exploration_.ActiveRegion(); }
+    // 画面の外の機構（どの部屋を回すかを画面の舞台が読む）。
+    const std::vector<Rules::MechanismRuntime>& Mechanisms() const noexcept { return exploration_.Mechanisms(); }
+    // 機構で動かす物体の置いたままの姿勢（回す部屋のテレビの元の傾きを画面の舞台が読む）。
+    const HIKARI::GameProjectTransform* RestPose(uint64_t sceneObject) const { return machines_.RestPose(sceneObject); }
     // 大区域の切り替え中なら、出る部屋と入る部屋（画面の鮮明な窓と保護を優先する）。
     bool TravelRooms(std::string& from, std::string& to) const { return camera_.TravelRooms(from, to); }
     // 世界座標の表示状態（画面の舞台が読む）。
@@ -42,6 +47,8 @@ private:
     void RestartFromTitle(HIKARI::WorldView& world);
     // 開発用（O）：ゴールの扉のある部屋の出生点へ移す。
     void TeleportToGoal(HIKARI::WorldView& world);
+    // 開発用の巡回（TD2_TOUR）の進み。
+    uint64_t tourFrame_ = 0; size_t tourIndex_ = 0;
     void Trace(HIKARI::WorldView& world, uint64_t frame);
     void FinishRecord();
 
@@ -50,6 +57,7 @@ private:
     CameraDirector camera_;
     MachineViews machines_;
     IntroDirector intro_;
+    SoundDirector sound_;
     bool introChecked_ = false, ending_ = false;
     // 世界を作った時の区域と仕掛け（通関の後に最初の状態へ戻すため、作者の配置のまま取っておく）。
     std::vector<Rules::RegionSource> initialSources_;
