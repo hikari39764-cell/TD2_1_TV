@@ -1,6 +1,7 @@
 #include "TD2MachineViews.h"
 #include "TD2SignalCable.h"
 #include "TD2Transform.h"
+#include "TD2ViewCull.h"
 #include "HIKARI/Project/ActionViews.h"
 #include "HIKARI/Project/GameFlowViews.h"
 #include "HIKARI/Project/WorldQuery.h"
@@ -26,6 +27,8 @@ constexpr float kHopRise = .3f, kHopHold = .18f, kHopTurn = .2f;
 constexpr float kRideCameraRise = .45f;
 // 乗り物のカメラが横へ膨らみ始める進み（棚を越えるまでは膨らまない）。
 constexpr float kRideBulgeAfter = .3f;
+// 仕掛けの模型を書くかの視野判定の余裕（度）。速く振る演出でも画に入る前に今の姿勢へ揃える。
+constexpr double kSightMarginDegrees = 20.0;
 
 // 見る向き（ローカル +Z）と上から作る回転。
 HIKARI::GameProjectQuaternion LookRotation(const F3& forward, const F3& up) {
@@ -133,7 +136,7 @@ void MachineViews::SyncMechanisms(HIKARI::WorldView& world, const RegionObjects&
             }
         }
         if (!error.empty()) { std::fprintf(stderr, "[TD2 configuration] disabled mechanism %s %s\n", source.id.c_str(), error.c_str()); return; }
-        MechanismView view; view.cameraLift = component.CameraLift(); view.cameraPull = component.CameraPull();
+        MechanismView view; view.cameraLift = component.CameraLift(); view.cameraPull = component.CameraPull(); view.shake = component.Shake();
         // 状態 1 と -1 の表に出てくる物体をまとめる（片方にしか無ければ、もう片方は元の姿勢のまま）。
         std::vector<uint64_t> ids;
         for (const auto* list : {&authored.deltas, &authored.deltasC}) for (const auto& delta : *list)
@@ -165,13 +168,16 @@ void MachineViews::SyncMechanisms(HIKARI::WorldView& world, const RegionObjects&
                 std::fprintf(stderr, "[TD2 mechanism] %s missing object=%llu\n", source.id.c_str(), static_cast<unsigned long long>(id));
                 continue;
             }
-            item.sceneId = id; item.handle = object.GetHandle(); item.b = item.c = item.a;
+            item.sceneId = id; item.handle = object.GetHandle(); item.b = item.c = item.a; item.shown = item.a;
+            // 視野判定の大きさ：光は届く距離、ほかは縮尺から大まかに（長く伸ばした鎖も覆う）。
+            if (HIKARI::GameProjectLightState light{}; object.GetLight().TryGetState(light)) item.reach = light.range + 1.f;
+            else item.reach = std::clamp(1.5f * (std::max)({item.a.scale.x, item.a.scale.y, item.a.scale.z}), 1.5f, 10.f);
             for (const auto* list : {&authored.deltas, &authored.deltasC}) for (const auto& delta : *list) {
                 if (delta.object != id) continue;
                 const auto pose = deltaPose(delta, item.a, item);
                 if (!pose) { std::fprintf(stderr, "[TD2 configuration] mechanism %s missing anchor=%llu\n", source.id.c_str(), static_cast<unsigned long long>(delta.anchor)); continue; }
                 (list == &authored.deltas ? item.b : item.c) = *pose;
-                item.from = static_cast<float>(delta.from); item.to = static_cast<float>(delta.to); item.lift = static_cast<float>(delta.lift);
+                item.from = static_cast<float>(delta.from); item.to = static_cast<float>(delta.to); item.lift = static_cast<float>(delta.lift); item.drop = delta.drop;
             }
             // その場で画面の向きの軸に回すだけ（倒立）なら、区域カメラは動かさない（カメラまで逆さにしない）。
             const auto& qa = item.a.rotation; const auto& qb = item.b.rotation;
@@ -191,10 +197,12 @@ void MachineViews::SyncMechanisms(HIKARI::WorldView& world, const RegionObjects&
                 // 状態 A と B の向きの差が 120°以上なら、カメラは途中で向こう側へ切り替える。
                 // 乗り物は人を乗せて運ぶので切り替えず、テレビと一緒に回り込んで画面を正面に保つ。
                 const float dot = std::abs(qa.x * qb.x + qa.y * qb.y + qa.z * qb.z + qa.w * qb.w);
-                attachment.turn = !source.ride && 2.f * std::acos(std::clamp(dot, 0.f, 1.f)) >= 120.f * kPiF / 180.f;
+                // その場で回るだけの乗り物（回る台）も同じ：一緒に回り込むと途中で画面が真横を向き、台の上や周りの物を映してしまう。
+                const bool spinOnly = dx * dx + dy * dy + dz * dz < 1e-6f;
+                attachment.turn = (!source.ride || spinOnly) && 2.f * std::acos(std::clamp(dot, 0.f, 1.f)) >= 120.f * kPiF / 180.f;
                 const auto& r = attachment.relative.position;
                 attachment.reach = std::sqrt(r.x * r.x + r.y * r.y + r.z * r.z);
-                if (source.ride) {
+                if (source.ride && !attachment.turn) {
                     // 乗り物：カメラの視線の先（テレビまでの距離）を狙う点としてテレビに付けておく。
                     // 膨らむ向きは、動きの真ん中でテレビの画面が向く水平の向き。
                     attachment.ride = true;
@@ -218,21 +226,31 @@ void MachineViews::UpdateMechanisms(const Frame& frame, Writes& writes) {
     for (size_t i = 0; i < mechanisms_.size() && i < runtimes.size(); ++i) {
         auto& view = mechanisms_[i];
         const double progress = runtimes[i].progress;
-        if (progress == view.written) continue;
-        // 診断（環境変数 TD2_SPIKE_EVENTS）：機構が動き出した・止まった時を出す。
-        if (static const bool spikeEvents = std::getenv("TD2_SPIKE_EVENTS") != nullptr; spikeEvents) {
-            const bool wasRest = view.written == std::round(view.written), atRest = progress == std::round(progress);
-            if (wasRest != atRest) {
-                std::fprintf(stderr, "[TD2 mech] %s %s progress=%.2f\n", runtimes[i].source.id.c_str(), atRest ? "stop" : "start", progress);
+        // 進みが変わったら区域カメラを運ぶ。模型は画に入る時だけ書く（画の外で往復し続ける仕掛けの書き込みと影の計算を省く）。
+        const bool advanced = progress != view.written;
+        if (!advanced && progress == view.drawn) continue;
+        if (advanced) {
+            // 診断（環境変数 TD2_SPIKE_EVENTS）：機構が動き出した・止まった時を出す。
+            if (static const bool spikeEvents = std::getenv("TD2_SPIKE_EVENTS") != nullptr; spikeEvents) {
+                const bool wasRest = view.written == std::round(view.written), atRest = progress == std::round(progress);
+                if (wasRest != atRest) {
+                    std::fprintf(stderr, "[TD2 mech] %s %s progress=%.2f\n", runtimes[i].source.id.c_str(), atRest ? "stop" : "start", progress);
+                }
             }
+            // 揺れ：動き出した時と着いた時に画面を揺らす（降ってきた物がぶつかる）。
+            if (view.shake > 0 && view.written >= 0) {
+                const bool wasRest = view.written == std::round(view.written), atRest = progress == std::round(progress);
+                if (wasRest != atRest) frame.camera.Kick(atRest ? view.shake * .6 : view.shake);
+            }
+            view.written = progress;
         }
-        view.written = progress;
         // 両端でゆっくり止まる。転台は四元数で回し、吊り台は直線で運ぶ。天秤の状態 -1 側は c へ向かう。
         const bool sideC = progress < 0;
         // 物体ごとの進み：自分の区間の中だけで 0→1 に進む（戻りは同じ区間を逆にたどるので、順番も逆になる）。
         const auto eased = [&progress](const MechanismObject& object) {
-            const float t = (static_cast<float>(std::abs(progress)) - object.from) / std::max(object.to - object.from, 1e-3f);
-            return Math::SmoothStep(std::clamp(t, 0.f, 1.f));
+            const float t = std::clamp((static_cast<float>(std::abs(progress)) - object.from) / std::max(object.to - object.from, 1e-3f), 0.f, 1.f);
+            // 落ちる物はだんだん速くなり、止まる所で勢いのままぶつかる。
+            return object.drop ? t * t : Math::SmoothStep(t);
         };
         std::vector<HIKARI::GameProjectTransform> poses;
         std::vector<float> eases, alongs;   // 物体ごとの進みと、跳ぶ物の横へ運ぶ進み
@@ -265,12 +283,24 @@ void MachineViews::UpdateMechanisms(const Frame& frame, Writes& writes) {
                 pose.position = {c.x + turned.x, c.y + turned.y, c.z + turned.z};
             }
             poses.push_back(pose);
+            if (!advanced) continue;
             // 区域カメラが付いたテレビは、下でカメラ自身の動きで運ぶ。
             const bool hasCamera = std::any_of(view.attached.begin(), view.attached.end(), [k](const auto& a) { return a.parent == k; });
             if (hasCamera) movedPose_[object.handle.value] = pose;
             else Moved(frame, object.handle.value, object.handle, object.a, pose);
-            Push(writes, object.handle, pose);
         }
+        // 前に書いた姿勢か新しい姿勢のどちらかが視野にあれば書く。最初の一回と、操作中のテレビを含む仕掛けは必ず書く。
+        bool seen = std::isnan(view.drawn);
+        for (size_t k = 0; k < view.objects.size() && !seen; ++k) {
+            const auto& object = view.objects[k];
+            seen = object.handle.value == frame.activeTv.value || frame.sight.Sees(poses[k].position, object.reach) ||
+                   frame.sight.Sees(object.shown.position, object.reach);
+        }
+        if (seen) {
+            for (size_t k = 0; k < view.objects.size(); ++k) { Push(writes, view.objects[k].handle, poses[k]); view.objects[k].shown = poses[k]; }
+            view.drawn = progress;
+        }
+        if (!advanced) continue;
         // 付いて行くカメラ。
         // ・大きく回る転台（120°以上）：前半はテレビの回る向きへ回転の kTurnOrbit 割だけ一緒に回り込み、画面が真横を向いて
         //   表も裏も見えない折り返しの瞬間に転台の向こう側へ切り替え、後半も同じ向きへ回り続けて落ち着く（動きが途切れない）。
@@ -569,8 +599,21 @@ void MachineViews::Moved(const Frame& frame, uint64_t key, Handle tv, const Tran
     movedPose_[key] = pose;
 }
 
+bool MachineViews::Sight::Sees(const HIKARI::GameProjectFloat3& center, float radius) const {
+    if (!hasRendered && !hasControl) return true;
+    return (hasRendered && SphereInView(rendered, center, radius, kSightMarginDegrees)) ||
+           (hasControl && SphereInView(control, center, radius, kSightMarginDegrees));
+}
+
 void MachineViews::Update(HIKARI::WorldView& world, Rules::Exploration& exploration, const RegionObjects& objects, CameraDirector& camera, double seconds) {
-    const Frame frame{exploration, objects.Television(exploration.ActiveRegion()), camera};
+    // 視野は Play 中のゲームカメラだけ（編集中は全部書く）。描いた姿勢は一フレーム前なので、硬い切りの直後に備えて操作中の姿勢も見る。
+    Sight sight;
+    static const bool sightOff = std::getenv("TD2_SIGHT_CULL_OFF") != nullptr;   // 比べる時だけ（環境変数）：視野で間引かない
+    if (!sightOff && world.GetRuntimeSession().IsPlayActive()) {
+        sight.hasRendered = world.GetCamera().GetRenderedPose(sight.rendered);
+        sight.hasControl = world.GetCamera().GetControlPose(sight.control);
+    }
+    const Frame frame{exploration, objects.Television(exploration.ActiveRegion()), camera, sight};
     Writes writes;
     UpdateMechanisms(frame, writes); Commit(world, writes, "mechanism");
     writes.clear(); UpdateSlides(frame, writes, seconds); Commit(world, writes, "slide");

@@ -7,6 +7,7 @@
 #include "HIKARI/Project/ActionViews.h"
 #include "HIKARI/Project/WorldQuery.h"
 #include "HIKARI/Project/PresentationViews.h"
+#include <optional>
 #include <algorithm>
 #include <array>
 #include <cmath>
@@ -22,6 +23,8 @@ using namespace Stage3D;
 // 舞台の部品の数の目安。部品は材質ごとに GPU のシーンの面を使い、工場の物体と合わせてエンジンの上限（16384 面）を超えると
 // 画面全体の描画が止まる。
 constexpr size_t kPartWarning = 7000;
+// オープニングの板を使わない間に退ける下への距離（舞台カメラに写らない所）。
+constexpr float kIntroPlaneHide = 2000.0f;
 // 瞬間移動の残像が足元へ潰れて消えるまでの秒数。
 constexpr double kSmearSeconds = 0.12;
 // 跳ね返りの残影を足元から現す秒数（ルールの予告と同じ 0.16 秒）と、回収の光跡が消える秒数。
@@ -190,9 +193,34 @@ void Screen3DStage::SubmitParts(HIKARI::WorldView& world, const std::vector<cons
     std::map<std::string_view, const StageRoom*> byRegion;
     for (const auto* room : drawn) { byRegion.emplace(room->regionId, room); }
 
+    // 診断の計時：区間ごとに次の区間を始めると前の区間が閉じる。
+    std::optional<StageTimer> lap; lap.emplace("parts.terrain");
     // 背景と地形：部屋と周り 1 マスの占有が変わった時だけ作り直し、毎フレームは作った要求をそのまま出す。
+    // Play：地形の入力（全部の部屋の位置・向き・地図、装置の位置と実体、描き方）の指紋が前のフレームと同じなら、
+    // 部屋ごとの占有の数え直しと比べ直しを丸ごと飛ばす（作った要求は残してあり、結果は変わらない）。
+    uint64_t terrainKey = 0;
+    if (animate) {
+        uint64_t key = 1469598103934665603ull;
+        const auto mixBytes = [&key](const void* data, size_t size) {
+            for (size_t i = 0; i < size; ++i) { key = (key ^ static_cast<const unsigned char*>(data)[i]) * 1099511628211ull; }
+        };
+        const auto mix = [&mixBytes](const auto& value) { mixBytes(&value, sizeof(value)); };
+        mix(palette); mix(projection_.scale); mix(projection_.pitch); mix(projection_.yaw); mix(hall_); mix(depthRows_); mix(playDepth_); mix(solid_);
+        for (const auto* room : rooms) {
+            const auto& r = room->Region();
+            mixBytes(room->regionId.data(), room->regionId.size()); mix(room->x); mix(room->y); mix(room->linkX); mix(room->linkY); mix(room->flipped); mix(room->placed);
+            mix(r.cols); mix(r.rows); mixBytes(r.cells.data(), r.cells.size());
+        }
+        for (const auto& device : snapshot.devices) { mix(device.kind); mix(device.rect); mix(device.solid); }
+        terrainKey = key == 0 ? 1 : key;
+    }
+    // 診断（環境変数 TD2_TERRAIN_SKIP_OFF）：飛ばさずに毎フレーム数え直す（比べるため）。
+    static const bool skipOff = std::getenv("TD2_TERRAIN_SKIP_OFF") != nullptr;
+    const bool terrainSame = animate && !skipOff && terrainKey == terrainKey_;
+    terrainKey_ = terrainKey;
     std::vector<char> occupancy, linked;
     for (const auto* drawnRoom : drawn) {
+        if (terrainSame) { break; }
         const auto& room = *drawnRoom; const auto& r = room.Region();
         const int width = r.cols + 2, height = r.rows + 2;
         occupancy.assign(static_cast<size_t>(width * height), 0);
@@ -267,6 +295,7 @@ void Screen3DStage::SubmitParts(HIKARI::WorldView& world, const std::vector<cons
         return true;
     });
 
+    lap.emplace("parts.hall");
     // 窓の向こうの大広間：外のカメラが画面を見る角度（なめらかにした正接）だけ奥の層をずらす。編集中は出さない。
     // 透視で撮る時は本当の透視で奥の層がずれるので、手で付ける視差は足さない（向きが 0 のまま変わらず、作った部品を使い回す）。
     if (animate && hall_) {
@@ -317,6 +346,7 @@ void Screen3DStage::SubmitParts(HIKARI::WorldView& world, const std::vector<cons
         }
     }
 
+    lap.emplace("parts.devices");
     // 装置と光線：描く部屋の装置だけ（Play は全部の部屋）。状態で変わる部品は全部出し、表示だけを切り替える。
     // 通電・実体が変わった時刻は描かない部屋の装置も覚える（後で画面に入った時に古い変化を動かし直さない）。
     // 編集中は時刻が進まないので、動きを付けず最終の姿にする。Play でも画に写らない部屋の装置は時刻を止める（回る・脈打つ
@@ -367,7 +397,8 @@ void Screen3DStage::SubmitParts(HIKARI::WorldView& world, const std::vector<cons
             if (found != snapshot.beams.end()) { beam = &*found; }
         }
         const double since = now - memory->second.changed;
-        if (actors && devices_.Draw(world, builder, device, beam, checkpoint, since, seenRooms.contains(room->first))) {
+        if (actors && devices_.Draw(world, builder, device, beam, checkpoint, since, seenRooms.contains(room->first),
+                                    redrawnRooms_.find(room->first) != redrawnRooms_.end(), frame_)) {
             // 光線の発射器は形が変わらないので焼いた部品のまま。
             if (device.kind == Rules::DeviceKind::Laser) { builder.LaserBody(device); failed_ += builder.Failed(); }
             continue;
@@ -378,6 +409,7 @@ void Screen3DStage::SubmitParts(HIKARI::WorldView& world, const std::vector<cons
     }
 
     if (actors) { devices_.EndFrame(world); }
+    lap.emplace("parts.actors");
     // 人物・残影・予告・瞬間移動の残像：世界に一組ずつ（持ち主は舞台カメラ）。部屋の境に立つ体も一つで、
     // 両側のテレビの切り出しにそれぞれ写る。
     StagePartBuilder global{projection_, palette, cameras_[static_cast<size_t>(ViewKind::Sharp)].handle.value, frameParts_};
@@ -456,25 +488,30 @@ void Screen3DStage::SubmitParts(HIKARI::WorldView& world, const std::vector<cons
     }
     global.NoMirror();
     failed_ += global.Failed();
+    lap.emplace("parts.submit");
     for (const auto& request : frameParts_) { submit(request); }
+    lap.reset();
     // オープニングの砂嵐の板：窓の 2〜4 段目に暗い・普通・明るい板を一枚ずつ。毎フレーム縦に跳ばし、ノイズを動かす。
     // 板は窓の倍の高さで、どこへ跳んでも窓を覆う。1 段目は板を置かず、キャプチャの暗い地のまま（黒い画面）。
+    // 出した板は覚えておき、砂嵐が終わった後も下へ退けて出し続ける（板を出さなくなるとモデルの組が変わって GPU のシーンが
+    // 作り直しになり、ゲームが始まる所で大きく引っかかる）。
+    const auto keep = [&](const PartRequest& request) { submit(request); introPlanes_.push_back(request); };
     if (const auto& noise = WindowOf(ViewKind::Noise); introStatic_ && noise.valid) {
+        introPlanes_.clear();
         // タイトル待ちとスペース直後の乱れの間（通関では目覚めから）は、2・3 段目に仮タイトルの板を置く（パソコンの画面の比に近い 3:2）。
         const bool title = intro_ && (intro_->ending ? intro_->time >= intro_->revealTime : intro_->time < intro_->titleOff + .3);
         // 出す板の組はいつも同じにする（タイトルの板と砂嵐の板を出し入れすると、モデルの組が変わって GPU のシーンが
         // 作り直しになり、演出の始まりで引っかかる）。使わない板は舞台カメラに写らない下へ退ける。
-        constexpr float kPlaneHide = 2000.0f;
         const auto plane = [&](std::string_view guid, uint64_t instance, double cx, double bottom, double width, double height, bool shown) {
             PartRequest request{};
             request.ownerObjectHandle = cameras_[static_cast<size_t>(ViewKind::Sharp)].handle.value;
             request.instanceId = instance;
             std::memcpy(request.model.assetGuid, guid.data(), guid.size());
             request.worldTransform.position = projection_.Point(cx, bottom, 0);
-            if (!shown) { request.worldTransform.position.y -= kPlaneHide; }
+            if (!shown) { request.worldTransform.position.y -= kIntroPlaneHide; }
             request.worldTransform.scale = {static_cast<float>(width * projection_.scale), static_cast<float>(height * projection_.scale), 1.0f};
             request.castShadow = 0; request.receiveShadow = 0; request.visible = 1;
-            submit(request);
+            keep(request);
         };
         plane(kTitleCardGuid, 0x5A71C0DE20ull, noise.x + noise.cols * .5, noise.y + noise.rows, noise.cols * .5, noise.rows, title);
         // 真っ白：黒い段の下の方。光の点：黒い段の上の小さな白い点。
@@ -496,10 +533,10 @@ void Screen3DStage::SubmitParts(HIKARI::WorldView& world, const std::vector<cons
             // 板の下端は窓の下端から（板の高さ − 窓の高さ）までの間。どこにあっても窓を覆う。
             const double bottom = noise.y + noise.rows + (height - noise.rows) * jump;
             request.worldTransform.position = projection_.Point(cx, bottom, 0);
-            if (!shown) { request.worldTransform.position.y -= kPlaneHide; }
+            if (!shown) { request.worldTransform.position.y -= kIntroPlaneHide; }
             request.worldTransform.scale = {static_cast<float>(noise.cols * .25 * projection_.scale), static_cast<float>(height * projection_.scale), 1.0f};
             request.castShadow = 0; request.receiveShadow = 0; request.visible = 1;
-            submit(request);
+            keep(request);
         }
         // 消える瞬間の線：黒い段（1 段目）の真ん中に、明るい砂嵐を細く潰した板を一枚。
         PartRequest line{};
@@ -509,7 +546,9 @@ void Screen3DStage::SubmitParts(HIKARI::WorldView& world, const std::vector<cons
         line.worldTransform.position = projection_.Point(noise.x + noise.cols * .125, noise.y + noise.rows * (.5 + kNoiseLine * .5), 0);
         line.worldTransform.scale = {static_cast<float>(noise.cols * .24 * projection_.scale), static_cast<float>(noise.rows * kNoiseLine * projection_.scale), 1.0f};
         line.castShadow = 0; line.receiveShadow = 0; line.visible = 1;
-        submit(line);
+        keep(line);
+    } else {
+        for (auto request : introPlanes_) { request.worldTransform.position.y -= kIntroPlaneHide; submit(request); }
     }
     // 舞台の部品が多すぎる時は一度だけ知らせる（GPU のシーンの面の上限に近づく）。
     if (static bool warned = false; !warned && accepted_ > kPartWarning) {

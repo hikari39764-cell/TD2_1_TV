@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <array>
 #include <cmath>
+#include <cstdlib>
 
 namespace TD2 {
 namespace {
@@ -55,43 +56,146 @@ void Screen3DStage::PlacePortals(const std::vector<const StageRoom*>& rooms, con
     if (candidates.size() > kMaxPortals) { candidates.resize(kMaxPortals); }
     // 砂嵐の間はキャプチャを一枚譲る（一番粗い段を使わない）。
     const int tiers = static_cast<int>(introStatic_ ? kPortalTiers - 1 : kPortalTiers);
-    // 段ごとの棚詰め：左から並べ、幅が尽きたら一段下へ。矩形の位置と大きさは 1 ゲーム画素の倍数（描き方の画素の格子を
-    // 部屋のマスにそろえる）。
-    struct Shelf { uint32_t x = 0, y = 0, height = 0; };
-    std::array<Shelf, kPortalTiers> shelves{};
-    const auto place = [&](int tier, Portal& portal) {
-        const auto& r = portal.room->Region();
-        const int density = kTierTexels[static_cast<size_t>(tier)];
-        const auto margins = MarginsFor(density);
-        const uint32_t block = PortalBlock(density);
-        const auto align = [block](uint32_t value) { return (value + block - 1) / block * block; };
-        const uint32_t width = align(margins.left + static_cast<uint32_t>(r.cols * density) + margins.right);
-        const uint32_t height = align(margins.top + static_cast<uint32_t>(r.rows * density) + margins.bottom);
-        const auto [captureWidth, captureHeight] = kTierCapture[static_cast<size_t>(tier)];
-        Shelf next = shelves[static_cast<size_t>(tier)];
-        if (next.x + width > captureWidth) { next = {0, next.y + next.height, 0}; }
-        if (next.x + width > captureWidth || next.y + height > captureHeight - kPortalParkRows) { return false; }
-        portal.tier = tier; portal.x = next.x; portal.y = next.y; portal.width = width; portal.height = height;
-        portal.left = margins.left; portal.top = margins.top;
-        next.x += width; next.height = (std::max)(next.height, height);
-        shelves[static_cast<size_t>(tier)] = next;
-        return true;
-    };
+    // 段：操作中と切り替え中の部屋は一番細かい段。ほかは画面上の大きさで決め、前の段より粗くするのは境を下回ってから。
+    std::vector<int> wants;
     for (const auto& candidate : candidates) {
-        const auto& id = candidate.room->regionId;
-        // 段：操作中と切り替え中の部屋は一番細かい段。ほかは画面上の大きさで決め、前の段より粗くするのは境を下回ってから。
         int want = static_cast<int>(kPortalTiers) - 1;
         for (size_t i = 0; i < kTierNeed.size(); ++i) { if (candidate.pixels >= kTierNeed[i]) { want = static_cast<int>(i); break; } }
-        if (const auto old = portalTier_.find(id); old != portalTier_.end() && old->second < want &&
+        if (const auto old = portalTier_.find(candidate.room->regionId); old != portalTier_.end() && old->second < want &&
             static_cast<size_t>(old->second) < kTierNeed.size() && candidate.pixels >= kTierNeed[static_cast<size_t>(old->second)] * kTierKeep) {
             want = old->second;
         }
         if (candidate.rank <= 1) { want = 0; }
-        want = (std::min)(want, tiers - 1);
-        // その段に収まらなければ一つずつ粗い段へ。どこにも収まらない画面は映さない。
-        Portal portal{candidate.room};
-        for (int tier = want; tier < tiers; ++tier) {
-            if (place(tier, portal)) { portals_.push_back(portal); portalTier_[id] = tier; break; }
+        wants.push_back((std::min)(want, tiers - 1));
+    }
+    // 段での矩形の大きさ。位置と大きさは 1 ゲーム画素の倍数（描き方の画素の格子を部屋のマスにそろえる）。
+    const auto sized = [](int tier, const StageRoom& room, Portal& portal) {
+        const auto& r = room.Region();
+        const int density = kTierTexels[static_cast<size_t>(tier)];
+        const auto margins = MarginsFor(density);
+        const uint32_t block = PortalBlock(density);
+        const auto align = [block](uint32_t value) { return (value + block - 1) / block * block; };
+        portal.tier = tier; portal.left = margins.left; portal.top = margins.top;
+        portal.width = align(margins.left + static_cast<uint32_t>(r.cols * density) + margins.right);
+        portal.height = align(margins.top + static_cast<uint32_t>(r.rows * density) + margins.bottom);
+    };
+    std::vector<Portal> placed(candidates.size());
+    std::vector<bool> done(candidates.size(), false);
+    for (size_t i = 0; i < candidates.size(); ++i) {
+        placed[i].room = candidates[i].room;
+        placed[i].always = candidates[i].rank <= 1;
+        if (const auto seen = seen_.find(candidates[i].room->regionId); seen != seen_.end() && seen->second.reach > 0) { placed[i].shown = true; }
+    }
+    // 置き方は二通り。まず前のフレームの所に残す：同じ段・同じ大きさの画面は同じ矩形に置き、新しい画面だけを空いた所の
+    // 上・左から詰める（並びを毎フレーム詰め直すと前の画面の大きさが変わるたびに後ろの画面が全部ずれ、ずれた画面は材質を
+    // 結び直して影の元の並びが変わり、エンジンが影の場面を毎回作り直していた）。詰め切れない画面が出た時だけ、全部を
+    // 左から棚に詰め直す（隙間ができても数は減らさない）。
+    std::array<std::vector<const Portal*>, kPortalTiers> used{};
+    const auto overlaps = [](const Portal& a, uint32_t x, uint32_t y, uint32_t w, uint32_t h) {
+        return x < a.x + a.width && a.x < x + w && y < a.y + a.height && a.y < y + h;
+    };
+    const auto free = [&](int tier, uint32_t x, uint32_t y, uint32_t w, uint32_t h) {
+        const auto [captureWidth, captureHeight] = kTierCapture[static_cast<size_t>(tier)];
+        if (x + w > captureWidth || y + h > captureHeight - kPortalParkRows) { return false; }
+        return std::none_of(used[static_cast<size_t>(tier)].begin(), used[static_cast<size_t>(tier)].end(),
+                            [&](const Portal* p) { return overlaps(*p, x, y, w, h); });
+    };
+    const auto keep = [&](size_t i, int tier) {
+        const auto last = portalPlace_.find(candidates[i].room->regionId);
+        Portal& portal = placed[i];
+        sized(tier, *portal.room, portal);
+        if (last == portalPlace_.end() || last->second.tier != tier || last->second.width != portal.width || last->second.height != portal.height ||
+            !free(tier, last->second.x, last->second.y, portal.width, portal.height)) { return false; }
+        portal.x = last->second.x; portal.y = last->second.y;
+        used[static_cast<size_t>(tier)].push_back(&portal); done[i] = true;
+        return true;
+    };
+    const auto fill = [&](size_t i, int tier) {
+        // 置ける所の候補は、原点と、置いた矩形の右端・下端の組み合わせ（下・左に寄せた所）。上の行から順に一番左。
+        Portal& portal = placed[i];
+        sized(tier, *portal.room, portal);
+        std::vector<uint32_t> xs{0}, ys{0};
+        for (const auto* p : used[static_cast<size_t>(tier)]) { xs.push_back(p->x + p->width); ys.push_back(p->y + p->height); }
+        std::sort(xs.begin(), xs.end()); std::sort(ys.begin(), ys.end());
+        for (const uint32_t y : ys) for (const uint32_t x : xs) {
+            if (!free(tier, x, y, portal.width, portal.height)) { continue; }
+            portal.x = x; portal.y = y;
+            used[static_cast<size_t>(tier)].push_back(&portal); done[i] = true;
+            return true;
+        }
+        return false;
+    };
+    // 診断（環境変数 TD2_PORTAL_STICKY_OFF）：前の所に残さず、毎フレーム棚に詰め直す（比べるため）。
+    static const bool stickyOff = std::getenv("TD2_PORTAL_STICKY_OFF") != nullptr;
+    if (!stickyOff) { for (size_t i = 0; i < candidates.size(); ++i) { (void)keep(i, wants[i]); } }
+    bool complete = !stickyOff;
+    for (size_t i = 0; i < candidates.size() && !stickyOff; ++i) {
+        if (done[i]) { continue; }
+        bool ok = false;
+        for (int tier = wants[i]; tier < tiers && !ok; ++tier) { ok = keep(i, tier) || fill(i, tier); }
+        complete = complete && ok;
+    }
+    if (!complete) {
+        // 棚詰め：左から並べ、幅が尽きたら一段下へ。その段に収まらなければ一つずつ粗い段へ。どこにも収まらない画面は映さない。
+        struct Shelf { uint32_t x = 0, y = 0, height = 0; };
+        std::array<Shelf, kPortalTiers> shelves{};
+        std::fill(done.begin(), done.end(), false);
+        for (size_t i = 0; i < candidates.size(); ++i) {
+            for (int tier = wants[i]; tier < tiers && !done[i]; ++tier) {
+                Portal& portal = placed[i];
+                sized(tier, *portal.room, portal);
+                const auto [captureWidth, captureHeight] = kTierCapture[static_cast<size_t>(tier)];
+                Shelf next = shelves[static_cast<size_t>(tier)];
+                if (next.x + portal.width > captureWidth) { next = {0, next.y + next.height, 0}; }
+                if (next.x + portal.width > captureWidth || next.y + portal.height > captureHeight - kPortalParkRows) { continue; }
+                portal.x = next.x; portal.y = next.y;
+                next.x += portal.width; next.height = (std::max)(next.height, portal.height);
+                shelves[static_cast<size_t>(tier)] = next; done[i] = true;
+            }
+        }
+    }
+    portalPlace_.clear();
+    for (size_t i = 0; i < candidates.size(); ++i) {
+        if (!done[i]) { continue; }
+        const auto& portal = placed[i];
+        portals_.push_back(portal);
+        portalTier_[portal.room->regionId] = portal.tier;
+        portalPlace_[portal.room->regionId] = {portal.tier, portal.x, portal.y, portal.width, portal.height};
+    }
+    // 人物の前を地形が覆わない角度の上限（右・左・上の正接）。人物は奥行き playDepth_ に立つので、外の目が斜めに見ると
+    // 手前の地形が「奥行き×正接 − 隙間」だけ人物に掛かる（上から見ると頭の上の天井、横から見ると隣の壁）。プレイヤーのいる
+    // 部屋だけ、掛かる量が kCoverAllow 以下になる正接まで絞り、急に変わらないよう上限は時間で追う。回された部屋は対象外。
+    constexpr double kCoverAllow = .1, kLimitSeconds = .2;
+    const double limitStep = portalLimitTime_ < 0 ? 1.0 : 1 - std::exp(-std::clamp(now - portalLimitTime_, 0.0, .1) / kLimitSeconds);
+    portalLimitTime_ = now;
+    std::string playerRoom;
+    std::array<double, 3> limitTarget{kMaxTan, kMaxTan, kMaxTan};
+    if (playDepth_ > 0 && frame.simulated && frame.snapshot && frame.snapshot->playerPresent) {
+        const auto& body = frame.snapshot->presentationPlayer;
+        for (const auto* room : rooms) {
+            const auto& r = room->Region();
+            const double lx = body.x - room->x, ly = body.y - room->y;
+            if (room->flipped || lx + body.w <= 0 || ly + body.h <= 0 || lx >= r.cols || ly >= r.rows) { continue; }
+            playerRoom = room->regionId;
+            const auto solid = [&r](int c, int row) {
+                return c >= 0 && row >= 0 && c < r.cols && row < r.rows && r.cells[static_cast<size_t>(row * r.cols + c)] == '1';
+            };
+            const int c0 = static_cast<int>(std::floor(lx)), c1 = static_cast<int>(std::floor(lx + body.w - 1e-6));
+            const int r0 = static_cast<int>(std::floor(ly)), r1 = static_cast<int>(std::floor(ly + body.h - 1e-6));
+            const auto rowHit = [&](int row) { for (int c = c0; c <= c1; ++c) { if (solid(c, row)) { return true; } } return false; };
+            const auto colHit = [&](int c) { for (int row = r0; row <= r1; ++row) { if (solid(c, row)) { return true; } } return false; };
+            // 体が地形に重なっている時（瞬間移動の直後など）は負になるので 0 で止める。負だと逆側から覗き込み、壁の側面が縞に写る。
+            const auto tanFor = [this](double gap) { return (std::max)(0.0, (gap + kCoverAllow) / playDepth_); };
+            for (int row = static_cast<int>(std::floor(ly - 1e-6)); row >= r0 - 2; --row) {
+                if (rowHit(row)) { limitTarget[2] = tanFor(ly - (row + 1)); break; }
+            }
+            for (int c = static_cast<int>(std::floor(lx + body.w)); c <= c1 + 2; ++c) {
+                if (colHit(c)) { limitTarget[0] = tanFor(c - (lx + body.w)); break; }
+            }
+            for (int c = static_cast<int>(std::floor(lx - 1e-6)); c >= c0 - 2; --c) {
+                if (colHit(c)) { limitTarget[1] = tanFor(lx - (c + 1)); break; }
+            }
+            break;
         }
     }
     // 角度：外のカメラがその画面を見る向きの正接（画面の右・上に対して）そのまま。プレイヤーのいる部屋は目が少し後を追う。
@@ -104,7 +208,13 @@ void Screen3DStage::PlacePortals(const std::vector<const StageRoom*>& rooms, con
             const double fx = follow != follow_.end() ? follow->second[0] : 0.0, fy = follow != follow_.end() ? follow->second[1] : 0.0;
             tan = {SoftLimit(seen->second.eyeX * parallaxGain_ + fx, kMaxTan), SoftLimit(seen->second.eyeY * parallaxGain_ + fy, kMaxTan)};
         }
-        portal.tanX = tan[0]; portal.tanY = tan[1];
+        auto [limit, fresh] = portalLimit_.try_emplace(id, std::array<double, 3>{kMaxTan, kMaxTan, kMaxTan});
+        for (size_t k = 0; k < limit->second.size(); ++k) {
+            const double goal = id == playerRoom ? (std::min)(limitTarget[k], kMaxTan) : kMaxTan;
+            limit->second[k] += (goal - limit->second[k]) * (fresh ? 1.0 : limitStep);
+        }
+        portal.tanX = std::clamp(tan[0], -limit->second[1], limit->second[0]);
+        portal.tanY = (std::min)(tan[1], limit->second[2]);
     }
 }
 

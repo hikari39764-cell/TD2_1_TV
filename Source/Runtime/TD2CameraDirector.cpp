@@ -25,6 +25,9 @@ constexpr double kSwapBoostSeconds = 1.0;
 constexpr double kTravelBlendIn = .35;
 constexpr uint64_t kFollowSource = 0x5444325F464F4C4Cull;   // 識別値 "TD2_FOLL"
 constexpr uint64_t kTravelSource = 0x5444325F5452564Cull;   // 識別値 "TD2_TRVL"
+constexpr uint64_t kShakeSource = 0x5444325F5348414Bull;    // 識別値 "TD2_SHAK"
+// 揺れ：強さ 1 の振れ幅（m）と、強さが 1/e になる秒。
+constexpr double kShakeMeters = .05, kShakeFade = .3;
 constexpr uint64_t kFocusSource = 0x5444325F464F4355ull;    // 識別値 "TD2_FOCU"
 }
 
@@ -352,7 +355,21 @@ void CameraDirector::Update(HIKARI::WorldView& world, Rules::Exploration& explor
                             double frameSeconds, double focusSeconds) {
     if (travel_) UpdateTravel(world, exploration, objects, input, frameSeconds);
     if (!travel_) UpdateFollow(world, exploration, objects, frameSeconds);
+    Shake(world, frameSeconds);
     Focus(world, exploration, objects, focusSeconds);
+}
+
+void CameraDirector::Shake(HIKARI::WorldView& world, double seconds) {
+    if (shake_ < 1e-3) { shake_ = 0; return; }
+    // 周期の割り切れない細かい揺れを重ね、カメラの向きの上下左右へずらす（追従にも演出にも足す）。
+    const double t = time_ * 2 * Math::kPi, a = shake_ * kShakeMeters;
+    HIKARI::GameProjectCameraModifier modifier{};
+    modifier.sourceId = kShakeSource; modifier.priority = 60; modifier.applyDuringOverride = 1;
+    modifier.localPositionOffset = {static_cast<float>(a * (std::sin(t * 17.3) + .6 * std::sin(t * 29.1 + 1.3))),
+                                    static_cast<float>(a * .8 * (std::sin(t * 21.7 + .7) + .5 * std::sin(t * 33.3 + 2.1))), 0.f};
+    modifier.localTargetOffset = {static_cast<float>(a * .6 * std::sin(t * 19.1 + .4)), static_cast<float>(a * .6 * std::sin(t * 23.9 + 1.7)), 0.f};
+    (void)world.GetCamera().SubmitModifier(modifier);
+    shake_ *= std::exp(-seconds / kShakeFade);
 }
 
 HIKARI::GameProjectSequencePlaybackHandle CameraDirector::PlayBoundSequence(HIKARI::WorldView& world, const RegionSequenceBinding& binding, float rate) {

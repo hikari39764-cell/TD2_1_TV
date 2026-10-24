@@ -32,6 +32,8 @@ struct ScreenStyleSettings {
     bool lit = false;
     // 舞台の灯（TD2.StageLight）で受光の組を照らすか。写る部屋が替わるたびに灯が部屋を移り、明るさが跳ねるので既定は切る。
     bool stageLights = false;
+    // Play で遠く小さな画面と画の外の画面を毎フレーム描き直さない（前の絵を使う）。切ると全部の画面を毎フレーム描く。
+    bool thinScreens = true;
     // 実体の地形で人物が立つ奥行き（部屋の正面から奥へのマス数）。手前の地形が自然な前景になる。
     float playDepth = 1.5f;
     // 人物（プレイヤーと残影）の見た目の大きさ。判定は変えない。
@@ -76,6 +78,7 @@ public:
         fields.Float("parallax", "視差", settings_.parallax, 0, 2);
         fields.Bool("lit", "受光", settings_.lit);
         fields.Bool("stageLights", "舞台の灯", settings_.stageLights);
+        fields.Bool("thinScreens", "遠い画面の間引き", settings_.thinScreens);
         fields.Float("actorScale", "人物の大きさ", settings_.actorScale, .8f, 2.0f);
         fields.Float("playDepth", "人物の奥行き", settings_.playDepth, 0, 4);
         fields.Bool("depthGrid", "奥行きのマス", settings_.depthGrid);

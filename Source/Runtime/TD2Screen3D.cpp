@@ -12,6 +12,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <chrono>
 #include <functional>
 #include <set>
 
@@ -22,6 +23,12 @@ using namespace Stage3D;
 constexpr double kHeroFormDelay = .35, kHeroFormSeconds = .45;
 // 演出の長さ（秒）。揺れと閃光は二乗で減衰する。
 constexpr double kShakeSeconds = 0.28, kFlashSeconds = 0.22;
+// 画に写っている覗き窓を描き直す間隔（フレーム）：段ごと。一番粗い段（ごく小さな画面）だけ一つおきにし、残りは毎フレーム。
+// 間引いた画面はカメラの揺れの間も前の角度のまま止まり、時間方向の AA の履歴と混ざって揺れて見えるので、大きな画面は間引かない。
+// 画の外へ出たばかりの画面（kPortalHold の間）は描き直さない。
+constexpr std::array<uint64_t, kPortalTiers> kPortalRedrawEvery{1, 1, 1, 2};
+// オープニングで飾りのテレビの信号が合う波の数（波ごとに一度、エンジンが GPU のシーンの経路を組み直す）。
+constexpr double kIntroLockWaves = 3;
 
 bool SameStyle(const ScreenStyleSettings& a, const ScreenStyleSettings& b) {
     // 明るさは保存の丸めで僅かに違うことがあるので、誤差の範囲は同じ組にする（組が増えるとキャプチャが足りなくなる）。
@@ -143,6 +150,24 @@ HIKARI::GameProjectTransform FxTransform(const ScreenEffect& e, const StageProje
 }
 }
 
+// ---------------------------------------------------------------- 診断の計時
+namespace {
+bool StageTraceOn() { static const bool on = std::getenv("TD2_STAGE_TRACE") != nullptr; return on; }
+long long StageNow() { return std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::steady_clock::now().time_since_epoch()).count(); }
+std::map<std::string, double>& StageTotals() { static std::map<std::string, double> totals; return totals; }
+}
+StageTimer::StageTimer(const char* name) { if (StageTraceOn()) { name_ = name; start_ = StageNow(); } }
+StageTimer::~StageTimer() { if (name_) { StageTotals()[name_] += (StageNow() - start_) * 1e-6; } }
+void StageTimer::EndFrame() {
+    if (!StageTraceOn()) return;
+    static int frames = 0;
+    if (++frames < 240) return;
+    std::string line;
+    for (const auto& [name, ms] : StageTotals()) { char text[64]; std::snprintf(text, sizeof(text), " %s=%.3f", name.c_str(), ms / frames); line += text; }
+    std::fprintf(stderr, "[TD2 stage-trace]%s\n", line.c_str());
+    StageTotals().clear(); frames = 0;
+}
+
 void Screen3DStage::RestoreCamera(HIKARI::WorldView& world, StageCamera& camera) {
     if (camera.handle.IsValid()) {
         if (const auto object = world.FindObject(camera.handle); object.IsValid()) { (void)object.SetWorldTransform(camera.original); }
@@ -158,7 +183,7 @@ bool Screen3DStage::Release(HIKARI::WorldView& world) {
     const auto models = world.GetPresentationModels();
     for (const auto& [owner, id] : submitted_) { models.Remove(owner, id); }
     for (const auto& [region, cache] : roomParts_) { for (const auto& [owner, id] : cache.retained) { models.Remove(owner, id); } }
-    submitted_.clear(); roomParts_.clear(); bound_.clear(); deviceMemory_.clear();
+    submitted_.clear(); roomParts_.clear(); terrainKey_ = 0; bound_.clear(); deviceMemory_.clear();
     const auto captures = world.GetSceneCapture();
     for (auto it = views_.begin(); it != views_.end();) {
         if (!captures.Destroy(it->handle)) { status_ = "3D キャプチャを解放できない（次のフレームで再試行）"; return false; }
@@ -168,7 +193,7 @@ bool Screen3DStage::Release(HIKARI::WorldView& world) {
     RestoreCamera(world, noiseCamera_);
     ReleaseStageLights(world);
     windows_ = {};
-    portals_.clear(); portalTier_.clear(); portalSeen_.clear(); portalTan_.clear(); follow_.clear();
+    portals_.clear(); portalTier_.clear(); portalSeen_.clear(); portalTan_.clear(); portalDrawn_.clear(); portalPlace_.clear(); portalLimit_.clear(); follow_.clear(); introPlanes_.clear();
     return true;
 }
 
@@ -328,9 +353,12 @@ void Screen3DStage::ApplyIntro(HIKARI::WorldView& world, std::map<uint64_t, Bind
             const double reach = computer ? 0.0 : infoOf(key)[1];
             const double on = intro_->powerOn + .15 + std::pow(reach, .8) * intro_->powerSeconds * .9 + IntroHash(key, 21) * .2;
             double locked = intro_->lockStart + (1 - reach) * intro_->lockSeconds + IntroHash(key, 22) * .15;
-            // 飾りのテレビは結び付けを外して普段の材質へ戻すので、外す時刻を 0.25 秒ごとにまとめる（一台ずつ外すとそのたびに
-            // エンジンが GPU のシーンを組み直し、信号が合っていく間ずっと画が止まる）。
-            if (decorative) { locked = std::ceil(locked * 4) / 4; }
+            // 飾りのテレビは結び付けを外して普段の材質へ戻すので、外す時刻を遠い・中ほど・手前の三つの波にまとめる（外すたびに
+            // エンジンが GPU のシーンの経路を組み直して数十 ms 止まる。細かく分けると信号が合っていく間ずっと引っかかる）。
+            if (decorative) {
+                const double wave = (std::max)(.25, (intro_->lockSeconds + .15) / kIntroLockWaves);
+                locked = intro_->lockStart + std::ceil((locked - intro_->lockStart) / wave) * wave;
+            }
             if (t < on) { return Look{0}; }
             if (t < on + .22) { return Look{7, 1 - (t - on) / .22}; }
             if (t < on + .44) { return Look{4, 1 - (t - on - .22) / .22}; }
@@ -415,6 +443,7 @@ void Screen3DStage::Render(HIKARI::WorldView& world, const std::vector<StageRoom
     // 受光は透視の窓と一緒の時だけ（受光の部品は実体の地形の組しか無い）。舞台の灯は別の切り替え（既定は切る）。
     solid_ = stage.lit && perspective_;
     lit_ = solid_ && stage.stageLights;
+    thinScreens_ = stage.thinScreens;
     actorScale_ = std::clamp(static_cast<double>(stage.actorScale), .8, 2.0);
     playDepth_ = solid_ ? std::clamp(static_cast<double>(stage.playDepth), 0.0, 4.0) : 0.0;
     // 立体：斜投影を焼いた部品の組を正対のカメラで撮る（天板と右の側面が見え、正面はマスにぴったり）。
@@ -426,7 +455,7 @@ void Screen3DStage::Render(HIKARI::WorldView& world, const std::vector<StageRoom
     ++frame_;
     play_ = !frame.authoring;
     if (frame.authoring) { seen_.clear(); portals_.clear(); PlaceEditorWindow(valid); }
-    else { Inspect(world, valid, frame); }
+    else { StageTimer timer("inspect"); Inspect(world, valid, frame); }
     // 覗き窓の描き方は操作中の部屋の描き方（部屋ごとの違いは明るさの丸め程度で、段ごとに一枚のキャプチャを共有する）。
     portalStyle_ = Effective(*valid.front());
     for (const auto* room : valid) { if (room->regionId == frame.activeRegion) { portalStyle_ = Effective(*room); } }
@@ -493,7 +522,7 @@ void Screen3DStage::Render(HIKARI::WorldView& world, const std::vector<StageRoom
     }
     introRooms_ = valid;
     if (!intro_ || intro_->ending) { introOnset_.clear(); }
-    if (!frame.authoring) { windows_ = {}; PlacePortals(valid, frame, now); }
+    if (!frame.authoring) { StageTimer timer("portals"); windows_ = {}; PlacePortals(valid, frame, now); }
     (void)maxCols;
     if (introStatic_) { PlaceNoise(); }
 
@@ -514,7 +543,7 @@ void Screen3DStage::Render(HIKARI::WorldView& world, const std::vector<StageRoom
         }
     }
 
-    SyncStageLights(world, shown, now);
+    { StageTimer timer("lights"); SyncStageLights(world, shown, now); }
 
     // 4. 窓の舞台カメラ（編集中の二枚と砂嵐）。画面の揺れは舞台カメラ（覗き窓では視点の目）を右・上へ少しずらし、画面の中の
     // 絵だけを揺らす。
@@ -545,7 +574,7 @@ void Screen3DStage::Render(HIKARI::WorldView& world, const std::vector<StageRoom
     }
 
     // 5〜7. キャプチャと画面の割り当て、イベント、部品、エフェクト。
-    if (!SyncCaptures(world, shown, flashAmount_ * fade(flashStart_, kFlashSeconds), shakeX, shakeY)) { return; }
+    { StageTimer timer("captures"); if (!SyncCaptures(world, shown, flashAmount_ * fade(flashStart_, kFlashSeconds), shakeX, shakeY)) { return; } }
     // 編集中は出来事が無いので効果を消す。ただしオープニングのプレビューでは主人公の登場を出す（登場の前へ巻き戻すと消す）。
     if (frame.simulated) { worldEffects_.Observe(*frame.snapshot); }
     else if (!intro_ || intro_->time < intro_->arriveTime) { worldEffects_.Reset(); }
@@ -554,8 +583,9 @@ void Screen3DStage::Render(HIKARI::WorldView& world, const std::vector<StageRoom
         worldEffects_.Add(ScreenEffectKind::Arrive, frame.snapshot->presentationPlayer, frame.snapshot->realTime, 1.5, frame.snapshot->tick);
         introArrived_ = true;
     }
-    SubmitParts(world, valid, shown, *frame.snapshot, kit, fx.enabled && fx.smear, now, frame.simulated);
-    PlayEffects(world, fx, frame.simulated || intro_ != nullptr, now);
+    { StageTimer timer("parts"); SubmitParts(world, valid, shown, *frame.snapshot, kit, fx.enabled && fx.smear, now, frame.simulated); }
+    { StageTimer timer("effects"); PlayEffects(world, fx, frame.simulated || intro_ != nullptr, now); }
+    StageTimer::EndFrame();
 
     size_t ready = 0, failedCaptures = 0;
     const auto captures = world.GetSceneCapture();
@@ -614,6 +644,7 @@ bool Screen3DStage::SyncCaptures(HIKARI::WorldView& world, const std::vector<Ass
             if (reused[j] || views_[j].kind != want.kind || views_[j].tier != want.tier) { continue; }
             reused[j] = true; want.handle = views_[j].handle; want.camera = views_[j].camera;
             want.width = views_[j].width; want.height = views_[j].height; want.flags = views_[j].flags;
+            want.brightness = views_[j].brightness; want.parkLast = views_[j].parkLast;
             break;
         }
     }
@@ -623,7 +654,15 @@ bool Screen3DStage::SyncCaptures(HIKARI::WorldView& world, const std::vector<Ass
         std::erase_if(bound_, [&](const auto& item) { return item.second.capture.value == views_[j].handle.value; });
     }
     views_ = std::move(wanted);
+    ++captureFrame_;
+    // 診断（環境変数 TD2_PORTAL_TRACE）：240 フレームごとに、描き直した覗き窓と前の絵を残した覗き窓の数。
+    if (static const bool trace = std::getenv("TD2_PORTAL_TRACE") != nullptr; trace && captureFrame_ % 240 == 0) {
+        std::fprintf(stderr, "[TD2 portals] redrawn=%llu kept=%llu (240 frames)\n", static_cast<unsigned long long>(portalRedrawn_),
+                     static_cast<unsigned long long>(portalKept_));
+        portalRedrawn_ = portalKept_ = 0;
+    }
     std::vector<HIKARI::GameProjectSceneCaptureViewDesc> descs;
+    redrawnRooms_.clear();
     for (auto& view : views_) {
         HIKARI::GameProjectSceneCaptureDesc desc{};
         // 段のキャプチャは視点を並べて描く（カメラ物体は作成と更新の判定にだけ使う）。窓は窓の舞台カメラで撮る。
@@ -634,21 +673,60 @@ bool Screen3DStage::SyncCaptures(HIKARI::WorldView& world, const std::vector<Ass
         desc.height = view.tier >= 0 ? kTierCapture[static_cast<size_t>(view.tier)][1] : window.height;
         // エフェクト（VFX）も舞台の一部として写す。覗き窓の無い段は止める（描かない）。
         descs.clear();
+        const bool noise = introStatic_ && view.kind == ViewKind::Noise;
+        const int density = view.tier >= 0 ? kTierTexels[static_cast<size_t>(view.tier)] : window.density;
+        const double focus = view.tier >= 0 ? kPortalEyeCells * projection_.scale : window.distance > 0 ? window.distance : kStageCameraDistance;
+        auto look = StyleDesc(view.style, view.style.brightness, density, projection_.scale, !noise && projection_.oblique > 0, focus, !noise && solid_);
+        // 画面の閃光：明るさを一時的に上乗せする。描き方の組分け（SameStyle）には含めない。
+        look.brightness = static_cast<float>(std::clamp(look.brightness * (1 + flash), 0.0, 4.0));
         if (view.tier >= 0) {
-            for (const auto& portal : portals_) { if (portal.tier == view.tier) { descs.push_back(PortalView(portal, shakeX, shakeY)); } }
+            // 描き直す覗き窓：操作中・切り替え中の部屋は毎フレーム、画に写っている画面は段の間隔ごと（部屋ごとに位相をずらして
+            // 負荷をならす）、画の外へ出たばかりの画面は描かない。前のフレームに無かった・矩形が変わった画面と、明るさが
+            // 変わったフレームは必ず描く。残す画面は前のフレームの絵のまま（エンジンの KeepPrevious）。
+            static const bool keepOff = std::getenv("TD2_PORTAL_KEEP_OFF") != nullptr;   // 比べる時だけ（環境変数）：毎フレーム全部描く
+            const bool sameLook = view.brightness == look.brightness && !keepOff && thinScreens_;
+            const uint64_t every = kPortalRedrawEvery[static_cast<size_t>(view.tier)];
+            for (const auto& portal : portals_) {
+                if (portal.tier != view.tier) { continue; }
+                auto portalView = PortalView(portal, shakeX, shakeY);
+                auto& drawn = portalDrawn_[portal.room->regionId];
+                const bool same = drawn.frame + 1 == captureFrame_ && drawn.tier == portal.tier && drawn.x == portal.x &&
+                                  drawn.y == portal.y && drawn.width == portal.width && drawn.height == portal.height;
+                const uint64_t phase = std::hash<std::string>{}(portal.room->regionId) % every;
+                const bool due = portal.always || (portal.shown && (captureFrame_ + phase) % every == 0);
+                if (same && sameLook && !due) {
+                    portalView.flags |= HIKARI::GameProjectSceneCaptureViewFlags(HIKARI::GameProjectSceneCaptureViewFlag::KeepPrevious);
+                    ++portalKept_;
+                } else {
+                    ++portalRedrawn_; redrawnRooms_.insert(portal.room->regionId);
+                }
+                drawn = {portal.tier, portal.x, portal.y, portal.width, portal.height, captureFrame_};
+                descs.push_back(portalView);
+            }
         }
+        view.brightness = look.brightness;
         // 一番粗い段は、下端の隅に何も無い所を撮る小さな視点を常に足す（覗き窓の無いテレビを結んでおく隅。キャプチャを
-        // 止めずに描き続け、結んだ画面の材質を外さない）。
-        if (view.tier >= 0 && view.tier == parkTier) {
+        // 止めずに描き続け、結んだ画面の材質を外さない）。ほかの段も覗き窓がある間は同じ隅の視点を足す。
+        // 隅の視点は前のフレームにもあれば前の絵のまま残す。残す視点が一つでもあると、エンジンは描き方（素描と奥行きの
+        // 効果）を描き直した視点の矩形だけに掛ける（無ければ段のキャプチャの全面に掛かり、空いた所の分まで重い）。
+        // 診断（環境変数 TD2_RECT_STYLE_OFF）：隅の視点を残さず、描き方を全面に掛ける（比べるため）。
+        static const bool rectStyle = std::getenv("TD2_RECT_STYLE_OFF") == nullptr;
+        bool parkNow = false;
+        if (view.tier >= 0 && (view.tier == parkTier || (rectStyle && !descs.empty()))) {
             Portal park{};
             park.room = portals_.empty() ? introRooms_.front() : portals_.front().room;
             park.tier = view.tier; park.x = 0; park.y = desc.height - kPortalParkRows; park.width = park.height = kPortalParkRows;
             // 視錐台の形は覗き窓と同じ（深度の範囲をそろえる）で、目だけを舞台から遠く離す。
             auto empty = PortalView(park, 0, 0);
             empty.eye = projection_.Point(kNoiseX * 2, kNoiseY * 2, kPortalEyeCells);
+            if (rectStyle && view.parkLast) {
+                empty.flags |= HIKARI::GameProjectSceneCaptureViewFlags(HIKARI::GameProjectSceneCaptureViewFlag::KeepPrevious);
+            }
             descs.push_back(empty);
+            parkNow = true;
         }
         const bool enabled = view.tier < 0 || !descs.empty();
+        view.parkLast = parkNow && enabled;
         desc.flags = HIKARI::GameProjectSceneCaptureFlags(HIKARI::GameProjectSceneCaptureFlag::RenderVfx) |
                      (enabled ? HIKARI::GameProjectSceneCaptureFlags(HIKARI::GameProjectSceneCaptureFlag::Enabled) : 0u);
         if (!view.handle.IsValid()) {
@@ -662,12 +740,6 @@ bool Screen3DStage::SyncCaptures(HIKARI::WorldView& world, const std::vector<Ass
         if (view.tier >= 0 && !descs.empty() && !captures.SetViews(view.handle, descs.data(), static_cast<uint32_t>(descs.size()))) {
             status_ = "覗き窓の視点を送れない（SetViews の SDK 4.6 のエンジンが要る）"; return false;
         }
-        const bool noise = introStatic_ && view.kind == ViewKind::Noise;
-        const int density = view.tier >= 0 ? kTierTexels[static_cast<size_t>(view.tier)] : window.density;
-        const double focus = view.tier >= 0 ? kPortalEyeCells * projection_.scale : window.distance > 0 ? window.distance : kStageCameraDistance;
-        auto look = StyleDesc(view.style, view.style.brightness, density, projection_.scale, !noise && projection_.oblique > 0, focus, !noise && solid_);
-        // 画面の閃光：明るさを一時的に上乗せする。描き方の組分け（SameStyle）には含めない。
-        look.brightness = static_cast<float>(std::clamp(look.brightness * (1 + flash), 0.0, 4.0));
         if (!captures.SetStyle(view.handle, look)) { status_ = "画面の描き方を送れない（SetStyle v2 のエンジンが要る）"; return false; }
     }
 
@@ -718,16 +790,29 @@ bool Screen3DStage::SyncCaptures(HIKARI::WorldView& world, const std::vector<Ass
             (void)captures.ClearMaterialBinding(old.capture, old.object);
         }
     }
+    // 診断（環境変数 TD2_BIND_TRACE）：結び直した理由ごとの数（240 フレームごと）。新しく結ぶ・別のキャプチャへ移る・切り出しだけ
+    // 動いた・保護だけ変わった。結び直すと画面の材質が書き換わり、影の元の並びが変わる。
+    static const bool bindTrace = std::getenv("TD2_BIND_TRACE") != nullptr;
+    static std::array<uint64_t, 4> bindReasons{};
     for (const auto& [id, binding] : next) {
         const auto old = bound_.find(id);
         if (old != bound_.end() && old->second.capture.value == binding.capture.value && old->second.slot == binding.slot &&
             std::memcmp(&old->second.rect, &binding.rect, sizeof(binding.rect)) == 0 && old->second.protect == binding.protect) { continue; }
+        if (bindTrace) {
+            ++bindReasons[old == bound_.end() ? 0 : old->second.capture.value != binding.capture.value ? 1
+                          : std::memcmp(&old->second.rect, &binding.rect, sizeof(binding.rect)) != 0 ? 2 : 3];
+        }
         HIKARI::GameProjectSceneCaptureMaterialRegionBindingDesc desc{};
         desc.capture = binding.capture; desc.modelObject = binding.object; desc.sourceRect = binding.rect;
         std::memcpy(desc.materialSlotName, binding.slot.c_str(), binding.slot.size() + 1);
         desc.flags = binding.protect ? HIKARI::GameProjectSceneCaptureMaterialBindingFlags(HIKARI::GameProjectSceneCaptureMaterialBindingFlag::ProtectReadability)
                                      : HIKARI::GameProjectSceneCaptureMaterialBindingFlags(HIKARI::GameProjectSceneCaptureMaterialBindingFlag::None);
         if (!captures.BindMaterialRegion(desc)) { status_ = "画面の 3D 結び付けに失敗：" + binding.slot; bound_ = std::move(next); return false; }
+    }
+    if (bindTrace && captureFrame_ % 240 == 0) {
+        std::fprintf(stderr, "[TD2 bind] new=%llu capture=%llu rect=%llu protect=%llu (240 frames)\n", static_cast<unsigned long long>(bindReasons[0]),
+                     static_cast<unsigned long long>(bindReasons[1]), static_cast<unsigned long long>(bindReasons[2]), static_cast<unsigned long long>(bindReasons[3]));
+        bindReasons = {};
     }
     bound_ = std::move(next);
     return true;

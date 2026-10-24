@@ -36,6 +36,7 @@ struct MachineObjectDelta {
     std::array<double, 3> position{}, rotation{}, pivot{};
     bool hasPivot = false;
     double from = 0, to = 1, lift = 0;
+    bool drop = false;   // 落ちる：だんだん速くなり、止まる所でぶつかる（! と書く）
     bool operator==(const MachineObjectDelta&) const = default;
 };
 
@@ -137,6 +138,7 @@ inline bool ParseDeltas(const std::string& text, std::vector<MachineObjectDelta>
                 if (!(delta.from >= 0 && delta.from < delta.to && delta.to <= 1)) { timed = false; }
                 continue;
             }
+            if (token == "!") { delta.drop = true; continue; }
             if (token.size() > 1 && token[0] == '^') {
                 try { delta.lift = std::stod(token.substr(1)); } catch (...) { timed = false; }
                 continue;
@@ -171,6 +173,7 @@ inline std::string FormatDeltas(const std::vector<MachineObjectDelta>& deltas) {
         if (d.anchor) { out += " @" + std::to_string(d.anchor); }
         if (d.from > 0 || d.to < 1) { out += " ~" + Number(d.from) + "-" + Number(d.to); }
         if (d.lift != 0) { out += " ^" + Number(d.lift); }
+        if (d.drop) { out += " !"; }
     }
     return out;
 }

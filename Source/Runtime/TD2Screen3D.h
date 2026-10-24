@@ -78,6 +78,18 @@ void PackRoomsForEditor(std::vector<StageRoom>& rooms);
 // 一つの World に一つの連続した舞台。世界地図どおりに部屋を置き、プレイヤー・光線・エフェクトは世界に一つずつ。
 // Play では写っているテレビごとに、外のカメラがその画面を見る角度で自分の部屋を覗く視点を作り（覗き窓）、細かさの段ごとに
 // 一枚のキャプチャへ並べて描く。編集中は正投影の窓（鮮明・未配置）で全部の部屋を撮り、各テレビは自分の範囲を切り出す。
+// 診断（環境変数 TD2_STAGE_TRACE）：舞台の各段にかかった時間を区間ごとに足し、240 フレームごとに平均を出す。
+// 変数が無ければ何も測らない。
+class StageTimer {
+public:
+    explicit StageTimer(const char* name);
+    ~StageTimer();
+    StageTimer(const StageTimer&) = delete; StageTimer& operator=(const StageTimer&) = delete;
+    static void EndFrame();
+private:
+    const char* name_ = nullptr; long long start_ = 0;
+};
+
 class Screen3DStage {
 public:
     // stage は舞台カメラに付けた共有設定。配色・カメラの角度・舞台カメラの指定はここだけが効く。
@@ -123,6 +135,8 @@ private:
         HIKARI::GameProjectSceneCaptureHandle handle{};
         HIKARI::GameProjectObjectHandle camera{};
         uint32_t width = 0, height = 0, flags = 0;
+        float brightness = -1;          // 前のフレームに送った明るさ（変わったら全部の覗き窓を描き直す）
+        bool parkLast = false;          // 前のフレームに下端の隅の視点を並べたか
     };
     struct Binding {
         HIKARI::GameProjectObjectHandle object{};
@@ -165,6 +179,8 @@ private:
         uint32_t x = 0, y = 0, width = 0, height = 0;
         uint32_t left = 0, top = 0;     // 余白（矩形の左上から部屋の左上までの texel）
         double tanX = 0, tanY = 0;      // 舞台で部屋を見る角度の正接（右・上）
+        bool always = false;            // 毎フレーム描き直す（操作中・切り替え中の部屋）
+        bool shown = false;             // 今の画に写っている（写っていなければ前の絵のまま残してよい）
     };
     // イベント ID で一度だけ出す。画面外で止めた後もイベントが消えるまで ID を保持する。
     struct ActiveFx { uint64_t eventId = 0; HIKARI::GameProjectVfxPlaybackHandle handle; };
@@ -203,6 +219,7 @@ private:
     // 奥行きの格子の列数（0 で無し）、透視の窓、受光（Play だけ）。
     int depthRows_ = 0;
     bool perspective_ = false, lit_ = false, solid_ = false;
+    bool thinScreens_ = true;    // 遠い画面を間引いて描く（TD2.ScreenStyle の thinScreens）
     double actorScale_ = 1;
     double playDepth_ = 0;
     // 舞台の灯：写っている部屋へ役ごとに一つずつ置き、使わない灯は消す。灯の物体 → 点けているか。
@@ -226,6 +243,18 @@ private:
     std::map<std::string, int, std::less<>> portalTier_;
     std::map<std::string, double, std::less<>> portalSeen_;
     std::map<std::string, std::array<double, 2>, std::less<>> portalTan_;
+    // 覗き窓の角度の上限（右・左・上の正接。プレイヤーの周りの地形で絞る）と、最後に追った時刻。
+    std::map<std::string, std::array<double, 3>, std::less<>> portalLimit_;
+    double portalLimitTime_ = -1;
+    // 覗き窓の記録：部屋ごとの段と矩形と、覗き窓があった最後のフレーム（遠くの画面を間引いて描く時、前のフレームと同じ
+    // 矩形に続けて置いた画面だけ前の絵を残す）。
+    struct PortalDrawn { int tier = -1; uint32_t x = 0, y = 0, width = 0, height = 0; uint64_t frame = 0; };
+    std::map<std::string, PortalDrawn, std::less<>> portalDrawn_;
+    // 前のフレームの覗き窓の置き場所（段と段のキャプチャの中の矩形）。同じ段・同じ大きさならそのまま残す。
+    struct PortalPlace { int tier = -1; uint32_t x = 0, y = 0, width = 0, height = 0; };
+    std::map<std::string, PortalPlace, std::less<>> portalPlace_;
+    uint64_t captureFrame_ = 0, portalRedrawn_ = 0, portalKept_ = 0;
+    std::set<std::string, std::less<>> redrawnRooms_;   // このフレームに覗き窓を描き直す部屋
     // プレイヤーのいる部屋で目がプレイヤーの後を少し追う分（正接。部屋を出ると 0 へなめらかに戻る）。
     std::map<std::string, std::array<double, 2>, std::less<>> follow_;
     // このフレームのオープニング（無ければ null）と、砂嵐の窓を使っているか。砂嵐を出す区域のテレビは全部の部屋から選ぶ。
@@ -246,9 +275,11 @@ private:
     std::map<uint64_t, Binding> bound_;            // 画面の物体 → 今の割り当て
     std::map<std::string, ScreenOnCamera, std::less<>> seen_;   // このフレームの見え方（区域 ID → 値。ゲームカメラが無い時は空）
     std::map<std::string, RoomParts> roomParts_;   // 区域 ID → 背景と地形の描画要求
+    uint64_t terrainKey_ = 0;                       // Play で前のフレームに地形を確かめた時の入力の指紋（0 は未確認）
     // 180° 回されている部屋の世界の範囲（左・上・右・下）。エフェクトを点対称に置くのに使う。
     std::vector<std::pair<std::string, std::array<double, 4>>> flippedRooms_;
     std::vector<PartRequest> frameParts_;          // このフレームの装置・人物・演出（毎フレーム作る）
+    std::vector<PartRequest> introPlanes_;         // オープニングの砂嵐・タイトルの板（終わった後も退けて出し続ける）
     StagePuppets puppets_;                         // Play で人物を演じる骨つきの人形
     StageDevices devices_;                         // Play で装置を演じる骨つきの物体
     // 装置ごとの通電・実体と、それが最後に変わった実時刻（扉・橋の出入りと通電灯の点灯を動かす）。

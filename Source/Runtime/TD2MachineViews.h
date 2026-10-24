@@ -4,6 +4,7 @@
 #include "TD2Mechanism.h"
 #include "HIKARI/Project/WorldView.h"
 #include <cstdint>
+#include <limits>
 #include <map>
 #include <string>
 #include <utility>
@@ -40,15 +41,19 @@ private:
 
     // 機構で動かす物体の状態 0・1・-1（天秤のもう一方）の姿勢。pivot はその点を中心に回す。
     // from / to は全体の進みのうちこの物体が動く区間（作者の ~始め-終わり）。
-    struct MechanismObject { uint64_t sceneId = 0; Handle handle{}; Transform a{}, b{}, c{}; bool pivot = false; HIKARI::GameProjectFloat3 center{}; float from = 0, to = 1, lift = 0; };
+    // reach は見えているかの判定に使う大きさ（m）、shown は最後に書いた姿勢。
+    struct MechanismObject { uint64_t sceneId = 0; Handle handle{}; Transform a{}, b{}, c{}; bool pivot = false; HIKARI::GameProjectFloat3 center{}; float from = 0, to = 1, lift = 0; bool drop = false;
+                             float reach = 1.5f; Transform shown{}; };
     // 動くテレビに付いて行く区域カメラ。turn は大きく回る転台（途中で向こう側へ切り替える）、reach はテレビまでの距離。
     // ride は乗り物（群れの外から自分の画面を狙う）、aim はテレビから見た狙う点、side は途中で膨らむ向き。
     struct MechanismAttachment { Handle handle{}; size_t parent = 0; Transform relative{}; bool turn = false, ride = false; float reach = 0; HIKARI::GameProjectFloat3 aim{}, side{}; };
     struct MechanismView {
         std::vector<MechanismObject> objects;
         std::vector<MechanismAttachment> attached;
-        double written = -1;                    // 最後に書いた進み（変わった時だけ書く）
+        double written = -1;                    // 最後に進めた進み（変わった時だけ書く）
+        double drawn = std::numeric_limits<double>::quiet_NaN();   // 最後に模型へ書いた進み（画の外にある間は書かずに置く）
         float cameraLift = 0, cameraPull = 0;   // 動きの途中だけカメラを持ち上げ・引く量（転台以外）
+        float shake = 0;                        // 動き出す時と着いた時の画面の揺れ
     };
     // スロット棚・テレビの塔のメンバー。カメラはテレビの塔だけが一緒に動かす。
     struct Member { Handle tv{}, camera{}; Transform tvPose{}, cameraPose{}; };
@@ -82,8 +87,14 @@ private:
     void SyncStacks(HIKARI::WorldView& world, const RegionObjects& objects, const Placements& placements, MachineSources& out);
     void SyncCarousels(HIKARI::WorldView& world, const RegionObjects& objects, std::vector<Rules::RegionSource>& regions, MachineSources& out);
     void SyncCables(HIKARI::WorldView& world);
-    // 一フレームの更新で共有するもの：規則の状態、操作中のテレビ、運ぶ先のカメラ。
-    struct Frame { const Rules::Exploration& exploration; Handle activeTv; CameraDirector& camera; };
+    // ゲームカメラの視野（描いた姿勢と操作中の姿勢）。取れない時は何でも見えている扱い。
+    struct Sight {
+        HIKARI::GameProjectCameraPose rendered{}, control{};
+        bool hasRendered = false, hasControl = false;
+        bool Sees(const HIKARI::GameProjectFloat3& center, float radius) const;
+    };
+    // 一フレームの更新で共有するもの：規則の状態、操作中のテレビ、運ぶ先のカメラ、視野。
+    struct Frame { const Rules::Exploration& exploration; Handle activeTv; CameraDirector& camera; const Sight& sight; };
     // 物体の今の姿勢を覚え、操作中のテレビなら追従カメラの基準を前の姿勢から運ぶ。first は初めて動く時の元の姿勢。
     void Moved(const Frame& frame, uint64_t key, Handle tv, const Transform& first, const Transform& pose);
     void UpdateMechanisms(const Frame& frame, Writes& writes);

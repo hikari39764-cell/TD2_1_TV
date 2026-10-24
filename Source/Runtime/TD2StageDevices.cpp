@@ -14,6 +14,8 @@ using Model = DeviceActorModel;
 using Role = StageDevices::Role;
 // 割り当てた直後や片段を替えた直後は、写らない部屋でも数フレームは動作を計算する（姿勢が片段に追いつくまで）。
 constexpr int kSettleFrames = 4;
+// 回り続ける動作を飛ばしたフレームの追いつき：これより長く止まっていたら、追いつかずにその時刻から続ける。
+constexpr uint64_t kCatchUpFrames = 4;
 // 退避点：舞台の下の、どの舞台カメラにも写らない所。
 constexpr float kParkDrop = 2000.0f;
 // 扉・橋の出入りの秒数（焼いた部品の kSwitchSeconds と同じ）。
@@ -213,7 +215,7 @@ void StageDevices::Release(size_t index) {
 }
 
 bool StageDevices::Draw(HIKARI::WorldView& world, const StagePartBuilder& builder, const Rules::DeviceSnapshot& device,
-                        const Rules::BeamState* beam, bool checkpoint, double since, bool seen) {
+                        const Rules::BeamState* beam, bool checkpoint, double since, bool seen, bool redrawn, uint64_t frame) {
     roles_.clear();
     RolesFor(builder, device, beam, checkpoint, since, roles_);
     if (roles_.empty()) { return false; }
@@ -236,7 +238,7 @@ bool StageDevices::Draw(HIKARI::WorldView& world, const StagePartBuilder& builde
         actors_[free].key = key; byKey_[std::move(key)] = free;
         taken_.push_back(free); chosen_.push_back(free);
     }
-    for (size_t i = 0; i < roles_.size(); ++i) { Perform(world, builder, actors_[chosen_[i]], roles_[i], seen); }
+    for (size_t i = 0; i < roles_.size(); ++i) { Perform(world, builder, actors_[chosen_[i]], roles_[i], seen, redrawn, frame); }
     // 役の数が減った（バネの幅を変えた等）時は、余った番号の物体を返す。
     for (size_t i = roles_.size();; ++i) {
         std::string key = device.id; key += '#'; key += std::to_string(i);
@@ -247,7 +249,7 @@ bool StageDevices::Draw(HIKARI::WorldView& world, const StagePartBuilder& builde
     return true;
 }
 
-void StageDevices::Perform(HIKARI::WorldView& world, const StagePartBuilder& builder, Actor& actor, const Role& role, bool seen) {
+void StageDevices::Perform(HIKARI::WorldView& world, const StagePartBuilder& builder, Actor& actor, const Role& role, bool seen, bool redrawn, uint64_t frame) {
     actor.used = true;
     const auto object = world.FindObject(actor.handle);
     if (!object.IsValid()) { return; }
@@ -274,7 +276,18 @@ void StageDevices::Perform(HIKARI::WorldView& world, const StagePartBuilder& bui
     // 回り続ける片段は写る部屋の間だけ計算する。それ以外は姿勢が片段に追いつけば止める（計算を続けると毎フレーム
     // 骨の姿勢が書き直され、エンジンが面を比べ直す）。
     if (actor.settle > 0) { --actor.settle; }
-    const bool evaluate = actor.settle > 0 || (role.loop && seen);
+    // 回り続けるだけの間は、覗き窓が前の絵を残すフレーム（小さな画面の一つおき）には計算しない。描き直すフレームに、
+    // 飛ばしたフレームの分だけ速めて進め、平均の速さは変えない（画に出る絵は毎フレーム計算した時と同じ）。
+    // 診断（環境変数 TD2_ACTOR_THIN_OFF）：飛ばさずに毎フレーム計算する（比べるため）。
+    static const bool thinOff = std::getenv("TD2_ACTOR_THIN_OFF") != nullptr;
+    const bool looping = actor.settle == 0 && role.loop && seen;
+    const bool evaluate = actor.settle > 0 || (looping && (redrawn || thinOff));
+    float speed = role.speed;
+    if (evaluate && looping && actor.evaluatedAt != 0 && frame > actor.evaluatedAt && frame - actor.evaluatedAt <= kCatchUpFrames) {
+        speed = role.speed * static_cast<float>(frame - actor.evaluatedAt);
+    }
+    if (evaluate) { actor.evaluatedAt = frame; }
+    if (evaluate && actor.speed != speed && animation.SetSpeed(actor.handle.value, speed)) { actor.speed = speed; }
     if (evaluate != actor.evaluating) { (void)animation.SetEvaluationEnabled(actor.handle.value, evaluate ? 1 : 0); actor.evaluating = evaluate; }
     actor.placed = true; actor.parked = false;
 }

@@ -51,6 +51,8 @@ public:
                      HIKARI::GameProjectFloat3& eye, HIKARI::GameProjectFloat3& look) const;
     // 仕掛けが操作中のテレビを動かした時、追従の基準を同じ剛体の動きで運ぶ。
     void Carry(const HIKARI::GameProjectTransform& from, const HIKARI::GameProjectTransform& to) { rig_.Carry(from, to); }
+    // 画面を揺らす（強さ 1 で数センチ）。今の揺れより強い時だけ上書きし、すぐに収まっていく。
+    void Kick(double strength) { shake_ = (std::max)(shake_, (std::min)(strength, 2.0)); }
 
     // 大区域の切り替え中なら、出る部屋と入る部屋。
     bool TravelRooms(std::string& from, std::string& to) const;
@@ -101,5 +103,7 @@ private:
     bool initialized_ = false;
     double time_ = 0, focusDistance_ = 0;
     double swapBoost_ = 0;   // 交換の直後、区域カメラの乗り換えを速めている残り秒
+    double shake_ = 0;       // 画面の揺れの今の強さ
+    void Shake(HIKARI::WorldView& world, double seconds);
 };
 }

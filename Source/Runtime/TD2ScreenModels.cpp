@@ -4,7 +4,9 @@
 #include <algorithm>
 #include <array>
 #include <cmath>
+#include <cstdlib>
 #include <cstring>
+#include <map>
 #include <span>
 #include <string>
 
@@ -347,51 +349,100 @@ void StagePartBuilder::Terrain(int x, int y, int cols, int rows, const std::vect
 void StagePartBuilder::SolidSeams(int x, int y, int cols, int rows, const std::vector<char>& occupancy) {
     // 実体の面の目地：見える面のマスの境に細い棒を置く（奥へ伸びる線が透視の中心へ集まり、奥行きの目盛りになる）。
     // 部屋の境の線は左と上の部屋の側だけが引く（隣の部屋と二重にならない）。
+    // 同じ形の棒が 1 マスおきに並ぶ所は 2・4・8 本を一つにしたまとめ部品で出す（部品は一つごとに毎フレームの手間と
+    // 視点ごとの選別がかかる。棒の並びは一本ずつ出した時と同じ）。
+    static constexpr std::array<std::string_view, 9> kZAlongX{"", "Solid_RodZ", "Solid_RodZ_X2", "", "Solid_RodZ_X4", "", "", "", "Solid_RodZ_X8"};
+    static constexpr std::array<std::string_view, 9> kZAlongY{"", "Solid_RodZ", "Solid_RodZ_Y2", "", "Solid_RodZ_Y4", "", "", "", "Solid_RodZ_Y8"};
+    static constexpr std::array<std::string_view, 9> kYAlongX{"", "Solid_RodY", "Solid_RodY_X2", "", "Solid_RodY_X4", "", "", "", "Solid_RodY_X8"};
+    static constexpr std::array<std::string_view, 9> kXAlongY{"", "Solid_RodX", "Solid_RodX_Y2", "", "Solid_RodX_Y4", "", "", "", "Solid_RodX_Y8"};
+    static constexpr std::array<std::string_view, 5> kXDeep{"", "Solid_RodX", "Solid_RodX_D2", "", "Solid_RodX_D4"};
+    static constexpr std::array<std::string_view, 5> kYDeep{"", "Solid_RodY", "Solid_RodY_D2", "", "Solid_RodY_D4"};
     const auto solid = [&](int col, int row) { return occupancy[static_cast<size_t>((row + 1) * (cols + 2) + col + 1)] != 0; };
     const int depth = depthRows_ + 1;
     const double front = SolidFront();
-    const auto rodZ = [&](double px, double py) {
+    // 診断（環境変数 TD2_ROD_BUNDLE_OFF）：まとめずに一本ずつ出す（比べるため）。
+    static const bool single = std::getenv("TD2_ROD_BUNDLE_OFF") != nullptr;
+    // 続いた番号（昇順）を連なりごとに 8・4・2・1 本へ分けて渡す。
+    const auto bundles = [](const std::vector<int>& at, const auto& emit) {
+        for (size_t i = 0; i < at.size();) {
+            size_t run = 1;
+            if (single) { emit(at[i], 1); ++i; continue; }
+            while (i + run < at.size() && at[i + run] == at[i] + static_cast<int>(run)) { ++run; }
+            for (size_t done = 0; done < run;) {
+                const int n = BundleOf(static_cast<int>(run - done));
+                emit(at[i + done], n);
+                done += static_cast<size_t>(n);
+            }
+            i += run;
+        }
+    };
+    // 奥へ伸びる棒：横（alongX）か下へ 1 マスおきに並べる。
+    const auto rodsZ = [&](double px, double py, const std::vector<int>& at, bool alongX) {
         partDepth_ = depth;
-        Add("Solid_RodZ", px, py, 1, 1, front);
+        bundles(at, [&](int first, int n) {
+            Add((alongX ? kZAlongX : kZAlongY)[static_cast<size_t>(n)], alongX ? px + first : px, alongX ? py : py + first, 1, 1, front);
+        });
         partDepth_ = 1;
     };
+    // 面の奥行き 1 マスごとの線（k = 1〜depth-1）：奥へ 4・2 本ずつまとめる。
+    const auto deep = [&](bool horizontal, double px, double py, int length) {
+        for (int k = 1; k < depth;) {
+            const int n = single ? 1 : (std::min)(BundleOf(depth - k), 4);
+            if (horizontal) { Add(kXDeep[static_cast<size_t>(n)], px, py, length, 1, front - k); }
+            else { Add(kYDeep[static_cast<size_t>(n)], px, py, 1, length, front - k); }
+            k += n;
+        }
+    };
     Begin("seams");
+    std::vector<int> at;
     // 天板（上が空き）と下面（下が空き）：奥へ伸びる線をマスの境に、横の線を奥行き 1 マスごとに。
     for (int side = 0; side < 2; ++side) {
         const int dy = side == 0 ? -1 : 1;
         const auto face = [&](int col, int row) { return solid(col, row) && !solid(col, row + dy); };
         for (int row = 0; row < rows; ++row) {
             const double py = y + row + (side == 0 ? 0 : 1);
+            at.clear();
             for (int col = 0; col < cols; ++col) {
-                if (face(col, row) && face(col - 1, row)) { rodZ(x + col, py); }
+                if (face(col, row) && face(col - 1, row)) { at.push_back(col); }
             }
+            rodsZ(x, py, at, true);
             for (int col = 0; col < cols;) {
                 if (!face(col, row)) { ++col; continue; }
                 int length = 0;
                 while (col + length < cols && face(col + length, row)) { ++length; }
-                for (int k = 1; k < depth; ++k) { Add("Solid_RodX", x + col + length * .5, py, length, 1, front - k); }
+                deep(true, x + col + length * .5, py, length);
                 col += length;
             }
         }
     }
-    // 正面：固いマスどうしの縦と横の境。
+    // 正面：固いマスどうしの縦と横の境。同じ長さの線が隣の列（行）に続く所はまとめる。
+    std::map<std::pair<int, int>, std::vector<int>> lines;
     for (int col = 0; col < cols; ++col) {
         for (int row = 0; row < rows;) {
             if (!(solid(col, row) && solid(col - 1, row))) { ++row; continue; }
             int length = 0;
             while (row + length < rows && solid(col, row + length) && solid(col - 1, row + length)) { ++length; }
-            Add("Solid_RodY", x + col, y + row + length, 1, length, front);
+            lines[{row, length}].push_back(col);
             row += length;
         }
     }
+    for (const auto& [run, list] : lines) {
+        const int row = run.first, length = run.second;
+        bundles(list, [&](int first, int n) { Add(kYAlongX[static_cast<size_t>(n)], x + first, y + row + length, 1, length, front); });
+    }
+    lines.clear();
     for (int row = 0; row < rows; ++row) {
         for (int col = 0; col < cols;) {
             if (!(solid(col, row) && solid(col, row - 1))) { ++col; continue; }
             int length = 0;
             while (col + length < cols && solid(col + length, row) && solid(col + length, row - 1)) { ++length; }
-            Add("Solid_RodX", x + col + length * .5, y + row, length, 1, front);
+            lines[{col, length}].push_back(row);
             col += length;
         }
+    }
+    for (const auto& [run, list] : lines) {
+        const int col = run.first, length = run.second;
+        bundles(list, [&](int first, int n) { Add(kXAlongY[static_cast<size_t>(n)], x + col + length * .5, y + first, length, 1, front); });
     }
     // 左右の側面（横が空き）：奥へ伸びる線を縦のマスの境に、縦の線を奥行き 1 マスごとに。
     for (int side = 0; side < 2; ++side) {
@@ -399,14 +450,16 @@ void StagePartBuilder::SolidSeams(int x, int y, int cols, int rows, const std::v
         const auto face = [&](int col, int row) { return solid(col, row) && !solid(col + dx, row); };
         for (int col = 0; col < cols; ++col) {
             const double px = x + col + (side == 0 ? 0 : 1);
+            at.clear();
             for (int row = 0; row < rows; ++row) {
-                if (face(col, row) && face(col, row - 1)) { rodZ(px, y + row); }
+                if (face(col, row) && face(col, row - 1)) { at.push_back(row); }
             }
+            rodsZ(px, y, at, false);
             for (int row = 0; row < rows;) {
                 if (!face(col, row)) { ++row; continue; }
                 int length = 0;
                 while (row + length < rows && face(col, row + length)) { ++length; }
-                for (int k = 1; k < depth; ++k) { Add("Solid_RodY", px, y + row + length, 1, length, front - k); }
+                deep(false, px, y + row + length, length);
                 row += length;
             }
         }

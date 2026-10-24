@@ -47,6 +47,8 @@ public:
         // 画面が真横を向いた瞬間に向こう側のカメラへ切り替える。
         fields.Float("cameraLift", "途中のカメラの持ち上げ", cameraLift_, 0.f, 4.f);
         fields.Float("cameraPull", "途中のカメラの引き", cameraPull_, 0.f, 4.f);
+        // 動き出す時に画面を揺らす強さ（着いた時はその 6 割）。上から降ってくる道など。
+        fields.Float("shake", "画面の揺れ", shake_, 0.f, 2.f);
         if (!fields.Section("元データ")) { return; }
         fields.Text("regionOffsets", "状態 B の区域のずれ", regionOffsets_);
         fields.Text("objectDeltas", "状態 B の物体の姿勢", objectDeltas_);
@@ -59,6 +61,7 @@ public:
 
     float CameraLift() const noexcept { return cameraLift_; }
     float CameraPull() const noexcept { return cameraPull_; }
+    float Shake() const noexcept { return shake_; }
     // 部品の値を読む。読めない行があれば error に書いて false。
     bool BuildSource(MechanismAuthoring& out, std::string& error) const {
         out = {};
@@ -73,7 +76,7 @@ public:
 private:
     std::string id_, rideFrom_, regionOffsets_, objectDeltas_, regionOffsetsC_, objectDeltasC_, recipe_, parts_;
     bool toggle_ = false, balance_ = false, ride_ = false;
-    float seconds_ = 0.8f, dwell_ = 0.f, settle_ = 0.f, cameraLift_ = 1.5f, cameraPull_ = 1.0f;
+    float seconds_ = 0.8f, dwell_ = 0.f, settle_ = 0.f, cameraLift_ = 1.5f, cameraPull_ = 1.0f, shake_ = 0.f;
 };
 
 // スロットの並んだ棚。メンバーの部屋の圧力板に「slide/区域ID」と書くと、踏んだ時その部屋が隣の空いたスロットへ滑る。

@@ -20,9 +20,11 @@ public:
     void BeginFrame();
     // 装置を物体で演じる。builder は部屋の回転・点対称の設定を済ませたもの。beam は光線の今の当たり（光線だけ）、
     // checkpoint は今のチェックポイントか、since は通電・実体が最後に変わってからの実秒。seen は画に写る部屋か
-    // （写らなければ回り続ける動作の計算を止める）。演じられた（焼いた部品を出さなくてよい）時 true。
+    // （写らなければ回り続ける動作の計算を止める）。redrawn はその部屋の覗き窓をこのフレームに描き直すか（前の絵を残す
+    // フレームは回り続ける動作も計算せず、次に描く時に飛ばした分だけ速めて追いつく）。frame はフレームの通し番号。
+    // 演じられた（焼いた部品を出さなくてよい）時 true。
     bool Draw(HIKARI::WorldView& world, const StagePartBuilder& builder, const Rules::DeviceSnapshot& device,
-              const Rules::BeamState* beam, bool checkpoint, double since, bool seen);
+              const Rules::BeamState* beam, bool checkpoint, double since, bool seen, bool redrawn, uint64_t frame);
     // フレームの終わり：このフレームに演じなかった物体を退避点へ。
     void EndFrame(HIKARI::WorldView& world);
     // 舞台を使わない時（編集中など）は全部を退避点へ。
@@ -52,9 +54,10 @@ private:
         float speed = 1;
         HIKARI::GameProjectTransform pose{};
         int settle = 0;                // 姿勢が落ち着くまで動作を計算し続けるフレーム数
+        uint64_t evaluatedAt = 0;      // 最後に動作を計算したフレーム（0 は未計算）
         bool placed = false, parked = false, used = false, evaluating = true;
     };
-    void Perform(HIKARI::WorldView& world, const StagePartBuilder& builder, Actor& actor, const Role& role, bool seen);
+    void Perform(HIKARI::WorldView& world, const StagePartBuilder& builder, Actor& actor, const Role& role, bool seen, bool redrawn, uint64_t frame);
     void ParkOne(HIKARI::WorldView& world, Actor& actor);
     void Release(size_t index);
     std::vector<Actor> actors_;

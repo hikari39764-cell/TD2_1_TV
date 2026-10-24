@@ -131,7 +131,8 @@ public:
     struct CollectibleCount { int taken = 0, total = 0; };
     CollectibleCount Collectibles() const;
     // 開発用：プレイヤーをその区域の出生点へ移す（残影は消し、速さと復活点も合わせる）。世界地図に無い区域なら false。
-    bool Teleport(std::string_view region);
+    // at を渡すとその部屋の中の位置（マス、本体の左上）へ、無ければ出生点へ置く。
+    bool Teleport(std::string_view region, const Vec2* at = nullptr);
     // 試遊を途中の状態から始める：踏み方に関係なく切り替わる機構（切り替え式・自動往復）をその状態へ置く。
     bool SetMechanismState(std::string_view id, int state);
     // 外から呼ばれた ClearEcho と StepBack の記録（試遊の記録が受け取って消す）。

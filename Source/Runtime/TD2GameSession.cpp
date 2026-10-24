@@ -165,7 +165,22 @@ void GameSession::Update(HIKARI::WorldView& world, const HIKARI::FrameContext& f
             for (size_t i = 0; i < tourIndex_; ++i) { start = tour.find(',', start); start = start == std::string::npos ? tour.size() : start + 1; }
             const auto end = tour.find(',', start);
             const auto region = start < tour.size() ? tour.substr(start, end == std::string::npos ? std::string::npos : end - start) : std::string{};
-            if (!region.empty() && exploration_.Teleport(region)) {
+            // 出生点は開始の部屋にしか使わないので、ほかの部屋では既定の左上（壁の中）のことが多い。床に立てるマスのうち
+            // 部屋の中央に一番近い所へ立たせる（体は幅 1 マス・高さ 1 マス弱に収まる）。
+            std::optional<Rules::Vec2> stand;
+            if (const auto* room = exploration_.FindRegion(region)) {
+                const auto& r = room->definition.region;
+                const auto solid = [&r](int c, int row) { return r.cells[static_cast<size_t>(row * r.cols + c)] == '1'; };
+                double best = 1e9;
+                for (int row = 1; row < r.rows; ++row) {
+                    for (int c = 0; c < r.cols; ++c) {
+                        if (!solid(c, row) || solid(c, row - 1)) continue;
+                        const double d = std::abs(c + .5 - r.cols * .5) + .5 * std::abs(row - r.rows * .5);
+                        if (d < best) { best = d; stand = Rules::Vec2{c + .19, row - .875}; }
+                    }
+                }
+            }
+            if (!region.empty() && exploration_.Teleport(region, stand ? &*stand : nullptr)) {
                 intro_.Skip(world); camera_.Jump(world, exploration_, regions_, region);
                 std::fprintf(stderr, "[TD2 tour] frame=%llu region=%s\n", static_cast<unsigned long long>(frame.frameIndex), region.c_str());
             }
@@ -278,11 +293,17 @@ void GameSession::RestartFromTitle(HIKARI::WorldView& world) {
 
 void GameSession::TeleportToGoal(HIKARI::WorldView& world) {
     std::string target;
+    Rules::Vec2 at{};
     for (const auto& [id, room] : exploration_.Regions()) {
         if (!room.placement.worldPlaced) continue;
-        if (std::any_of(room.definition.devices.begin(), room.definition.devices.end(), [](const auto& d) { return d.kind == Rules::DeviceKind::Goal; })) { target = id; break; }
+        const auto goal = std::find_if(room.definition.devices.begin(), room.definition.devices.end(), [](const auto& d) { return d.kind == Rules::DeviceKind::Goal; });
+        if (goal == room.definition.devices.end()) continue;
+        // 扉の左に立たせる（出生点は扉から遠いことがある。扉が部屋の左端なら扉の中）。
+        const Rules::Rect body = exploration_.State().player.rect;
+        target = id; at = {(std::max)(0.0, goal->rect.x - 1.0), goal->rect.y + goal->rect.h - body.h};
+        break;
     }
-    if (target.empty() || !exploration_.Teleport(target)) { std::fprintf(stderr, "[TD2 dev] no goal room\n"); return; }
+    if (target.empty() || !exploration_.Teleport(target, &at)) { std::fprintf(stderr, "[TD2 dev] no goal room\n"); return; }
     camera_.Jump(world, exploration_, regions_, target);
     // 瞬間移動した試遊は解法にならないので、記録を書き終えずに捨てる（編集器は書き終わった記録だけ読む）。
     recording_ = false; recordClosed_ = true;

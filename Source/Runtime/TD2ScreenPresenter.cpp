@@ -13,6 +13,7 @@
 #include <cmath>
 #include <cstdio>
 #include <map>
+#include <optional>
 
 namespace TD2 {
 namespace {
@@ -51,6 +52,7 @@ void ScreenPresentationSystem::ReportTiming(double frameSeconds, double renderSe
 
 void ScreenPresentationSystem::Update(HIKARI::WorldView& world, const HIKARI::FrameContext& frame) {
     const auto started = std::chrono::steady_clock::now();
+    std::optional<StageTimer> lap; lap.emplace("query");
     // 1. 描き方：舞台カメラの共有設定と、区域ごとの設定。
     ScreenStyleSettings globalStyle;
     std::map<uint64_t, ScreenStyleSettings> localStyles;
@@ -183,7 +185,9 @@ void ScreenPresentationSystem::Update(HIKARI::WorldView& world, const HIKARI::Fr
         }
         stage.snapshot = &authored_;
     }
+    lap.emplace("render");
     stage_.Render(world, rooms_, stage, globalStyle, fx); status_ = stage_.Status(); ReportStatus();
+    lap.reset();
     ReportTiming(frame.rawDt, std::chrono::duration<double>(std::chrono::steady_clock::now() - started).count());
 }
 }
