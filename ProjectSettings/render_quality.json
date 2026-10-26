@@ -21,7 +21,7 @@
     "dlssQualityMode": "Performance",
     "dynamicGiQuality": "Off",
     "forwardCostMode": "Full",
-    "frameGenerationMode": "DLSS",
+    "frameGenerationMode": "Off",
     "frameGenerationMultiplier": 2,
     "geometryPipeline": "MeshShader",
     "lightProbeVolumeSampling": "FullTrilinear",
