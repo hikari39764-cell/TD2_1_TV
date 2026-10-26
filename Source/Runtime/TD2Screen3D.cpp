@@ -119,6 +119,9 @@ ScreenFxSlot SlotOf(ScreenEffectKind kind) {
     case ScreenEffectKind::Checkpoint: return ScreenFxSlot::Checkpoint;
     case ScreenEffectKind::EchoAbsorb: return ScreenFxSlot::EchoAbsorb;
     case ScreenEffectKind::Arrive: return ScreenFxSlot::Arrive;
+    // 残影の土煙は着地の土煙、光の火花は衝撃の火花を小さくして使う。
+    case ScreenEffectKind::EchoDust: return ScreenFxSlot::Land;
+    case ScreenEffectKind::BeamSpark: return ScreenFxSlot::Impact;
     default: return ScreenFxSlot::Impact;
     }
 }
@@ -134,7 +137,7 @@ uint32_t FxRandomSeed(const ScreenEffect& e) {
 HIKARI::GameProjectTransform FxTransform(const ScreenEffect& e, const StageProjection& projection, double scale) {
     const auto& r = e.rect;
     const bool feet = e.kind == ScreenEffectKind::Land || e.kind == ScreenEffectKind::Respawn || e.kind == ScreenEffectKind::Checkpoint ||
-                      e.kind == ScreenEffectKind::Arrive;
+                      e.kind == ScreenEffectKind::Arrive || e.kind == ScreenEffectKind::EchoDust;
     HIKARI::GameProjectTransform transform{};
     transform.position = projection.Point(r.x + r.w * .5, feet ? r.y + r.h : r.y + r.h * .5, projection.FxDepth());
     const float size = static_cast<float>(projection.scale * scale);
@@ -503,6 +506,7 @@ void Screen3DStage::Render(HIKARI::WorldView& world, const std::vector<StageRoom
 
     // 覗き窓は目の向きで撮るので、目の追従を求めた後に決める。
     intro_ = frame.intro;
+    uiScreen_ = frame.uiScreen;
     // 砂嵐の窓はパソコンの信号が合うまで使う。
     introStatic_ = intro_ && (intro_->ending || intro_->time < (std::max)(intro_->restoreTime, intro_->lockStart + intro_->lockSeconds + .1f));
     // 主人公は登場の光が集まってから足元から現れる。それまでは画面のどこにも出さない。
@@ -522,6 +526,23 @@ void Screen3DStage::Render(HIKARI::WorldView& world, const std::vector<StageRoom
     }
     introRooms_ = valid;
     if (!intro_ || intro_->ending) { introOnset_.clear(); }
+    // Play の砂嵐：機構で動いている部屋と、見せ場の間に新しく画に入った部屋（オープニングの間は砂嵐の窓が別にある）。
+    eventFraming_ = frame.eventFraming && !frame.authoring && !introStatic_;
+    if (!eventFraming_) { eventSnow_.clear(); movedSnow_.clear(); }
+    else { movedSnow_.insert(frame.snowRooms.begin(), frame.snowRooms.end()); }
+    snow_.clear();
+    if (!frame.authoring && !introStatic_) {
+        snow_.insert(frame.snowRooms.begin(), frame.snowRooms.end());
+        snow_.insert(eventSnow_.begin(), eventSnow_.end());
+        snow_.erase(frame.activeRegion);
+    }
+    // 診断（環境変数 TD2_SNOW_TRACE）：砂嵐の部屋が変わった時に一覧を出す。
+    if (static const bool snowTrace = std::getenv("TD2_SNOW_TRACE") != nullptr; snowTrace) {
+        static std::string last;
+        std::string list = std::to_string(frame.snowRooms.size()) + (frame.eventFraming ? " event" : "") + ":";
+        for (const auto& room : snow_) { list += " " + room; }
+        if (list != last) { std::fprintf(stderr, "[TD2 snow] t=%.2f %s\n", now, list.c_str()); last = list; }
+    }
     if (!frame.authoring) { StageTimer timer("portals"); windows_ = {}; PlacePortals(valid, frame, now); }
     (void)maxCols;
     if (introStatic_) { PlaceNoise(); }
@@ -704,6 +725,8 @@ bool Screen3DStage::SyncCaptures(HIKARI::WorldView& world, const std::vector<Ass
                 descs.push_back(portalView);
             }
         }
+        // 砂嵐の部屋がある間は、一番粗い段の右下に砂嵐の板を撮る視点を足す（板が毎フレーム動くので毎回描く）。
+        if (view.tier == static_cast<int>(kSnowTier) && !snow_.empty() && !introStatic_) { descs.push_back(SnowView()); }
         view.brightness = look.brightness;
         // 一番粗い段は、下端の隅に何も無い所を撮る小さな視点を常に足す（覗き窓の無いテレビを結んでおく隅。キャプチャを
         // 止めずに描き続け、結んだ画面の材質を外さない）。ほかの段も覗き窓がある間は同じ隅の視点を足す。
@@ -771,6 +794,18 @@ bool Screen3DStage::SyncCaptures(HIKARI::WorldView& world, const std::vector<Ass
                 if (screen.IsValid() && !next.contains(screen.GetHandle().value)) { bind(*room, *park, corner); }
             }
         }
+        // 砂嵐の部屋：一番粗い段の右下の砂嵐の視点を結ぶ。テレビごとに矩形の中の少しずつ違う所を切り出し、並んだテレビが
+        // 同じ砂嵐にならないようにする。
+        const auto snowView = std::find_if(views_.begin(), views_.end(), [](const View& v) { return v.tier == static_cast<int>(kSnowTier); });
+        if (!snow_.empty() && !introStatic_ && snowView != views_.end()) {
+            const double w = snowView->width, h = snowView->height, sw = kSnowWidth * .7, sh = kSnowHeight * .7;
+            for (const auto* room : introRooms_) {
+                if (!room->placed || !snow_.contains(room->regionId)) { continue; }
+                const uint64_t key = std::hash<std::string>{}(room->regionId);
+                const double sx = kSnowLeft + (kSnowWidth - sw) * IntroHash(key, 3), sy = kSnowTop + (kSnowHeight - sh) * IntroHash(key, 4);
+                bind(*room, *snowView, {static_cast<float>(sx / w), static_cast<float>(sy / h), static_cast<float>(sw / w), static_cast<float>(sh / h)});
+            }
+        }
     } else {
         for (size_t i = 0; i < screens.size(); ++i) {
             if (viewOf[i] < 0) { continue; }
@@ -784,7 +819,10 @@ bool Screen3DStage::SyncCaptures(HIKARI::WorldView& world, const std::vector<Ass
     // 保護は前のフレームのカメラで測った見え方で選ぶ。オープニングの砂嵐はその後で結び直す。
     ChooseProtected(next);
     ApplyIntro(world, next);
+    // 窓の画布を貼っている画面は結ばない（外しもしない）。結んだ覚えからも外し、放された時に新しく結び直す。
+    if (uiScreen_ != 0) { next.erase(uiScreen_); }
     for (const auto& [id, old] : bound_) {
+        if (id == uiScreen_) { continue; }
         const auto found = next.find(id);
         if ((found == next.end() || found->second.slot != old.slot) && world.FindObject(old.object).IsValid()) {
             (void)captures.ClearMaterialBinding(old.capture, old.object);
@@ -851,8 +889,10 @@ void Screen3DStage::PlayEffects(HIKARI::WorldView& world, const ScreenFxSettings
             }
             continue;
         }
-        // 装置が切れる側は同じエフェクトを小さく出す。
-        const double scale = fx.scale * entry.scale * (item.kind == ScreenEffectKind::DeviceSwitch && item.reversed ? .7 : 1.0);
+        // 装置が切れる側は同じエフェクトを小さく出す。残影の土煙・光の火花は続けて出すので小さく。
+        const double kind = item.kind == ScreenEffectKind::DeviceSwitch && item.reversed ? .7
+                          : item.kind == ScreenEffectKind::EchoDust ? .5 : item.kind == ScreenEffectKind::BeamSpark ? .45 : 1.0;
+        const double scale = fx.scale * entry.scale * kind;
         auto transform = FxTransform(item, projection_, scale);
         // 回された部屋の中のエフェクトは、部屋の中心について点対称に置いて 180° 回す（画面では正立して見える）。
         for (const auto& [id, room] : flippedRooms_) {

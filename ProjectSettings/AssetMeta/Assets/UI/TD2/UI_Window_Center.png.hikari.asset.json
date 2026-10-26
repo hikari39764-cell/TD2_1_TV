@@ -1,0 +1,21 @@
+{
+  "displayName": "UI_Window_Center",
+  "guid": "739836959fa1f2c7368b410a4f2b2de1",
+  "importSettings": {
+    "allowResize": false,
+    "colorSpace": "Srgb",
+    "compression": "BC7",
+    "debugOutputFormat": "DDS",
+    "dimension": "Texture2D",
+    "forcePowerOfTwo": false,
+    "maxSize": 4096,
+    "mipPolicy": "Generate",
+    "outputFormat": "HTEX",
+    "usage": "Auto"
+  },
+  "importerId": "TextureImporter",
+  "importerVersion": 8,
+  "metaVersion": 1,
+  "sourcePath": "Assets/UI/TD2/UI_Window_Center.png",
+  "type": "Texture"
+}

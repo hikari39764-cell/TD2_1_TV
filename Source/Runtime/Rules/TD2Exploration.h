@@ -27,6 +27,10 @@ struct MechanismSource {
     double settle = 0.0;      // 踏み続け式・天秤：踏まれ方がこの秒数変わらなかった時だけ動き出す（走り抜けでは動かない）
     bool ride = false;        // 乗り物：動く部屋に外から入り、部屋の中に収まって着地したら反対の端へ向かう（圧力板は見ない）
     std::vector<std::string> rideFrom;   // 乗り場：空なら動く部屋そのもの。書けばそこへ入って着地した時に状態 1 へ動き、戻らない（道が降ってくる）
+    // 乗り込む前の部屋：書けば、そこから入って来た時だけ動く（降りた先から一歩戻っただけでは動かない）。空ならどこから入っても動く。
+    std::vector<std::string> rideEnter;
+    // 降りた後に閉じる口：運ばれた後にこの部屋へ降りると、乗り物の部屋との境を閉じる（区域を移る乗り物を後戻りさせない）。
+    std::vector<std::string> sealExits;
     std::vector<MechanismMove> moves;    // 状態 1
     std::vector<MechanismMove> movesC;   // 状態 -1（天秤だけ）
 };
@@ -40,6 +44,7 @@ struct MechanismRuntime {
     double rest = 0.0;                    // 自動往復で、端に着いてから止まっている秒数
     int pending = 0; double pendingTime = 0.0;   // settle の間、待っている次の状態と経過秒
     bool rideArmed = false;               // 乗り物：外から乗り込んだばかりで、着地を待っている
+    bool carried = false;                 // 乗り物：最後の動きで中の体を運んだ（乗り込み直すと消える）
 };
 // スロットの並んだ棚。メンバーの部屋の圧力板（targets=slide/区域ID）を踏むと、その部屋が隣の空いたスロットへ滑る。
 // 空きが隣に無ければ動かず、blockedCount が増える（揺れの合図）。
@@ -94,6 +99,16 @@ struct CarouselRuntime {
     double progress = 0.0;
     PlateEdges cw, ccw;
 };
+// 遊びの進み（保存して次の起動で戻すもの）。仕掛けの状態（機構は向かっている先）・切り替え式の板・拾った宝石・
+// 復活点だけで、体の勢いや残影、動いている途中の様子は含めない。
+struct Progress {
+    std::string region, checkpoint;   // 復活点のある部屋と、最後に触れたチェックポイント（装置 ID。無ければ空）
+    Vec2 local;                       // 復活点の部屋の中の位置（マス、体の左端と足元）
+    std::vector<std::pair<std::string, int>> mechanisms, carousels;            // 機構の状態、回転柱の回した数
+    std::vector<std::pair<std::string, std::vector<int>>> slides, stacks;      // 棚のメンバーごとのスロット、塔の場所
+    std::vector<std::string> latched, taken;   // 入っている切り替え式の板と、拾った宝石（装置 ID）
+    std::vector<std::pair<std::string, std::string>> sealed;   // 乗り物で降りて閉じた境（部屋の組）
+};
 struct RegionEvents { std::string regionId; StepOutput output; };
 struct RegionTransition { std::string kind, fromRegion, toRegion; Vec2 worldPosition; };
 struct ExplorationOutput {
@@ -127,6 +142,8 @@ public:
     bool StepBack(std::string_view region, int direction);
     // 残影を消す（大区域を出た時。前の箱庭の装置を押したまま残さない）。
     void ClearEcho();
+    // 残影を頭に載せて運んでいるか。運んでいる残影は大区域を出ても消さず、本体と一緒に持って行く。
+    bool CarryingEcho() const noexcept { return state_.echo && state_.echo->supportId == "player"; }
     // 宝石（収集物）の拾った数と世界にある数。拾った物は死んでも戻らない。
     struct CollectibleCount { int taken = 0, total = 0; };
     CollectibleCount Collectibles() const;
@@ -135,6 +152,11 @@ public:
     bool Teleport(std::string_view region, const Vec2* at = nullptr);
     // 試遊を途中の状態から始める：踏み方に関係なく切り替わる機構（切り替え式・自動往復）をその状態へ置く。
     bool SetMechanismState(std::string_view id, int state);
+    // 遊びの進みを書き出す。
+    Progress SaveProgress() const;
+    // 書き出した進みへ戻す（Initialize した直後の世界に使う）。部屋はまとめて一度に動かし、復活点へ立たせる。
+    // 戻せない時は理由を返す（世界は Initialize し直して使う）。今の世界に無い仕掛けや装置の行は無視する。
+    std::string RestoreProgress(const Progress& progress);
     // 外から呼ばれた ClearEcho と StepBack の記録（試遊の記録が受け取って消す）。
     struct ExternalCall { std::string kind, region; int direction = 0; };
     std::vector<ExternalCall> TakeCalls() { return std::exchange(calls_, {}); }
@@ -157,6 +179,9 @@ private:
     std::vector<CarouselRuntime> carousels_;
     std::vector<std::string> problems_;
     std::set<std::string, std::less<>> isolated_;   // 動いている部屋（境界でどこともつながない）
+    std::set<std::pair<std::string, std::string>> sealed_;   // 乗り物で降りて閉じた境（名前の小さい方が先）
+    std::vector<RuleEvent> mechanismEvents_;   // 機構の側で起きた出来事（乗り物が着いて有効にした検査点）。次の Record で出す
+    std::vector<std::pair<std::string, std::string>> pendingSeals_;   // 降りかけている（乗り物の部屋, 降りた部屋）。出きったら閉じる
 
     std::map<std::string, RegionRuntime> regions_;
     std::map<std::string, std::string> deviceOwners_;

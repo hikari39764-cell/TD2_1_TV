@@ -50,9 +50,9 @@
   "bloom": {
     "downsampleCount": 6,
     "enabled": true,
-    "intensity": 0.4169999957084656,
+    "intensity": 0.20900000631809235,
     "radius": 1.0,
-    "threshold": 0.1379999965429306
+    "threshold": 0.17249999940395355
   },
   "clouds": {
     "ambientScale": 1.0,
@@ -61,7 +61,7 @@
     "coverageBias": 0.0,
     "densityScale": 1.0,
     "detailErosion": 0.11999999731779099,
-    "enabled": true,
+    "enabled": false,
     "shadowStrength": 0.6499999761581421,
     "shapeScale": 1.0,
     "silverLining": 1.0,
@@ -76,14 +76,14 @@
     "lut": "",
     "lutIntensity": 1.0,
     "midtonesTint": [
-      1.0,
-      1.0,
-      1.0
+      0.7060931921005249,
+      0.7060931921005249,
+      0.7060931921005249
     ],
     "shadowsTint": [
-      0.4229390621185303,
-      0.4229390621185303,
-      0.4229390621185303
+      0.04301077127456665,
+      0.04301077127456665,
+      0.04301077127456665
     ]
   },
   "defaultWeather": "engine.weather.clear",
@@ -216,10 +216,10 @@
     "streakLength": 0.15000000596046448
   },
   "toneMapping": {
-    "contrast": 1.4299999475479126,
+    "contrast": 1.2380000352859497,
     "curve": "AgX",
     "gamma": 2.200000047683716,
-    "saturation": 0.6399999856948853,
+    "saturation": 0.7440000176429749,
     "whiteBalanceTemperature": 7631.0,
     "whiteBalanceTint": 0.0
   }

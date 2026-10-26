@@ -1,0 +1,21 @@
+{
+  "displayName": "UI_Window_BottomLeft",
+  "guid": "5dc8852f0f8d863156b51064203b1f0b",
+  "importSettings": {
+    "allowResize": false,
+    "colorSpace": "Srgb",
+    "compression": "BC7",
+    "debugOutputFormat": "DDS",
+    "dimension": "Texture2D",
+    "forcePowerOfTwo": false,
+    "maxSize": 4096,
+    "mipPolicy": "Generate",
+    "outputFormat": "HTEX",
+    "usage": "Auto"
+  },
+  "importerId": "TextureImporter",
+  "importerVersion": 8,
+  "metaVersion": 1,
+  "sourcePath": "Assets/UI/TD2/UI_Window_BottomLeft.png",
+  "type": "Texture"
+}

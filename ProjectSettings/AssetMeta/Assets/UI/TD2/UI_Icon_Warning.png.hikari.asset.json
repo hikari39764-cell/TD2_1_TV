@@ -1,0 +1,21 @@
+{
+  "displayName": "UI_Icon_Warning",
+  "guid": "f81bd7ac567feca342da861b5f7a47db",
+  "importSettings": {
+    "allowResize": false,
+    "colorSpace": "Srgb",
+    "compression": "BC7",
+    "debugOutputFormat": "DDS",
+    "dimension": "Texture2D",
+    "forcePowerOfTwo": false,
+    "maxSize": 4096,
+    "mipPolicy": "Generate",
+    "outputFormat": "HTEX",
+    "usage": "Auto"
+  },
+  "importerId": "TextureImporter",
+  "importerVersion": 8,
+  "metaVersion": 1,
+  "sourcePath": "Assets/UI/TD2/UI_Icon_Warning.png",
+  "type": "Texture"
+}

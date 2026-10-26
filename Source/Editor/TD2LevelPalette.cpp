@@ -10,7 +10,7 @@ void DeviceIcon(IEditorWorkspaceUi& ui, std::string_view kind, EditorWorkspacePo
     DeviceDraft d; d.kind = kind;
     if (kind == "Door" || kind == "LockWall") { d.h = 2; }
     if (kind == "OneWay" || kind == "Bridge") { d.w = 2; }
-    if (kind == "Laser") { d.direction = "Right"; }
+    if (kind == "Laser" || kind == "Pusher") { d.direction = "Right"; }
     if (kind == "Spikes") { d.w = 2; }
     if (kind == "Goal") { d.w = 2; d.h = 3; }
     MapCanvasView v;

@@ -9,7 +9,7 @@ bool Released(const EditorWorkspaceCanvasInput& input) {
     constexpr uint32_t buttons = kPrimary | kSecondary;
     return (input.releasedButtons & buttons) || (!(input.heldButtons & buttons) && !(input.pressedButtons & buttons));
 }
-bool Linkable(std::string_view kind) { return kind == "Door" || kind == "Laser" || kind == "Bridge" || kind == "Goal"; }
+bool Linkable(std::string_view kind) { return kind == "Door" || kind == "Laser" || kind == "Bridge" || kind == "Goal" || kind == "Pusher"; }
 EditorWorkspacePoint Center(const DeviceDraft& d, int worldX, int worldY) {
     return {static_cast<float>(worldX + d.x + d.w * .5), static_cast<float>(worldY + d.y + d.h * .5)};
 }
@@ -421,7 +421,7 @@ void LevelEditor::PressSelect(EditorWorkspaceHostContext& ctx, const EditorWorks
     }
     model_.devices.Select(-1); focus_ = Focus::Room;
     // スポーン位置の人の記号（開始テレビだけ）。
-    if (s.entryRegion && lx >= s.spawnX && lx < s.spawnX + .625f && ly >= s.spawnY && ly < s.spawnY + .875f) { drag_ = Drag::Spawn; model_.gesture = true; return; }
+    if (s.entryRegion && lx >= s.spawnX && lx < s.spawnX + float(kPlayerWidth) && ly >= s.spawnY && ly < s.spawnY + float(kPlayerHeight)) { drag_ = Drag::Spawn; model_.gesture = true; return; }
     // ダブルクリックでそのテレビへ寄る。
     if (lastClick_ == id && clock_ - lastClickTime_ < .3f) { FitRoom(s); lastClick_ = 0; return; }
     lastClick_ = id; lastClickTime_ = clock_;
@@ -548,8 +548,9 @@ void LevelEditor::ContinueDrag(EditorWorkspaceHostContext& ctx, const EditorWork
         dragLast_ = clamped;
         break;
     case Drag::Spawn:
-        s.spawnX = (std::min)(std::floor(clamped.x) + .1875f, static_cast<float>(s.region.cols) - .625f);
-        s.spawnY = (std::min)(std::floor(clamped.y) + .125f, static_cast<float>(s.region.rows) - .875f);
+        // 押したマスの床に足を着ける（体は上のマスへはみ出す）。
+        s.spawnX = (std::min)(std::floor(clamped.x) + .1875f, static_cast<float>(s.region.cols) - float(kPlayerWidth));
+        s.spawnY = std::clamp(std::floor(clamped.y) + 1 - float(kPlayerHeight), 0.0f, static_cast<float>(s.region.rows) - float(kPlayerHeight));
         break;
     case Drag::Device: case Drag::Resize: {
         auto* d = model_.devices.Selected();
@@ -702,14 +703,14 @@ void LevelEditor::DrawSpawnPicker(EditorWorkspaceHostContext& ctx, const EditorW
     for (const auto& room : model_.rooms) {
         const auto& s = room.settings;
         if (!s.worldPlaced || !ContainsWorldPoint(Placement(s), {point.x, point.y})) { continue; }
-        const PreviewSpawn spawn{double(point.x) - s.worldX - .3125, double(point.y) - s.worldY - .875};
-        bool clear = spawn.x >= 0 && spawn.y >= 0 && spawn.x + .625 <= s.region.cols && spawn.y + .875 <= s.region.rows && ValidateRegion(s.region).valid;
+        const PreviewSpawn spawn{double(point.x) - s.worldX - kPlayerWidth * .5, double(point.y) - s.worldY - kPlayerHeight};
+        bool clear = spawn.x >= 0 && spawn.y >= 0 && spawn.x + kPlayerWidth <= s.region.cols && spawn.y + kPlayerHeight <= s.region.rows && ValidateRegion(s.region).valid;
         if (clear) {
-            for (int y = static_cast<int>(std::floor(spawn.y)); y < static_cast<int>(std::ceil(spawn.y + .875)); ++y)
-                for (int x = static_cast<int>(std::floor(spawn.x)); x < static_cast<int>(std::ceil(spawn.x + .625)); ++x)
+            for (int y = static_cast<int>(std::floor(spawn.y)); y < static_cast<int>(std::ceil(spawn.y + kPlayerHeight)); ++y)
+                for (int x = static_cast<int>(std::floor(spawn.x)); x < static_cast<int>(std::ceil(spawn.x + kPlayerWidth)); ++x)
                     if (s.region.cells[CellIndex(s.region, x, y)] == '1') { clear = false; }
         }
-        const auto a = view_.Screen(point.x - .3125f, point.y - .875f), b = view_.Screen(point.x + .3125f, point.y);
+        const auto a = view_.Screen(point.x - float(kPlayerWidth) * .5f, point.y - float(kPlayerHeight)), b = view_.Screen(point.x + float(kPlayerWidth) * .5f, point.y);
         const EditorWorkspaceColor color = clear ? EditorWorkspaceColor{.4f, 1, .7f, 1} : EditorWorkspaceColor{1, .3f, .3f, 1};
         ctx.ui->CanvasRect(a, b, color, 2);
         ctx.ui->CanvasCircle(view_.Screen(point.x, point.y - .7f), view_.tile * .13f, color, 2);

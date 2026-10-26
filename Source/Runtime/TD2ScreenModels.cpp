@@ -16,6 +16,8 @@ namespace {
 constexpr double kBackdropDepth = -0.85;
 // 地形の部品の奥行き（マス）。奥行きの格子の一列はこの厚み（斜投影を焼いた部品は奥へ伸ばせないので、立方体にはしない）。
 constexpr double kTerrainDepth = 0.7;
+// 焼いた残影の背丈（当たりの箱の高さ 1 マスに対する割合）。1 マスの隙間でも天井に刺さらない。
+constexpr double kEchoFillHeight = .98;
 // 後ろの壁の窓：天井の下と左右に 1.5 マス、床の上に 2.5 マスの明るい壁を残す（床の上の壁に物の影と暗がりが落ち、
 // 部屋が実験室の一室に見える）。窓の向こうの層は、目の向きの正接が最大（0.3）の時に部屋の縁を越えても、
 // 隣の部屋の壁の帯（1.5 マス以上）に隠れる範囲で作る。
@@ -766,12 +768,54 @@ void StagePartBuilder::Device(const Rules::DeviceSnapshot& d, bool checkpoint, d
         }
         break;
     }
+    case Rules::DeviceKind::Pusher: PusherParts(d, true, since); break;
     case Rules::DeviceKind::Mechanism: break;   // 画面の外の機構は画面に描かない
     case Rules::DeviceKind::LockWall:
         cells("LockWall_Tile", d.solid);
         Add("LockWall_Emblem", x, r.y + r.h * .5 + .35, 1, 1, 0, {}, -1, d.solid);
         Add("FX_Ring", x, bottom, .4, .4, .15, {}, -1, !d.solid);
         break;
+    }
+}
+
+void StagePartBuilder::PusherBody(const Rules::DeviceSnapshot& pusher) {
+    Begin("device/" + pusher.id);
+    PusherParts(pusher, false, 1e3);
+}
+
+// 押し刺：伸縮橋と同じ石墨の箱を今の位置に 1 マスずつ並べ（縦に伸ばすと立体の組で天板の斜めまで伸びる）、
+// 元の位置から箱の背中まで灰色の腕を伸ばす。刺の面には赤い丸鋸を並べ、大半を箱に沈めて縁だけ出す（当たりの帯と同じ 4/32）。
+// 圧力板につながる物は箱の上に通電灯を載せる（往復する物は載せない）。
+void StagePartBuilder::PusherParts(const Rules::DeviceSnapshot& d, bool saws, double since) {
+    const auto& r = d.rect;
+    for (double cy = 0; cy < r.h - 1e-6; cy += 1) for (double cx = 0; cx < r.w - 1e-6; cx += 1) {
+        Add("Bridge_Deck", r.x + cx + .5, r.y + cy + 1, 1, 1);
+    }
+    const double reach = d.travel * d.push, length = (std::max)(reach, .01);
+    const bool out = reach > .02;
+    const double mx = r.x + r.w * .5, my = r.y + r.h * .5;
+    // 棒の部品は原点から上へ伸びる。横の腕は 90°回す（正の角は画面の上で反時計回り＝上向きが左向きになる）。
+    switch (d.direction) {
+    case Rules::Direction::Up: Add("Solid_RodY", mx, r.y + r.h + reach, 1.2, length, 0, {}, 0, out); break;
+    case Rules::Direction::Down: Add("Solid_RodY", mx, r.y, 1.2, length, 0, {}, 0, out); break;
+    case Rules::Direction::Left: Add("Solid_RodY", r.x + r.w, my, 1.2, length, 0, RotateZ(-kPi * .5), 0, out); break;
+    default: Add("Solid_RodY", r.x, my, 1.2, length, 0, RotateZ(kPi * .5), 0, out); break;
+    }
+    if (!d.timed) { Lamp(mx, r.y + .3, d.powered, since); }
+    if (!saws) { return; }
+    const double ox = projection_.ShiftX(-.3), oy = projection_.ShiftY(-.3);
+    const bool horizontal = d.direction == Rules::Direction::Left || d.direction == Rules::Direction::Right;
+    const int count = static_cast<int>(std::ceil((horizontal ? r.h : r.w) - 1e-6));
+    constexpr double kInset = .38;   // 刃の中心を面から箱の中へ寄せる量（刃の半径 .5 のうち .12 だけ出る）
+    for (int k = 0; k < count; ++k) {
+        double sx = r.x + k + .5, sy = r.y + k + .5;
+        switch (d.direction) {
+        case Rules::Direction::Up: sy = r.y + kInset; break;
+        case Rules::Direction::Down: sy = r.y + r.h - kInset; break;
+        case Rules::Direction::Left: sx = r.x + kInset; break;
+        default: sx = r.x + r.w - kInset; break;
+        }
+        Add("Spikes_Saw", sx + ox, sy + oy, 1, 1, 0, RotateZ(-time_ * 4.5 + k * .31), 0);
     }
 }
 
@@ -791,7 +835,7 @@ void StagePartBuilder::Beam(const Rules::DeviceSnapshot& laser, const Rules::Bea
     const Rules::Rect r = shown ? beam->rect : Rules::Rect{laser.rect.x, laser.rect.y, 1, 1};
     const double ox = projection_.ShiftX(-.35), oy = projection_.ShiftY(-.35);
     // 光線は細かく脈打つ（太さだけ。長さと位置は当たりのまま）。
-    const double pulse = 1 + .14 * std::sin(time_ * 37.0) + .06 * std::sin(time_ * 91.0);
+    const double pulse = (1 + .14 * std::sin(time_ * 37.0) + .06 * std::sin(time_ * 91.0)) * (horizontal ? r.h : r.w) / (4.0 / 32);
     if (horizontal) { Add("LaserBeam", r.x + r.w * .5 + ox, r.y + r.h * .5 + oy, r.w, pulse, 0, {}, -1, shown); }
     else { Add("LaserBeam", r.x + r.w * .5 + ox, r.y + r.h * .5 + oy, r.h, pulse, 0, RotateZ(kPi * .5), -1, shown); }
     // 当たりの火花は光線の先端に置く。
@@ -821,7 +865,12 @@ void StagePartBuilder::Actor(const Rules::BodyState& body, const Rules::Rect& r,
     const double depth = projection_.ActorDepth() + (echo ? -.05 : 0);
     for (size_t i = 0; i < poses.size(); ++i) {
         // 使う一体だけを人物の位置へ。ほかは退避点に留め、人物が動いても触らない。
-        if (visible && i == current) {
+        if (visible && i == current && echo) {
+            // 残影は当たりの箱（高さ 1 マス）に収まる大きさで、形の変化（潰れ・沈み・伸び・傾き）を足元を軸に掛ける。
+            const double size = r.h * kEchoFillHeight;
+            Add(poses[i], r.x + r.w * .5, r.y + r.h, size * echoWidth_, size * echoHeight_ * std::clamp(grow, .01, 1.0), depth,
+                RotateZ(echoLean_), 0);
+        } else if (visible && i == current) {
             const double size = r.h * actorScale_;
             Add(poses[i], r.x + r.w * .5, r.y + r.h, size, size * std::clamp(grow, .01, 1.0), depth);
         }

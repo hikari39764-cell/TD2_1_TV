@@ -383,7 +383,7 @@ void RegisterLevelOperations(IEditorOperationRegistrar& registrar) {
                 Param("remove", kBoolean, false, "true で世界地図から外す")}, Place},
         {"td2.level.room", "テレビの区域の大きさ（cols・rows）・開始テレビ・出生点を変える。",
          true, {region(), object(), Param("cols", kInteger, false, "列の数"), Param("rows", kInteger, false, "行の数"),
-                Param("entry", kBoolean, false, "開始テレビにする（他は外れる）"), Param("spawn", kJson, false, "出生点 [x, y]（マス、人物の左上）")}, EditRoom},
+                Param("entry", kBoolean, false, "開始テレビにする（他は外れる）"), Param("spawn", kJson, false, "出生点 [x, y]（マス、幅 0.625・高さ 1.5 の当たりの左上）")}, EditRoom},
         {"td2.level.terrain", "地形を描く：cells で全体を置き換えるか、rect の範囲を地面（solid=true）か空き（false）にする。",
          true, {region(), object(), Param("cells", kJson, false, "上の行から 0/1 の文字列（行の配列でも可）"),
                 Param("rect", kJson, false, "[x, y, w, h]（マス）"), Param("solid", kBoolean, false, "rect を地面にするか（既定 true）")}, Terrain},

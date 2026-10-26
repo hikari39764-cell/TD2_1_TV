@@ -1,0 +1,21 @@
+{
+  "displayName": "UI_RowSelected_Right",
+  "guid": "943befe2061165e4ad5f7be460932717",
+  "importSettings": {
+    "allowResize": false,
+    "colorSpace": "Srgb",
+    "compression": "BC7",
+    "debugOutputFormat": "DDS",
+    "dimension": "Texture2D",
+    "forcePowerOfTwo": false,
+    "maxSize": 4096,
+    "mipPolicy": "Generate",
+    "outputFormat": "HTEX",
+    "usage": "Auto"
+  },
+  "importerId": "TextureImporter",
+  "importerVersion": 8,
+  "metaVersion": 1,
+  "sourcePath": "Assets/UI/TD2/UI_RowSelected_Right.png",
+  "type": "Texture"
+}

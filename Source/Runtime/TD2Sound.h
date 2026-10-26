@@ -67,6 +67,8 @@ public:
     void OnEvent(HIKARI::WorldView& world, const Rules::RuleEvent& event);
     // シーンを出る時：全部止める。
     void Stop(HIKARI::WorldView& world);
+    // 続きから始めた時：そのチェックポイントは鳴らし済みにする（立たせた瞬間に鳴らさない）。
+    void NoteCheckpoint(std::string id) { lastCheckpoint_ = std::move(id); }
 
 private:
     // 鳴らし続ける音（BGM・環境音・足音）。音量は目標へ秒あたり rate で近づき、0 になれば止める（keep なら止めない）。
@@ -83,7 +85,8 @@ private:
     void PlayOnce(HIKARI::WorldView& world, HIKARI::GameProjectAudioSoundHandle sound, float volume, std::string_view name);
     SoundSettings settings_;
     bool loaded_ = false;
-    Loop titleBgm_{kTitleBgmPath}, stageBgm_{kStageBgmPath}, ambient_{kAmbientPath}, phone_{kPhonePath, HIKARI::GameProjectAudioBus::Se};
+    // 環境音は声の系統で鳴らす（設定の「環境音」の音量をこの系統に掛ける。このゲームに声は無い）。
+    Loop titleBgm_{kTitleBgmPath}, stageBgm_{kStageBgmPath}, ambient_{kAmbientPath, HIKARI::GameProjectAudioBus::Voice}, phone_{kPhonePath, HIKARI::GameProjectAudioBus::Se};
     Loop footsteps_{kFootstepsPath, HIKARI::GameProjectAudioBus::Se};
     HIKARI::GameProjectAudioSoundHandle swap_{}, checkpoint_{}, blink_{}, plate_{}, death_{};
     std::array<HIKARI::GameProjectAudioSoundHandle, kThunderPaths.size()> thunder_{};

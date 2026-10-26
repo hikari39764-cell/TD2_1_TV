@@ -20,17 +20,16 @@
 #include <vector>
 
 namespace TD2 {
+struct TitleCardTimes;
 inline constexpr std::string_view kIntroComponentType = "TD2.Intro";
 // 砂嵐の板（暗い・普通・明るい）。画面の舞台がこれを撮り、テレビは段ごとの範囲を切り出して映す。
 inline constexpr std::array<std::string_view, 3> kStaticPlaneGuids{
     "1c8e4a6f2d9b47e3a0f5c2b7d8e6a914", "7a3f9c1e5b2d48a6b9e0c4f7d1a2e358", "c4d2e8f1a6b94375a2e7f0c9b3d8e146"};
-// 全部のテレビが一斉に白くなる時の真っ白な板と、タイトル待ちにパソコンへ映す仮のタイトル（Assets/Textures/kari.png）の板。
+// 全部のテレビが一斉に白くなる時の真っ白な板。
 inline constexpr std::string_view kWhitePlaneGuid = "d40d696ce6b34b86b22adc341d837970";
-inline constexpr std::string_view kTitleCardGuid = "8836ea3367f9465a914fa6d0c239c989";
 // 黒帯に使う真っ黒な小さなテクスチャ（Assets からの相対）。
 inline constexpr std::string_view kLetterboxTexture = "TD2/Intro/T_TD2_LetterboxBlack.png";
-// 暗転の中のタイトル（仮。Assets/Textures/kari.png）と、点灯・消灯の点と線に使う白。
-inline constexpr std::string_view kTitleTexture = "Textures/kari.png";
+// 白い板（暗転の中のタイトルの紙と、点灯・消灯の点と線。タイトルの絵は TD2TitleCard が描く）。
 inline constexpr std::string_view kWhiteTexture = "TD2/Intro/T_TD2_White.png";
 
 // 演出アセットのイベントトラックで使う事件の名前。始まりの時刻と長さを演出ワークスペースで動かす。
@@ -45,6 +44,10 @@ inline constexpr std::string_view Collapse = "順に消灯";    // 範囲：最�
 inline constexpr std::string_view Alone = "凝視";           // 終わり：パソコンだけが白く残る時の終わり（砂嵐に変わる）
 inline constexpr std::string_view Pull = "吸い込み";            // 範囲：引かれ始めから画面に飛び込んで切れるまで
 inline constexpr std::string_view TitleCard = "タイトルカード";     // 範囲：暗転の中のタイトルが点いてから消えるまで
+inline constexpr std::string_view Burst = "炸裂";          // 範囲：タイトルの周りの碎片が中心から飛び出して落ち着くまで
+inline constexpr std::string_view Spray = "噴出";          // 範囲：タイトルから碎片が噴き出し始め、一番激しくなるまで
+inline constexpr std::string_view Rewind = "巻き戻し";      // 範囲：全部が中心へ吸い戻される
+inline constexpr std::string_view Glitch = "乱れ";         // 範囲：タイトルの撕裂一回（負片 1 コマと赤青のずれ。何度でも置ける）
 inline constexpr std::string_view Reveal = "遠景";          // 始まり：机の遠景に切り替わる（暗いまま）
 inline constexpr std::string_view Power = "復電";           // 範囲：手元から遠くへ電気が戻る
 inline constexpr std::string_view Lock = "信号合わせ";          // 範囲：遠くから信号が合う（パソコンが最後）
@@ -73,6 +76,8 @@ struct IntroSettings {
     float flicker = 1.0f;              // 明滅の強さ（0 で灯はそのまま）
     float depthOfField = .3f;          // オープニングの間の被写界深度のぼけ（カメラの設定に掛ける倍率）
     float letterbox = 2.35f;           // 映画の黒帯の画面比（16:9 の画面で見た比。0 で無し）
+    // 暗転の中のタイトルの噴出：一番激しい時の 1 秒あたりの数、碎片の大きさと速さに掛ける値。
+    float sprayPeak = 170.0f, spraySize = 1.0f, spraySpeed = 1.0f;
     std::array<uint64_t, 6> props{};
 };
 
@@ -97,6 +102,9 @@ public:
         fields.Float("flicker", "灯の明滅", settings_.flicker, 0, 1);
         fields.Float("depthOfField", "被写界深度の強さ", settings_.depthOfField, 0, 1);
         fields.Float("letterbox", "黒帯の画面比", settings_.letterbox, 0, 4);
+        fields.Float("sprayPeak", "タイトルの噴出の多さ", settings_.sprayPeak, 10, 400);
+        fields.Float("spraySize", "タイトルの噴出の大きさ", settings_.spraySize, .2f, 3);
+        fields.Float("spraySpeed", "タイトルの噴出の速さ", settings_.spraySpeed, .2f, 3);
         if (fields.Section("吸い込まれる机の小物")) {
             for (size_t i = 0; i < settings_.props.size(); ++i) {
                 const std::string id = "prop" + std::to_string(i + 1), label = "小物 " + std::to_string(i + 1);
@@ -139,7 +147,11 @@ struct IntroTimeline {
     float titleOff = kIntroNever, flickerStart = kIntroNever, staticStart = kIntroNever, staticFull = kIntroNever;
     float blackoutStart = kIntroNever, whiteStart = kIntroNever, suckStart = kIntroNever, collapseSeconds = 1;
     float aloneEnd = kIntroNever, pullStart = kIntroNever, blackTime = kIntroNever, restoreTime = kIntroNever;
-    float titleIn = kIntroNever, titleHold = 0, revealTime = kIntroNever;
+    float titleIn = kIntroNever, titleHold = 0, titleSeconds = 0, revealTime = kIntroNever;
+    // タイトルの動き（置かれていなければタイトルカードの範囲から既定の割合で決める）。
+    float burstStart = kIntroNever, burstSeconds = 0, sprayStart = kIntroNever, sprayEnd = kIntroNever;
+    float rewindStart = kIntroNever, rewindSeconds = 0;
+    std::vector<std::pair<float, float>> glitches;   // 乱れの始まりと長さ
     float powerOn = kIntroNever, powerSeconds = 1, lockStart = kIntroNever, lockSeconds = 1, arriveTime = kIntroNever;
     float letterboxIn = kIntroNever, letterboxOut = kIntroNever;
     float closeStart = kIntroNever, wakeEnd = kIntroNever;   // 通関：扉が閉じ始める時刻と、目覚めの終わり（タイトル待ちへ戻る）
@@ -166,8 +178,8 @@ class IntroDirector {
 public:
     // Play の最初のフレームに呼ぶ。オープニングを使うなら true（タイトル待ちから始める）。preview は「この画面から」。
     bool Begin(HIKARI::WorldView& world, bool preview);
-    // Play の毎フレーム。オープニングの間は true（規則は止める）。start はこのフレームでスペースを押したか。
-    bool Update(HIKARI::WorldView& world, bool start);
+    // Play の毎フレーム。オープニングの間は true（規則は止める）。start はこのフレームでスペースを押したか。seconds はフレームの秒。
+    bool Update(HIKARI::WorldView& world, bool start, double seconds = 0);
     // ゴールの扉に入った時に呼ぶ。通関の演出を流すなら true（終わるまで Update が true を返す）。
     // eye・look は今の追従の画と区域カメラの差で、演出の始めの 1.2 秒で 0 へ戻す（扉に入った瞬間の画が跳ばない）。
     bool BeginEnding(HIKARI::WorldView& world, HIKARI::GameProjectObjectHandle goalScreen, uint64_t goalCamera,
@@ -213,6 +225,10 @@ private:
     void DriveEyelids(HIKARI::WorldView& world, double t) const;
     // 演出の始めの画のずれ（追従の画 − 区域カメラ）を 1.2 秒で 0 へ戻す。
     void DriveStartOffset(HIKARI::WorldView& world, double t) const;
+    // タイトル待ちの寄り：画角を狭めてパソコンの画面を大きく写す（メールの字が読める大きさ）。weight は 0〜1。
+    void DriveTitleZoom(HIKARI::WorldView& world, double weight) const;
+    // タイトル待ちのピント：パソコンの画面の中心に合わせる（作者のピントは奥の工場にあり、近い画面の字がぼける）。weight は 0〜1。
+    void DriveTitleFocus(HIKARI::WorldView& world, double weight) const;
     // 演出の暗転は描線と仕上げの色より前に掛かるので、暗転の間は色調整を 0 倍して本当の黒にする。
     void DriveBlack(HIKARI::WorldView& world, double t);
     // 机の小物：吸い込みの前に震え、引かれ始めると順に画面へ飛んで消える。
@@ -227,6 +243,8 @@ private:
     void WarmUi(HIKARI::WorldView& world) const;
     // 暗転の中のタイトル：点 → 横線 → 全面と点き、しばらく映って、逆の順に消える。
     void DriveTitleCard(HIKARI::WorldView& world, double t) const;
+    // タイトルカードの時刻（事件の位置から。動きの事件が無ければカードの範囲から既定の割合で）。
+    TitleCardTimes TitleTimes() const;
     // 灯・小物・色調整・カメラを作者の状態へ戻す（演出は止めない）。
     void Restore(HIKARI::WorldView& world);
     void Finish(HIKARI::WorldView& world);
@@ -246,6 +264,8 @@ private:
     HIKARI::GameProjectFloat3 screenCenter_{};   // パソコンの画面の中心（世界座標）
     HIKARI::GameProjectDepthOfFieldSettings depthOfField_{};   // カメラに作者が付けた被写界深度
     bool depthOfFieldRead_ = false;
+    // タイトル待ちの寄りの進み（0〜1）と、オープニングを始めた時の寄り（始めの 1.2 秒で 0 へ戻す）。
+    double titleZoom_ = 0, zoomAtStart_ = 0;
     IntroScreens screens_;
 
 };

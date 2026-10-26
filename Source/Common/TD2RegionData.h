@@ -10,6 +10,11 @@ namespace TD2 {
 inline constexpr std::string_view kRegionComponentType = "TD2.Region";
 inline constexpr std::string_view kScreenSystemId = "TD2.ScreenPresentation";
 inline constexpr int kDefaultTilePixels = 64;
+// 本体の当たりの大きさ（マス）。人形の頭が天井に埋まらないよう、見た目より高く取る（残影は 1 マスのまま）。
+// 位置は当たりの左上。開始位置・チェックポイントの立つ所もこの大きさで確かめる。
+inline constexpr double kPlayerWidth = 0.625, kPlayerHeight = 1.5;
+// 本体を描く高さ（人形の大きさの基準）。当たりと足元で揃え、当たりを変えても見た目は変えない。
+inline constexpr double kPlayerDrawHeight = 0.875;
 
 // ルールはこの列挙と整数のマス座標を使う。tilePixels は表示専用で、距離・衝突に使わない。
 enum class TileKind : uint8_t {

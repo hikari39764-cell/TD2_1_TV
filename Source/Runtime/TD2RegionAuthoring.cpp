@@ -1,9 +1,10 @@
 #include "TD2RegionAuthoring.h"
 #include "../Common/TD2DeviceText.h"
+#include <algorithm>
 #include <utility>
 
 namespace TD2 {
-static_assert(static_cast<size_t>(Rules::DeviceKind::Goal) + 1 == kDeviceKindNames.size(), "装置の種類名の並びはルールの列挙と同じにする");
+static_assert(static_cast<size_t>(Rules::DeviceKind::Pusher) + 1 == kDeviceKindNames.size(), "装置の種類名の並びはルールの列挙と同じにする");
 static_assert(static_cast<size_t>(Rules::Direction::Right) + 1 == kDirectionNames.size(), "向きの名前の並びはルールの列挙と同じにする");
 
 bool ParseDevices(std::string_view text, std::vector<Rules::DeviceDefinition>& devices, std::string& error) {
@@ -32,6 +33,12 @@ bool ParseDevices(std::string_view text, std::vector<Rules::DeviceDefinition>& d
             else if (key == "opacity") { device.opacity = number; }
             else if (key == "depth") { device.depth = number; }
             else if (key == "variant") { device.variant = value; }
+            // 押し刺：伸びるマス数・秒数、往復の止まる秒数と始まりのずれ。
+            else if (key == "travel") { device.travel = std::clamp(number, .25, 30.0); }
+            else if (key == "seconds") { device.seconds = std::clamp(number, .05, 10.0); }
+            else if (key == "dwell") { device.dwell = std::clamp(number, 0.0, 30.0); }
+            else if (key == "phase") { device.phase = std::clamp(number, 0.0, 1.0); }
+            else if (key == "width") { device.width = std::clamp(number, 1.0 / 32, .9); }
         }
         devices.push_back(std::move(device));
     }

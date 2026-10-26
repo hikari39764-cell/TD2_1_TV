@@ -1,0 +1,21 @@
+{
+  "displayName": "UI_Row_Middle",
+  "guid": "792bc8d6847ff057f5e24ff37c581e93",
+  "importSettings": {
+    "allowResize": false,
+    "colorSpace": "Srgb",
+    "compression": "BC7",
+    "debugOutputFormat": "DDS",
+    "dimension": "Texture2D",
+    "forcePowerOfTwo": false,
+    "maxSize": 4096,
+    "mipPolicy": "Generate",
+    "outputFormat": "HTEX",
+    "usage": "Auto"
+  },
+  "importerId": "TextureImporter",
+  "importerVersion": 8,
+  "metaVersion": 1,
+  "sourcePath": "Assets/UI/TD2/UI_Row_Middle.png",
+  "type": "Texture"
+}

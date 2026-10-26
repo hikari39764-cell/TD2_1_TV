@@ -46,6 +46,13 @@ void Screen3DStage::PlacePortals(const std::vector<const StageRoom*>& rooms, con
         const auto last = portalSeen_.find(room->regionId);
         if (last == portalSeen_.end() || now - last->second > kPortalHold) { continue; }
         const bool travel = room->regionId == travel_[0] || room->regionId == travel_[1];
+        // 砂嵐の部屋は撮らない。見せ場でカメラが引いている間に新しく画に入った部屋も、覗き窓を作らずに砂嵐にする。
+        if (snow_.contains(room->regionId)) { continue; }
+        if (eventFraming_ && room->regionId != frame.activeRegion && !travel && !portalPlace_.contains(room->regionId) &&
+            !movedSnow_.contains(room->regionId)) {
+            eventSnow_.insert(room->regionId); snow_.insert(room->regionId);
+            continue;
+        }
         candidates.push_back({room, room->regionId == frame.activeRegion ? 0 : travel ? 1 : 2, CellPixels(*room)});
     }
     std::stable_sort(candidates.begin(), candidates.end(), [](const Candidate& a, const Candidate& b) {
@@ -94,9 +101,13 @@ void Screen3DStage::PlacePortals(const std::vector<const StageRoom*>& rooms, con
     const auto overlaps = [](const Portal& a, uint32_t x, uint32_t y, uint32_t w, uint32_t h) {
         return x < a.x + a.width && a.x < x + w && y < a.y + a.height && a.y < y + h;
     };
+    // 一番粗い段の右下は砂嵐の視点の場所（いつも空けておく。砂嵐を出す時に覗き窓をずらさない）。
+    const auto snowSpot = [](int tier, uint32_t x, uint32_t y, uint32_t w, uint32_t h) {
+        return static_cast<size_t>(tier) == kSnowTier && x < kSnowLeft + kSnowWidth && kSnowLeft < x + w && y < kSnowTop + kSnowHeight && kSnowTop < y + h;
+    };
     const auto free = [&](int tier, uint32_t x, uint32_t y, uint32_t w, uint32_t h) {
         const auto [captureWidth, captureHeight] = kTierCapture[static_cast<size_t>(tier)];
-        if (x + w > captureWidth || y + h > captureHeight - kPortalParkRows) { return false; }
+        if (x + w > captureWidth || y + h > captureHeight - kPortalParkRows || snowSpot(tier, x, y, w, h)) { return false; }
         return std::none_of(used[static_cast<size_t>(tier)].begin(), used[static_cast<size_t>(tier)].end(),
                             [&](const Portal* p) { return overlaps(*p, x, y, w, h); });
     };
@@ -147,7 +158,8 @@ void Screen3DStage::PlacePortals(const std::vector<const StageRoom*>& rooms, con
                 const auto [captureWidth, captureHeight] = kTierCapture[static_cast<size_t>(tier)];
                 Shelf next = shelves[static_cast<size_t>(tier)];
                 if (next.x + portal.width > captureWidth) { next = {0, next.y + next.height, 0}; }
-                if (next.x + portal.width > captureWidth || next.y + portal.height > captureHeight - kPortalParkRows) { continue; }
+                if (next.x + portal.width > captureWidth || next.y + portal.height > captureHeight - kPortalParkRows ||
+                    snowSpot(tier, next.x, next.y, portal.width, portal.height)) { continue; }
                 portal.x = next.x; portal.y = next.y;
                 next.x += portal.width; next.height = (std::max)(next.height, portal.height);
                 shelves[static_cast<size_t>(tier)] = next; done[i] = true;
@@ -208,6 +220,13 @@ void Screen3DStage::PlacePortals(const std::vector<const StageRoom*>& rooms, con
             const double fx = follow != follow_.end() ? follow->second[0] : 0.0, fy = follow != follow_.end() ? follow->second[1] : 0.0;
             tan = {SoftLimit(seen->second.eyeX * parallaxGain_ + fx, kMaxTan), SoftLimit(seen->second.eyeY * parallaxGain_ + fy, kMaxTan)};
         }
+        // 診断（環境変数 TD2_TAN_TRACE）：毎フレーム、画面ごとの見る角度・向き・段（角度の跳びを探す）。
+        if (static const bool tanTrace = std::getenv("TD2_TAN_TRACE") != nullptr; tanTrace) {
+            const auto seen = seen_.find(id);
+            std::fprintf(stderr, "[TD2 tan] t=%.3f %s tier=%d x=%u y=%u tan=%.3f,%.3f facing=%.3f eye=%.3f,%.3f\n", now, id.c_str(), portal.tier,
+                portal.x, portal.y, tan[0], tan[1], seen != seen_.end() ? seen->second.facing : -1.0,
+                seen != seen_.end() ? seen->second.eyeX : 0.0, seen != seen_.end() ? seen->second.eyeY : 0.0);
+        }
         auto [limit, fresh] = portalLimit_.try_emplace(id, std::array<double, 3>{kMaxTan, kMaxTan, kMaxTan});
         for (size_t k = 0; k < limit->second.size(); ++k) {
             const double goal = id == playerRoom ? (std::min)(limitTarget[k], kMaxTan) : kMaxTan;
@@ -249,6 +268,26 @@ HIKARI::GameProjectSceneCaptureViewDesc Screen3DStage::PortalView(const Portal& 
         view.left = static_cast<float>((left - cx) * scale); view.right = static_cast<float>((right - cx) * scale);
         view.top = static_cast<float>((cy - top) * scale); view.bottom = static_cast<float>((cy - bottom) * scale);
     }
+    return view;
+}
+
+HIKARI::GameProjectSceneCaptureViewDesc Screen3DStage::SnowView() const {
+    // 覗き窓と同じ向き・深度の範囲・透視（一つのキャプチャの視点は近い面・遠い面・投影をそろえないと受け付けられない）で、
+    // 板の真ん中の kSnowCols × kSnowRows マスを正面から撮る。
+    const double scale = projection_.scale;
+    HIKARI::GameProjectSceneCaptureViewDesc view{};
+    view.x = kSnowLeft; view.y = kSnowTop; view.width = kSnowWidth; view.height = kSnowHeight;
+    const auto eye = projection_.Point(kSnowX, kSnowY, kPortalEyeCells);
+    const auto forward3 = projection_.Forward(), up3 = projection_.Up();
+    view.eye = {static_cast<float>(eye.x), static_cast<float>(eye.y), static_cast<float>(eye.z)};
+    view.forward = {static_cast<float>(forward3[0]), static_cast<float>(forward3[1]), static_cast<float>(forward3[2])};
+    view.up = {static_cast<float>(up3[0]), static_cast<float>(up3[1]), static_cast<float>(up3[2])};
+    view.nearZ = static_cast<float>((kPortalEyeCells - kPortalNearCells) * scale);
+    view.farZ = static_cast<float>((kPortalEyeCells + kPortalFarCells) * scale);
+    // 板の面（目から kPortalEyeCells）の矩形を近い面へ縮めた端（覗き窓と同じ式）。
+    const double k = view.nearZ / kPortalEyeCells;
+    view.left = static_cast<float>(-kSnowCols * .5 * k); view.right = static_cast<float>(kSnowCols * .5 * k);
+    view.top = static_cast<float>(kSnowRows * .5 * k); view.bottom = static_cast<float>(-kSnowRows * .5 * k);
     return view;
 }
 

@@ -26,13 +26,17 @@ public:
     MachineSources Sync(HIKARI::WorldView& world, const RegionObjects& objects, std::vector<Rules::RegionSource>& regions);
     // 仕掛けの進みを物体へ書く。操作中のテレビが動いたら、追従カメラの基準も同じだけ運ぶ。
     void Update(HIKARI::WorldView& world, Rules::Exploration& exploration, const RegionObjects& objects, CameraDirector& camera, double seconds);
-    // 機構で動かす物体の、置いたままの姿勢（状態 0）。機構に出てこない物体なら nullptr。
-    const HIKARI::GameProjectTransform* RestPose(uint64_t sceneObject) const {
-        for (const auto& view : mechanisms_) for (const auto& object : view.objects) if (object.sceneId == sceneObject) return &object.a;
-        return nullptr;
-    }
+    // 次の Update で、視野の外や止まっている物も含めて全部を今の場所へ書く（続きから戻した・世界を最初へ戻した時）。
+    void Resync() noexcept { resync_ = true; }
+    // 機構・回転柱で動いている部屋（操作中の部屋を除く）。画面は砂嵐にする（回る・落ちる間の覗き窓の角度の跳びと
+    // 段の入れ替わりを見せない）。止まってから kSnowTail 秒は砂嵐のまま（信号が合うまで）。
+    std::vector<std::string> SnowRooms() const;
 
 private:
+    bool resync_ = false;
+    double clock_ = 0;                                          // Update に渡された秒の合計
+    std::map<std::string, double, std::less<>> snowUntil_;     // 区域 ID → 砂嵐をやめる時刻（clock_）
+    std::map<uint64_t, std::string> tvRooms_;                   // 部屋のテレビの物体 → 区域 ID
     using Transform = HIKARI::GameProjectTransform;
     using Handle = HIKARI::GameProjectObjectHandle;
     using Writes = std::vector<HIKARI::GameProjectWorldTransformWrite>;
@@ -42,7 +46,7 @@ private:
     // 機構で動かす物体の状態 0・1・-1（天秤のもう一方）の姿勢。pivot はその点を中心に回す。
     // from / to は全体の進みのうちこの物体が動く区間（作者の ~始め-終わり）。
     // reach は見えているかの判定に使う大きさ（m）、shown は最後に書いた姿勢。
-    struct MechanismObject { uint64_t sceneId = 0; Handle handle{}; Transform a{}, b{}, c{}; bool pivot = false; HIKARI::GameProjectFloat3 center{}; float from = 0, to = 1, lift = 0; bool drop = false;
+    struct MechanismObject { uint64_t sceneId = 0; Handle handle{}; Transform a{}, b{}, c{}; bool pivot = false; HIKARI::GameProjectFloat3 center{}; float from = 0, to = 1, lift = 0, corner = 0; bool drop = false;
                              float reach = 1.5f; Transform shown{}; };
     // 動くテレビに付いて行く区域カメラ。turn は大きく回る転台（途中で向こう側へ切り替える）、reach はテレビまでの距離。
     // ride は乗り物（群れの外から自分の画面を狙う）、aim はテレビから見た狙う点、side は途中で膨らむ向き。

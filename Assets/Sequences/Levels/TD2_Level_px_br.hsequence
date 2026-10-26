@@ -1,6 +1,6 @@
 {
  "assetType": "Sequence",
- "displayName": "px ↔ br",
+ "displayName": "mq ↔ br",
  "formatVersion": 5,
  "guid": "2c9e4b7a1d6f4e30b5a8c2d7e9f1a4b6",
  "sequence": {
@@ -16,7 +16,7 @@
     "id": 2,
     "name": "from",
     "required": true,
-    "sceneObjectId": 12203,
+    "sceneObjectId": 12171,
     "targetKind": "sceneObject"
    },
    {
@@ -124,7 +124,7 @@
           0.0
          ],
          "position": [
-          5.6,
+          3.0,
           4.6,
           -1.6
          ],

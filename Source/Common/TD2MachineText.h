@@ -30,12 +30,14 @@ struct MachineRegionOffset {
 // 基準（状態 A、錨があればその物体）の向きで測った位置（m）と、基準に後から掛ける回転（度）。cx cy cz は回す中心。
 // ~始め-終わり は全体の進み（0〜1）のうちこの物体が動く区間。先にどく物と後から入る物がぶつからないよう順番を付ける。
 // ^高さ は跳ぶ乗り物の高さ（m）。先にこの高さまで浮き上がり、高いところで運んで、最後に降りる（棚や塔を上から越える）。
+// |高さ は折れ線の道：先に真上へこの高さだけ上がり（負なら下がり）、その高さのまま横へ運び、最後に終わりの高さへ寄せる
+// （隣のテレビの角を斜めに切らない吊りかご）。
 // 負の高さは落ちる乗り物：先にその分だけ真下へ落ち、横へ運ぶにつれて終わりの高さへなじむ。
 struct MachineObjectDelta {
     uint64_t object = 0, anchor = 0;
     std::array<double, 3> position{}, rotation{}, pivot{};
     bool hasPivot = false;
-    double from = 0, to = 1, lift = 0;
+    double from = 0, to = 1, lift = 0, corner = 0;
     bool drop = false;   // 落ちる：だんだん速くなり、止まる所でぶつかる（! と書く）
     bool operator==(const MachineObjectDelta&) const = default;
 };
@@ -143,6 +145,10 @@ inline bool ParseDeltas(const std::string& text, std::vector<MachineObjectDelta>
                 try { delta.lift = std::stod(token.substr(1)); } catch (...) { timed = false; }
                 continue;
             }
+            if (token.size() > 1 && token[0] == '|') {
+                try { delta.corner = std::stod(token.substr(1)); } catch (...) { timed = false; }
+                continue;
+            }
             rest.push_back(token);
         }
         if (!timed) { fail("動く区間は ~始め-終わり（0 以上 1 以下、始め < 終わり）、弧は ^高さ"); continue; }
@@ -173,6 +179,7 @@ inline std::string FormatDeltas(const std::vector<MachineObjectDelta>& deltas) {
         if (d.anchor) { out += " @" + std::to_string(d.anchor); }
         if (d.from > 0 || d.to < 1) { out += " ~" + Number(d.from) + "-" + Number(d.to); }
         if (d.lift != 0) { out += " ^" + Number(d.lift); }
+        if (d.corner != 0) { out += " |" + Number(d.corner); }
         if (d.drop) { out += " !"; }
     }
     return out;

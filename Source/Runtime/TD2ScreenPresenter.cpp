@@ -111,15 +111,6 @@ void ScreenPresentationSystem::Update(HIKARI::WorldView& world, const HIKARI::Fr
                 room.x = runtime->placement.worldX; room.y = runtime->placement.worldY; room.region = &runtime->definition.region;
                 room.linkX = room.x; room.linkY = room.y;
                 room.flipped = runtime->flipped;
-                for (const auto& mechanism : session->Mechanisms()) {
-                    for (const auto* moves : {&mechanism.source.moves, &mechanism.source.movesC}) {
-                        for (const auto& move : *moves) { if (move.flip && move.regionId == placement.regionId) { room.flippable = true; } }
-                    }
-                }
-                if (const auto* rest = room.flippable ? session->RestPose(room.configuration.screenObject) : nullptr) {
-                    const auto right = QRotate(rest->rotation, {1, 0, 0}), up = QRotate(rest->rotation, {0, 1, 0});
-                    room.restTurn = std::atan2(right.y, up.y);
-                }
                 rooms_.push_back(std::move(room));
                 return;
             }
@@ -144,6 +135,8 @@ void ScreenPresentationSystem::Update(HIKARI::WorldView& world, const HIKARI::Fr
         stage.snapshot = &session->Snapshot(); stage.activeRegion = session->ActiveRegion(); stage.simulated = true;
         (void)session->TravelRooms(stage.travelFrom, stage.travelTo);
         if (session->Intro().active) { stage.intro = &session->Intro(); }
+        stage.uiScreen = session->UiScreen();
+        stage.snowRooms = session->SnowRooms(); stage.eventFraming = session->EventFraming();
     } else {
         if (!playing) {
             intro_.Preview(world);
@@ -173,14 +166,15 @@ void ScreenPresentationSystem::Update(HIKARI::WorldView& world, const HIKARI::Fr
                 device.inverted || device.kind == Rules::DeviceKind::Goal, false,   // 通関の扉は編集中は開けて見せる
                 device.kind == Rules::DeviceKind::Solid || device.kind == Rules::DeviceKind::Door || device.kind == Rules::DeviceKind::LockWall};
             item.variant = device.variant; item.latch = device.latch;
+            item.travel = device.travel; item.timed = device.dwell > 0;   // 押し刺は縮んだ元の位置で描く
             item.world = device.kind == Rules::DeviceKind::Plate && std::any_of(device.targets.begin(), device.targets.end(), [](const std::string& t) {
                 return t.starts_with("mech/") || t.starts_with("slide/") || t.starts_with("stack/") || t.starts_with("carousel/");
             });
             authored_.devices.push_back(std::move(item));
         }
         if (entry < rooms_.size()) {
-            const Rules::Rect body{rooms_[entry].x + authored[entry].spawn.x, rooms_[entry].y + authored[entry].spawn.y, .625, .875};
-            authored_.player.rect = body; authored_.player.grounded = true; authored_.presentationPlayer = body;
+            const Rules::Rect body{rooms_[entry].x + authored[entry].spawn.x, rooms_[entry].y + authored[entry].spawn.y, kPlayerWidth, kPlayerHeight};
+            authored_.player.rect = body; authored_.player.grounded = true; authored_.presentationPlayer = Rules::DrawnPlayer(body);
             stage.activeRegion = rooms_[entry].regionId;
         }
         stage.snapshot = &authored_;

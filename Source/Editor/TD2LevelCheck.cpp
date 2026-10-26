@@ -83,6 +83,17 @@ std::vector<LevelIssue> CheckLevel(const std::vector<CheckRoom>& rooms, const st
         for (const auto& d : devices.Items()) {
             if (d.kind == "Laser") { beams.push_back(Beam(s, d)); }
             if (d.kind == "Spikes") { spikes.push_back({d.x, d.y, d.w, d.h}); }
+            // 押し刺は伸び切るまでの通り道全体が危ない（立つ所を置かない）。
+            if (d.kind == "Pusher") {
+                double travel = 3;
+                try { if (const auto text = d.Extra("travel"); !text.empty()) { travel = std::stod(text); } } catch (...) {}
+                Box b{d.x, d.y, d.w, d.h};
+                if (d.direction == "Right") { b.w += travel; }
+                else if (d.direction == "Left") { b.x -= travel; b.w += travel; }
+                else if (d.direction == "Down") { b.h += travel; }
+                else { b.y -= travel; b.h += travel; }
+                spikes.push_back(b);
+            }
         }
         // 立つ所（チェックポイントと開始位置）が壁・光路・トゲの上にないか。
         const auto checkStand = [&](const Box& b, const std::string& what) {
@@ -90,15 +101,15 @@ std::vector<LevelIssue> CheckLevel(const std::vector<CheckRoom>& rooms, const st
             if (std::any_of(spikes.begin(), spikes.end(), [&](const Box& k) { return Overlap(k, b); })) { add(IssueLevel::Error, room.name + "：" + what + "がトゲの上", id, b.x, b.y); return; }
             if (std::any_of(beams.begin(), beams.end(), [&](const Box& k) { return Overlap(k, b); })) { add(IssueLevel::Warning, room.name + "：" + what + "がレーザーの通り道", id, b.x, b.y); }
         };
-        if (s.entryRegion) { checkStand({s.spawnX, s.spawnY, .625, .875}, "開始位置"); }
+        if (s.entryRegion) { checkStand({s.spawnX, s.spawnY, kPlayerWidth, kPlayerHeight}, "開始位置"); }
         // チェックポイント：実行時と同じく、近くの床の上で一番近い立てる所へ復活する。立てる所が無ければ使えない。
         const auto anchor = [&](const DeviceDraft& d) -> std::optional<Box> {
-            const double ix = d.x + (d.w - .625) * .5, iy = d.y + d.h - .875;
+            const double ix = d.x + (d.w - kPlayerWidth) * .5, iy = d.y + d.h - kPlayerHeight;
             std::optional<Box> best; double score = 1e9;
             for (int y = static_cast<int>(std::floor(d.y)) - 1; y <= static_cast<int>(std::floor(d.y + d.h)) + 3; ++y)
                 for (int x = static_cast<int>(std::floor(d.x)) - 2; x <= static_cast<int>(std::floor(d.x + d.w - 1.0 / 32)) + 2; ++x) {
                     if (x < 0 || y < 0 || x >= s.region.cols || y >= s.region.rows || !SolidCell(s, x, y)) { continue; }
-                    const Box b{std::clamp(ix, double(x), double(x) + 1 - .625), double(y) - .875, .625, .875};
+                    const Box b{std::clamp(ix, double(x), double(x) + 1 - kPlayerWidth), double(y) - kPlayerHeight, kPlayerWidth, kPlayerHeight};
                     if (b.y < 0 || InWall(s, b) || std::any_of(spikes.begin(), spikes.end(), [&](const Box& k) { return Overlap(k, b); })) { continue; }
                     const double candidate = std::hypot(b.x - ix, b.y - iy);
                     if (candidate < score) { score = candidate; best = b; }

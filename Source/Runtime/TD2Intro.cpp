@@ -1,4 +1,5 @@
 #include "TD2Intro.h"
+#include "TD2TitleCard.h"
 #include "TD2RegionComponent.h"
 #include "TD2StageLight.h"
 #include "TD2Transform.h"
@@ -46,6 +47,9 @@ double Noise(uint32_t seed, double t, double frequency) {
 }
 // タイトルの点灯（点・線・開く）と消灯（閉じる・線・点）にかかる秒。タイトルカードの範囲からこれを引いた残りが映っている時間。
 constexpr double kTitleOnSeconds = .42, kTitleOffSeconds = .36;
+// タイトル待ちの寄り：画角を何度狭めるか、寄りきるまでの秒、オープニングで作者の構図へ戻す秒。
+// 50 度の広い画ではパソコンの画面が画の半分ほどで、内部の描き分け（DLSS の内部解像度）ではメールの細い字がにじむ。
+constexpr double kTitleZoomDegrees = 12, kTitleZoomSeconds = 1.6, kTitleZoomOutSeconds = 1.2;
 // 画面に飛び込んで切れてから灯とテレビを戻すまで（暗転の中で戻し、戻る瞬間を見せない）。
 constexpr float kRestoreAfterBlack = .06f;
 }
@@ -69,7 +73,14 @@ IntroTimeline ReadIntroTimeline(const std::vector<HIKARI::GameProjectSequenceEve
         else if (name == IntroEvent::Collapse) { t.suckStart = start; t.collapseSeconds = length; }
         else if (name == IntroEvent::Alone) { t.aloneEnd = end; }
         else if (name == IntroEvent::Pull) { t.pullStart = start; t.blackTime = end; t.restoreTime = end + kRestoreAfterBlack; }
-        else if (name == IntroEvent::TitleCard) { t.titleIn = start; t.titleHold = static_cast<float>((std::max)(0.0, length - kTitleOnSeconds - kTitleOffSeconds)); }
+        else if (name == IntroEvent::TitleCard) {
+            t.titleIn = start; t.titleSeconds = length;
+            t.titleHold = static_cast<float>((std::max)(0.0, length - kTitleOnSeconds - kTitleOffSeconds));
+        }
+        else if (name == IntroEvent::Burst) { t.burstStart = start; t.burstSeconds = length; }
+        else if (name == IntroEvent::Spray) { t.sprayStart = start; t.sprayEnd = end; }
+        else if (name == IntroEvent::Rewind) { t.rewindStart = start; t.rewindSeconds = length; }
+        else if (name == IntroEvent::Glitch) { t.glitches.push_back({start, length}); }
         else if (name == IntroEvent::Reveal) { t.revealTime = start; }
         else if (name == IntroEvent::Power) { t.powerOn = start; t.powerSeconds = length; }
         else if (name == IntroEvent::Lock) { t.lockStart = start; t.lockSeconds = length; }
@@ -228,6 +239,7 @@ bool IntroDirector::Begin(HIKARI::WorldView& world, bool preview) {
     (void)sequence.Pause(playback);
     Prepare(world, playback);
     phase_ = Phase::Title;
+    titleZoom_ = zoomAtStart_ = 0;
     std::fprintf(stderr, "[TD2 intro] title lamps=%zu tvs=%zu lightning=%zu\n", lamps_.size(), screens_.tvScreens.size(), screens_.lightning.size());
     return true;
 }
@@ -327,7 +339,7 @@ void IntroDirector::ScheduleCollapse(HIKARI::WorldView& world) {
     }
 }
 
-bool IntroDirector::Update(HIKARI::WorldView& world, bool start) {
+bool IntroDirector::Update(HIKARI::WorldView& world, bool start, double seconds) {
     if (phase_ == Phase::Ending) {
         HIKARI::GameProjectSequencePlaybackSnapshot snapshot{};
         const bool alive = world.GetSequence().GetSnapshot(playback_, snapshot);
@@ -339,7 +351,14 @@ bool IntroDirector::Update(HIKARI::WorldView& world, bool start) {
     if (phase_ == Phase::Title) {
         DriveDepthOfField(world);
         WarmUi(world);
-        if (start && world.GetSequence().Resume(playback_)) { phase_ = Phase::Playing; std::fprintf(stderr, "[TD2 intro] start\n"); }
+        // メールが開くのに合わせてゆっくり寄る（長いフレームでも飛ばないよう 1/30 秒ずつ）。
+        titleZoom_ = (std::min)(1.0, titleZoom_ + (std::min)(seconds, 1.0 / 30) / kTitleZoomSeconds);
+        DriveTitleZoom(world, Math::Smoothstep(titleZoom_));
+        DriveTitleFocus(world, Math::Smoothstep(titleZoom_));   // 寄るのと一緒にピントを画面へ送る
+        if (start && world.GetSequence().Resume(playback_)) {
+            phase_ = Phase::Playing; zoomAtStart_ = Math::Smoothstep(titleZoom_);
+            std::fprintf(stderr, "[TD2 intro] start\n");
+        }
         return true;
     }
     if (phase_ != Phase::Playing) { return false; }
@@ -349,6 +368,12 @@ bool IntroDirector::Update(HIKARI::WorldView& world, bool start) {
         return false;
     }
     Apply(world, snapshot.timeSeconds);
+    // 寄った画から、メールが消える間に作者のタイトルの構図へ引き戻す。
+    if (zoomAtStart_ > 0) {
+        const double back = 1 - Math::Smoothstep(snapshot.timeSeconds / kTitleZoomOutSeconds);
+        DriveTitleZoom(world, zoomAtStart_ * back);
+        DriveTitleFocus(world, zoomAtStart_ * back);   // ピントも同じ間に作者の位置へ戻す
+    }
     return true;
 }
 
@@ -417,7 +442,8 @@ void IntroDirector::DriveDepthOfField(HIKARI::WorldView& world, double scale) {
 void IntroDirector::DriveLetterbox(HIKARI::WorldView& world, double t) const {
     if (!(settings_.letterbox > 0)) { return; }
     // 黒帯の範囲の始めから 1 秒で入り、終わりまでの 0.8 秒で退く（なめらかに）。
-    const double amount = Math::Smoothstep((t - screens_.letterboxIn) / 1.0) * (1 - Math::Smoothstep((t - (screens_.letterboxOut - .8)) / .8));
+    const double amount = Math::Smoothstep((t - screens_.letterboxIn) / 1.0) * (1 - Math::Smoothstep((t - (screens_.letterboxOut - .8)) / .8)) *
+                          (1 - TitleCardBarsAway(TitleTimes(), t));
     if (amount <= 0) { return; }
     const auto [width, height] = UiSize(world);
     // 帯の太さは 16:9 の画面で letterbox の比になる割合に揃える（編集器の縦長なゲームビューでも帯が太くなりすぎない）。
@@ -441,42 +467,34 @@ void IntroDirector::WarmUi(HIKARI::WorldView& world) const {
     request.width = 1; request.height = 1;
     request.tint = {1, 1, 1, .004f};
     const auto ui = world.GetUi();
-    for (const auto texture : {kLetterboxTexture, kTitleTexture, kWhiteTexture}) { (void)ui.SubmitSprite(texture, request); }
+    for (const auto texture : {kLetterboxTexture, kWhiteTexture}) { (void)ui.SubmitSprite(texture, request); ++request.sourceId; }
+    for (const auto texture : TitleCardTextures()) { (void)ui.SubmitSprite(texture, request); ++request.sourceId; }
 }
 
 void IntroDirector::DriveTitleCard(HIKARI::WorldView& world, double t) const {
-    // 点灯 0.42 秒（点 0.12・線 0.16・開く 0.14）、映る titleHold 秒、消灯 0.36 秒（閉じる・線・点 各 0.12）。
-    const double on = t - screens_.titleIn, off = on - kTitleOnSeconds - screens_.titleHold;
-    if (on < 0 || off >= kTitleOffSeconds) { return; }
-    const auto [width, height] = UiSize(world);
-    // 黒帯の内側に 16:9 で収める。
-    const double bar = settings_.letterbox > 0 ? height * (std::max)(0.0, 1.0 - 16.0 / 9.0 / settings_.letterbox) * .5 : 0.0;
-    const double cardW = (std::min)(double(width), (height - 2 * bar) * 16 / 9), cardH = cardW * 9 / 16;
-    const double cx = width * .5, cy = height * .5, line = (std::max)(2.0, height * .004);
-    HIKARI::GameProjectUiSpriteRequest request{};
-    request.sourceId = 0x7D2149u; request.order = 99000;
-    request.referenceWidth = width; request.referenceHeight = height;
-    const auto ui = world.GetUi();
-    const auto put = [&](std::string_view texture, double w, double h, float brightness) {
-        request.x = static_cast<float>(cx - w * .5); request.y = static_cast<float>(cy - h * .5);
-        request.width = static_cast<float>(w); request.height = static_cast<float>(h);
-        request.tint = {brightness, brightness, brightness, 1};
-        (void)ui.SubmitSprite(texture, request);
-    };
-    if (off < 0) {
-        if (on < .12) { const double d = line * (1 + 2 * Math::Smoothstep(on / .12)); put(kWhiteTexture, d, d, 1); }
-        else if (on < .28) { put(kWhiteTexture, line * 3 + (cardW - line * 3) * Math::Smoothstep((on - .12) / .16), line, 1); }
-        else if (on < kTitleOnSeconds) { put(kTitleTexture, cardW, line + (cardH - line) * Math::Smoothstep((on - .28) / .14), .95f); }
-        else {
-            // 映っている間はわずかにちらつく。
-            const auto tick = static_cast<uint32_t>(t * 12);
-            put(kTitleTexture, cardW, cardH, static_cast<float>(.82 + .08 * Hash(0x7171u, tick)));
-        }
-        return;
+    DrawTitleCard(world, TitleTimes(), {settings_.sprayPeak, settings_.spraySize, settings_.spraySpeed}, t);
+}
+
+TitleCardTimes IntroDirector::TitleTimes() const {
+    // 動きの事件が置かれていなければ、タイトルカードの範囲から既定の割合で決める（原案の 4.2 秒の配分）。
+    TitleCardTimes c;
+    if (!(screens_.titleIn < kIntroNever)) { c.seconds = 0; return c; }
+    const auto has = [](float v) { return v < kIntroNever; };
+    c.in = screens_.titleIn;
+    c.seconds = screens_.titleSeconds > 0 ? screens_.titleSeconds : kTitleOnSeconds + screens_.titleHold + kTitleOffSeconds;
+    const double k = c.seconds / 4.2;
+    c.burst = has(screens_.burstStart) ? screens_.burstStart : c.in + .42 * k;
+    c.burstSeconds = has(screens_.burstStart) ? screens_.burstSeconds : .48 * k;
+    c.spray = has(screens_.sprayStart) ? screens_.sprayStart : c.in + .9 * k;
+    c.sprayEnd = has(screens_.sprayStart) ? screens_.sprayEnd : c.in + 3.3 * k;
+    c.rewind = has(screens_.rewindStart) ? screens_.rewindStart : c.sprayEnd;
+    c.rewindSeconds = has(screens_.rewindStart) ? (std::max)(.05f, screens_.rewindSeconds) : .54 * k;
+    if (!screens_.glitches.empty()) {
+        for (const auto& [start, length] : screens_.glitches) c.glitches.push_back({start, length});
+    } else {
+        for (const double at : {1.55, 2.10, 2.48, 2.76, 2.96, 3.08, 3.16, 3.22}) c.glitches.push_back({c.in + at * k, .1});
     }
-    if (off < .12) { put(kTitleTexture, cardW, line + (cardH - line) * (1 - Math::Smoothstep(off / .12)), .95f); }
-    else if (off < .24) { put(kWhiteTexture, line * 3 + (cardW - line * 3) * (1 - Math::Smoothstep((off - .12) / .12)), line, 1); }
-    else { const double d = line * 3 * (1 - Math::Smoothstep((off - .24) / .12)); if (d > .5) { put(kWhiteTexture, d, d, 1); } }
+    return c;
 }
 
 double IntroDirector::EndingLamp(const Lamp& lamp, double t) const {
@@ -535,6 +553,27 @@ void IntroDirector::DriveStartOffset(HIKARI::WorldView& world, double t) const {
     modifier.worldPositionOffset = {startEye_.x * w, startEye_.y * w, startEye_.z * w};
     modifier.worldTargetOffset = {startLook_.x * w, startLook_.y * w, startLook_.z * w};
     (void)world.GetCamera().SubmitModifier(modifier);
+}
+
+void IntroDirector::DriveTitleZoom(HIKARI::WorldView& world, double weight) const {
+    if (weight <= 0) { return; }
+    // 画角だけを狭める（目の位置は作者のタイトルの構図のまま。パソコンの画面はほぼ画の真ん中にある）。
+    HIKARI::GameProjectCameraModifier modifier{};
+    modifier.sourceId = 0x7D214Eu; modifier.priority = 60; modifier.applyDuringOverride = 1;
+    modifier.verticalFovOffsetRadians = static_cast<float>(-kTitleZoomDegrees * weight * 3.14159265358979 / 180);
+    (void)world.GetCamera().SubmitModifier(modifier);
+}
+
+void IntroDirector::DriveTitleFocus(HIKARI::WorldView& world, double weight) const {
+    if (weight <= 0 || (screenCenter_.x == 0 && screenCenter_.y == 0 && screenCenter_.z == 0)) { return; }
+    // ぼけの量はオープニングの設定のまま、焦点の距離だけを画面の中心の奥行きにする（ぼけの差し替え 300 より強く）。
+    HIKARI::GameProjectCameraFocusRequest focus{};
+    focus.cameraObjectHandle = world.FindSceneObject(settings_.cameraObject).GetHandle().value;
+    focus.sourceId = 0x7D2146u; focus.priority = 400;
+    focus.mode = HIKARI::GameProjectCameraFocusMode::WorldPoint;
+    focus.weight = static_cast<float>((std::min)(1.0, weight));
+    focus.worldPoint = screenCenter_;
+    (void)world.GetCamera().SubmitFocus(focus);
 }
 
 void IntroDirector::DriveBlack(HIKARI::WorldView& world, double t) {

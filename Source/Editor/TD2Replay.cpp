@@ -51,7 +51,7 @@ std::string BuildExploration(const std::vector<ReplayRoom>& rooms, const std::ve
     for (const auto& m : machines) {
         if (m.kind == MachineKind::Mechanism) {
             Rules::MechanismSource s;
-            s.id = m.id; s.toggle = m.toggle; s.balance = m.balance; s.seconds = m.seconds; s.dwell = m.dwell; s.settle = m.settle; s.ride = m.ride; s.rideFrom = m.rideFrom;
+            s.id = m.id; s.toggle = m.toggle; s.balance = m.balance; s.seconds = m.seconds; s.dwell = m.dwell; s.settle = m.settle; s.ride = m.ride; s.rideFrom = m.rideFrom; s.rideEnter = m.rideEnter; s.sealExits = m.sealExits;
             bool ok = true;
             for (const auto& [offsets, moves] : {std::pair{&m.offsets, &s.moves}, std::pair{&m.offsetsC, &s.movesC}}) {
                 for (const auto& o : *offsets) {

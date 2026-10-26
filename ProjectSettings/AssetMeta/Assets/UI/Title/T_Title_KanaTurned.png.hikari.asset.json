@@ -1,0 +1,21 @@
+{
+  "displayName": "T_Title_KanaTurned",
+  "guid": "addb8b1d3d7558bf13b82f4e2d258de9",
+  "importSettings": {
+    "allowResize": false,
+    "colorSpace": "Srgb",
+    "compression": "BC7",
+    "debugOutputFormat": "DDS",
+    "dimension": "Texture2D",
+    "forcePowerOfTwo": false,
+    "maxSize": 4096,
+    "mipPolicy": "Generate",
+    "outputFormat": "HTEX",
+    "usage": "Auto"
+  },
+  "importerId": "TextureImporter",
+  "importerVersion": 8,
+  "metaVersion": 1,
+  "sourcePath": "Assets/UI/Title/T_Title_KanaTurned.png",
+  "type": "Texture"
+}

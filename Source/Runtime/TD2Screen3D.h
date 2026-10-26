@@ -46,10 +46,6 @@ struct StageRoom {
     bool placed = true;
     // 機構で 180° 回されている。region は作者の向きのまま（画面は絵ごと逆さに写る）。
     bool flipped = false;
-    // 回す機構がある部屋。中の装置はテレビの傾きの分だけ逆に回して描き、回っている途中も正立に見せる。
-    // restTurn は置いたままのテレビの傾き（最初から逆さに吊ったテレビは π）。
-    bool flippable = false;
-    double restTurn = 0;
     const RegionDefinition* region = nullptr;
     RegionDefinition ownedRegion;
     ScreenConfiguration configuration;
@@ -68,6 +64,12 @@ struct StageFrame {
     std::string travelFrom, travelTo;
     // オープニングの演出（タイトルと砂嵐）。無ければ普段どおり。
     const IntroScreens* intro = nullptr;
+    // 窓の画布を貼っているテレビ（ハンドルの値。0 なら無し）。その画面は 3D の絵へ結ばず、放されたら結び直す。
+    uint64_t uiScreen = 0;
+    // 機構で動いている間の部屋（区域 ID）。画面は砂嵐にし、覗き窓を作らない。
+    std::vector<std::string> snowRooms;
+    // 見せ場の仕掛けでカメラが引いている間。新しく画に入るテレビは覗き窓を作らずに砂嵐にする（一瞬遅れて絵が出る跳びを見せない）。
+    bool eventFraming = false;
 };
 
 // 編集中の並べ直し：全部の部屋を一枚ずつの窓に収めるため、描く位置（x, y）だけを二つの組に詰めて並べる。
@@ -203,6 +205,8 @@ private:
     bool SyncCaptures(HIKARI::WorldView& world, const std::vector<Assigned>& screens, double flash, double shakeX, double shakeY);
     // 覗き窓一つの視点（舞台の目・視錐台）。shakeX/Y は画面の揺れ（舞台の長さ）。
     HIKARI::GameProjectSceneCaptureViewDesc PortalView(const Portal& portal, double shakeX, double shakeY) const;
+    // Play の砂嵐の視点：一番粗い段のキャプチャの右下の矩形に、舞台の外の砂嵐の板を正投影で撮る。
+    HIKARI::GameProjectSceneCaptureViewDesc SnowView() const;
     // ゲームカメラから見た各部屋の画面（目立ち具合・向き）。Play 中は毎フレーム測り直す。
     void Inspect(HIKARI::WorldView& world, const std::vector<const StageRoom*>& rooms, const StageFrame& frame);
     // 読みやすさの保護を掛ける画面（エンジンの上限 12）。保護の有無で色調が変わるので、入れ替えは控えめにする。
@@ -257,8 +261,21 @@ private:
     std::set<std::string, std::less<>> redrawnRooms_;   // このフレームに覗き窓を描き直す部屋
     // プレイヤーのいる部屋で目がプレイヤーの後を少し追う分（正接。部屋を出ると 0 へなめらかに戻る）。
     std::map<std::string, std::array<double, 2>, std::less<>> follow_;
+    // Play の砂嵐にする部屋（機構で動いている部屋と、見せ場の間に新しく画に入った部屋）。
+    std::set<std::string, std::less<>> snow_;
+    std::set<std::string, std::less<>> eventSnow_;   // 見せ場の間に新しく画に入った部屋（見せ場が終わるまで砂嵐）
+    std::set<std::string, std::less<>> movedSnow_;   // 見せ場の間に機構で動いて砂嵐だった部屋（止まったらすぐ普段の画面へ戻す）
+    bool eventFraming_ = false;
+    double echoLastX_ = 0, echoLastTime_ = -1;   // 残影の前のフレームの位置と実時刻（押されて動く速さを測る）
+    double echoStepTime_ = -1, echoLean_ = 0;    // 残影に乗られた実時刻（沈みの始まり）と、なめらかにした傾き
+    Rules::Rect echoLastRect_{}, crushRect_{};   // 前のフレームの残影の箱と、潰れた所
+    int echoLastFacing_ = 1, crushFacing_ = 1;
+    uint64_t crushesSeen_ = 0;                   // 見た潰れの回数（増えた時だけ潰れる姿を出す）
+    double crushTime_ = -1;                      // 潰れ始めた実時刻
+    bool crushSideways_ = false;                 // 横から挟まれた（幅が薄くなる）か
     // このフレームのオープニング（無ければ null）と、砂嵐の窓を使っているか。砂嵐を出す区域のテレビは全部の部屋から選ぶ。
     const IntroScreens* intro_ = nullptr;
+    uint64_t uiScreen_ = 0;
     bool introStatic_ = false;
     // オープニングで主人公を隠すか、現れる途中の伸び（0〜1）、登場のエフェクトを足したか。
     bool heroShown_ = true, introArrived_ = false;

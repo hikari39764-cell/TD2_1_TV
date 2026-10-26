@@ -18,7 +18,7 @@ bool Flag(const Json& fields, std::string_view id) { const auto* v = FieldValue(
 struct KindInfo { MachineKind kind; std::string_view type, idField; std::vector<std::string> fields; };
 const std::vector<KindInfo>& Kinds() {
     static const std::vector<KindInfo> kinds{
-        {MachineKind::Mechanism, "TD2.Mechanism", "mechanismId", {"mechanismId", "toggle", "balance", "seconds", "dwell", "settle", "ride", "rideFrom", "cameraLift", "cameraPull",
+        {MachineKind::Mechanism, "TD2.Mechanism", "mechanismId", {"mechanismId", "toggle", "balance", "seconds", "dwell", "settle", "ride", "rideFrom", "rideEnter", "sealExits", "cameraLift", "cameraPull",
             "regionOffsets", "objectDeltas", "regionOffsetsC", "objectDeltasC", "recipe", "parts"}},
         {MachineKind::Slide, "TD2.SlideRack", "rackId", {"rackId", "seconds", "members", "emptySlots"}},
         {MachineKind::Stack, "TD2.StackColumn", "stackId", {"stackId", "pullSeconds", "dropSeconds", "resetSeconds", "members", "dockDistances"}},
@@ -134,7 +134,7 @@ bool LoadMachines(EditorWorkspaceHostContext& ctx, std::vector<Machine>& machine
                 m.id = Text(fields, info.idField);
                 switch (info.kind) {
                 case MachineKind::Mechanism:
-                    m.toggle = Flag(fields, "toggle"); m.balance = Flag(fields, "balance"); m.ride = Flag(fields, "ride"); m.rideFrom = ParseNames(Text(fields, "rideFrom"));
+                    m.toggle = Flag(fields, "toggle"); m.balance = Flag(fields, "balance"); m.ride = Flag(fields, "ride"); m.rideFrom = ParseNames(Text(fields, "rideFrom")); m.rideEnter = ParseNames(Text(fields, "rideEnter")); m.sealExits = ParseNames(Text(fields, "sealExits"));
                     m.seconds = Real(fields, "seconds", .8); m.dwell = Real(fields, "dwell", 0); m.settle = Real(fields, "settle", 0);
                     m.cameraLift = Real(fields, "cameraLift", 1.5); m.cameraPull = Real(fields, "cameraPull", 1);
                     // 読めない行は飛ばし、読めた分だけを編集に使う。
@@ -169,7 +169,7 @@ bool WriteMachine(EditorWorkspaceHostContext& ctx, const Machine& before, const 
     set(InfoOf(after.kind).idField, before.id, after.id);
     switch (after.kind) {
     case MachineKind::Mechanism:
-        set("toggle", before.toggle, after.toggle); set("balance", before.balance, after.balance); set("ride", before.ride, after.ride); set("rideFrom", JoinNames(before.rideFrom), JoinNames(after.rideFrom));
+        set("toggle", before.toggle, after.toggle); set("balance", before.balance, after.balance); set("ride", before.ride, after.ride); set("rideFrom", JoinNames(before.rideFrom), JoinNames(after.rideFrom)); set("rideEnter", JoinNames(before.rideEnter), JoinNames(after.rideEnter)); set("sealExits", JoinNames(before.sealExits), JoinNames(after.sealExits));
         set("seconds", before.seconds, after.seconds); set("dwell", before.dwell, after.dwell); set("settle", before.settle, after.settle);
         set("cameraLift", before.cameraLift, after.cameraLift); set("cameraPull", before.cameraPull, after.cameraPull);
         set("regionOffsets", FormatOffsets(before.offsets), FormatOffsets(after.offsets));

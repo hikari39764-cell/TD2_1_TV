@@ -20,6 +20,8 @@ struct Machine {
     // 機構
     bool toggle = false, balance = false, ride = false;
     std::vector<std::string> rideFrom;   // 乗り場（空なら動くテレビ自身）
+    std::vector<std::string> rideEnter;  // 乗る前の区域（空ならどこから入っても動く）
+    std::vector<std::string> sealExits;  // 降りたら閉じる区域
     double seconds = .8, dwell = 0, settle = 0, cameraLift = 1.5, cameraPull = 1;
     std::vector<MachineRegionOffset> offsets, offsetsC;
     std::vector<MachineObjectDelta> deltas, deltasC;

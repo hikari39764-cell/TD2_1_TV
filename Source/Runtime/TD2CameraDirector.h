@@ -53,6 +53,11 @@ public:
     void Carry(const HIKARI::GameProjectTransform& from, const HIKARI::GameProjectTransform& to) { rig_.Carry(from, to); }
     // 画面を揺らす（強さ 1 で数センチ）。今の揺れより強い時だけ上書きし、すぐに収まっていく。
     void Kick(double strength) { shake_ = (std::max)(shake_, (std::min)(strength, 2.0)); }
+    // 見せ場の仕掛け（揺れのある機構）が動いている間に画へ入れたい物（世界の中心と半径 m）。毎フレーム渡す。
+    // 渡されている間は向きを変えずに注視点を寄せて後ろへ引き、渡されなくなると少し待ってから元の追従へ戻る。
+    void FrameEvent(const HIKARI::GameProjectFloat3& center, float radius) { eventPoints_.push_back({center, radius}); }
+    // 見せ場で引いている（戻る途中も含む）。新しく画に入るテレビは砂嵐にしてもらう。
+    bool EventFraming() const noexcept { return eventWeight_ > .02 || !eventPoints_.empty(); }
 
     // 大区域の切り替え中なら、出る部屋と入る部屋。
     bool TravelRooms(std::string& from, std::string& to) const;
@@ -69,6 +74,7 @@ private:
         RegionSequenceBinding binding;
         std::string from, to, pending;      // 自動の切り替え中に先へ進んだ部屋（終わったら追従が引き継ぐ）
         bool reverse = false, manual = false;
+        bool hurried = false;               // 見せ場の仕掛けが動き出して演出を速めた
         int direction = 0;                   // 手動で越えた向き（+1 右、-1 左）
         double velocity = 0, progress = 0;   // 手動の進む速さ（演出の長さに対する割合／秒）と進み（0→1）
         double accel = 0;                    // 手動の速さのばねの状態（押し始めと離し際を滑らかにする）
@@ -105,5 +111,13 @@ private:
     double swapBoost_ = 0;   // 交換の直後、区域カメラの乗り換えを速めている残り秒
     double shake_ = 0;       // 画面の揺れの今の強さ
     void Shake(HIKARI::WorldView& world, double seconds);
+    // 見せ場の画：このフレームに入れたい物、引き具合（0〜1）、渡されなくなってから戻り始めるまでの残り秒、引いた先の目と注視点。
+    struct EventPoint { HIKARI::GameProjectFloat3 center{}; float radius = 0; };
+    std::vector<EventPoint> eventPoints_;
+    double eventWeight_ = 0, eventHold_ = 0;
+    HIKARI::GameProjectFloat3 eventEye_{}, eventLook_{};
+    double eventFov_ = 0;   // 振った先の画角（縦、ラジアン）
+    bool eventValid_ = false;
+    void FrameEventPose(CameraRigPose& pose, double dt);
 };
 }

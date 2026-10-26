@@ -73,6 +73,34 @@
       "source": "GamepadAxis"
     },
     {
+      "action": "Gameplay.Move",
+      "component": 0,
+      "control": "DPadLeft",
+      "scale": -1.0,
+      "source": "GamepadButton"
+    },
+    {
+      "action": "Gameplay.Move",
+      "component": 0,
+      "control": "DPadRight",
+      "scale": 1.0,
+      "source": "GamepadButton"
+    },
+    {
+      "action": "Gameplay.Move",
+      "component": 1,
+      "control": "DPadUp",
+      "scale": 1.0,
+      "source": "GamepadButton"
+    },
+    {
+      "action": "Gameplay.Move",
+      "component": 1,
+      "control": "DPadDown",
+      "scale": -1.0,
+      "source": "GamepadButton"
+    },
+    {
       "action": "Gameplay.Look",
       "component": 0,
       "control": "DeltaX",
@@ -178,7 +206,7 @@
       "control": "Start",
       "scale": 1.0,
       "source": "GamepadButton"
-    },
+    },
     {
       "action": "Gameplay.DevSkipIntro",
       "component": 0,
@@ -190,6 +218,13 @@
       "action": "Gameplay.DevGoal",
       "component": 0,
       "control": "O",
+      "scale": 1.0,
+      "source": "Keyboard"
+    },
+    {
+      "action": "Gameplay.Menu",
+      "component": 0,
+      "control": "Escape",
       "scale": 1.0,
       "source": "Keyboard"
     }

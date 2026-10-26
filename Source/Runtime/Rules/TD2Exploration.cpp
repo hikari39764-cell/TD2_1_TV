@@ -6,6 +6,8 @@
 
 namespace TD2::Rules {
 namespace {
+// つながない口に置く薄い壁の厚さ（マス）。境の両側へ半分ずつはみ出す。
+constexpr double kThinWall = .02;
 std::string DeviceId(std::string_view region, std::string_view local) {
     // region ID は '/' を含まないので、別のテレビの同名の装置と混ざらない。
     return std::string(region) + "/" + std::string(local);
@@ -33,7 +35,7 @@ std::string Exploration::Initialize(std::vector<RegionSource> sources, std::vect
             const auto spawn = spawnOverride.value_or(authored.spawn);
             // 空中の位置も受け付ける。区域の外へは丸めない。
             if (!std::isfinite(spawn.x) || !std::isfinite(spawn.y) || spawn.x < 0 || spawn.y < 0 ||
-                spawn.x + .625 > p.cols || spawn.y + .875 > p.rows) { return "test spawn outside region: " + p.regionId; }
+                spawn.x + kPlayerWidth > p.cols || spawn.y + kPlayerHeight > p.rows) { return "test spawn outside region: " + p.regionId; }
             next.world_.spawn = {spawn.x + p.worldX, spawn.y + p.worldY};
         }
         RegionRuntime runtime;
@@ -184,7 +186,8 @@ void Exploration::BuildBoundaries() {
             for (const auto& other : placements_) {
                 const auto shared = FindSharedWorldEdge(p, other);
                 if (!shared || shared->sideA != side) continue;
-                if (isolated_.contains(p.regionId) || isolated_.contains(other.regionId)) thin.emplace_back(shared->overlapBegin, shared->overlapEnd);
+                const bool sealed = sealed_.contains(std::minmax(p.regionId, other.regionId));
+                if (sealed || isolated_.contains(p.regionId) || isolated_.contains(other.regionId)) thin.emplace_back(shared->overlapBegin, shared->overlapEnd);
                 std::vector<std::pair<int64_t, int64_t>> remainder;
                 for (const auto& [begin, end] : exposed) {
                     if (shared->overlapBegin >= end || shared->overlapEnd <= begin) remainder.emplace_back(begin, end);
@@ -200,7 +203,7 @@ void Exploration::BuildBoundaries() {
                 if (vertical) world_.boundaries.push_back({double(side == WorldSide::Left ? bounds.left - 1 : bounds.right), double(begin), 1, double(end - begin)});
                 else world_.boundaries.push_back({double(begin), double(side == WorldSide::Top ? bounds.top - 1 : bounds.bottom), double(end - begin), 1});
             }
-            constexpr double kThin = .02;
+            constexpr double kThin = kThinWall;
             for (const auto& [begin, end] : thin) {
                 const double edge = side == WorldSide::Left ? bounds.left : side == WorldSide::Right ? bounds.right
                                   : side == WorldSide::Top ? bounds.top : bounds.bottom;
@@ -225,7 +228,7 @@ void Exploration::Record(StepOutput output, ExplorationOutput& out) {
     for (auto& event : output.events) {
         if (IsMachineTarget(event.subjectId)) continue;   // 仕掛けの受け口は画面に出ない
         const auto owner = deviceOwners_.find(event.subjectId);
-        std::string region = owner != deviceOwners_.end() ? owner->second : RegionAt({event.position.x, event.position.y, .625, .875});
+        std::string region = owner != deviceOwners_.end() ? owner->second : RegionAt({event.position.x, event.position.y, kPlayerWidth, kPlayerHeight});
         if (region.empty()) region = activeRegion_;
         const auto& p = regions_.at(region).placement;
         event.position.x -= p.worldX; event.position.y -= p.worldY;
@@ -306,6 +309,8 @@ ExplorationOutput Exploration::Step(const InputState& input, double seconds) {
     if (turning) { state_.actionArmed = false; state_.blinkBuffer = 0; state_.pendingActionPressed = state_.pendingActionReleased = false; }
     auto result = StepRules(world_, state_, turning ? InputState{} : input, seconds);
     UpdateMechanisms(seconds);
+    for (auto& event : mechanismEvents_) result.events.push_back(std::move(event));
+    mechanismEvents_.clear();
     UpdateSlides(seconds);
     UpdateStacks(seconds);
     UpdateCarousels(seconds);
@@ -314,17 +319,91 @@ ExplorationOutput Exploration::Step(const InputState& input, double seconds) {
     const auto current = RegionAt(state_.player.rect);
     if (!current.empty() && current != activeRegion_) {
         out.transitions.push_back({respawn ? "respawn" : swapped ? "swap" : "crossed", activeRegion_, current, {state_.player.rect.x, state_.player.rect.y}});
+        const std::string previous = activeRegion_;
         activeRegion_ = current;
         // 乗り物：外から動く部屋へ入ったら、着地して収まるのを待って動き出す（復活でそこに出た時は動かさない）。
         if (!respawn) {
+            // 行き先で降りる口（sealExits のうち、着いた時に隣り合う部屋）が全部閉じていれば乗せない。
+            // 一度降りて閉じた側へもう一度運ぶと、出口の無い部屋に閉じ込めてしまう（s4 に s3c から入り直した時）。
+            const auto deadEnd = [this](const MechanismRuntime& m, const std::string& room) {
+                const int goal = m.source.rideFrom.empty() ? (m.target ? 0 : 1) : 1;
+                if (goal == m.state) return false;
+                const auto targets = TargetsFor(m, goal);
+                const auto at = [&](const std::string& id, RegionPlacement p) {
+                    for (const auto& t : targets) if (t.regionId == id) { p.worldX = t.worldX; p.worldY = t.worldY; }
+                    return p;
+                };
+                const auto* ride = FindRegion(room);
+                if (!ride) return false;
+                const auto r = at(room, ride->placement);
+                bool touching = false;
+                for (const auto& exit : m.source.sealExits) {
+                    const auto* e = FindRegion(exit);
+                    if (!e || !e->placement.worldPlaced) continue;
+                    const auto p = at(exit, e->placement);
+                    const int ox = std::min(r.worldX + r.cols, p.worldX + p.cols) - std::max(r.worldX, p.worldX);
+                    const int oy = std::min(r.worldY + r.rows, p.worldY + p.rows) - std::max(r.worldY, p.worldY);
+                    if (!((ox == 0 && oy > 0) || (oy == 0 && ox > 0))) continue;   // 辺を共有する部屋だけ
+                    touching = true;
+                    if (!sealed_.contains(std::minmax(room, exit))) return false;
+                }
+                return touching;
+            };
             for (auto& m : mechanisms_) {
-                if (!m.source.ride || m.moving) continue;
-                // 乗り込む前に降りた（ほかの部屋へ出た）時は待ちをやめる。
-                m.rideArmed = m.source.rideFrom.empty()
+                if (!m.source.ride) continue;
+                const auto inOrigins = [&m](const std::string& region) {
+                    return std::any_of(m.origins.begin(), m.origins.end(), [&](const MechanismMove& o) { return o.regionId == region; });
+                };
+                // 運ばれた後に決めた口へ降りたら、その境を閉じる。乗り物の部屋へ入り直したら、運んだ印は消す。
+                if (m.carried && !m.moving && inOrigins(previous) &&
+                    std::find(m.source.sealExits.begin(), m.source.sealExits.end(), current) != m.source.sealExits.end()) {
+                    pendingSeals_.push_back({previous, current});
+                }
+                // 降りかけて（体がまだ境をまたいだまま）戻った時は印を残す。そうしないと次に降りても閉じない。
+                if (inOrigins(current) && std::find(m.source.sealExits.begin(), m.source.sealExits.end(), previous) == m.source.sealExits.end()) m.carried = false;
+                if (m.moving) continue;
+                // 乗り込む前に降りた（ほかの部屋へ出た）時は待ちをやめる。決めた部屋から入って来た時だけ待つ。
+                const bool came = m.source.rideEnter.empty() ||
+                    std::find(m.source.rideEnter.begin(), m.source.rideEnter.end(), previous) != m.source.rideEnter.end();
+                m.rideArmed = came && (m.source.rideFrom.empty()
                     ? std::any_of(m.origins.begin(), m.origins.end(), [&](const MechanismMove& o) { return o.regionId == current; })
-                    : std::find(m.source.rideFrom.begin(), m.source.rideFrom.end(), current) != m.source.rideFrom.end();
+                    : std::find(m.source.rideFrom.begin(), m.source.rideFrom.end(), current) != m.source.rideFrom.end());
+                if (m.rideArmed && deadEnd(m, current)) m.rideArmed = false;
             }
+        } else {
+            // 復活は乗り込みではない。乗り込んで着地する前に死んだ時の待ちも捨てる（復活先の部屋で動き出さないように）。
+            for (auto& m : mechanisms_) m.rideArmed = false;
+            // 乗り物の部屋で復活した（降りた先で死んだ）時は、その部屋の閉じた口を開け直す（閉じ込めない）。
+            bool reopened = false;
+            for (const auto& m : mechanisms_) {
+                if (!m.source.ride || std::none_of(m.origins.begin(), m.origins.end(), [&](const MechanismMove& o) { return o.regionId == current; })) continue;
+                for (const auto& exit : m.source.sealExits) reopened = sealed_.erase(std::minmax(current, exit)) > 0 || reopened;
+            }
+            if (reopened) BuildBoundaries();
         }
+    }
+    // 降りかけの口：体が乗り物の部屋から出きったら閉じる。乗り物の部屋へ戻った・別の部屋へ移った時はやめる。
+    if (!pendingSeals_.empty()) {
+        bool sealedNow = false;
+        std::erase_if(pendingSeals_, [&](const std::pair<std::string, std::string>& seal) {
+            if (activeRegion_ != seal.second) return true;
+            const auto* ride = FindRegion(seal.first);
+            if (!ride) return true;
+            const auto& p = ride->placement; const auto& b = state_.player.rect;
+            // 閉じる壁は境から出口側へ半分はみ出す。体がその壁に掛かっている間は閉じない（壁の中から逆へ歩けてしまう）。
+            const double m = kThinWall * .5 + 1e-6;
+            const bool inside = b.x < p.worldX + p.cols + m && b.x + b.w > p.worldX - m && b.y < p.worldY + p.rows + m && b.y + b.h > p.worldY - m;
+            if (inside) return false;
+            if (sealed_.insert(std::minmax(seal.first, seal.second)).second) {
+                sealedNow = true;
+                // 閉じた乗り物の部屋に残影を残さない（交換で戻ると、閉じた口から出られずに詰む）。
+                const bool echoInside = state_.echo && state_.echo->supportId != "player" && RegionAt(state_.echo->rect) == seal.first;
+                const bool pendingInside = state_.pendingEcho && RegionAt(state_.pendingEcho->origin) == seal.first;
+                if (echoInside || pendingInside) (void)RemoveWorldEcho(world_, state_);
+            }
+            return true;
+        });
+        if (sealedNow) BuildBoundaries();
     }
     Record(std::move(result), out); snapshotDirty_ = true;
     return out;
@@ -341,7 +420,10 @@ void Exploration::UpdateMechanisms(double seconds) {
             }
         } else if (m.source.ride) {
             // 乗り込んだ部屋の中に体が全部収まって着地したら、反対の端へ向かう（入口をまたいだまま動かない）。
-            const auto* region = m.rideArmed ? FindRegion(activeRegion_) : nullptr;
+            // 乗り込んだ部屋（動く部屋か、rideFrom の出発の部屋）に今いる時だけ動かす。
+            const bool aboard = std::any_of(m.origins.begin(), m.origins.end(), [&](const MechanismMove& o) { return o.regionId == activeRegion_; }) ||
+                                std::find(m.source.rideFrom.begin(), m.source.rideFrom.end(), activeRegion_) != m.source.rideFrom.end();
+            const auto* region = m.rideArmed && aboard ? FindRegion(activeRegion_) : nullptr;
             if (region && !m.moving && std::abs(m.progress - m.target) < 1e-9 && state_.player.grounded && !state_.player.dead) {
                 const auto& p = region->placement;
                 const auto& b = state_.player.rect;
@@ -376,6 +458,33 @@ void Exploration::UpdateMechanisms(double seconds) {
         if (m.target != m.state && MoveRegions(TargetsFor(m, m.target))) m.state = m.target;
         else if (m.target != m.state) { m.target = m.state; m.progress = m.state; }
         m.moving = false;
+        // 乗り物：着いた時に体が中にいれば、運んだ印を付ける（降りた口を閉じるため）。
+        if (m.source.ride) {
+            const auto here = RegionAt(state_.player.rect);
+            m.carried = !state_.player.dead && std::any_of(m.origins.begin(), m.origins.end(), [&](const MechanismMove& o) { return o.regionId == here; });
+            // 運び終えたら、その部屋の一番近い検査点で起き上がるようにする。乗る前の部屋で起きると、
+            // 乗り物はもう向こうに着いていて戻れない（s4 へ b8 から落ちた後、左半分の検査点には触れない）。
+            if (m.carried) {
+                std::optional<size_t> best; double score = 0;
+                const auto& b = state_.player.rect;
+                for (size_t i = 0; i < world_.devices.size(); ++i) {
+                    const auto& dev = world_.devices[i];
+                    const auto owner = deviceOwners_.find(dev.id);
+                    if (dev.kind != DeviceKind::Checkpoint || owner == deviceOwners_.end() || owner->second != here) continue;
+                    const double d = std::hypot(dev.rect.x + dev.rect.w / 2 - b.x - b.w / 2, dev.rect.y + dev.rect.h / 2 - b.y - b.h / 2);
+                    if (!best || d < score) { best = i; score = d; }
+                }
+                if (best) {
+                    if (const auto at = CheckpointRespawnPoint(world_, state_, *best)) {
+                        const auto& dev = world_.devices[*best];
+                        state_.checkpointId = dev.id; state_.checkpointPosition = *at;
+                        for (size_t j = 0; j < world_.devices.size() && j < state_.devices.size(); ++j)
+                            if (world_.devices[j].kind == DeviceKind::Checkpoint) state_.devices[j].active = j == *best;
+                        mechanismEvents_.push_back({EventKind::CheckpointActivated, dev.id, "ride", {dev.rect.x, dev.rect.y}, state_.simulationTime});
+                    }
+                }
+            }
+        }
         for (const auto& origin : m.origins) isolated_.erase(origin.regionId);
         BuildBoundaries();
         snapshotDirty_ = true;
@@ -394,6 +503,121 @@ bool Exploration::SetMechanismState(std::string_view id, int state) {
         return true;
     }
     return false;
+}
+
+Progress Exploration::SaveProgress() const {
+    Progress p;
+    // 復活点は、それがある部屋の中の位置で残す（部屋が仕掛けで動いた世界でも、戻した後の同じ部屋に立たせる）。
+    const Rect body{state_.checkpointPosition.x, state_.checkpointPosition.y, state_.player.rect.w, state_.player.rect.h};
+    p.region = RegionAt(body);
+    if (p.region.empty()) p.region = activeRegion_;
+    if (const auto* room = FindRegion(p.region)) p.local = {body.x - room->placement.worldX, body.y + body.h - room->placement.worldY};
+    p.checkpoint = state_.checkpointId;
+    // 動いている途中の仕掛けは、向かっている先の状態で残す（板で動かした物は戻した後も同じ先へ向かうので、着いた姿で戻す）。
+    for (const auto& m : mechanisms_) p.mechanisms.push_back({m.source.id, m.target});
+    for (const auto& s : slides_) p.slides.push_back({s.source.id, s.slotOf});
+    for (const auto& s : stacks_) p.stacks.push_back({s.source.id, s.at});
+    for (const auto& c : carousels_) p.carousels.push_back({c.source.id, c.step});
+    for (size_t i = 0; i < world_.devices.size() && i < state_.devices.size(); ++i) {
+        const auto& d = world_.devices[i];
+        if (d.kind == DeviceKind::Plate && d.latch && state_.devices[i].active) p.latched.push_back(d.id);
+        if (d.kind == DeviceKind::Collectible && state_.devices[i].active) p.taken.push_back(d.id);
+    }
+    for (const auto& edge : sealed_) p.sealed.push_back(edge);
+    return p;
+}
+
+std::string Exploration::RestoreProgress(const Progress& p) {
+    // 1. 部屋の行き先を仕掛けごとに集め、一度にまとめて動かす（一つずつ動かすと途中で重なる並びがある）。
+    std::map<std::string, MechanismMove> moves;
+    const auto place = [&](const std::string& region, int x, int y, bool flip) { moves[region] = {region, x, y, flip}; };
+    const auto flipped = [this](const std::string& region) { return regions_.at(region).flipped; };
+    for (const auto& [id, value] : p.mechanisms) {
+        const auto m = std::find_if(mechanisms_.begin(), mechanisms_.end(), [&](const MechanismRuntime& r) { return r.source.id == id; });
+        if (m == mechanisms_.end()) continue;
+        if (value < -1 || value > 1 || (value < 0 && !m->source.balance)) return "bad mechanism state " + id;
+        for (const auto& move : TargetsFor(*m, value)) place(move.regionId, move.worldX, move.worldY, move.flip);
+    }
+    for (const auto& [id, slots] : p.slides) {
+        const auto s = std::find_if(slides_.begin(), slides_.end(), [&](const SlideRuntime& r) { return r.source.id == id; });
+        if (s == slides_.end()) continue;
+        const int count = static_cast<int>(s->source.slots.size());
+        if (slots.size() != s->source.members.size()) return "bad slide " + id;
+        for (size_t i = 0; i < slots.size(); ++i) {
+            if (slots[i] < 0 || slots[i] >= count || std::count(slots.begin(), slots.end(), slots[i]) != 1) return "bad slide " + id;
+            const auto& slot = s->source.slots[static_cast<size_t>(slots[i])];
+            place(s->source.members[i], slot.worldX, slot.worldY, flipped(s->source.members[i]));
+        }
+    }
+    for (const auto& [id, places] : p.stacks) {
+        const auto s = std::find_if(stacks_.begin(), stacks_.end(), [&](const StackRuntime& r) { return r.source.id == id; });
+        if (s == stacks_.end()) continue;
+        if (places.size() != s->source.members.size()) return "bad stack " + id;
+        for (size_t i = 0; i < places.size(); ++i) {
+            const int k = places[i];
+            const bool slot = k >= 0;
+            const size_t index = static_cast<size_t>(slot ? k : -1 - k);
+            if (index >= (slot ? s->source.slots.size() : s->source.docks.size()) || std::count(places.begin(), places.end(), k) != 1) return "bad stack " + id;
+            const auto& at = slot ? s->source.slots[index] : s->source.docks[index];
+            place(s->source.members[i], at.first, at.second, flipped(s->source.members[i]));
+        }
+    }
+    for (const auto& [id, step] : p.carousels) {
+        const auto c = std::find_if(carousels_.begin(), carousels_.end(), [&](const CarouselRuntime& r) { return r.source.id == id; });
+        if (c == carousels_.end()) continue;
+        const int count = static_cast<int>(c->source.faces.size());
+        if (step < 0 || step >= count) return "bad carousel " + id;
+        for (int i = 0; i < count; ++i) {
+            const auto& station = c->source.stations[static_cast<size_t>((i + step) % count)];
+            place(c->source.faces[static_cast<size_t>(i)], station.first, station.second, flipped(c->source.faces[static_cast<size_t>(i)]));
+        }
+    }
+    std::vector<MechanismMove> targets;
+    for (const auto& [region, move] : moves) targets.push_back(move);
+    if (!MoveRegions(targets)) return "rooms overlap";
+    // 2. 仕掛けを確定した状態に置く（動いていない・待っていない）。
+    for (const auto& [id, value] : p.mechanisms)
+        for (auto& m : mechanisms_) if (m.source.id == id) {
+            m.state = m.target = m.pending = value; m.progress = value; m.moving = false; m.rest = 0; m.pendingTime = 0; m.rideArmed = false;
+        }
+    for (const auto& [id, slots] : p.slides)
+        for (auto& s : slides_) if (s.source.id == id) { s.slotOf = slots; s.moving = s.from = s.to = s.blocked = -1; s.progress = 0; }
+    for (const auto& [id, places] : p.stacks)
+        for (auto& s : stacks_) if (s.source.id == id) { s.at = s.to = places; s.phase = 0; s.progress = 0; }
+    for (const auto& [id, step] : p.carousels)
+        for (auto& c : carousels_) if (c.source.id == id) { c.step = step; c.direction = 0; c.progress = 0; }
+    // 3. 切り替え式の板と宝石。受け口の通電を今の板にそろえ、読み込んだ直後に踏んだ扱いで切り替わらないようにする。
+    const auto has = [](const std::vector<std::string>& list, const std::string& id) { return std::find(list.begin(), list.end(), id) != list.end(); };
+    for (size_t i = 0; i < world_.devices.size() && i < state_.devices.size(); ++i) {
+        const auto& d = world_.devices[i];
+        if (d.kind == DeviceKind::Plate && d.latch) state_.devices[i].active = has(p.latched, d.id);
+        if (d.kind == DeviceKind::Collectible) state_.devices[i].active = has(p.taken, d.id);
+    }
+    const auto active = [this](size_t index) { return index < state_.devices.size() && state_.devices[index].active; };
+    for (auto& m : mechanisms_) m.powered = active(m.device);
+    for (auto& s : slides_) for (size_t i = 0; i < s.devices.size() && i < s.powered.size(); ++i) s.powered[i] = active(s.devices[i]);
+    isolated_.clear();
+    sealed_.clear(); pendingSeals_.clear();
+    for (const auto& [a, b] : p.sealed) if (regions_.contains(a) && regions_.contains(b)) sealed_.insert(std::minmax(a, b));
+    BuildBoundaries();
+    // 4. 復活点へ立たせる。
+    const auto* room = FindRegion(p.region);
+    if (!room || !room->placement.worldPlaced) return "missing region " + p.region;
+    const Vec2 at{p.local.x, p.local.y - state_.player.rect.h};
+    if (!Teleport(p.region, &at)) return "cannot place player in " + p.region;
+    state_.checkpointId = p.checkpoint;
+    // 乗り物の部屋で続きから始めた時は運ばれた後として扱う（決めた口へ降りれば、そこを閉じる）。
+    for (auto& m : mechanisms_)
+        if (m.source.ride) m.carried = std::any_of(m.origins.begin(), m.origins.end(), [&](const MechanismMove& o) { return o.regionId == p.region; });
+    // 乗り物の部屋で続きから始めた時は、その部屋の閉じた口を開け直す（そこで死んで起き上がった時と同じ。閉じ込めない）。
+    bool reopened = false;
+    for (const auto& m : mechanisms_) {
+        if (!m.source.ride || std::none_of(m.origins.begin(), m.origins.end(), [&](const MechanismMove& o) { return o.regionId == p.region; })) continue;
+        for (const auto& exit : m.source.sealExits) reopened = sealed_.erase(std::minmax(p.region, exit)) > 0 || reopened;
+    }
+    if (reopened) BuildBoundaries();
+    snapshotDirty_ = true;
+    return {};
 }
 
 std::vector<MechanismMove> Exploration::TargetsFor(const MechanismRuntime& m, int state) const {
@@ -549,12 +773,28 @@ bool Exploration::MoveRegions(const std::vector<MechanismMove>& targets) {
     // 入ってもう一度運ばれないように（入れ替わる二部屋で、乗っていた部屋ごと隣へ跳んでいた）。
     const auto ownerOf = [this](const Rect& r) { return RegionAt(r); };
     const std::string playerIn = ownerOf(state_.player.rect);
-    const std::string echoIn = state_.echo ? ownerOf(state_.echo->rect) : std::string{};
+    // 頭に載せた残影は本体と同じ部屋として運ぶ（頭だけ隣のテレビに掛かっていても置いて行かない）。
+    const std::string echoIn = !state_.echo ? std::string{} : state_.echo->supportId == "player" ? playerIn : ownerOf(state_.echo->rect);
     const std::string pendingIn = state_.pendingEcho ? ownerOf(state_.pendingEcho->origin) : std::string{};
     const std::string dashIn = state_.dash ? ownerOf(state_.dash->contact) : std::string{};
     const std::string bounceIn = state_.bounce ? ownerOf(state_.bounce->contact) : std::string{};
-    const std::string checkpointIn = ownerOf({state_.checkpointPosition.x, state_.checkpointPosition.y, .625, .875});
-    const std::string spawnIn = ownerOf({world_.spawn.x, world_.spawn.y, .625, .875});
+    // 本体のいるテレビが回る時、別のテレビに残した残影は消す（回った舞台の外へ交換で戻ると、閉じた側から入れずに詰む）。
+    const bool turningHere = std::any_of(targets.begin(), targets.end(), [&](const MechanismMove& m) {
+        return m.regionId == playerIn && m.flip != regions_.at(m.regionId).flipped;
+    });
+    // 頭の残影は回すと点対称で足の下へ移る。隣の部屋へ掛かっていて部屋からはみ出す時も消す。
+    const auto within = [this](const Rect& r, const std::string& region) {
+        const auto it = regions_.find(region);
+        if (it == regions_.end()) return false;
+        const auto& p = it->second.placement;
+        return r.x >= p.worldX && r.y >= p.worldY && r.x + r.w <= p.worldX + p.cols && r.y + r.h <= p.worldY + p.rows;
+    };
+    const bool headOutside = state_.echo && state_.echo->supportId == "player" && !within(state_.echo->rect, playerIn);
+    if (turningHere && ((state_.echo && (echoIn != playerIn || headOutside)) || (state_.pendingEcho && pendingIn != playerIn))) {
+        (void)RemoveWorldEcho(world_, state_); snapshotDirty_ = true;
+    }
+    const std::string checkpointIn = ownerOf({state_.checkpointPosition.x, state_.checkpointPosition.y, kPlayerWidth, kPlayerHeight});
+    const std::string spawnIn = ownerOf({world_.spawn.x, world_.spawn.y, kPlayerWidth, kPlayerHeight});
     for (const auto& move : targets) {
         auto& runtime = regions_.at(move.regionId);
         const auto old = runtime.placement;
@@ -582,15 +822,16 @@ bool Exploration::MoveRegions(const std::vector<MechanismMove>& targets) {
         }
         if (state_.bounce && inside(bounceIn)) { if (flip) state_.bounce.reset(); else map(state_.bounce->contact); }
         if (inside(checkpointIn)) {
-            Rect point{state_.checkpointPosition.x, state_.checkpointPosition.y, .625, .875};
+            Rect point{state_.checkpointPosition.x, state_.checkpointPosition.y, kPlayerWidth, kPlayerHeight};
             map(point); state_.checkpointPosition = {point.x, point.y};
         }
-        if (inside(spawnIn)) { Rect point{world_.spawn.x, world_.spawn.y, .625, .875}; map(point); world_.spawn = {point.x, point.y}; }
-        // 装置は回さない：部屋が回っても画面の上の位置と向きのまま（弾簧は上を向いたまま）。部屋ごと動く分だけ運ぶ。
+        if (inside(spawnIn)) { Rect point{world_.spawn.x, world_.spawn.y, kPlayerWidth, kPlayerHeight}; map(point); world_.spawn = {point.x, point.y}; }
+        // 装置は部屋と一緒に運ぶ。回す時は舞台ごと回る：点対称に移し、向きを裏返す（重力を受けるのは体だけ）。
         for (auto& device : world_.devices) {
             const auto owner = deviceOwners_.find(device.id);
             if (owner == deviceOwners_.end() || owner->second != move.regionId) continue;
-            device.rect.x += move.worldX - old.worldX; device.rect.y += move.worldY - old.worldY;
+            map(device.rect);
+            if (flip) device.direction = Opposite(device.direction);
         }
         for (auto& chunk : world_.chunks) {
             if (chunk.region.regionId != move.regionId) continue;

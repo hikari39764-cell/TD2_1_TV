@@ -13,8 +13,8 @@
 
 namespace TD2 {
 // 装置の種類名。並びはルールの DeviceKind と同じ（受け口の Mechanism は作者が書かない）。
-inline constexpr std::array<std::string_view, 13> kDeviceKindNames{"Solid", "OneWay", "Plate", "Door", "Laser", "Spikes", "Checkpoint", "LockWall",
-                                                                   "Spring", "Bridge", "Collectible", "Decal", "Goal"};
+inline constexpr std::array<std::string_view, 14> kDeviceKindNames{"Solid", "OneWay", "Plate", "Door", "Laser", "Spikes", "Checkpoint", "LockWall",
+                                                                   "Spring", "Bridge", "Collectible", "Decal", "Goal", "Pusher"};
 // 向きの名前。並びはルールの Direction と同じ。
 inline constexpr std::array<std::string_view, 4> kDirectionNames{"Up", "Down", "Left", "Right"};
 
@@ -75,7 +75,8 @@ inline bool Parse(std::string_view text, std::vector<DeviceLine>& out, std::stri
                 if (IndexOf(kDirectionNames, value) < 0) { return fail("dir は Up/Down/Left/Right"); }
             } else if (key == "invert" || key == "latch" || key == "all") {
                 if (value != "0" && value != "1") { return fail(key + " は 0 か 1"); }
-            } else if (key == "range" || key == "power" || key == "delay" || key == "cooldown" || key == "opacity" || key == "depth") {
+            } else if (key == "range" || key == "power" || key == "delay" || key == "cooldown" || key == "opacity" || key == "depth" ||
+                       key == "travel" || key == "seconds" || key == "dwell" || key == "phase" || key == "width") {
                 if (!Number(value, number)) { return fail(key + " は有限の数にしてください"); }
             } else if (key != "variant") {
                 return fail("知らない項目：" + key);

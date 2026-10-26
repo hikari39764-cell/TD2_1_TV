@@ -15,6 +15,23 @@ void DrawSpring(IEditorWorkspaceUi& ui, DeviceDraft& d) {
     if (EditFloat(ui, "td2.device.cooldown", "次に使えるまでの秒数", cooldown, 3, 30)) { d.SetExtra("cooldown", std::abs(cooldown - 3) < 1e-6 ? "" : ShortNumber(cooldown)); }
 }
 
+// 押し刺：伸びるマス数と秒数、動き方（板で伸びる／往復）。往復は端で止まる秒数と始まりのずれ。
+void DrawPusher(IEditorWorkspaceUi& ui, DeviceDraft& d) {
+    const auto read = [&d](std::string_view key, double fallback) {
+        const auto text = d.Extra(key);
+        try { return text.empty() ? fallback : std::stod(text); } catch (...) { return fallback; }
+    };
+    double travel = read("travel", 3), seconds = read("seconds", .5), dwell = read("dwell", 0), phase = read("phase", 0);
+    if (EditFloat(ui, "td2.device.travel", "伸びるマス数", travel, .25f, 30)) { d.SetExtra("travel", std::abs(travel - 3) < 1e-6 ? "" : ShortNumber(travel)); }
+    if (EditFloat(ui, "td2.device.seconds", "伸びる秒数", seconds, .05f, 10)) { d.SetExtra("seconds", std::abs(seconds - .5) < 1e-6 ? "" : ShortNumber(seconds)); }
+    const bool timed = dwell > 0;
+    if (ui.Selectable("td2.device.pusher.plate", "板で伸びる", !timed)) { d.SetExtra("dwell", ""); d.SetExtra("phase", ""); }
+    if (ui.Selectable("td2.device.pusher.timed", "往復する", timed) && !timed) { d.SetExtra("dwell", "1"); }
+    if (!timed) { return; }
+    if (EditFloat(ui, "td2.device.dwell", "端で止まる秒数", dwell, .05f, 30)) { d.SetExtra("dwell", ShortNumber(dwell)); }
+    if (EditFloat(ui, "td2.device.phase", "始まりのずれ", phase, 0, 1)) { d.SetExtra("phase", phase < 1e-6 ? "" : ShortNumber(phase)); }
+}
+
 // 貼り絵の図案：キーの説明・出口の矢印・前景（実体の地形の時に手前に出る暗い塊と垂れた線）。
 void DrawDecal(IEditorWorkspaceUi& ui, DeviceDraft& d) {
     constexpr std::array<std::pair<std::string_view, std::string_view>, 9> variants{{{"ad", "A / D"}, {"space", "スペース"}, {"spaceHold", "スペース長押し"},
@@ -236,18 +253,27 @@ void LevelEditor::DrawDeviceInspector(EditorWorkspaceHostContext& ctx) {
     ui.SameLine(); if (ui.Button("td2.device.delete", "削除")) { model_.devices.RemoveSelected(); s.devices = model_.devices.Serialize(); model_.Commit(ctx); focus_ = Focus::Room; return; }
     d = model_.devices.Selected();
     if (!d) { return; }
-    if (d->kind == "Laser" || d->kind == "Spikes" || d->kind == "OneWay") {
+    // 一方通行・バネ・板は上向きか天井向き（↓）だけ。
+    if (d->kind == "Laser" || d->kind == "Spikes" || d->kind == "OneWay" || d->kind == "Spring" || d->kind == "Plate" || d->kind == "Pusher") {
         constexpr std::array<std::string_view, 4> directions{"Up", "Right", "Down", "Left"};
         constexpr std::array<std::string_view, 4> names{"↑", "→", "↓", "←"};
+        const bool vertical = d->kind == "OneWay" || d->kind == "Spring" || d->kind == "Plate";
         for (size_t i = 0; i < directions.size(); ++i) {
+            if (vertical && (i % 2) == 1) { continue; }
             if (i) { ui.SameLine(); }
             if (ui.Button("td2.device.direction." + std::to_string(i), d->direction == directions[i] ? std::string(names[i]) + " ●" : std::string(names[i]))) { d->direction = directions[i]; }
         }
     }
-    if (d->kind == "Laser") { EditFloat(ui, "td2.device.range", "射程", d->range, .125f, 128); }
+    if (d->kind == "Laser") {
+        EditFloat(ui, "td2.device.range", "射程", d->range, .125f, 128);
+        // 並べて光の帘にする時は太くする（細い光の隙間は体がすり抜けられる）。
+        bool wide = !d->Extra("width").empty();
+        if (ui.Checkbox("td2.device.wide", "太い光", &wide)) { d->SetExtra("width", wide ? "0.4" : ""); }
+    }
     if (d->kind == "Spring") { DrawSpring(ui, *d); }
+    if (d->kind == "Pusher") { DrawPusher(ui, *d); }
     if (d->kind == "Decal") { DrawDecal(ui, *d); }
-    if (d->kind == "Laser" || d->kind == "Door" || d->kind == "Bridge" || d->kind == "Goal") {
+    if (d->kind == "Laser" || d->kind == "Door" || d->kind == "Bridge" || d->kind == "Goal" || (d->kind == "Pusher" && d->Extra("dwell").empty())) {
         ui.Checkbox("td2.device.invert", "通電で閉じる（逆）", &d->inverted);
         // つながる板が二枚以上ある時の動き方（全部で動けば、二か所を同時に押さえる謎になる）。
         bool all = d->Extra("all") == "1";
@@ -281,7 +307,7 @@ void LevelEditor::DrawPlateLinks(EditorWorkspaceHostContext& ctx) {
     const auto* d = model_.devices.Selected();
     if (!d) { return; }
     ui.Separator();
-    ui.Text(d->targets.empty() ? "まだつないでいません：「配線」でこの板から扉・レーザー・橋・ゴール・仕掛けへドラッグ" : "つなぎ先");
+    ui.Text(d->targets.empty() ? "まだつないでいません：「配線」でこの板から扉・レーザー・橋・ゴール・押し刺・仕掛けへドラッグ" : "つなぎ先");
     const std::string region = model_.draft.region.regionId;
     std::string removing;
     for (const auto& target : d->targets) {

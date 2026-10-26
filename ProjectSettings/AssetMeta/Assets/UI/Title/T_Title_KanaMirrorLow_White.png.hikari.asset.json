@@ -1,0 +1,21 @@
+{
+  "displayName": "T_Title_KanaMirrorLow_White",
+  "guid": "387df23c4daa5825c71a79862cb74b70",
+  "importSettings": {
+    "allowResize": false,
+    "colorSpace": "Srgb",
+    "compression": "BC7",
+    "debugOutputFormat": "DDS",
+    "dimension": "Texture2D",
+    "forcePowerOfTwo": false,
+    "maxSize": 4096,
+    "mipPolicy": "Generate",
+    "outputFormat": "HTEX",
+    "usage": "Auto"
+  },
+  "importerId": "TextureImporter",
+  "importerVersion": 8,
+  "metaVersion": 1,
+  "sourcePath": "Assets/UI/Title/T_Title_KanaMirrorLow_White.png",
+  "type": "Texture"
+}

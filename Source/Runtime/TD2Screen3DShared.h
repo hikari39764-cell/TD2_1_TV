@@ -26,6 +26,14 @@ inline constexpr double kPortalEyeCells = 42, kPortalNearCells = 8, kPortalFarCe
 // 段のキャプチャの下端に空けておく行（texel）。覗き窓の無いテレビをここへ結んでおき、結び付けを外さない（外す・新しく
 // 結ぶと材質が作り直しになり、エンジンが GPU のシーンを作り直す）。
 inline constexpr uint32_t kPortalParkRows = 8;
+// Play の砂嵐：機構で回る・落ちる間のテレビに出す（覗き窓の角度の跳びと段の入れ替わりを見せない）。舞台のずっと外
+// （オープニングの砂嵐の窓とも部屋とも重ならない所）の板を、一番粗い段のキャプチャの右下（隅の行の上）に取った小さな
+// 視点で撮る。板は毎フレーム跳ばしてノイズを動かすので、結んだテレビは結び直さずに砂嵐が動く。
+inline constexpr double kSnowX = -3000, kSnowY = -2700, kSnowCols = 12, kSnowRows = 6;
+inline constexpr size_t kSnowTier = kPortalTiers - 1;
+inline constexpr uint32_t kSnowWidth = 128u, kSnowHeight = 64u;
+inline constexpr uint32_t kSnowLeft = kTierCapture[kSnowTier][0] - kSnowWidth;
+inline constexpr uint32_t kSnowTop = kTierCapture[kSnowTier][1] - kPortalParkRows - kSnowHeight;
 // 1 ゲーム画素の texel（描き方の pixelSize と同じ丸め）。
 inline uint32_t PortalBlock(int texels) { return static_cast<uint32_t>((std::max)(1, texels / kGamePixelsPerCell)); }
 // 覗き窓の部屋の周りの余白（texel）。描き方は周りの texel を読む：落ち影は光の側（左上）へ 8×16 ゲーム画素、色鉛筆の

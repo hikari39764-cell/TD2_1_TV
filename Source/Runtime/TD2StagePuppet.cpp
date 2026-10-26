@@ -21,6 +21,12 @@ constexpr double kTurnSeconds = .05;
 constexpr double kBodyHalfDepth = .21;
 // 退避点：舞台の下の、どの舞台カメラにも写らない所。
 constexpr float kParkDrop = 2000.0f;
+// 残影の背丈（マス）。主角の 0.84 倍で、どの動作も当たりの箱（高さ 1 マス）の中に収まる（頭上を受ける腕がちょうど上辺）。
+constexpr double kEchoSize = .99;
+// 残影はほぼカメラを向き、向いている側へ少しだけ振る（しゃがんだ横向きは頭が箱からはみ出す）。
+constexpr double kEchoYaw = 25.0;
+// 押され始めにひるむ秒数。
+constexpr double kEchoFlinchSeconds = .5;
 
 }
 
@@ -60,30 +66,50 @@ void StagePuppets::Player(HIKARI::WorldView& world, const StagePartBuilder& buil
     }
     // 動作の優先：ダッシュ → 壁蹴りの跳ね返り → 交換 → 空中（上りは跳び、下りは落ち）→ 着地 → 走り → 待機。
     // ダッシュ・壁蹴り・交換は今は仮の動作（走りを速めたもの、元の忍者の動作）。
+    // 残影を頭に載せている間は、待機・走り・空中を両手で支える版にし、着地の屈みは出さない（手が残影から離れる）。
+    const bool carrying = snapshot.echo && snapshot.echo->supportId == "player";
     if (snapshot.dashing) { Play(world, player_, "Dash", true, .04f, 1); }
     else if (snapshot.bouncing) { Play(world, player_, "WallJump", false, .04f, 1); }
     else if (now < swapUntil_) { Play(world, player_, "Swap", false, .05f, 1); }
     else if (!body.grounded) {
-        if (body.vy < 0) { Play(world, player_, "Jump", false, .1f, 1); }
-        else { Play(world, player_, "Fall", true, .18f, 1); }
+        if (body.vy < 0) { PlayCarry(world, carrying, "Jump", false, .1f, 1); }
+        else { PlayCarry(world, carrying, "Fall", true, .18f, 1); }
     }
-    else if (now < landUntil_) { Play(world, player_, "Land", false, .05f, 1.3f); }
+    else if (now < landUntil_ && !carrying) { Play(world, player_, "Land", false, .05f, 1.3f); }
     else if (std::abs(body.walkVx) > .01) {
         // 見た目の背丈あたりの歩きの速さを、走りの動作が進む速さで割る。
         const double heights = std::abs(body.walkVx) / (std::max)(snapshot.presentationPlayer.h * actorScale, .1);
         const double stride = kRunModelSpeed / player_.settings.height;
-        Play(world, player_, "Run", true, .1f, std::clamp(static_cast<float>(heights / stride), kRunSlowest, kRunFastest));
+        PlayCarry(world, carrying, "Run", true, .1f, std::clamp(static_cast<float>(heights / stride), kRunSlowest, kRunFastest));
     }
-    else { Play(world, player_, "Idle", true, .22f, 1); }
-    Stand(world, builder, player_, snapshot.presentationPlayer, body.facing, actorScale, depth, grow, now);
+    else { PlayCarry(world, carrying, "Idle", true, carrying ? .12f : .22f, 1); }
+    const double yaw = (body.facing < 0 ? -1.0 : 1.0) * (90.0 - player_.settings.turn);
+    Stand(world, builder, player_, snapshot.presentationPlayer, yaw, snapshot.presentationPlayer.h * actorScale, depth, grow, now);
 }
 
 void StagePuppets::Echo(HIKARI::WorldView& world, const StagePartBuilder& builder, const Rules::BodyState& body, const Rules::Rect& rect,
-                        bool shown, double grow, double actorScale, double depth, double now) {
+                        bool shown, double grow, double depth, double now, const EchoCue& cue) {
     if (!echo_.handle.IsValid()) { return; }
-    if (!shown || body.dead) { ParkOne(world, echo_); return; }
-    Play(world, echo_, "Echo", true, 0, 1);
-    Stand(world, builder, echo_, rect, body.facing, actorScale, depth, grow, now);
+    if (!shown || body.dead) { ParkOne(world, echo_); echoPushed_ = false; echoFlinchUntil_ = -1; return; }
+    if (cue.pushed && !echoPushed_) { echoFlinchUntil_ = now + kEchoFlinchSeconds; }
+    echoPushed_ = cue.pushed;
+    // 動作の優先：横からの光 → 上からの光か上に立たれる → 狭い所 → 押され始め → しゃがんで待つ（頭の上・空中も同じ）。
+    // 横からの光は光の方を向き、腕を前に構えて受ける。上からの光と、上に立つ主角は、座って両腕を頭の上で組んで受け止める
+    // （腕の先が箱の上辺で、光の止まる所・主角の足にちょうど届く）。頭のすぐ上が塞がっていれば、頭を抱えて縮こまる。
+    double yaw = (body.facing < 0 ? -1.0 : 1.0) * kEchoYaw;
+    if (cue.beam == EchoBeam::FromLeft || cue.beam == EchoBeam::FromRight) {
+        yaw = (cue.beam == EchoBeam::FromLeft ? -1.0 : 1.0) * (90.0 - echo_.settings.turn);
+        PlayEcho(world, "EchoGuard", true, .1f, 1);
+    }
+    else if (cue.beam == EchoBeam::Above || cue.stoodOn) { PlayEcho(world, "EchoBrace", false, .1f, 1.6f); }
+    else if (cue.cramped) { PlayEcho(world, "EchoDuck", false, .12f, 1.5f); }
+    else if (now < echoFlinchUntil_) { PlayEcho(world, "EchoFlinch", false, .06f, 1.3f); }
+    else { PlayEcho(world, "EchoIdle", true, .2f, 1); }
+    Stand(world, builder, echo_, rect, yaw, rect.h * kEchoSize, depth, grow, now, cue.lean, cue.width, cue.height);
+}
+
+void StagePuppets::PlayEcho(HIKARI::WorldView& world, std::string_view clip, bool loop, float blend, float speed) {
+    if (!Play(world, echo_, clip, loop, blend, speed)) { (void)Play(world, echo_, "Echo", true, 0, 1); }
 }
 
 void StagePuppets::Park(HIKARI::WorldView& world) {
@@ -91,37 +117,47 @@ void StagePuppets::Park(HIKARI::WorldView& world) {
     ParkOne(world, echo_);
 }
 
-void StagePuppets::Play(HIKARI::WorldView& world, Puppet& puppet, std::string_view clip, bool loop, float blend, float speed) {
+bool StagePuppets::Play(HIKARI::WorldView& world, Puppet& puppet, std::string_view clip, bool loop, float blend, float speed) {
     const auto animation = world.GetAnimation();
     const uint64_t id = puppet.handle.value;
     if (puppet.clip != clip) {
         const bool started = blend > 0 ? animation.CrossFade(id, clip, blend, loop ? 1 : 0, 1) : animation.Play(id, clip, loop ? 1 : 0, 1);
         // その動作がモデルに無ければ今の動作のまま。
-        if (!started) { return; }
+        if (!started) { return false; }
         puppet.clip = clip; puppet.speed = -1;
     }
     if (std::abs(puppet.speed - speed) > .02f && animation.SetSpeed(id, speed)) { puppet.speed = speed; }
+    return true;
 }
 
-void StagePuppets::Stand(HIKARI::WorldView& world, const StagePartBuilder& builder, Puppet& puppet, const Rules::Rect& rect, int facing,
-                         double actorScale, double depth, double grow, double now) {
+void StagePuppets::PlayCarry(HIKARI::WorldView& world, bool carrying, std::string_view clip, bool loop, float blend, float speed) {
+    if (carrying) {
+        const std::string name = "Carry" + std::string(clip);
+        if (Play(world, player_, name, loop, blend, speed)) { return; }
+    }
+    (void)Play(world, player_, clip, loop, blend, speed);
+}
+
+void StagePuppets::Stand(HIKARI::WorldView& world, const StagePartBuilder& builder, Puppet& puppet, const Rules::Rect& rect, double yaw,
+                         double size, double depth, double grow, double now, double lean, double width, double height) {
     const auto object = world.FindObject(puppet.handle);
     if (!object.IsValid()) { return; }
     const double dt = puppet.time < 0 ? 0.0 : std::clamp(now - puppet.time, 0.0, .1);
     puppet.time = now;
-    // 右向きはモデルの正面（+Z）を舞台の右（+X）へ。turn の分だけ手前（カメラ）へ振る。
-    const double target = (facing < 0 ? -1.0 : 1.0) * (90.0 - puppet.settings.turn);
+    // 0 がモデルの正面（+Z）をカメラへ向けた向きで、90 は舞台の右（+X）。
+    const double target = yaw;
     if (puppet.parked || dt <= 0) { puppet.yaw = target; }
     else { puppet.yaw += (target - puppet.yaw) * (1 - std::exp(-dt / kTurnSeconds)); }
     if (puppet.parked) { (void)world.GetAnimation().SetEvaluationEnabled(puppet.handle.value, 1); }
-    const double size = rect.h * actorScale;
     // 斜投影を焼いた組では、焼いた形の奥ほど右上へずれている。人形は斜めにできないので、体の中ほどの奥行きの分だけ
     // 全体を移して焼いた形と重ねる（実体の組ではずれは 0）。
     const double half = kBodyHalfDepth * size;
     const auto& projection = builder.Projection();
-    auto pose = builder.Place(rect.x + rect.w * .5 + projection.ShiftX(-half), rect.y + rect.h + projection.ShiftY(-half), depth - half, QFromEulerDeg(0, puppet.yaw, 0));
+    // 傾きは足元を軸にした画面の上での回転（向きの後に掛ける）。
+    auto pose = builder.Place(rect.x + rect.w * .5 + projection.ShiftX(-half), rect.y + rect.h + projection.ShiftY(-half), depth - half,
+                              QMul(RotateZ(lean), QFromEulerDeg(0, puppet.yaw, 0)));
     const auto s = static_cast<float>(size * builder.StageScale() / (std::max)(puppet.settings.height, .1f));
-    pose.scale = {s, static_cast<float>(s * std::clamp(grow, .01, 1.0)), s};
+    pose.scale = {static_cast<float>(s * width), static_cast<float>(s * height * std::clamp(grow, .01, 1.0)), static_cast<float>(s * width)};
     (void)object.SetWorldTransform(pose);
     puppet.parked = false;
     puppet.stood = true;

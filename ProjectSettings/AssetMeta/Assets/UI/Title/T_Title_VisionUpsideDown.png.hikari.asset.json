@@ -1,0 +1,21 @@
+{
+  "displayName": "T_Title_VisionUpsideDown",
+  "guid": "b3adf7a8d10012c88f89ba1d352b8ff3",
+  "importSettings": {
+    "allowResize": false,
+    "colorSpace": "Srgb",
+    "compression": "BC7",
+    "debugOutputFormat": "DDS",
+    "dimension": "Texture2D",
+    "forcePowerOfTwo": false,
+    "maxSize": 4096,
+    "mipPolicy": "Generate",
+    "outputFormat": "HTEX",
+    "usage": "Auto"
+  },
+  "importerId": "TextureImporter",
+  "importerVersion": 8,
+  "metaVersion": 1,
+  "sourcePath": "Assets/UI/Title/T_Title_VisionUpsideDown.png",
+  "type": "Texture"
+}

@@ -54,6 +54,8 @@ public:
     void SetTime(double seconds) { time_ = seconds; }
     // 焼いた静止の人物を使うか（骨つきの人形が立つ間は false にして退避点へ置く）。
     void BakedActors(bool on) { bakedActors_ = on; }
+    // 焼いた残影の形：縦・横の倍率と、足元を軸にした傾き（ラジアン、正で上が左へ）。
+    void EchoShape(double height, double width, double lean) { echoHeight_ = height; echoWidth_ = width; echoLean_ = lean; }
     // 通関の扉へ入ってからの秒（通関の演出が数える。負なら演出が無く、入った瞬間に閉じた姿にする）。
     void GoalClosing(double seconds) { goalClosing_ = seconds; }
     double GoalClosingTime() const noexcept { return goalClosing_; }
@@ -88,6 +90,9 @@ public:
     void Device(const Rules::DeviceSnapshot& device, bool checkpoint, double since);
     // 光線の発射器だけ（骨つきの物体が棒と火花を演じる時に、変わらない本体を焼いた部品で出す）。
     void LaserBody(const Rules::DeviceSnapshot& laser);
+    // 押し刺の箱と腕（骨つきの丸鋸が刃を演じる時は箱と腕だけを焼いた部品で描く）。
+    void PusherBody(const Rules::DeviceSnapshot& pusher);
+    void PusherParts(const Rules::DeviceSnapshot& pusher, bool saws, double since);
     // 光線一組（棒と当たりの火花）。beam が無い時は発射器の場所で隠す。
     void Beam(const Rules::DeviceSnapshot& laser, const Rules::BeamState* beam);
     // 人物：姿勢と向きのモデルを全部出し、今の一つだけを rect に立たせる（shown=false なら全部退避）。
@@ -125,6 +130,7 @@ private:
     int depthRows_ = 0;
     // partDepth_ は Add の奥行きの倍率（実体の箱を部屋の奥まで伸ばす間だけ 1 以外）。
     double actorScale_ = 1, partDepth_ = 1, playDepth_ = 0;
+    double echoHeight_ = 1, echoWidth_ = 1, echoLean_ = 0;
     double mirrorX_ = 0, mirrorY_ = 0, turn_ = 0, time_ = 0, goalClosing_ = -1;
     size_t failed_ = 0;
 };

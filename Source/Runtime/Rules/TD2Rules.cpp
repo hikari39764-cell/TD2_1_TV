@@ -12,14 +12,17 @@ namespace TD2::Rules {
 namespace {
 constexpr double kEps = 0.001 / 32.0;
 constexpr double kStep = 1.0 / 120.0;
-constexpr double kPlayerWidth = 0.625, kPlayerHeight = 0.875;
 constexpr double kGravity = 43.75, kMaxFall = 28.125;
 constexpr double kSwapHold = .3;
 constexpr double kGroundTolerance = 0.55 / 32.0;
 // バネ：踏み板の厚さ、記録する最小の着地速度、打ち上げ速度と冷却の範囲（マス単位）。
 constexpr double kSpringCap = 10.0 / 32.0, kSpringStep = 10.1 / 32.0, kSpringImpactMin = 60.0 / 32.0;
 constexpr double kSpringPowerMin = 100.0 / 32.0, kSpringPowerMax = 1400.0 / 32.0;
-Rect SpringCap(const Rect& r) { return {r.x, r.y + r.h - kSpringCap, r.w, kSpringCap}; }
+// 天井向きのバネは踏み板がマスの上端に付く。
+Rect SpringCap(const DeviceDefinition& d) {
+    const Rect& r = d.rect;
+    return d.direction == Direction::Down ? Rect{r.x, r.y, r.w, kSpringCap} : Rect{r.x, r.y + r.h - kSpringCap, r.w, kSpringCap};
+}
 // 棘の当たりはマスより小さい：根元側を残し、先端側 8/32、横 3/32 ずつ内側。
 Rect SpikeHitbox(const Rect& r, Direction direction) {
     constexpr double tip = 8.0 / 32.0, side = 3.0 / 32.0;
@@ -28,6 +31,33 @@ Rect SpikeHitbox(const Rect& r, Direction direction) {
     case Direction::Down: return {r.x + side, r.y, r.w - 2 * side, r.h - tip};
     case Direction::Left: return {r.x + tip, r.y + side, r.w - tip, r.h - 2 * side};
     default: return {r.x, r.y + side, r.w - tip, r.h - 2 * side};
+    }
+}
+
+// 押し刺の今の矩形（元の矩形を向きへ travel×伸び だけずらす）と、刺の付いた前の面のすぐ外の薄い帯。
+Rect PusherRect(const DeviceDefinition& d, double push) {
+    Rect r = d.rect; const double a = d.travel * push;
+    switch (d.direction) {
+    case Direction::Up: r.y -= a; break;
+    case Direction::Down: r.y += a; break;
+    case Direction::Left: r.x -= a; break;
+    default: r.x += a; break;
+    }
+    return r;
+}
+// 往復の押し刺の伸び（0〜1）：端で dwell 秒止まりながら、seconds 秒で伸び縮みする。
+double TimedPush(const DeviceDefinition& d, double clock) {
+    const double seconds = std::max(.05, d.seconds), hold = d.dwell, period = 2 * (hold + seconds);
+    const double t = std::fmod(clock + std::clamp(d.phase, 0.0, 1.0) * period, period);
+    return t < hold ? 0.0 : t < hold + seconds ? (t - hold) / seconds : t < 2 * hold + seconds ? 1.0 : 1.0 - (t - 2 * hold - seconds) / seconds;
+}
+Rect PusherFace(const Rect& r, Direction direction) {
+    constexpr double thin = 4.0 / 32, side = 1.0 / 32;   // 刃は面から 4/32 ほど出る（画面の丸鋸と同じ）
+    switch (direction) {
+    case Direction::Up: return {r.x + side, r.y - thin, r.w - 2 * side, thin};
+    case Direction::Down: return {r.x + side, r.y + r.h, r.w - 2 * side, thin};
+    case Direction::Left: return {r.x - thin, r.y + side, thin, r.h - 2 * side};
+    default: return {r.x + r.w, r.y + side, thin, r.h - 2 * side};
     }
 }
 
@@ -76,6 +106,7 @@ struct Collider {
     std::string id;
     bool oneWay = false, spike = false, spring = false;
     Direction direction = Direction::Up;
+    bool ceiling = false;   // 天井向きの一方通行：下からだけ当たる（上と横からは通り抜ける）
 };
 bool Rider(const BodyState* rider, const BodyState& carrier, const std::string& carrierId) {
     return rider && !rider->dead && !carrier.dead && rider->supportId == carrierId &&
@@ -97,7 +128,7 @@ public:
     }
     bool IsSolid(size_t i) const {
         const auto kind = d.devices[i].kind;
-        return kind == DeviceKind::Solid || kind == DeviceKind::OneWay || kind == DeviceKind::Spring ||
+        return kind == DeviceKind::Solid || kind == DeviceKind::OneWay || kind == DeviceKind::Spring || kind == DeviceKind::Pusher ||
                ((kind == DeviceKind::Door || kind == DeviceKind::LockWall || kind == DeviceKind::Bridge) && !s.devices[i].active);
     }
     std::vector<Collider> Colliders(const Rect& area, const BodyState* body = nullptr,
@@ -122,16 +153,26 @@ public:
         for (size_t i = 0; i < d.devices.size(); ++i) {
             const auto& dev = d.devices[i];
             const bool spike = dev.kind == DeviceKind::Spikes;
-            const bool oneWay = dev.kind == DeviceKind::OneWay;
-            if (dev.id == ignore || (oneWay && fullOnly)) continue;
-            if (staticOnly && dev.kind != DeviceKind::Solid && !oneWay) continue;
+            const bool hanging = dev.direction == Direction::Down;
+            const bool oneWay = dev.kind == DeviceKind::OneWay && !hanging, ceiling = dev.kind == DeviceKind::OneWay && hanging;
+            if (dev.id == ignore || ((oneWay || ceiling) && fullOnly)) continue;
+            if (staticOnly && dev.kind != DeviceKind::Solid && dev.kind != DeviceKind::OneWay) continue;
             // バネは上面の踏み板だけが当たる（光線もここで止まる）。
-            const Rect rect = dev.kind == DeviceKind::Spring ? SpringCap(dev.rect) : spike ? SpikeHitbox(dev.rect, dev.direction) : dev.rect;
+            const Rect rect = dev.kind == DeviceKind::Spring ? SpringCap(dev) : spike ? SpikeHitbox(dev.rect, dev.direction)
+                            : dev.kind == DeviceKind::Pusher ? PusherRect(dev, s.devices[i].push) : dev.rect;
             if ((IsSolid(i) || (spike && echoBody)) && Overlap(area, rect))
-                result.push_back({rect, dev.id, oneWay, spike, dev.kind == DeviceKind::Spring, dev.direction});
+                result.push_back({rect, dev.id, oneWay, spike, dev.kind == DeviceKind::Spring && !hanging, dev.direction, ceiling});
         }
-        // 残影とプレイヤーは互いに当たらない（自分の残影は通り抜ける。乗ることも押すこともない）。
-        (void)body; (void)noBodies;
+        // 残影はプレイヤーにとって上からだけ乗れる台（横や下からは通り抜け、道を塞がない）。
+        // 残影にとってプレイヤーは塊：落ちてきた残影は頭の上に載る。互いに載っている相手は外す（積み重ねの中で自分に当たらない）。
+        if (!staticOnly && !noBodies && body && !s.echoOverlapGrace) {
+            const BodyState* other = echoBody ? &s.player : (s.echo ? &*s.echo : nullptr);
+            const std::string otherId = echoBody ? "player" : "echo";
+            const bool oneWayBody = !echoBody;
+            if (other && !other->dead && otherId != ignore && !(oneWayBody && fullOnly) &&
+                !Rider(other, *body, echoBody ? "echo" : "player"))
+                result.push_back({other->rect, otherId, oneWayBody});
+        }
         return result;
     }
     bool Clear(const Rect& rect, const BodyState* body = nullptr, bool echoBody = false,
@@ -143,7 +184,7 @@ public:
         b.grounded = false; b.supportId.clear();
         const Rect foot{b.rect.x, b.rect.y + b.rect.h - 0.01 / 32, b.rect.w, 0.6 / 32};
         for (const auto& c : Colliders(foot, &b, echoBody)) {
-            if (OverlapX(b.rect, c.rect) && std::abs(b.rect.y + b.rect.h - c.rect.y) < kGroundTolerance && b.vy >= -kEps) {
+            if (!c.ceiling && OverlapX(b.rect, c.rect) && std::abs(b.rect.y + b.rect.h - c.rect.y) < kGroundTolerance && b.vy >= -kEps) {
                 b.grounded = true; b.supportId = c.id; b.vy = 0; return;
             }
         }
@@ -198,7 +239,7 @@ public:
         for (const auto& c : Colliders(area, &b, echoBody, ignore)) {
             const auto& r = c.rect;
             if (horizontal) {
-                if (c.oneWay || b.rect.y >= r.y + r.h - kEps || b.rect.y + b.rect.h <= r.y + kEps) continue;
+                if (c.oneWay || c.ceiling || b.rect.y >= r.y + r.h - kEps || b.rect.y + b.rect.h <= r.y + kEps) continue;
                 const bool hit = amount > 0 ? before.x + before.w <= r.x + kEps && target + b.rect.w > r.x
                                             : before.x >= r.x + r.w - kEps && target < r.x + r.w;
                 if (!hit) continue;
@@ -216,7 +257,7 @@ public:
                 b.vx = 0;
             } else {
                 if (!OverlapX(b.rect, r)) continue;
-                if (amount > 0 && before.y + before.h <= r.y + kEps && target + b.rect.h >= r.y) {
+                if (amount > 0 && !c.ceiling && before.y + before.h <= r.y + kEps && target + b.rect.h >= r.y) {
                     target = std::min(target, r.y - b.rect.h); b.vy = 0; b.grounded = true; b.supportId = c.id;
                 } else if (amount < 0 && !c.oneWay && before.y >= r.y + r.h - kEps && target < r.y + r.h) {
                     if (c.spike && c.direction == Direction::Up) {
@@ -398,14 +439,22 @@ public:
         if (s.player.supportId == "echo") { s.player.supportId.clear(); s.player.grounded = false; }
         Event(EventKind::EchoRemoved, "echo", "replaced", source);
     }
-    // 交換：本体と残影の足元を入れ替える（大きさはそれぞれのまま。残影は本体より少し背が高い）。勢いは捨てる。
+    // 交換：本体と残影の足元を入れ替える（大きさはそれぞれのまま。本体は残影より背が高い）。勢いは捨てる。
+    // 重なっている時は上下を入れ替える：残影に乗って交換すると残影が頭の上へ、頭に載せて交換すると残影の上に立つ。
     // 入れ替えた先が塞がっている時は交換しない。
     void Swap() {
         if (!s.echo || s.player.dead) return;
         auto& p = s.player; auto& e = *s.echo;
         const Rect from = p.rect;
-        const Rect playerTo{e.rect.x + (e.rect.w - p.rect.w) / 2, e.rect.y + e.rect.h - p.rect.h, p.rect.w, p.rect.h};
-        const Rect echoTo{p.rect.x + (p.rect.w - e.rect.w) / 2, p.rect.y + p.rect.h - e.rect.h, e.rect.w, e.rect.h};
+        Rect playerTo{e.rect.x + (e.rect.w - p.rect.w) / 2, e.rect.y + e.rect.h - p.rect.h, p.rect.w, p.rect.h};
+        Rect echoTo{p.rect.x + (p.rect.w - e.rect.w) / 2, p.rect.y + p.rect.h - e.rect.h, e.rect.w, e.rect.h};
+        if (Rider(&p, e, "echo")) {
+            playerTo = {e.rect.x + (e.rect.w - p.rect.w) / 2, e.rect.y + e.rect.h - p.rect.h, p.rect.w, p.rect.h};
+            echoTo = {playerTo.x + (p.rect.w - e.rect.w) / 2, playerTo.y - e.rect.h, e.rect.w, e.rect.h};
+        } else if (Rider(&e, p, "player")) {
+            echoTo = {p.rect.x + (p.rect.w - e.rect.w) / 2, p.rect.y + p.rect.h - e.rect.h, e.rect.w, e.rect.h};
+            playerTo = {echoTo.x + (e.rect.w - p.rect.w) / 2, echoTo.y - p.rect.h, p.rect.w, p.rect.h};
+        }
         if (!Clear(playerTo, nullptr, false, {}, true) || !Clear(echoTo, nullptr, true, {}, true)) {
             Event(EventKind::BlinkRejected, "player", "swap-blocked", p.rect); return;
         }
@@ -498,17 +547,18 @@ public:
         for (size_t i = 0; i < d.devices.size(); ++i) {
             const auto& dev = d.devices[i]; auto& state = s.devices[i];
             if (dev.kind != DeviceKind::Plate) continue;
-            const auto presses = [&](const BodyState& b) {
-                const double feet = b.rect.y + b.rect.h, bottom = dev.rect.y + dev.rect.h;
-                return !b.dead && OverlapX(b.rect, dev.rect) && feet >= bottom - 7.0 / 32 &&
-                       feet <= bottom + 2.0 / 32 && b.rect.y < bottom && b.vy >= -kEps;
+            // 天井向きの板は、下から上がって来た頭が板に届いた時に押される（落ち始めると離れる）。
+            const bool hanging = dev.direction == Direction::Down;
+            const auto touches = [&](const Rect& r) {
+                if (!OverlapX(r, dev.rect)) return false;
+                if (hanging) { const double top = dev.rect.y; return r.y <= top + 7.0 / 32 && r.y >= top - 2.0 / 32 && r.y + r.h > top; }
+                const double feet = r.y + r.h, bottom = dev.rect.y + dev.rect.h;
+                return feet >= bottom - 7.0 / 32 && feet <= bottom + 2.0 / 32 && r.y < bottom;
             };
+            const auto presses = [&](const BodyState& b) { return !b.dead && touches(b.rect) && (hanging ? b.vy <= kEps : b.vy >= -kEps); };
             // 壁蹴りのダッシュで残影が出るまでの間も、出発点の板は押されたままにする（離して押し直すと二回分の入力になる）。
             const auto pending = [&] {
-                if (!s.pendingEcho) return false;
-                const Rect& r = s.pendingEcho->origin;
-                const double feet = r.y + r.h, bottom = dev.rect.y + dev.rect.h;
-                return OverlapX(r, dev.rect) && feet >= bottom - 7.0 / 32 && feet <= bottom + 2.0 / 32 && r.y < bottom;
+                return s.pendingEcho && touches(s.pendingEcho->origin);
             };
             const bool pressed = presses(s.player) || (s.echo && presses(*s.echo)) || pending();
             if (state.pressed != pressed) Event(EventKind::PlateChanged, dev.id, pressed ? "pressed" : "released", dev.rect);
@@ -525,7 +575,7 @@ public:
         for (size_t i = 0; i < d.devices.size(); ++i) {
             const auto& dev = d.devices[i]; auto& state = s.devices[i];
             if (dev.kind != DeviceKind::Door && dev.kind != DeviceKind::Laser && dev.kind != DeviceKind::Bridge &&
-                dev.kind != DeviceKind::Mechanism && dev.kind != DeviceKind::Goal) continue;
+                dev.kind != DeviceKind::Mechanism && dev.kind != DeviceKind::Goal && dev.kind != DeviceKind::Pusher) continue;
             // つながっていない光線と通関の扉は動いたまま（開いたまま）、ほかは止まったまま。
             const bool on = powered.contains(dev.id) && !(dev.all && unpowered.contains(dev.id));
             const bool active = linked.contains(dev.id) ? (dev.inverted ? !on : on)
@@ -537,6 +587,7 @@ public:
             if (closing) {
                 if (s.echo && Overlap(s.echo->rect, dev.rect)) {
                     Event(EventKind::EchoRemoved, "echo", "door-crush", s.echo->rect); s.echo.reset(); s.echoOverlapGrace = false;
+                    ++s.crushes; s.crushSideways = dev.rect.h >= dev.rect.w;
                 }
                 if (!s.player.dead && Overlap(s.player.rect, dev.rect)) death = "door-crush";
             }
@@ -552,27 +603,28 @@ public:
             const int dy = dev.direction == Direction::Down ? 1 : dev.direction == Direction::Up ? -1 : 0;
             const double x = dev.rect.x + dev.rect.w / 2, y = dev.rect.y + dev.rect.h / 2;
             double length = dev.range;
-            const Rect area{std::min(x, x + dx * length) - 2.0 / 32, std::min(y, y + dy * length) - 2.0 / 32,
-                            std::abs(dx * length) + 4.0 / 32, std::abs(dy * length) + 4.0 / 32};
+            const double half = std::clamp(dev.width, 1.0 / 32, .9) * .5;
+            const Rect area{std::min(x, x + dx * length) - half, std::min(y, y + dy * length) - half,
+                            std::abs(dx * length) + 2 * half, std::abs(dy * length) + 2 * half};
             auto blockers = Colliders(area, nullptr, false, {}, true, true);
             if (s.echo) blockers.push_back({s.echo->rect, "echo"});
             for (const auto& c : blockers) {
                 const auto& r = c.rect;
                 double distance;
                 if (dx) {
-                    if (y + 2.0 / 32 <= r.y + kEps || y - 2.0 / 32 >= r.y + r.h - kEps) continue;
+                    if (y + half <= r.y + kEps || y - half >= r.y + r.h - kEps) continue;
                     if (dx > 0) { if (r.x + r.w <= x + kEps) continue; distance = std::max(0.0, r.x - x); }
                     else { if (r.x >= x - kEps) continue; distance = std::max(0.0, x - r.x - r.w); }
                 } else {
-                    if (x + 2.0 / 32 <= r.x + kEps || x - 2.0 / 32 >= r.x + r.w - kEps) continue;
+                    if (x + half <= r.x + kEps || x - half >= r.x + r.w - kEps) continue;
                     if (dy > 0) { if (r.y + r.h <= y + kEps) continue; distance = std::max(0.0, r.y - y); }
                     else { if (r.y >= y - kEps) continue; distance = std::max(0.0, y - r.y - r.h); }
                 }
                 length = std::min(length, distance);
             }
             if (length <= kEps) continue;
-            const Rect beam = dx ? Rect{std::min(x, x + dx * length), y - 2.0 / 32, length, 4.0 / 32}
-                                 : Rect{x - 2.0 / 32, std::min(y, y + dy * length), 4.0 / 32, length};
+            const Rect beam = dx ? Rect{std::min(x, x + dx * length), y - half, length, 2 * half}
+                                 : Rect{x - half, std::min(y, y + dy * length), 2 * half, length};
             s.beams.push_back({dev.id, beam});
         }
     }
@@ -581,8 +633,100 @@ public:
             return dev.kind == DeviceKind::Spikes && Overlap(rect, SpikeHitbox(dev.rect, dev.direction));
         });
     }
+    bool PusherFaceAt(const Rect& rect) const {
+        for (size_t i = 0; i < d.devices.size(); ++i) {
+            const auto& dev = d.devices[i];
+            if (dev.kind == DeviceKind::Pusher && Overlap(rect, PusherFace(PusherRect(dev, s.devices[i].push), dev.direction))) return true;
+        }
+        return false;
+    }
+    // 押し刺：板で動く物は通電で伸び、切れると戻る。往復の物（dwell > 0）は両端で止まりながら時計で行き来する。
+    // 動いた分だけ上に乗った体を運び、重なった残影を押し出す（押し切れない残影は潰れて消える）。
+    // 刺の面が本体に当たれば死ぬ。背中側で本体を押し切れない時は挟まれて死ぬ。
+    std::string Pushers() {
+        std::string death;
+        for (size_t i = 0; i < d.devices.size(); ++i) {
+            const auto& dev = d.devices[i];
+            if (dev.kind != DeviceKind::Pusher) continue;
+            auto& state = s.devices[i];
+            const double seconds = std::max(.05, dev.seconds);
+            double next = state.push;
+            if (dev.dwell > 0) {
+                state.clock += kStep;
+                next = TimedPush(dev, state.clock);
+            } else {
+                const double target = state.active ? 1.0 : 0.0, rate = kStep / seconds;
+                next = target > state.push ? std::min(target, state.push + rate) : std::max(target, state.push - rate);
+            }
+            if (std::abs(next - state.push) < 1e-12) continue;
+            const Rect before = PusherRect(dev, state.push), after = PusherRect(dev, next);
+            // 通った範囲全体で当たりを見る（速い押し刺が一 tick で体を飛び越さないように）。
+            const Rect swept = Sweep(before, after);
+            const bool forward = next > state.push;
+            state.push = next;
+            const double dx = after.x - before.x, dy = after.y - before.y;
+            const bool horizontal = std::abs(dx) > 0;
+            // 上に乗った体（とその上に載った体）は横の動きだけ一緒に運ぶ。上下の動きは押し出しと重力に任せる。
+            if (horizontal) {
+                for (BodyState* b : {&s.player, s.echo ? &*s.echo : nullptr}) {
+                    if (!b || b->dead || b->supportId != dev.id) continue;
+                    const bool echoBody = b != &s.player;
+                    BodyState* rider = RiderFor(*b, echoBody);
+                    const double x0 = b->rect.x;
+                    Move(*b, echoBody, dx, true, dev.id);
+                    if (rider) Move(*rider, !echoBody, b->rect.x - x0, true, echoBody ? "echo" : "player");
+                }
+            }
+            // 重なった残影を押し出す。壁や本体に挟まれて押し切れなければ潰れて消える。
+            if (s.echo && Overlap(s.echo->rect, swept)) {
+                auto& e = *s.echo;
+                const double need = horizontal ? (dx > 0 ? after.x + after.w - e.rect.x : after.x - e.rect.x - e.rect.w)
+                                               : (dy > 0 ? after.y + after.h - e.rect.y : after.y - e.rect.y - e.rect.h);
+                BodyState* rider = RiderFor(e, true);
+                const double x0 = e.rect.x, y0 = e.rect.y;
+                Move(e, true, need, horizontal);
+                bool crushed = Overlap(e.rect, after);
+                if (!crushed) {
+                    (horizontal ? e.vx : e.vy) = 0;
+                    s.echoPushed = true;
+                    if (rider) { Move(*rider, false, e.rect.x - x0, true, "echo"); Move(*rider, false, e.rect.y - y0, false, "echo"); }
+                    // 上に立つ本体が天井で止まったら、残影はその間で潰れる（本体へめり込ませない）。
+                    crushed = rider && Overlap(rider->rect, e.rect);
+                }
+                if (crushed) {
+                    Event(EventKind::EchoRemoved, "echo", "push-crush", e.rect);
+                    if (s.player.supportId == "echo") { s.player.supportId.clear(); s.player.grounded = false; }
+                    s.echo.reset(); s.echoOverlapGrace = false;
+                    ++s.crushes; s.crushSideways = horizontal;
+                }
+            }
+            // 本体：刺の面で触れれば死ぬ。戻る背中に押されて押し切れなければ挟まれて死ぬ。
+            if (!s.player.dead && death.empty() && Overlap(s.player.rect, swept)) {
+                if (forward) death = "spikes";
+                else {
+                    auto& p = s.player;
+                    const double need = horizontal ? (dx > 0 ? after.x + after.w - p.rect.x : after.x - p.rect.x - p.rect.w)
+                                                   : (dy > 0 ? after.y + after.h - p.rect.y : after.y - p.rect.y - p.rect.h);
+                    // 頭に載せた残影も一緒に押す。天井などで付いて来られなければ潰れる。
+                    BodyState* rider = RiderFor(p, false);
+                    const double x0 = p.rect.x, y0 = p.rect.y;
+                    Move(p, false, need, horizontal, dev.id);
+                    if (Overlap(p.rect, after)) death = "crush";
+                    else if (rider) {
+                        Move(*rider, true, p.rect.x - x0, true, "player"); Move(*rider, true, p.rect.y - y0, false, "player");
+                        if (Overlap(rider->rect, p.rect)) {
+                            Event(EventKind::EchoRemoved, "echo", "push-crush", rider->rect);
+                            s.echo.reset(); s.echoOverlapGrace = false;
+                            ++s.crushes; s.crushSideways = horizontal;
+                        }
+                    }
+                }
+            }
+        }
+        return death;
+    }
     std::string Hazard() const {
-        if (SpikeAt(s.player.rect)) return "spikes";
+        if (SpikeAt(s.player.rect) || PusherFaceAt(s.player.rect)) return "spikes";
         for (const auto& beam : s.beams) if (Overlap(s.player.rect, beam.rect)) return "laser";
         if (!InWorld(d, s.player.rect)) return "out-of-world";
         return {};
@@ -600,6 +744,12 @@ public:
             const Rect rect{std::clamp(ideal.x, double(x), double(x) + 1.0 - kPlayerWidth), double(y) - kPlayerHeight, kPlayerWidth, kPlayerHeight};
             if (!InWorld(d, rect) || !Clear(rect, nullptr, false, {}, true, true) || SpikeAt(rect)) continue;
             const bool blocked = std::any_of(d.devices.begin(), d.devices.end(), [&](const DeviceDefinition& other) {
+                if (other.kind == DeviceKind::Pusher) {
+                    const Rect a = Sweep(PusherRect(other, 0.0), PusherRect(other, 1.0)), f = PusherFace(PusherRect(other, 1.0), other.direction);
+                    const double x0 = std::min(a.x, f.x), y0 = std::min(a.y, f.y);
+                    const Rect lane{x0, y0, std::max(a.x + a.w, f.x + f.w) - x0, std::max(a.y + a.h, f.y + f.h) - y0};
+                    return Overlap(rect, lane);
+                }
                 return (other.kind == DeviceKind::Door || other.kind == DeviceKind::LockWall || other.kind == DeviceKind::Bridge) &&
                        Overlap(rect, other.rect);
             });
@@ -615,6 +765,8 @@ public:
             const auto& dev = d.devices[i]; auto& state = s.devices[i];
             if (dev.kind != DeviceKind::Spring) continue;
             state.cooldown = std::max(0.0, state.cooldown - kStep);
+            // 天井向きのバネは打ち上げない（体は下へ落ちるので、踏み板の背に乗っても溜めない）。
+            if (dev.direction == Direction::Down) { state.charge = 0; state.impact = 0; continue; }
             std::vector<BodyState*> occupants;
             if (!s.player.dead && s.player.grounded && s.player.supportId == dev.id) occupants.push_back(&s.player);
             if (s.echo && !s.echo->dead && s.echo->grounded && s.echo->supportId == dev.id) occupants.push_back(&*s.echo);
@@ -703,12 +855,14 @@ public:
     }
     void Tick(const InputState& input, bool actionPressed, bool actionReleased) {
         s.simulationTime += kStep; ++s.tick; ++out.simulationSteps;
+        s.echoPushed = false;
         ResolveEchoSpikes();
         if (s.player.dead) {
-            s.deathRemaining -= kStep; Pending(); Switches();
+            s.deathRemaining -= kStep; Pending(); Switches(); (void)Pushers();
             if (s.echo) Integrate(*s.echo, true);
             RemoveFallenEcho(); Switches(); Beams(); Springs(); Sensors();
             if (s.deathRemaining <= kEps) Respawn();
+            UpdateEchoCramped();
             return;
         }
         // スペース：点按は常にダッシュ（前の残影は自動で引き取られ、出発点に新しい残影が出る）。
@@ -735,6 +889,7 @@ public:
         if (direction) p.facing = direction;
         ConsumeBlink();
         if (const auto reason = Switches(); !reason.empty()) { Die(reason); return; }
+        if (const auto reason = Pushers(); !reason.empty()) { Die(reason); return; }
         if (s.echo && Rider(&*s.echo, p, "player")) Stack(p, false, *s.echo);
         else if (s.echo && Rider(&p, *s.echo, "echo")) Stack(*s.echo, true, p);
         else {
@@ -755,6 +910,11 @@ public:
             if (const auto reason = Hazard(); !reason.empty()) { Die(reason); return; }
         }
         Springs(); Sensors(); ValidateSupports();
+        UpdateEchoCramped();
+    }
+    // 表示用：残影の頭の上（0.3 マス）が塞がっているか（本体は数えない）。
+    void UpdateEchoCramped() {
+        s.echoCramped = s.echo && !Clear(Rect{s.echo->rect.x, s.echo->rect.y - .3, s.echo->rect.w, .3}, &*s.echo, true, {}, true);
     }
 };
 
@@ -800,14 +960,22 @@ std::string ValidateWorld(const WorldDefinition& d) {
         // 「区域ID/装置ID」は別のテレビの装置。世界を組んだ後に検査する。
         if (it == d.devices.end() && d.chunks.empty() && target.find('/') != std::string::npos) continue;
         if (it == d.devices.end() || (it->kind != DeviceKind::Door && it->kind != DeviceKind::Laser && it->kind != DeviceKind::Bridge &&
-                                      it->kind != DeviceKind::Mechanism && it->kind != DeviceKind::Goal))
-            return "plate targets must reference an existing door, bridge, laser, goal or mechanism";
+                                      it->kind != DeviceKind::Mechanism && it->kind != DeviceKind::Goal && it->kind != DeviceKind::Pusher))
+            return "plate targets must reference an existing door, bridge, laser, goal, pusher or mechanism";
     }
     return {};
+}
+std::optional<Vec2> CheckpointRespawnPoint(const WorldDefinition& d, WorldState& s, size_t device) {
+    if (device >= d.devices.size() || d.devices[device].kind != DeviceKind::Checkpoint) return {};
+    StepOutput out; Simulation sim(d, s, out);
+    return sim.CheckpointAnchor(d.devices[device]);
 }
 WorldState CreateWorldState(const WorldDefinition& d) {
     if (const auto error = ValidateWorld(d); !error.empty()) throw std::invalid_argument(error);
     WorldState s; s.player = MakeBody(d.spawn); s.checkpointPosition = d.spawn; s.devices.resize(d.devices.size());
+    // 往復の押し刺は時計 0 の位置から始める（ずれが伸びた側にある物が、最初の tick で一気に伸びないように）。
+    for (size_t i = 0; i < d.devices.size(); ++i)
+        if (d.devices[i].kind == DeviceKind::Pusher && d.devices[i].dwell > 0) s.devices[i].push = TimedPush(d.devices[i], 0.0);
     StepOutput out; Simulation sim(d, s, out); sim.Probe(s.player); sim.Switches(); sim.Beams();
     return s;
 }
@@ -850,24 +1018,28 @@ StepOutput StepRules(const WorldDefinition& d, WorldState& s, const InputState& 
 WorldSnapshot BuildSnapshot(const WorldDefinition& d, const WorldState& s) {
     WorldSnapshot result;
     result.regionId = d.region.regionId;
-    result.player = s.player; result.presentationPlayer = s.player.rect;
+    result.player = s.player;
+    Rect shown = s.player.rect;
     result.echo = s.echo;
     if (s.pendingEcho) { result.pendingEcho = s.pendingEcho->origin; result.pendingEchoAge = s.pendingEcho->age; result.pendingEchoFacing = s.pendingEcho->facing; }
     result.beams = s.beams; result.checkpointId = s.checkpointId;
     result.dashing = s.dash.has_value(); result.bouncing = s.bounce.has_value();
     result.tick = s.tick; result.deaths = s.deaths; result.recalls = s.recalls; result.swaps = s.swaps; result.echoes = s.echoes;
+    result.crushes = s.crushes; result.crushSideways = s.crushSideways; result.echoCramped = s.echoCramped;
+    result.echoPushed = s.echoPushed;
     result.simulationTime = s.simulationTime; result.realTime = s.realTime;
     // 表示位置だけを補間し、当たり判定とセンサーは確定した物理位置を使う。
     if (s.dash) {
         const double ease = Math::SmoothStep(s.dash->age / s.dash->duration);
         const auto& end = s.bounce ? s.bounce->contact : s.player.rect;
-        result.presentationPlayer.x = s.dash->source.x + (end.x - s.dash->source.x) * ease;
-        result.presentationPlayer.y = s.dash->source.y + (end.y - s.dash->source.y) * ease;
+        shown.x = s.dash->source.x + (end.x - s.dash->source.x) * ease;
+        shown.y = s.dash->source.y + (end.y - s.dash->source.y) * ease;
     } else if (s.bounce) {
         const double t = std::clamp((s.bounce->age - .08) / .12, 0.0, 1.0), ease = 1 - std::pow(1 - t, 3);
-        result.presentationPlayer.x = s.bounce->contact.x + (s.player.rect.x - s.bounce->contact.x) * ease;
-        result.presentationPlayer.y = s.bounce->contact.y + (s.player.rect.y - s.bounce->contact.y) * ease;
+        shown.x = s.bounce->contact.x + (s.player.rect.x - s.bounce->contact.x) * ease;
+        shown.y = s.bounce->contact.y + (s.player.rect.y - s.bounce->contact.y) * ease;
     }
+    result.presentationPlayer = DrawnPlayer(shown);
     // 圧力板につながっている仕掛け（つながっていない扉・橋は通電しない）。
     std::unordered_set<std::string> linked;
     for (const auto& dev : d.devices) if (dev.kind == DeviceKind::Plate) linked.insert(dev.targets.begin(), dev.targets.end());
@@ -875,7 +1047,9 @@ WorldSnapshot BuildSnapshot(const WorldDefinition& d, const WorldState& s) {
         const auto& dev = d.devices[i]; const auto& state = s.devices[i];
         const bool solid = dev.kind == DeviceKind::Solid || dev.kind == DeviceKind::OneWay || dev.kind == DeviceKind::Spring ||
             ((dev.kind == DeviceKind::Door || dev.kind == DeviceKind::LockWall || dev.kind == DeviceKind::Bridge) && !state.active);
-        DeviceSnapshot snapshot{dev.id, dev.kind, dev.rect, dev.direction, state.active, state.pressed, solid};
+        DeviceSnapshot snapshot{dev.id, dev.kind, dev.kind == DeviceKind::Pusher ? PusherRect(dev, state.push) : dev.rect,
+                                dev.direction, state.active, state.pressed, solid || dev.kind == DeviceKind::Pusher};
+        snapshot.push = state.push; snapshot.travel = dev.travel; snapshot.timed = dev.dwell > 0;
         if (dev.kind == DeviceKind::Spring) {
             snapshot.charge = std::clamp(state.charge / std::max(0.05, dev.delay), 0.0, 1.0);
             snapshot.cooldown = std::clamp(state.cooldown / std::clamp(dev.cooldown, 3.0, 30.0), 0.0, 1.0);

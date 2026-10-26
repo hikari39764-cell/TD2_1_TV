@@ -6,6 +6,7 @@
 #include "HIKARI/Project/SequenceView.h"
 #include "HIKARI/Project/WorldQuery.h"
 #include <algorithm>
+#include <array>
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
@@ -23,6 +24,8 @@ constexpr float kSwapRegionSeconds = .38f;
 constexpr double kSwapBoostSeconds = 1.0;
 // 演出の序盤のこの割合までに、開始時のカメラのずれを 0 に戻す。
 constexpr double kTravelBlendIn = .35;
+// 見せ場の仕掛けが動き出した時、自動の切り替えの演出を速める倍率。
+constexpr float kTravelHurry = 3.f;
 constexpr uint64_t kFollowSource = 0x5444325F464F4C4Cull;   // 識別値 "TD2_FOLL"
 constexpr uint64_t kTravelSource = 0x5444325F5452564Cull;   // 識別値 "TD2_TRVL"
 constexpr uint64_t kShakeSource = 0x5444325F5348414Bull;    // 識別値 "TD2_SHAK"
@@ -193,7 +196,7 @@ void CameraDirector::OnCrossing(HIKARI::WorldView& world, Rules::Exploration& ex
         return;
     }
     if (SameArea(from, to)) return;   // 大区域の中：追従の基準が次の区域カメラへ移る
-    exploration.ClearEcho();          // 大区域を出たら残影は置いて行かない
+    if (!exploration.CarryingEcho()) exploration.ClearEcho();   // 大区域を出たら置いた残影は残さない（頭の残影は一緒に運ぶ）
     const auto* a = exploration.FindRegion(from);
     const auto* b = exploration.FindRegion(to);
     int direction = 0;
@@ -284,6 +287,12 @@ void CameraDirector::UpdateTravel(HIKARI::WorldView& world, Rules::Exploration& 
     } else if (travel.progress >= 1 - 1e-3 || snapshot.state != HIKARI::GameProjectSequencePlaybackState::Playing) {
         FinishTravel(world, exploration, objects, travel.to);
         return;
+    } else if (!eventPoints_.empty() && !travel.hurried) {
+        // 自動の切り替えの途中で見せ場の仕掛けが動き出した（降りた所で上からテレビが落ちてくる等）：演出を速めて早く終え、
+        // 見せ場の画へ渡す（切り替えのカメラのままだと落ちてくる物が写らない）。
+        travel.hurried = true;
+        const float speed = std::clamp(travel.binding.speed, .1f, 8.f) * kTravelHurry;
+        (void)sequence.SetPlaybackRate(playback_, travel.reverse ? -speed : speed);
     }
     // 開始時のずれを序盤で 0 に戻し、演出中も呼吸を重ねる。
     const float weight = static_cast<float>(1 - Math::SmoothStep(travel.progress / kTravelBlendIn));
@@ -337,13 +346,14 @@ void CameraDirector::UpdateFollow(HIKARI::WorldView& world, const Rules::Explora
     CameraRegionFrame frame;
     if (!RegionFrame(world, exploration, objects, region, frame)) return;
     const auto& state = exploration.State();
-    const auto& body = state.player.rect;
+    const auto body = Rules::DrawnPlayer(state.player.rect);
     const auto target = CameraRig::ScreenPoint(frame, body.x + body.w * .5, body.y + body.h * .5);
     const auto velocity = CameraRig::ScreenVelocity(frame, state.player.vx, state.player.vy);
     // 交換の直後は区域カメラの乗り換えを速くする（本体が一瞬で移ったのに画が遅れて付いて来ないように）。
     auto area = AreaOf(region);
     if (swapBoost_ > 0) { area.regionSeconds = (std::min)(area.regionSeconds, kSwapRegionSeconds); swapBoost_ -= dt; }
-    const auto pose = rig_.Update(frame, area, target, velocity, !state.player.dead, dt, time_);
+    auto pose = rig_.Update(frame, area, target, velocity, !state.player.dead, dt, time_);
+    FrameEventPose(pose, dt);
     HIKARI::GameProjectCameraPoseRequest request{};
     request.cameraObjectHandle = driver_.value; request.sourceId = kFollowSource; request.priority = 50;
     request.pose.eye = pose.eye; request.pose.target = pose.look; request.pose.up = pose.up;
@@ -355,8 +365,85 @@ void CameraDirector::Update(HIKARI::WorldView& world, Rules::Exploration& explor
                             double frameSeconds, double focusSeconds) {
     if (travel_) UpdateTravel(world, exploration, objects, input, frameSeconds);
     if (!travel_) UpdateFollow(world, exploration, objects, frameSeconds);
+    eventPoints_.clear();   // 切り替えの演出中は見せ場の画を使わない（次のフレームにまた渡される）
     Shake(world, frameSeconds);
     Focus(world, exploration, objects, focusSeconds);
+}
+
+// 見せ場の画：渡された物（落ちる・倒れるテレビ）と元の注視点（プレイヤーのテレビ）が画に収まるよう、目はほぼその場に
+// 置いたまま（後ろへ引くと棚や壁の向こうへ出て真っ暗になる）、両者の真ん中へ向きを振り、画角を広げて収める。
+// 目は向きの後ろへ kEventBack m までだけ引き、画角は kEventMaxFov まで。向きと画角はばねで追う（落ちる物を追いかける）。
+// 渡されなくなっても kEventHold 秒はそのまま見せ（着地まで見る）、それからゆっくり元の追従へ戻る。
+void CameraDirector::FrameEventPose(CameraRigPose& pose, double dt) {
+    constexpr double kEventFill = .8, kEventAspect = 16.0 / 9.0, kEventMaxFov = 1.05, kEventBack = .8;
+    constexpr double kEventHold = .5, kEventFollow = .22, kEventIn = .35, kEventOut = .7, kPlayerRadius = .6;
+    using V = std::array<double, 3>;
+    const auto sub = [](const V& a, const V& b) { return V{a[0] - b[0], a[1] - b[1], a[2] - b[2]}; };
+    const auto add = [](const V& a, const V& b, double k) { return V{a[0] + b[0] * k, a[1] + b[1] * k, a[2] + b[2] * k}; };
+    const auto dot = [](const V& a, const V& b) { return a[0] * b[0] + a[1] * b[1] + a[2] * b[2]; };
+    const auto unit = [&dot](const V& a) { const double l = std::sqrt(dot(a, a)); return l > 1e-9 ? V{a[0] / l, a[1] / l, a[2] / l} : V{0, 0, 1}; };
+    const auto of = [](const HIKARI::GameProjectFloat3& p) { return V{p.x, p.y, p.z}; };
+    const auto to = [](const V& p) { return HIKARI::GameProjectFloat3{static_cast<float>(p[0]), static_cast<float>(p[1]), static_cast<float>(p[2])}; };
+    // 向き d に直交する上と右。
+    const auto basis = [&](const V& d, V& r, V& u) {
+        u = of(pose.up); u = unit(add(u, d, -dot(u, d)));
+        r = {d[1] * u[2] - d[2] * u[1], d[2] * u[0] - d[0] * u[2], d[0] * u[1] - d[1] * u[0]};
+    };
+    const V eye = of(pose.eye), look = of(pose.look);
+    const double base = std::sqrt(dot(sub(look, eye), sub(look, eye)));
+    if (!eventPoints_.empty() && base > 1e-4) {
+        const V d = unit(sub(look, eye));
+        V r, u; basis(d, r, u);
+        // 画の面の上で、入れたい物の端から端までの真ん中を新しい注視点にする（奥行きは元の注視点のまま）。
+        double x0 = -kPlayerRadius, x1 = kPlayerRadius, y0 = -kPlayerRadius, y1 = kPlayerRadius;
+        for (const auto& p : eventPoints_) {
+            const V o = sub(of(p.center), look);
+            const double x = dot(o, r), y = dot(o, u), rad = p.radius;
+            x0 = (std::min)(x0, x - rad); x1 = (std::max)(x1, x + rad); y0 = (std::min)(y0, y - rad); y1 = (std::max)(y1, y + rad);
+        }
+        // 寄せ過ぎない：一番広い画角でもプレイヤーのテレビが画の中ほど（端から 4 割より内）に残る所まで（高い所から落ちて
+        // くる物を追っても、自分の画面が画から外れない）。
+        const double keep = std::tan(kEventMaxFov * .5) * .6 * base;
+        const V target = add(add(look, r, std::clamp((x0 + x1) * .5, -keep * kEventAspect, keep * kEventAspect)), u, std::clamp((y0 + y1) * .5, -keep, keep));
+        const V wanted = add(eye, d, -kEventBack);
+        // 新しい向きで、全部が画の kEventFill に収まる画角（縦）。
+        const V d2 = unit(sub(target, wanted));
+        V r2, u2; basis(d2, r2, u2);
+        double need = std::tan(pose.verticalFovRadians * .5) * kEventFill;
+        const auto fit = [&](const V& point, double rad) {
+            const V o = sub(point, wanted);
+            const double z = dot(o, d2);
+            if (z < .3) return;
+            need = (std::max)(need, (std::abs(dot(o, u2)) + rad) / z);
+            need = (std::max)(need, (std::abs(dot(o, r2)) + rad) / z / kEventAspect);
+        };
+        fit(look, kPlayerRadius);
+        for (const auto& p : eventPoints_) fit(of(p.center), p.radius);
+        const double fov = std::clamp(2 * std::atan(need / kEventFill), static_cast<double>(pose.verticalFovRadians), kEventMaxFov);
+        if (!eventValid_) { eventEye_ = to(wanted); eventLook_ = to(target); eventFov_ = fov; eventValid_ = true; }
+        else {
+            const double a = 1 - std::exp(-dt / kEventFollow);
+            eventEye_ = to(add(of(eventEye_), sub(wanted, of(eventEye_)), a));
+            eventLook_ = to(add(of(eventLook_), sub(target, of(eventLook_)), a));
+            eventFov_ += (fov - eventFov_) * a;
+        }
+        eventHold_ = kEventHold;
+    } else {
+        eventHold_ = (std::max)(0.0, eventHold_ - dt);
+    }
+    const double goal = eventHold_ > 0 ? 1.0 : 0.0;
+    eventWeight_ += (goal - eventWeight_) * (1 - std::exp(-dt / (goal > eventWeight_ ? kEventIn : kEventOut)));
+    if (goal == 0 && eventWeight_ < 1e-3) { eventWeight_ = 0; eventValid_ = false; }
+    if (!eventValid_ || eventWeight_ <= 0) return;
+    const double w = eventWeight_ * eventWeight_ * (3 - 2 * eventWeight_);
+    pose.eye = to(add(eye, sub(of(eventEye_), eye), w));
+    pose.look = to(add(look, sub(of(eventLook_), look), w));
+    pose.verticalFovRadians = static_cast<float>(pose.verticalFovRadians + (eventFov_ - pose.verticalFovRadians) * w);
+    // 診断（環境変数 TD2_EVENT_TRACE）：見せ場の画の元の目・注視点と、振った先・画角・重み。
+    if (static const bool trace = std::getenv("TD2_EVENT_TRACE") != nullptr; trace) {
+        std::fprintf(stderr, "[TD2 event] w=%.2f eye=%.2f,%.2f,%.2f look=%.2f,%.2f,%.2f -> look=%.2f,%.2f,%.2f fov=%.3f\n", w,
+                     eye[0], eye[1], eye[2], look[0], look[1], look[2], eventLook_.x, eventLook_.y, eventLook_.z, pose.verticalFovRadians);
+    }
 }
 
 void CameraDirector::Shake(HIKARI::WorldView& world, double seconds) {

@@ -1,0 +1,21 @@
+{
+  "displayName": "T_Title_Nn_White",
+  "guid": "8a526a46a5590d1d62ce4e64bd1abe57",
+  "importSettings": {
+    "allowResize": false,
+    "colorSpace": "Srgb",
+    "compression": "BC7",
+    "debugOutputFormat": "DDS",
+    "dimension": "Texture2D",
+    "forcePowerOfTwo": false,
+    "maxSize": 4096,
+    "mipPolicy": "Generate",
+    "outputFormat": "HTEX",
+    "usage": "Auto"
+  },
+  "importerId": "TextureImporter",
+  "importerVersion": 8,
+  "metaVersion": 1,
+  "sourcePath": "Assets/UI/Title/T_Title_Nn_White.png",
+  "type": "Texture"
+}

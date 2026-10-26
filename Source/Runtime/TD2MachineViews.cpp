@@ -29,6 +29,8 @@ constexpr float kRideCameraRise = .45f;
 constexpr float kRideBulgeAfter = .3f;
 // 仕掛けの模型を書くかの視野判定の余裕（度）。速く振る演出でも画に入る前に今の姿勢へ揃える。
 constexpr double kSightMarginDegrees = 20.0;
+// 動いた部屋の画面が、止まった後も砂嵐のままでいる秒（信号が合うまでの間）。
+constexpr double kSnowTail = .3;
 
 // 見る向き（ローカル +Z）と上から作る回転。
 HIKARI::GameProjectQuaternion LookRotation(const F3& forward, const F3& up) {
@@ -177,7 +179,7 @@ void MachineViews::SyncMechanisms(HIKARI::WorldView& world, const RegionObjects&
                 const auto pose = deltaPose(delta, item.a, item);
                 if (!pose) { std::fprintf(stderr, "[TD2 configuration] mechanism %s missing anchor=%llu\n", source.id.c_str(), static_cast<unsigned long long>(delta.anchor)); continue; }
                 (list == &authored.deltas ? item.b : item.c) = *pose;
-                item.from = static_cast<float>(delta.from); item.to = static_cast<float>(delta.to); item.lift = static_cast<float>(delta.lift); item.drop = delta.drop;
+                item.from = static_cast<float>(delta.from); item.to = static_cast<float>(delta.to); item.lift = static_cast<float>(delta.lift); item.corner = static_cast<float>(delta.corner); item.drop = delta.drop;
             }
             // その場で画面の向きの軸に回すだけ（倒立）なら、区域カメラは動かさない（カメラまで逆さにしない）。
             const auto& qa = item.a.rotation; const auto& qb = item.b.rotation;
@@ -271,6 +273,15 @@ void MachineViews::UpdateMechanisms(const Frame& frame, Writes& writes) {
                 pose.position.y += object.lift * up;
                 // 向きは渡り始めてから変える（浮いてすぐ回ると、付いたカメラが棚の上へ振れる）。
                 pose.rotation = QSlerp(object.a.rotation, end.rotation, Math::SmoothStep(std::clamp((along - kHopTurn) / (1.f - kHopTurn), 0.f, 1.f)));
+            } else if (object.corner != 0) {
+                // 折れ線の道：進みの最初の 3 割で真上へ、次の 4 割で横へ、残りで終わりの高さへ（角を斜めに切らない）。
+                const float up = Math::SmoothStep(std::clamp(e / .3f, 0.f, 1.f));
+                const float across = Math::SmoothStep(std::clamp((e - .3f) / .4f, 0.f, 1.f));
+                const float settle = Math::SmoothStep(std::clamp((e - .7f) / .3f, 0.f, 1.f));
+                const float middle = object.a.position.y + object.corner;
+                pose.position = Lerp(object.a.position, end.position, across);
+                pose.position.y = middle * (1.f - settle) + end.position.y * settle + (object.a.position.y - middle) * (1.f - up);
+                pose.rotation = QSlerp(object.a.rotation, end.rotation, across);
             } else {
                 pose.position = Lerp(object.a.position, end.position, e);
                 pose.rotation = QSlerp(object.a.rotation, end.rotation, e);
@@ -289,8 +300,23 @@ void MachineViews::UpdateMechanisms(const Frame& frame, Writes& writes) {
             if (hasCamera) movedPose_[object.handle.value] = pose;
             else Moved(frame, object.handle.value, object.handle, object.a, pose);
         }
+        // 動いている間：回るテレビと見せ場の機構（揺れのある物）の部屋のテレビ（操作中のテレビを除く）は砂嵐にする（覗き窓の
+        // 角度が大きく振れる）。平らに動くだけの物と、時機を見て渡る自動往復（dwell）は普段の画面のまま。見せ場の機構は部屋の
+        // テレビをカメラの画へ入れてもらう（落ちてくる・倒れる様子を引いて見せる）。
+        if (progress != std::round(progress)) {
+            const bool dramatic = view.shake > 0, shuttle = runtimes[i].source.dwell > 0;
+            for (size_t k = 0; k < view.objects.size(); ++k) {
+                const auto& object = view.objects[k];
+                const auto room = tvRooms_.find(object.handle.value);
+                if (room == tvRooms_.end()) continue;
+                const auto& qa = object.a.rotation; const auto& qb = (sideC ? object.c : object.b).rotation;
+                const bool turning = std::abs(qa.x * qb.x + qa.y * qb.y + qa.z * qb.z + qa.w * qb.w) < .995;
+                if (!shuttle && (dramatic || turning) && object.handle.value != frame.activeTv.value) snowUntil_[room->second] = clock_ + kSnowTail;
+                if (dramatic) frame.camera.FrameEvent(poses[k].position, object.reach);
+            }
+        }
         // 前に書いた姿勢か新しい姿勢のどちらかが視野にあれば書く。最初の一回と、操作中のテレビを含む仕掛けは必ず書く。
-        bool seen = std::isnan(view.drawn);
+        bool seen = std::isnan(view.drawn) || resync_;
         for (size_t k = 0; k < view.objects.size() && !seen; ++k) {
             const auto& object = view.objects[k];
             seen = object.handle.value == frame.activeTv.value || frame.sight.Sees(poses[k].position, object.reach) ||
@@ -408,12 +434,12 @@ void MachineViews::UpdateSlides(const Frame& frame, Writes& writes, double secon
         // 動けなかった：そのテレビを 0.35 秒だけ左右に細かく揺らす。
         if (runtime.blockedCount != view.blockedCount) { view.blockedCount = runtime.blockedCount; view.shaking = runtime.blocked; view.shake = 0; }
         const bool moving = runtime.moving >= 0;
-        if (!moving && view.lastMoving < 0 && view.shaking < 0) continue;
+        if (!moving && view.lastMoving < 0 && view.shaking < 0 && !resync_) continue;
         for (size_t m = 0; m < view.members.size() && m < runtime.slotOf.size(); ++m) {
             auto& member = view.members[m];
             if (!member.tv.IsValid()) continue;
             const bool thisMoving = moving && runtime.moving == static_cast<int>(m);
-            if (!thisMoving && view.lastMoving != static_cast<int>(m) && view.shaking != static_cast<int>(m)) continue;
+            if (!thisMoving && view.lastMoving != static_cast<int>(m) && view.shaking != static_cast<int>(m) && !resync_) continue;
             // スロットの位置の間を、両端でゆっくり止まるように運ぶ。
             const auto& to = view.slots[static_cast<size_t>(thisMoving ? runtime.to : runtime.slotOf[m])];
             const auto& from = view.slots[static_cast<size_t>(thisMoving ? runtime.from : runtime.slotOf[m])];
@@ -464,7 +490,7 @@ void MachineViews::UpdateStacks(const Frame& frame, Writes& writes, double secon
         auto& view = stacks_[i]; const auto& s = runtimes[i];
         if (s.blockedCount != view.blockedCount) { view.blockedCount = s.blockedCount; view.shake = 0; }
         const bool moving = s.phase != 0;
-        if (!moving && view.lastPhase == 0 && view.shake < 0) continue;
+        if (!moving && view.lastPhase == 0 && view.shake < 0 && !resync_) continue;
         const auto placeOf = [&](int place) -> const F3* {
             if (place >= 0 && static_cast<size_t>(place) < view.slots.size()) return &view.slots[static_cast<size_t>(place)];
             const auto dock = static_cast<size_t>(-1 - place);
@@ -541,6 +567,13 @@ void MachineViews::UpdateCarousels(const Frame& frame, Writes& writes) {
     const auto& runtimes = frame.exploration.Carousels();
     for (size_t i = 0; i < carousels_.size() && i < runtimes.size(); ++i) {
         auto& view = carousels_[i]; const auto& c = runtimes[i];
+        // 回っている間、面のテレビ（操作中の面を除く）は砂嵐にする（回るにつれて覗き窓の角度が大きく振れる）。
+        if (c.direction != 0) {
+            for (const auto& part : view.parts) {
+                if (part.camera || !part.tv.IsValid() || part.tv.value == frame.activeTv.value) continue;
+                if (const auto room = tvRooms_.find(part.tv.value); room != tvRooms_.end()) snowUntil_[room->second] = clock_ + kSnowTail;
+            }
+        }
         const double turns = c.step + c.direction * Math::SmoothStep(c.progress);
         if (turns == view.written) continue;
         view.written = turns;
@@ -605,7 +638,17 @@ bool MachineViews::Sight::Sees(const HIKARI::GameProjectFloat3& center, float ra
            (hasControl && SphereInView(control, center, radius, kSightMarginDegrees));
 }
 
+std::vector<std::string> MachineViews::SnowRooms() const {
+    std::vector<std::string> rooms;
+    for (const auto& [room, until] : snowUntil_) if (until >= clock_) rooms.push_back(room);
+    return rooms;
+}
+
 void MachineViews::Update(HIKARI::WorldView& world, Rules::Exploration& exploration, const RegionObjects& objects, CameraDirector& camera, double seconds) {
+    clock_ += (std::max)(0.0, seconds);
+    std::erase_if(snowUntil_, [this](const auto& item) { return item.second < clock_; });
+    tvRooms_.clear();
+    for (const auto& [region, handle] : objects.televisions) if (handle.IsValid()) tvRooms_[handle.value] = region;
     // 視野は Play 中のゲームカメラだけ（編集中は全部書く）。描いた姿勢は一フレーム前なので、硬い切りの直後に備えて操作中の姿勢も見る。
     Sight sight;
     static const bool sightOff = std::getenv("TD2_SIGHT_CULL_OFF") != nullptr;   // 比べる時だけ（環境変数）：視野で間引かない
@@ -619,6 +662,7 @@ void MachineViews::Update(HIKARI::WorldView& world, Rules::Exploration& explorat
     writes.clear(); UpdateSlides(frame, writes, seconds); Commit(world, writes, "slide");
     writes.clear(); UpdateStacks(frame, writes, seconds); Commit(world, writes, "stack");
     writes.clear(); UpdateCarousels(frame, writes); Commit(world, writes, "carousel");
+    resync_ = false;
     UpdateCables(world, exploration, seconds);
 }
 }

@@ -60,7 +60,7 @@ inline void DrawCanvasGrid(IEditorWorkspaceUi& ui, const MapCanvasView& v, Edito
 }
 
 inline EditorWorkspaceColor DeviceColor(std::string_view kind) {
-    if (kind == "Laser" || kind == "Spikes") { return {.83f, .37f, .42f, 1}; }
+    if (kind == "Laser" || kind == "Spikes" || kind == "Pusher") { return {.83f, .37f, .42f, 1}; }
     if (kind == "Checkpoint") { return {.42f, .85f, .73f, 1}; }
     if (kind == "Plate" || kind == "Door" || kind == "Bridge") { return {.84f, .69f, .38f, 1}; }
     if (kind == "Spring") { return {.96f, .72f, .24f, 1}; }
@@ -75,10 +75,13 @@ inline EditorWorkspaceColor DeviceColor(std::string_view kind) {
 inline void DrawDeviceGlyph(IEditorWorkspaceUi& ui, const DeviceDraft& d, const MapCanvasView& v) {
     auto a = v.Screen(static_cast<float>(d.x), static_cast<float>(d.y));
     auto b = v.Screen(static_cast<float>(d.x + d.w), static_cast<float>(d.y + d.h));
-    if (d.kind == "OneWay") { b.y = a.y + v.tile; }
-    if (d.kind == "Plate" || d.kind == "Checkpoint") { a.y = b.y - v.tile; }
+    // 天井向き（↓）の一方通行・板・バネは上下を返して描く。
+    const bool hanging = d.direction == "Down" && (d.kind == "OneWay" || d.kind == "Plate" || d.kind == "Spring");
+    if (d.kind == "OneWay") { if (hanging) { a.y = b.y - v.tile; } else { b.y = a.y + v.tile; } }
+    if (d.kind == "Plate") { if (hanging) { b.y = a.y + v.tile; } else { a.y = b.y - v.tile; } }
+    if (d.kind == "Checkpoint") { a.y = b.y - v.tile; }
     const auto c = DeviceColor(d.kind);
-    const auto p = [&](float x, float y) { return EditorWorkspacePoint{a.x + (b.x - a.x) * x, a.y + (b.y - a.y) * y}; };
+    const auto p = [&](float x, float y) { return EditorWorkspacePoint{a.x + (b.x - a.x) * x, a.y + (b.y - a.y) * (hanging ? 1 - y : y)}; };
     const float stroke = std::clamp(v.tile * .055f, 1.0f, 2.5f);
     const float unit = (std::min)({v.tile, b.x - a.x, b.y - a.y});
     const auto line = [&](float x1, float y1, float x2, float y2) { ui.CanvasLine(p(x1, y1), p(x2, y2), c, stroke); };
@@ -107,6 +110,40 @@ inline void DrawDeviceGlyph(IEditorWorkspaceUi& ui, const DeviceDraft& d, const 
             ui.CanvasLine(oriented(static_cast<float>(i) / teeth, .95f), oriented((i + .5f) / teeth, .08f), c, stroke);
             ui.CanvasLine(oriented((i + .5f) / teeth, .08f), oriented((i + 1.0f) / teeth, .95f), c, stroke);
         }
+    } else if (d.kind == "Pusher") {
+        // 押し刺：暗い箱の刺の面に歯を描き、伸び切った所を破線の枠で、伸びる向きを矢印で示す。
+        const auto read = [&d](std::string_view key, double fallback) {
+            const auto text = d.Extra(key);
+            try { return text.empty() ? fallback : std::stod(text); } catch (...) { return fallback; }
+        };
+        const float travel = static_cast<float>(read("travel", 3));
+        const EditorWorkspacePoint dir = d.direction == "Left" ? EditorWorkspacePoint{-1, 0} : d.direction == "Right" ? EditorWorkspacePoint{1, 0} : d.direction == "Down" ? EditorWorkspacePoint{0, 1} : EditorWorkspacePoint{0, -1};
+        ui.CanvasFill(a, b, {.16f, .19f, .21f, 1});
+        const bool vertical = d.direction == "Left" || d.direction == "Right";
+        const int teeth = std::clamp(static_cast<int>(std::ceil((vertical ? d.h : d.w) * 2)), 1, 64);
+        const auto face = [&](float along, float depth) {
+            if (d.direction == "Down") { return p(along, 1 - depth); }
+            if (d.direction == "Left") { return p(depth, along); }
+            if (d.direction == "Right") { return p(1 - depth, along); }
+            return p(along, depth);
+        };
+        for (int i = 0; i < teeth; ++i) {
+            ui.CanvasLine(face(static_cast<float>(i) / teeth, .3f), face((i + .5f) / teeth, -.08f), c, stroke);
+            ui.CanvasLine(face((i + .5f) / teeth, -.08f), face((i + 1.0f) / teeth, .3f), c, stroke);
+        }
+        const EditorWorkspacePoint shift{dir.x * travel * v.tile, dir.y * travel * v.tile};
+        const EditorWorkspacePoint ea{a.x + shift.x, a.y + shift.y}, eb{b.x + shift.x, b.y + shift.y};
+        const EditorWorkspaceColor faint{c.r, c.g, c.b, .55f};
+        for (float t = 0; t < 1; t += .2f) {
+            ui.CanvasLine({ea.x + (eb.x - ea.x) * t, ea.y}, {ea.x + (eb.x - ea.x) * (t + .1f), ea.y}, faint, 1);
+            ui.CanvasLine({ea.x + (eb.x - ea.x) * t, eb.y}, {ea.x + (eb.x - ea.x) * (t + .1f), eb.y}, faint, 1);
+            ui.CanvasLine({ea.x, ea.y + (eb.y - ea.y) * t}, {ea.x, ea.y + (eb.y - ea.y) * (t + .1f)}, faint, 1);
+            ui.CanvasLine({eb.x, ea.y + (eb.y - ea.y) * t}, {eb.x, ea.y + (eb.y - ea.y) * (t + .1f)}, faint, 1);
+        }
+        const auto center = p(.5f, .5f);
+        const EditorWorkspacePoint tip{center.x + shift.x, center.y + shift.y};
+        ui.CanvasLine(center, tip, faint, stroke);
+        for (const float side : {-1.0f, 1.0f}) { ui.CanvasLine(tip, {tip.x - dir.x * unit * .22f - dir.y * side * unit * .16f, tip.y - dir.y * unit * .22f + dir.x * side * unit * .16f}, faint, stroke); }
     } else if (d.kind == "Laser") {
         const auto center = p(.5f, .5f);
         const EditorWorkspacePoint dir = d.direction == "Left" ? EditorWorkspacePoint{-1, 0} : d.direction == "Right" ? EditorWorkspacePoint{1, 0} : d.direction == "Down" ? EditorWorkspacePoint{0, 1} : EditorWorkspacePoint{0, -1};
@@ -118,6 +155,7 @@ inline void DrawDeviceGlyph(IEditorWorkspaceUi& ui, const DeviceDraft& d, const 
         ui.CanvasFill(a, b, {c.r * .3f, c.g * .3f, c.b * .3f, 1});
         ui.CanvasRect(a, b, c, stroke);
         if (d.kind == "Solid") { line(.12f, .12f, .88f, .12f); }
+        else if (d.kind == "Spring") { line(.15f, .85f, .85f, .85f); line(.5f, .7f, .5f, .3f); line(.38f, .42f, .5f, .3f); line(.5f, .3f, .62f, .42f); }
         else if (d.kind == "Door") {
             line(.5f, .05f, .5f, .95f); ui.CanvasCircle(p(.65f, .54f), unit * .06f, c, stroke);
         } else if (d.kind == "Goal") {
@@ -161,8 +199,9 @@ inline void DrawRoomMap(IEditorWorkspaceUi& ui, const RegionSettings& s, const M
     }
     for (const auto& d : devices.Items()) { DrawDeviceGlyph(ui, d, v); }
     if (!spawnFigure) { return; }
-    // スポーン位置は人の記号で、.625 × .875 マスの矩形に収める。
-    const auto spawn = [&](float x, float y) { return v.Screen(s.spawnX + x, s.spawnY + y); };
+    // スポーン位置は人の記号で、当たりの足元に揃えた .625 × .875 マスの矩形に収める（見た目の大きさ）。
+    const float feet = static_cast<float>(kPlayerHeight - kPlayerDrawHeight);
+    const auto spawn = [&](float x, float y) { return v.Screen(s.spawnX + x, s.spawnY + feet + y); };
     constexpr EditorWorkspaceColor player{.88f, .94f, .98f, 1};
     const float stroke = std::clamp(v.tile * .07f, 1.0f, 3.0f);
     ui.CanvasCircle(spawn(.3125f, .16f), v.tile * .12f, player, stroke);

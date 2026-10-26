@@ -159,7 +159,7 @@ public:
         DeviceEditor d; d.Load(s.devices);
         if (const auto problem = d.Validate(s.region.cols, s.region.rows); !problem.empty()) { return problem; }
         if (!std::isfinite(s.spawnX) || !std::isfinite(s.spawnY) || s.spawnX < 0 || s.spawnY < 0 ||
-            s.spawnX + .625f > static_cast<float>(s.region.cols) || s.spawnY + .875f > static_cast<float>(s.region.rows)) { return "スポーン位置が地図の外です"; }
+            s.spawnX + float(kPlayerWidth) > static_cast<float>(s.region.cols) || s.spawnY + float(kPlayerHeight) > static_cast<float>(s.region.rows)) { return "スポーン位置が地図の外です"; }
         const auto layout = Layout(&s);
         const auto valid = ValidateWorldLayout(layout);
         return valid.valid ? std::string{} : valid.message + "：" + valid.regionA + " / " + valid.regionB;
@@ -273,7 +273,7 @@ public:
                 next.region.cols = model ? model->cols : 12; next.region.rows = model ? model->rows : 7;
                 next.region.cells.assign(static_cast<size_t>(next.region.cols * next.region.rows), '0');
                 for (int x = 0; x < next.region.cols; ++x) { next.region.cells[CellIndex(next.region, x, next.region.rows - 1)] = '1'; }
-                next.spawnX = 1.1875f; next.spawnY = static_cast<float>(next.region.rows) - 1.875f;
+                next.spawnX = 1.1875f; next.spawnY = static_cast<float>(next.region.rows) - 1 - float(kPlayerHeight);
                 next.devices.clear();
             }
             AppendRegionChanges(commands, room->target, room->settings, next);

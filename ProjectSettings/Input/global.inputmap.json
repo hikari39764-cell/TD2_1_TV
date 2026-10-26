@@ -10,7 +10,7 @@
     {
       "action": "Global.StopPlay",
       "component": 0,
-      "control": "Escape",
+      "control": "F12",
       "scale": 1.0,
       "source": "Keyboard"
     }

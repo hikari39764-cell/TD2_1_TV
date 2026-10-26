@@ -31,6 +31,7 @@ std::optional<Rules::Vec2> TestEntrySpawn() {
 
 void GameSession::OnGameStarted(HIKARI::WorldView&) {
     exploration_ = {}; regions_ = {}; camera_.Reset(); machines_ = {}; introChecked_ = ending_ = false;
+    menu_ = {}; pendingProgress_.reset(); saving_ = checkpointTouched_ = false;
     initialSources_.clear(); initialMachines_ = {};
     sceneActive_ = leftHeld_ = rightHeld_ = false;
     previewEntryObject_ = 0; previewSpawn_.reset(); previewEntryRegion_.clear(); previewStates_.clear();
@@ -143,12 +144,40 @@ void GameSession::Update(HIKARI::WorldView& world, const HIKARI::FrameContext& f
     buttons.action = {actionValid && action.down != 0, actionValid && action.pressed != 0, actionValid && action.released != 0};
     leftHeld_ = left; rightHeld_ = right;
     const double frameSeconds = std::isfinite(frame.gameDt) ? std::clamp(double(frame.gameDt), 0.0, .25) : 0;
+    // 画の上の窓：最初に設定を読み、毎フレームのキーを読む。窓がスペースを使った後は、離すまで遊びへ渡さない。
+    menu_.Start(world);
+    menu_.Warm(world, frameSeconds);
+    menu_.ReadKeys(world, frameSeconds);
+    menu_.DrawClosing(world, frameSeconds);
     double remaining = camera_.HoldsWorld() ? 0 : frameSeconds;
     camera_.AdvanceClock(frameSeconds);
     if (!camera_.Initialized()) camera_.Initialize(world, exploration_, regions_);
     // オープニングの演出：最初の Play のフレームで始め（「この画面から」の試遊は除く）、終わるまで規則を進めない。
     // スペースは演出を始めるだけで、ダッシュにはならない。カメラは演出が動かし、焦点だけは画面に合わせて追う。
-    if (!introChecked_) { introChecked_ = true; (void)intro_.Begin(world, previewSpawn_.has_value() || previewEntryObject_ != 0 || TestEntryRegion()); }
+    static const std::string tour = [] { const char* v = std::getenv("TD2_TOUR"); return std::string(v ? v : ""); }();
+    if (!introChecked_) {
+        introChecked_ = true;
+        const bool test = previewSpawn_.has_value() || previewEntryObject_ != 0 || TestEntryRegion();
+        // 遊ぶ人の保存を書くのは普通に始めた時だけ（検証は TD2_SAVE_SLOT で別の枠を使う時だけ書く）。
+        saving_ = tour.empty() && (!test || std::getenv("TD2_SAVE_SLOT") != nullptr);
+        (void)intro_.Begin(world, test);
+        // 続きがあれば、タイトル待ちの上に全画面の問いを出す（はい なら続きから、いいえ ならそのままタイトル）。
+        std::string text; Rules::Progress saved;
+        if (saving_ && !test && LoadSlot(world, ProgressSlot(), text) && ReadProgressText(text, saved)) {
+            pendingProgress_ = std::move(saved); menu_.OpenContinue();
+        }
+    }
+    if (menu_.ContinueOpen()) {
+        const auto choice = menu_.UpdateContinue(world, frameSeconds);
+        if (choice == MenuDirector::Choice::Yes && pendingProgress_) { (void)ResumeProgress(world, *pendingProgress_); }
+        if (choice != MenuDirector::Choice::None) { pendingProgress_.reset(); }
+        if (menu_.ContinueOpen() || choice == MenuDirector::Choice::No) {
+            menu_.EndFrame(world);
+            (void)intro_.Update(world, false, frameSeconds);
+            sound_.Update(world, intro_, exploration_.State().player, false, frameSeconds);
+            return;
+        }
+    }
     // 開発用：エディタの Play の時だけ、K でオープニングを飛ばし、O でゴールの部屋へ移る（出荷したゲームでは効かない）。
     if (world.GetRuntimeSession().GetHostKind() == HIKARI::GameProjectRuntimeHostKind::EditorPreview) {
         HIKARI::GameProjectInputActionState skip{}, goal{};
@@ -157,7 +186,6 @@ void GameSession::Update(HIKARI::WorldView& world, const HIKARI::FrameContext& f
     }
     // 開発用（環境変数 TD2_TOUR="区域,区域,…"）：TD2_TOUR_FRAMES フレームごとに次の区域の出生点へ移り、カメラもそこから
     // 追従し直す。無頭の実行で区域カメラの写りを順に撮るためのもので、変数が無ければ何もしない。
-    static const std::string tour = [] { const char* v = std::getenv("TD2_TOUR"); return std::string(v ? v : ""); }();
     if (!tour.empty()) {
         static const int period = [] { const char* v = std::getenv("TD2_TOUR_FRAMES"); return v ? std::max(10, std::atoi(v)) : 90; }();
         if (tourFrame_++ % period == 0) {
@@ -166,7 +194,7 @@ void GameSession::Update(HIKARI::WorldView& world, const HIKARI::FrameContext& f
             const auto end = tour.find(',', start);
             const auto region = start < tour.size() ? tour.substr(start, end == std::string::npos ? std::string::npos : end - start) : std::string{};
             // 出生点は開始の部屋にしか使わないので、ほかの部屋では既定の左上（壁の中）のことが多い。床に立てるマスのうち
-            // 部屋の中央に一番近い所へ立たせる（体は幅 1 マス・高さ 1 マス弱に収まる）。
+            // 部屋の中央に一番近い所へ立たせる（体は幅 1 マス・高さ 2 マスに収まる）。
             std::optional<Rules::Vec2> stand;
             if (const auto* room = exploration_.FindRegion(region)) {
                 const auto& r = room->definition.region;
@@ -174,9 +202,9 @@ void GameSession::Update(HIKARI::WorldView& world, const HIKARI::FrameContext& f
                 double best = 1e9;
                 for (int row = 1; row < r.rows; ++row) {
                     for (int c = 0; c < r.cols; ++c) {
-                        if (!solid(c, row) || solid(c, row - 1)) continue;
+                        if (!solid(c, row) || solid(c, row - 1) || row < 2 || solid(c, row - 2)) continue;
                         const double d = std::abs(c + .5 - r.cols * .5) + .5 * std::abs(row - r.rows * .5);
-                        if (d < best) { best = d; stand = Rules::Vec2{c + .19, row - .875}; }
+                        if (d < best) { best = d; stand = Rules::Vec2{c + .19, row - kPlayerHeight}; }
                     }
                 }
             }
@@ -187,10 +215,42 @@ void GameSession::Update(HIKARI::WorldView& world, const HIKARI::FrameContext& f
             ++tourIndex_;
         }
     }
-    const bool cinematic = intro_.Update(world, buttons.action.pressed);
+    // タイトル待ちのパソコンのメール（通関の目覚めでも同じ姿を出す）。スペースはメールの決定にだけ使う。
+    bool startIntro = false;
+    {
+        const auto& screens = intro_.Screens();
+        const bool titleWait = intro_.TitleWait();
+        const bool wake = intro_.EndingPlaying() && screens.time >= screens.revealTime;
+        if (titleWait || wake || menu_.TitleLeaving()) {
+            // メールはパソコンの画面の絵として写る。目覚めでは見え始めの時刻から黒い画面に浮かび上がる。
+            const float alpha = wake ? static_cast<float>(std::clamp((screens.time - screens.revealTime) / .6, 0.0, 1.0)) : 1.f;
+            const auto choice = menu_.UpdateTitle(world, world.FindSceneObject(screens.computerScreen), alpha, titleWait, frameSeconds);
+            if (choice == MenuDirector::Choice::Yes) { startIntro = true; }
+            if (choice == MenuDirector::Choice::No) { (void)world.GetRuntimeSession().RequestEndSession(); }
+        }
+        if (titleWait || menu_.HoldsAction()) { buttons.action = {}; }
+    }
+    const bool cinematic = intro_.Update(world, startIntro, frameSeconds);
     if (intro_.TakeEndingFinished()) { RestartFromTitle(world); }
+    // ESC の窓：遊んでいる間だけ開く。開いている間は世界を止める（カメラは止めたまま描き、音は続ける）。
+    if (!cinematic && !ending_ && !menu_.PauseOpen() && menu_.MenuPressed()) { menu_.OpenPause(); }
+    const bool paused = !cinematic && menu_.PauseOpen();
+    if (paused) {
+        // 窓は今いる部屋のテレビの画面の絵として出す。
+        const auto result = menu_.UpdatePause(world, world.FindObject(regions_.Television(exploration_.ActiveRegion())), frameSeconds, saving_);
+        if (result == MenuDirector::PauseResult::Quit) {
+            if (menu_.QuitSave() && saving_) { WriteProgress(world); }
+            (void)world.GetRuntimeSession().RequestEndSession();
+        }
+        remaining = 0;
+    }
+    menu_.EndFrame(world);
     // 音：段ごとの BGM・環境音の受け渡しと足音（演出の間も毎フレーム）。
     sound_.Update(world, intro_, exploration_.State().player, !cinematic && remaining > 0, frameSeconds);
+    if (paused) {
+        camera_.Update(world, exploration_, regions_, 0.f, 0.0, 0.0);
+        return;
+    }
     if (cinematic) {
         camera_.Update(world, exploration_, regions_, 0.f, 0.0, std::isfinite(frame.gameDt) ? std::max(0.0, double(frame.gameDt)) : 0.0);
         return;
@@ -225,6 +285,9 @@ void GameSession::Update(HIKARI::WorldView& world, const HIKARI::FrameContext& f
                 if (event.kind == Rules::EventKind::GoalReached && goalRegion.empty()) goalRegion = region.regionId;
         for (const auto& region : output.regions)
             for (const auto& event : region.output.events)
+                if (event.kind == Rules::EventKind::CheckpointActivated) checkpointTouched_ = true;
+        for (const auto& region : output.regions)
+            for (const auto& event : region.output.events)
                 if (event.kind == Rules::EventKind::CollectibleTaken) {
                     const auto count = exploration_.Collectibles();
                     std::fprintf(stderr, "[TD2 gem] taken=%d total=%d at=%s\n", count.taken, count.total, region.regionId.c_str());
@@ -249,6 +312,8 @@ void GameSession::Update(HIKARI::WorldView& world, const HIKARI::FrameContext& f
         // ゴールの扉に入ったら、その刻みで世界を止めて通関の演出へ移る。
         if (!goalRegion.empty()) { StartEnding(world, goalRegion); return; }
     }
+    // チェックポイントに触れたら、その刻みの後の進みを保存する。
+    if (std::exchange(checkpointTouched_, false) && saving_) { WriteProgress(world); }
     machines_.Update(world, exploration_, regions_, camera_, frameSeconds);
     camera_.Update(world, exploration_, regions_, moveValid ? move.x : 0.f, frameSeconds,
                    std::isfinite(frame.gameDt) ? std::max(0.0, double(frame.gameDt)) : 0.0);
@@ -264,6 +329,8 @@ void GameSession::Update(HIKARI::WorldView& world, const HIKARI::FrameContext& f
 
 void GameSession::StartEnding(HIKARI::WorldView& world, const std::string& region) {
     FinishRecord();
+    // 通関したら続きは無い（次の起動はタイトルから）。
+    if (saving_) { DeleteSlot(world, ProgressSlot()); }
     HIKARI::GameProjectFloat3 eye{}, look{};
     (void)camera_.StartOffset(world, exploration_, regions_, region, eye, look);
     const auto camera = regions_.cameras.find(region);
@@ -273,6 +340,16 @@ void GameSession::StartEnding(HIKARI::WorldView& world, const std::string& regio
 }
 
 void GameSession::RestartFromTitle(HIKARI::WorldView& world) {
+    ResetWorld(world);
+    // 試遊の記録は最初の一回だけ（戻った後の分は残さない）。
+    recording_ = false; recordClosed_ = true;
+    introChecked_ = true;
+    menu_.ResetTitle();
+    (void)intro_.Begin(world, false);
+    std::fprintf(stderr, "[TD2 world] restarted from title entry=%s\n", exploration_.ActiveRegion().c_str());
+}
+
+void GameSession::ResetWorld(HIKARI::WorldView& world) {
     ending_ = false;
     auto sources = initialSources_;
     auto machines = initialMachines_;
@@ -284,11 +361,36 @@ void GameSession::RestartFromTitle(HIKARI::WorldView& world) {
     camera_.Stop(world); camera_.Reset();
     camera_.SyncBindings(world); camera_.SyncAreas(world);
     camera_.Initialize(world, exploration_, regions_);
-    // 試遊の記録は最初の一回だけ（戻った後の分は残さない）。
+    // 動かした仕掛けのテレビを最初の場所へ書き戻す（棚や塔は止まっている間は書かないので、まとめて書かせる）。
+    machines_.Resync();
+    machines_.Update(world, exploration_, regions_, camera_, 0.0);
+}
+
+bool GameSession::ResumeProgress(HIKARI::WorldView& world, const Rules::Progress& progress) {
+    intro_.Skip(world);
+    const auto error = exploration_.RestoreProgress(progress);
+    if (!error.empty()) {
+        std::fprintf(stderr, "[TD2 save] restore failed: %s\n", error.c_str());
+        // 今の関卡に合わない保存（部屋を消した・重なる）は消し、次の起動で同じ問いを出さない。
+        if (saving_) { DeleteSlot(world, ProgressSlot()); }
+        RestartFromTitle(world);
+        return false;
+    }
+    (void)exploration_.TakeCalls();
+    // 仕掛けのテレビを戻した位置へ置いてから、カメラをその部屋へ付け直す。
+    machines_.Resync();
+    machines_.Update(world, exploration_, regions_, camera_, 0.0);
+    camera_.Jump(world, exploration_, regions_, exploration_.ActiveRegion());
+    sound_.NoteCheckpoint(progress.checkpoint);
+    // 続きから遊んだ分は解法の記録にしない。
     recording_ = false; recordClosed_ = true;
-    introChecked_ = true;
-    (void)intro_.Begin(world, false);
-    std::fprintf(stderr, "[TD2 world] restarted from title entry=%s\n", exploration_.ActiveRegion().c_str());
+    std::fprintf(stderr, "[TD2 save] resumed region=%s checkpoint=%s gems=%zu\n", exploration_.ActiveRegion().c_str(),
+                 progress.checkpoint.c_str(), progress.taken.size());
+    return true;
+}
+
+void GameSession::WriteProgress(HIKARI::WorldView& world) {
+    (void)StoreSlot(world, ProgressSlot(), WriteProgressText(exploration_.SaveProgress()));
 }
 
 void GameSession::TeleportToGoal(HIKARI::WorldView& world) {

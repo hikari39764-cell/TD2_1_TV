@@ -29,6 +29,9 @@ constexpr float kIntroPlaneHide = 2000.0f;
 constexpr double kSmearSeconds = 0.12;
 // 跳ね返りの残影を足元から現す秒数（ルールの予告と同じ 0.16 秒）と、回収の光跡が消える秒数。
 constexpr double kEchoPrintSeconds = 0.16, kRecallTrailSeconds = 0.2;
+// 潰れた残影が薄くなり切るまでの秒数（その間に砕けるエフェクトが重なる）。
+constexpr double kEchoCrushSeconds = 0.15;
+
 }
 
 void Screen3DStage::SyncStageLights(HIKARI::WorldView& world, const std::vector<Assigned>& shown, double now) {
@@ -353,16 +356,6 @@ void Screen3DStage::SubmitParts(HIKARI::WorldView& world, const std::vector<cons
     // 部品が毎フレーム GPU のシーンを書き直させない。写る前に画の外側で動き出すので、止めた所は見えない）。
     std::set<std::string_view> seenRooms;
     for (const auto& item : shown) { seenRooms.insert(item.room->regionId); }
-    // 回す機構のある部屋の装置は回さない：テレビの今の傾き（画面の外から見て反時計回りの角）の分だけ逆に回して描き、
-    // テレビと地形が回っている途中も、回り終えた後も、装置は正立して同じ所に見える。
-    std::map<std::string_view, double> roomTurn;
-    for (const auto* drawnRoom : drawn) {
-        HIKARI::GameProjectTransform tv{};
-        if (!drawnRoom->flippable || !world.FindSceneObject(drawnRoom->configuration.screenObject).GetWorldTransform(tv)) { continue; }
-        const auto right = QRotate(tv.rotation, {1, 0, 0}), up = QRotate(tv.rotation, {0, 1, 0});
-        // 置いたままの傾きからの差（-π〜π）。
-        roomTurn[drawnRoom->regionId] = std::remainder(std::atan2(right.y, up.y) - drawnRoom->restTurn, 2 * 3.14159265358979323846);
-    }
     // 骨つきの物体で演じる装置（Play だけ）。演じた装置は焼いた部品を出さない。
     const bool actors = animate && devices_.Acquire(world);
     if (actors) { devices_.BeginFrame(); } else { devices_.Park(world); }
@@ -385,26 +378,40 @@ void Screen3DStage::SubmitParts(HIKARI::WorldView& world, const std::vector<cons
         builder.Solid(solid_, playDepth_);
         // 通関の扉は演出の秒で閉じる（プレビューでも同じ姿）。
         if (intro_ && intro_->ending && intro_->time >= intro_->closeStart) { builder.GoalClosing(intro_->time - intro_->closeStart); }
-        if (const auto turn = roomTurn.find(room->first); turn != roomTurn.end()) {
-            const auto& r = room->second->Region();
-            builder.Turn(room->second->x + r.cols * .5, room->second->y + r.rows * .5, turn->second);
-        } else {
-            mirrorFor(builder, room->second);
+        // 回された部屋の装置は舞台ごと回っている（規則では点対称に移り、向きも裏返っている）。画面の絵は作者の向きで描くので、
+        // 位置と向きを作者の向きへ戻して描く。テレビが回る間も回り終えた後も、装置は画面と一緒に回って見える。
+        const auto& r = room->second->Region();
+        const double cx = room->second->x + r.cols * .5, cy = room->second->y + r.rows * .5;
+        const auto unturn = [&](Rules::Rect& rect) { rect.x = 2 * cx - rect.x - rect.w; rect.y = 2 * cy - rect.y - rect.h; };
+        const bool flipped = room->second->flipped;
+        Rules::DeviceSnapshot turned;
+        if (flipped) { turned = device; unturn(turned.rect); turned.direction = Rules::Opposite(device.direction); }
+        const auto& facing = flipped ? turned : device;
+        // 天井向きのバネ・板・一方通行は、自分の中心で半回転させて描く。
+        if (facing.direction == Rules::Direction::Down && (facing.kind == Rules::DeviceKind::Spring || facing.kind == Rules::DeviceKind::Plate ||
+                                                          facing.kind == Rules::DeviceKind::OneWay)) {
+            builder.Turn(facing.rect.x + facing.rect.w * .5, facing.rect.y + facing.rect.h * .5, kPi);
         }
         const Rules::BeamState* beam = nullptr;
+        Rules::BeamState turnedBeam;
         if (device.kind == Rules::DeviceKind::Laser) {
             const auto found = std::find_if(snapshot.beams.begin(), snapshot.beams.end(), [&](const Rules::BeamState& b) { return b.sourceId == device.id; });
-            if (found != snapshot.beams.end()) { beam = &*found; }
+            if (found != snapshot.beams.end()) {
+                beam = &*found;
+                if (flipped) { turnedBeam = *found; unturn(turnedBeam.rect); beam = &turnedBeam; }
+            }
         }
         const double since = now - memory->second.changed;
-        if (actors && devices_.Draw(world, builder, device, beam, checkpoint, since, seenRooms.contains(room->first),
+        if (actors && devices_.Draw(world, builder, facing, beam, checkpoint, since, seenRooms.contains(room->first),
                                     redrawnRooms_.find(room->first) != redrawnRooms_.end(), frame_)) {
             // 光線の発射器は形が変わらないので焼いた部品のまま。
-            if (device.kind == Rules::DeviceKind::Laser) { builder.LaserBody(device); failed_ += builder.Failed(); }
+            if (facing.kind == Rules::DeviceKind::Laser) { builder.LaserBody(facing); failed_ += builder.Failed(); }
+            // 押し刺の箱と腕も焼いた部品のまま（刃だけを骨つきの丸鋸が演じる）。
+            if (facing.kind == Rules::DeviceKind::Pusher) { builder.PusherBody(facing); failed_ += builder.Failed(); }
             continue;
         }
-        builder.Device(device, checkpoint, since);
-        if (device.kind == Rules::DeviceKind::Laser) { builder.Beam(device, beam); }
+        builder.Device(facing, checkpoint, since);
+        if (facing.kind == Rules::DeviceKind::Laser) { builder.Beam(facing, beam); }
         failed_ += builder.Failed();
     }
 
@@ -435,11 +442,78 @@ void Screen3DStage::SubmitParts(HIKARI::WorldView& world, const std::vector<cons
         echoGrow = std::clamp(snapshot.pendingEchoAge / kEchoPrintSeconds, .08, 1.0);
         echoShown = snapshot.pendingEchoAge < kEchoPrintSeconds || std::fmod(snapshot.pendingEchoAge, .1) < .06;
     }
+    // 潰れた残影：門・押し刺に挟まれた瞬間から少しの間、挟まれた向きへ薄く潰れていく姿を見せる（同時に砕けるエフェクト）。
+    // 前のフレームに残影がいた時だけ（世界の作り直しで数や時計が戻った時は数えず、前の潰れも忘れる）。新しい残影が出たらそちらを描く。
+    if (snapshot.crushes != crushesSeen_) {
+        if (snapshot.crushes == crushesSeen_ + 1 && echoLastTime_ >= 0) {
+            crushTime_ = snapshot.realTime; crushRect_ = echoLastRect_; crushFacing_ = echoLastFacing_; crushSideways_ = snapshot.crushSideways;
+        } else { crushTime_ = -1; }
+        crushesSeen_ = snapshot.crushes;
+    }
+    if (crushTime_ > snapshot.realTime) { crushTime_ = -1; }
+    double crushHeight = 1, crushWidth = 1;
+    if (!snapshot.echo && !snapshot.pendingEcho && crushTime_ >= 0 && snapshot.realTime - crushTime_ < kEchoCrushSeconds) {
+        const double k = std::clamp((snapshot.realTime - crushTime_) / kEchoCrushSeconds, 0.0, 1.0);
+        if (crushSideways_) { crushWidth = 1 - .85 * k; crushHeight = 1 + .12 * k; }
+        else { crushHeight = 1 - .85 * k; crushWidth = 1 + .2 * k; }
+        echoRect = crushRect_; echoBody.facing = crushFacing_; echoShown = true; echoGrow = 1;
+    }
+    // 残影の体の反応（当たりは変えない。形と動作だけ）：乗られた瞬間に縦へ少し沈んで戻り、頭の上では歩きに合わせて揺れ、
+    // 押されて横へ動くと上が遅れて傾き、跳ね上がる間は縦に伸びる。沈みは一瞬だけにする（沈んだままだと足が浮く）。
+    // 動作（光を受ける・上の主角を支える・狭い所で縮こまる・押されてひるむ）は人形が合図から選ぶ。
+    EchoCue cue;
+    double echoStretch = 1, echoLean = 0;
+    bool flareOn = false;
+    double flareX = 0, flareY = 0;
+    if (snapshot.echo) {
+        const auto& e = *snapshot.echo;
+        const double real = snapshot.realTime, dt = echoLastTime_ < 0 ? 0.0 : std::clamp(real - echoLastTime_, 0.0, .1);
+        // 1 フレームで 0.3 マスを超える動きは交換などの移動なので速さに数えない。
+        const double dx = e.rect.x - echoLastX_;
+        const double vx = dt > 0 && std::abs(dx) < .3 ? dx / dt : 0.0;
+        echoLastX_ = e.rect.x; echoLastTime_ = real; echoLastRect_ = e.rect; echoLastFacing_ = e.facing;
+        const bool carried = e.supportId == "player", stoodOn = snapshot.player.supportId == "echo" && !snapshot.player.dead;
+        if (echoStepTime_ > real) { echoStepTime_ = -1; }   // 世界の作り直しで時計が戻った
+        if (stoodOn && echoStepTime_ < 0) { echoStepTime_ = real; }
+        if (!stoodOn) { echoStepTime_ = -1; }
+        if (echoStepTime_ >= 0) { echoStretch = 1 - .06 * std::sin(kPi * std::clamp((real - echoStepTime_) / .22, 0.0, 1.0)); }
+        else if (!e.grounded && e.vy < -1) { echoStretch = 1 + (std::min)(.06, -e.vy * .004); }
+        // 上向きの棘の先に押し上げられていれば、細かく揺れて釣り合いを取る。
+        const auto support = std::find_if(snapshot.devices.begin(), snapshot.devices.end(), [&](const auto& d) { return d.id == e.supportId; });
+        const bool onSpikes = support != snapshot.devices.end() && support->kind == Rules::DeviceKind::Spikes;
+        double lean = 0;
+        if (carried) { lean = .035 * std::sin(real * 9.0) * (std::abs(snapshot.player.walkVx) > .01 ? 1.0 : .3); }
+        else if (snapshot.echoPushed && e.grounded && std::abs(vx) > .5) { lean = std::clamp(vx * .012, -.12, .12); }
+        if (onSpikes) { lean += .06 * std::sin(real * 13.0) + .025 * std::sin(real * 31.0); }
+        echoLean_ += (lean - echoLean_) * (dt > 0 ? 1 - std::exp(-dt / .08) : 1.0);
+        echoLean = echoLean_;
+        cue.carried = carried; cue.stoodOn = stoodOn; cue.cramped = snapshot.echoCramped;
+        cue.pushed = snapshot.echoPushed; cue.onSpikes = onSpikes;
+        const auto contact = BeamOnEcho(snapshot, e.rect);
+        cue.beam = contact.from;
+        if (contact.from != EchoBeam::None) { flareOn = true; flareX = contact.x; flareY = contact.y; }
+    } else { echoLastTime_ = echoStepTime_ = -1; echoLean_ = 0; }
+    cue.lean = echoLean; cue.height = echoStretch * crushHeight; cue.width = crushWidth / std::sqrt((std::max)(.5, echoStretch));
     mirrorFor(global, flippedRoomAt(echoRect.x + echoRect.w * .5, echoRect.y + echoRect.h * .5));
     global.BakedActors(!(puppets && puppets_.Has(StageActorRole::Echo)));
+    global.EchoShape(cue.height, cue.width, cue.lean);
     global.Actor(echoBody, echoRect, true, snapshot.realTime, echoShown, echoGrow);
-    if (puppets) { puppets_.Echo(world, global, echoBody, echoRect, echoShown, echoGrow, actorScale_, projection_.ActorDepth() - .05, snapshot.realTime); }
+    global.EchoShape(1, 1, 0);
+    if (puppets) { puppets_.Echo(world, global, echoBody, echoRect, echoShown, echoGrow, projection_.ActorDepth() - .05, snapshot.realTime, cue); }
     else { puppets_.Park(world); }
+    global.NoMirror();
+    // 残影で止まった光の当たる所の光：光線と同じ奥行き（発射器のレンズ）に、脈打つ十字のきらめきと淡い輪を重ねる。
+    // 部品の数を変えないよう、当たっていない時も隠して置く。
+    mirrorFor(global, flippedRoomAt(flareX, flareY));
+    global.Begin("echoFlare");
+    {
+        const double ox = projection_.ShiftX(-.35), oy = projection_.ShiftY(-.35), t = snapshot.realTime;
+        const double pulse = 1 + .25 * std::sin(t * 23.0) + .12 * std::sin(t * 57.0);
+        const double glint = .34 * pulse, ring = .5 + .08 * std::sin(t * 11.0);
+        global.Add("FX_Shard", flareX + ox, flareY + glint * .5 + oy, glint, glint, .3, RotateZ(t * 2.0), -1, flareOn);
+        global.Add("FX_Shard", flareX + ox, flareY + glint * .35 + oy, glint * .7, glint * .7, .3, RotateZ(t * 2.0 + kPi * .25), -1, flareOn);
+        global.Add("FX_Ring", flareX + ox, flareY + ring * .5 + oy, ring, ring, .3, {}, -1, flareOn);
+    }
     global.BakedActors(true);
     mirrorFor(global, flippedRoomAt(shownPlayer.x + shownPlayer.w * .5, shownPlayer.y + shownPlayer.h * .5));
     // 残影の印：残影がいる間、プレイヤーの頭上に菫の菱形を浮かべる（スペースで回収できる合図）。
@@ -498,28 +572,31 @@ void Screen3DStage::SubmitParts(HIKARI::WorldView& world, const std::vector<cons
     const auto keep = [&](const PartRequest& request) { submit(request); introPlanes_.push_back(request); };
     if (const auto& noise = WindowOf(ViewKind::Noise); introStatic_ && noise.valid) {
         introPlanes_.clear();
-        // タイトル待ちとスペース直後の乱れの間（通関では目覚めから）は、2・3 段目に仮タイトルの板を置く（パソコンの画面の比に近い 3:2）。
+        // タイトル待ちとスペース直後の乱れの間（通関では目覚めから）は、2・3 段目を一枚の暗い砂嵐の板で覆う。
+        // パソコンのタイトルは画の上の UI（TD2Menus のメール）が描き、この板はその下で二つの段の継ぎ目を隠すだけ。
         const bool title = intro_ && (intro_->ending ? intro_->time >= intro_->revealTime : intro_->time < intro_->titleOff + .3);
         // 出す板の組はいつも同じにする（タイトルの板と砂嵐の板を出し入れすると、モデルの組が変わって GPU のシーンが
         // 作り直しになり、演出の始まりで引っかかる）。使わない板は舞台カメラに写らない下へ退ける。
-        const auto plane = [&](std::string_view guid, uint64_t instance, double cx, double bottom, double width, double height, bool shown) {
+        const auto plane = [&](std::string_view guid, uint64_t instance, double cx, double bottom, double width, double height, bool show) {
             PartRequest request{};
             request.ownerObjectHandle = cameras_[static_cast<size_t>(ViewKind::Sharp)].handle.value;
             request.instanceId = instance;
             std::memcpy(request.model.assetGuid, guid.data(), guid.size());
             request.worldTransform.position = projection_.Point(cx, bottom, 0);
-            if (!shown) { request.worldTransform.position.y -= kIntroPlaneHide; }
+            if (!show) { request.worldTransform.position.y -= kIntroPlaneHide; }
             request.worldTransform.scale = {static_cast<float>(width * projection_.scale), static_cast<float>(height * projection_.scale), 1.0f};
             request.castShadow = 0; request.receiveShadow = 0; request.visible = 1;
             keep(request);
         };
-        plane(kTitleCardGuid, 0x5A71C0DE20ull, noise.x + noise.cols * .5, noise.y + noise.rows, noise.cols * .5, noise.rows, title);
+        // 板は窓の倍の高さで、毎フレーム跳ばして砂嵐を動かす（止まった砂嵐にしない）。
+        plane(kStaticPlaneGuids[0], 0x5A71C0DE20ull, noise.x + noise.cols * .5, noise.y + noise.rows * (1 + IntroHash(frame_, 7u)),
+              noise.cols * .5, noise.rows * 2, title);
         // 真っ白：黒い段の下の方。光の点：黒い段の上の小さな白い点。
         plane(kWhitePlaneGuid, 0x5A71C0DE11ull, noise.x + noise.cols * .125, noise.y + noise.rows, noise.cols * .24, noise.rows * .4, true);
         plane(kWhitePlaneGuid, 0x5A71C0DE12ull, noise.x + noise.cols * .125, noise.y + noise.rows * (kNoiseDot + .01), noise.cols * .012, noise.rows * .02, true);
         for (size_t band = 1; band <= kStaticPlaneGuids.size(); ++band) {
-            // タイトルの間の 2・3 段目はタイトルの板が映るので、砂嵐の板は退けておく。
-            const bool shown = !(title && band <= 2);
+            // タイトルの間の 2・3 段目は暗い砂嵐の板が覆うので、段ごとの板は退けておく。
+            const bool bandShown = !(title && band <= 2);
             const auto guid = kStaticPlaneGuids[band - 1];
             PartRequest request{};
             request.ownerObjectHandle = cameras_[static_cast<size_t>(ViewKind::Sharp)].handle.value;
@@ -533,7 +610,7 @@ void Screen3DStage::SubmitParts(HIKARI::WorldView& world, const std::vector<cons
             // 板の下端は窓の下端から（板の高さ − 窓の高さ）までの間。どこにあっても窓を覆う。
             const double bottom = noise.y + noise.rows + (height - noise.rows) * jump;
             request.worldTransform.position = projection_.Point(cx, bottom, 0);
-            if (!shown) { request.worldTransform.position.y -= kIntroPlaneHide; }
+            if (!bandShown) { request.worldTransform.position.y -= kIntroPlaneHide; }
             request.worldTransform.scale = {static_cast<float>(noise.cols * .25 * projection_.scale), static_cast<float>(height * projection_.scale), 1.0f};
             request.castShadow = 0; request.receiveShadow = 0; request.visible = 1;
             keep(request);
@@ -549,6 +626,20 @@ void Screen3DStage::SubmitParts(HIKARI::WorldView& world, const std::vector<cons
         keep(line);
     } else {
         for (auto request : introPlanes_) { request.worldTransform.position.y -= kIntroPlaneHide; submit(request); }
+    }
+    // Play の砂嵐の板：いつも出しておき（出し入れするとモデルの組が変わって GPU のシーンを作り直す）、毎フレーム縦に跳ばして
+    // ノイズを動かす。板は視点の 4 倍の高さで、どこへ跳んでも視点を覆う。
+    if (play_) {
+        PartRequest snow{};
+        snow.ownerObjectHandle = cameras_[static_cast<size_t>(ViewKind::Sharp)].handle.value;
+        snow.instanceId = 0x5A71C0DE40ull;
+        std::memcpy(snow.model.assetGuid, kStaticPlaneGuids[1].data(), kStaticPlaneGuids[1].size());
+        constexpr double height = kSnowRows * 4;
+        const double bottom = kSnowY + kSnowRows * .5 + (height - kSnowRows) * IntroHash(frame_, 41u);
+        snow.worldTransform.position = projection_.Point(kSnowX, bottom, 0);
+        snow.worldTransform.scale = {static_cast<float>((kSnowCols + 2) * projection_.scale), static_cast<float>(height * projection_.scale), 1.0f};
+        snow.castShadow = 0; snow.receiveShadow = 0; snow.visible = 1;
+        submit(snow);
     }
     // 舞台の部品が多すぎる時は一度だけ知らせる（GPU のシーンの面の上限に近づく）。
     if (static bool warned = false; !warned && accepted_ > kPartWarning) {
