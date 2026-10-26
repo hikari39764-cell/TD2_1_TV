@@ -5,6 +5,6 @@
   "importerId": "AudioAssetImporter",
   "importerVersion": 1,
   "metaVersion": 1,
-  "sourcePath": "Assets/Audio/BGM/BGM_Stage.wav",
+  "sourcePath": "Assets/Audio/BGM/BGM_Stage.flac",
   "type": "Audio"
 }

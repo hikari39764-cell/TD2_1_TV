@@ -15,7 +15,8 @@ inline constexpr std::string_view kSoundComponentType = "TD2.Sound";
 
 // 音の資産（Assets/Audio の下、英語名）。
 inline constexpr std::string_view kTitleBgmPath = "Assets/Audio/BGM/BGM_Title.mp3";
-inline constexpr std::string_view kStageBgmPath = "Assets/Audio/BGM/BGM_Stage.wav";
+// 道中の曲は継ぎ目なく繰り返すので FLAC（MP3 は頭と尾に無音が付き、繰り返しの継ぎ目が途切れる）。
+inline constexpr std::string_view kStageBgmPath = "Assets/Audio/BGM/BGM_Stage.flac";
 inline constexpr std::string_view kAmbientPath = "Assets/Audio/AMB/AMB_Rain.mp3";
 inline constexpr std::string_view kPhonePath = "Assets/Audio/SE/SE_Phone.mp3";
 inline constexpr std::string_view kSwapPath = "Assets/Audio/SE/SE_Swap.mp3";
