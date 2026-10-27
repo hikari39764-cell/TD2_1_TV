@@ -41,7 +41,7 @@
     "sourceFormat": ".gltf"
   },
   "importerId": "ModelImporter",
-  "importerVersion": 43,
+  "importerVersion": 44,
   "metaVersion": 1,
   "sourcePath": "Assets/TD2/Intro/SM_TD2_StaticWhite.gltf",
   "type": "Model"

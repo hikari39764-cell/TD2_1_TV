@@ -1,0 +1,14 @@
+{
+  "displayName": "charge",
+  "guid": "9831147ede5448f367ac0c8f4a2f7671",
+  "importSettings": {
+    "cookVfx": true,
+    "outputFormat": "HVFXC",
+    "sourceFormat": ".hvfx"
+  },
+  "importerId": "VfxAssetImporter",
+  "importerVersion": 27,
+  "metaVersion": 1,
+  "sourcePath": "Assets/Vfx/charge.hvfx",
+  "type": "VfxEffect"
+}

@@ -1,0 +1,14 @@
+{
+  "displayName": "flame_jet",
+  "guid": "a637838fa338cee13d094c6f68bd7ce2",
+  "importSettings": {
+    "cookVfx": true,
+    "outputFormat": "HVFXC",
+    "sourceFormat": ".hvfx"
+  },
+  "importerId": "VfxAssetImporter",
+  "importerVersion": 27,
+  "metaVersion": 1,
+  "sourcePath": "Assets/Vfx/flame_jet.hvfx",
+  "type": "VfxEffect"
+}

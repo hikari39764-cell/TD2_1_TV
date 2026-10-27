@@ -10510,7 +10510,7 @@
       "transform": {
         "position": [
           0.0,
-          2.9800000190734863,
+          3.0237622261047363,
           -3.0999999046325684
         ],
         "rotationEulerDeg": [
@@ -11099,11 +11099,11 @@
             "cells": "111111111111000000000001000000000001000000000000111000000000111000000000111111111111",
             "cols": 12,
             "devices": "ad Decal 4 1 4 2 variant=ad\nd1gem Collectible 1 3 1 1\n",
-            "entryRegion": true,
+            "entryRegion": false,
             "regionId": "td2.d1",
             "rows": 7,
             "screenBrightness": 2.2,
-            "spawnX": 4.0,
+            "spawnX": 4.1875,
             "spawnY": 5.125,
             "tilePixels": 64,
             "worldPlaced": true,
@@ -16386,7 +16386,7 @@
       "transform": {
         "position": [
           -0.75,
-          1.2999999523162842,
+          1.2942321300506592,
           -14.0
         ],
         "rotationEulerDeg": [
@@ -24253,12 +24253,12 @@
       "sourcePrefabId": "",
       "transform": {
         "position": [
-          2.0999999046325684,
-          3.799999952316284,
+          2.0140013694763184,
+          3.780865430831909,
           5.199999809265137
         ],
         "rotationEulerDeg": [
-          45.629600524902344,
+          45.629608154296875,
           180.0,
           0.0
         ],
