@@ -41,7 +41,7 @@
     "sourceFormat": ".gltf"
   },
   "importerId": "ModelImporter",
-  "importerVersion": 43,
+  "importerVersion": 44,
   "metaVersion": 1,
   "sourcePath": "Assets/Models/TD2Devices/SM_TD2_Dev_Door_H3.gltf",
   "type": "Model"
