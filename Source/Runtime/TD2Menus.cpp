@@ -1,6 +1,9 @@
 #include "TD2Menus.h"
+#include "TD2Popups.h"
+#include "../Common/TD2Math.h"
 #include "TD2RegionComponent.h"
 #include "HIKARI/Project/ActionViews.h"
+#include "HIKARI/Project/GameFlowViews.h"
 #include "HIKARI/Project/AudioView.h"
 #include "HIKARI/Project/DisplaySettingsView.h"
 #include "HIKARI/Project/SceneCaptureView.h"
@@ -24,6 +27,18 @@ constexpr std::string_view kIconMail = "UI/TD2/UI_Icon_MailNew.png";
 constexpr std::string_view kIconMailOpen = "UI/TD2/UI_Icon_MailOpen.png";
 constexpr std::string_view kMailFields = "UI/TD2/UI_MailFields.png";
 constexpr std::string_view kMailBody = "ねえ、わたしと いっしょに あそばない？";
+// 隠しの道を通した後のメール（開発者から）。本文は二行。
+constexpr std::string_view kDevSubject = "件名：ありがとう", kDevSender = "差出人：開発者";
+constexpr std::string_view kDevBody = "私たちのゲームを 遊んでくれて、\nありがとうございました。";
+constexpr std::string_view kDevRestart = "最初から";
+constexpr std::string_view kDevConfirm = "セーブデータを消して、最初から始めます。\nよろしいですか？";
+// 弾窓の演出で出す字（起動の直後に一度描いて、初めて出す時に字の読み込みで止まらないようにする）。
+constexpr std::string_view kPopupGlyphs =
+    "ちなみにタイトルは：ビジョン　ですたのしんでねゴールでまってるねクリアおめでとうでもまだかえっちゃだめだよだってきみは"
+    "ずっとここでわたしとあそぶんだからほんとうにもうあそんでくれないのしょうがないなあこんどはマウスをロックしたよおとなしく"
+    "「はい」をえらんでねアハハゆっくりやすんでめがさめたらまたいっしょにあそぼうまさかそこまでほんきだなんてこんどこそおてあげ"
+    "つぎのステージもうすこしだけくれるこれがさいごのおねがい……ごめんこわがらせちゃったかなやっぱりほしいなしちゃうすっごくうれしい"
+    "ここまでおもわなかったイライラさせかもしれないけどありがとうゆめをみてたとおもってつかれさまおしらせエラー！？いいえ";
 // メールの出方（タイトル待ちの経過秒）：窓が開き始める・本文を打ち始める・一秒に打つ字の数。
 constexpr double kMailOpen = .6, kMailType = .9, kMailCharsPerSecond = 16;
 // テレビの画面に貼る画布の大きさ（正方形。画面の比に合わせてその左上を使う）と、画面の材質スロット名
@@ -54,22 +69,8 @@ constexpr std::array<HIKARI::GameProjectDisplayResolution, 4> kResolutionValues{
 enum Row { kResume, kBgm, kSe, kAmbient, kWindowMode, kResolution, kVsync, kQuit, kRowCount };
 constexpr std::array<std::string_view, kRowCount> kRowLabels{"つづける", "BGM", "効果音", "環境音", "画面モード", "解像度", "垂直同期", "ゲームをやめる"};
 
-double Smooth(double t) { t = std::clamp(t, 0.0, 1.0); return t * t * (3 - 2 * t); }
 // 目標へ秒あたり rate の割合で寄せる。
 float Follow(float value, float goal, double seconds, double rate = 18) { return value + (goal - value) * static_cast<float>(1 - std::exp(-seconds * rate)); }
-// UTF-8 の文字の数と、頭から count 文字。
-size_t Length(std::string_view text) {
-    size_t n = 0;
-    for (const char c : text) n += (static_cast<unsigned char>(c) & 0xC0) != 0x80;
-    return n;
-}
-std::string_view Head(std::string_view text, size_t count) {
-    size_t at = 0;
-    for (size_t n = 0; at < text.size(); ++at) {
-        if ((static_cast<unsigned char>(text[at]) & 0xC0) != 0x80 && n++ == count) break;
-    }
-    return text.substr(0, at);
-}
 // 画面の縁へ向かって少しずつ暗くし、ブラウン管の奥に映っているように見せる（帯を重ねる）。
 void Shade(Ui::Painter& paint, Rect s) {
     for (int i = 1; i <= 6; ++i) {
@@ -186,6 +187,15 @@ bool MenuDirector::BeginCanvas(HIKARI::WorldView& world, HIKARI::ObjectView scre
     return true;
 }
 
+bool MenuDirector::PaintOnScreen(HIKARI::WorldView& world, HIKARI::ObjectView screen, int order, const std::function<void(Ui::Painter&, Ui::Rect)>& draw) {
+    Rect region{};
+    if (!BeginCanvas(world, screen, region)) return false;
+    Ui::Painter paint(world, canvas_.handle, kCanvasSize, kCanvasSize, order);
+    paint.SetGain(kCanvasGain); paint.SetTextOutline(kCanvasOutline);
+    draw(paint, region);
+    return true;
+}
+
 void MenuDirector::EndFrame(HIKARI::WorldView& world) {
     if (canvas_.drawing) {
         (void)world.GetUiCanvases().CommitUpdate(canvas_.handle);
@@ -194,7 +204,12 @@ void MenuDirector::EndFrame(HIKARI::WorldView& world) {
         // このフレームは描かなかった：画面を放す（このあと舞台がその画面を 3D の絵へ結び直す）。
         canvas_.screen = {};
     }
-    if (std::exchange(cursorDrawn_, false)) (void)world.GetInput().SetPointerCursorVisible(0);
+    // OS のマウスポインター：単体のゲームではずっと隠し、通関の「マウスをロックした」問いの間だけ見せる（その一瞬だけ本当の
+    // マウスが使えると気付ける）。エディタの Play では、窓の矢印を描いた時だけ隠す（エディタの操作を邪魔しない）。
+    const bool standalone = world.GetRuntimeSession().GetHostKind() == HIKARI::GameProjectRuntimeHostKind::StandaloneGame;
+    const bool show = std::exchange(pointerRequested_, false), drawn = std::exchange(cursorDrawn_, false);
+    if (show) (void)world.GetInput().SetPointerCursorVisible(1);
+    else if (standalone || drawn) (void)world.GetInput().SetPointerCursorVisible(0);
 }
 
 void MenuDirector::SaveSettings(HIKARI::WorldView& world) {
@@ -254,6 +269,8 @@ void MenuDirector::Warm(HIKARI::WorldView& world, double seconds) {
     for (const auto label : kWindowModes) glyphs += label;
     for (const auto label : kResolutions) glyphs += label;
     glyphs += "W・S選ぶA・D変えるスペース決定ESC閉じる十字キー選ぶ・変えるA決定START閉じる";
+    glyphs += kPopupGlyphs;
+    for (const auto text : {kDevSubject, kDevSender, kDevBody, kDevRestart, kDevConfirm}) glyphs += text;
     paint.Text(glyphs, {0, 0, 4096, 32}, 24, Ui::kInk);
 }
 
@@ -262,7 +279,7 @@ void MenuDirector::DrawClosing(HIKARI::WorldView& world, double seconds) {
     if (closing_ >= 0 && (closing_ += seconds) < .4) {
         // 押した姿を一瞬見せてから、全体を薄くしていく。
         Ui::Painter paint(world, kContinueOrder);
-        DrawContinue(paint, static_cast<float>(1 - Smooth((closing_ - .08) / .32)), 1, seconds, true);
+        DrawContinue(paint, static_cast<float>(1 - Math::SmoothStep((closing_ - .08) / .32)), 1, seconds, true);
     } else {
         closing_ = -1;
     }
@@ -286,7 +303,7 @@ MenuDirector::Choice MenuDirector::UpdateContinue(HIKARI::WorldView& world, doub
     if (!warming && keys_.right) choice_ = 1;
     // 起動の最初に出るので、黒い背景は初めから覆い（下のタイトルの画を見せない）、窓だけ現れる。
     Ui::Painter paint(world, kContinueOrder);
-    DrawContinue(paint, 1, warming ? kWarmAlpha : static_cast<float>(Smooth(opened_ / .3)), step, false);
+    DrawContinue(paint, 1, warming ? kWarmAlpha : static_cast<float>(Math::SmoothStep(opened_ / .3)), step, false);
     if (warming || !keys_.confirm || opened_ < .2) return Choice::None;
     holdAction_ = true;
     mode_ = Mode::None;
@@ -295,11 +312,12 @@ MenuDirector::Choice MenuDirector::UpdateContinue(HIKARI::WorldView& world, doub
     return choice_ == 0 ? Choice::Yes : Choice::No;
 }
 
-MenuDirector::Choice MenuDirector::UpdateTitle(HIKARI::WorldView& world, HIKARI::ObjectView screen, float alpha, bool interactive, double seconds) {
+MenuDirector::Choice MenuDirector::UpdateTitle(HIKARI::WorldView& world, HIKARI::ObjectView screen, float alpha, bool interactive, double seconds, bool developer) {
     seconds = (std::min)(seconds, kUiStep);
     titleTime_ += seconds;
+    const std::string_view mailBody = developer ? kDevBody : kMailBody;
     // 出てくる途中でスペースを押したら、窓・本文・ボタンをすぐに出しきる（その押下では決めない）。
-    const double readyTime = kMailType + (static_cast<double>(Length(kMailBody)) + 7) / kMailCharsPerSecond;
+    const double readyTime = kMailType + (static_cast<double>(Ui::CharCount(mailBody)) + 7) / kMailCharsPerSecond;
     const bool skipped = interactive && leaving_ < 0 && keys_.confirm && titleTime_ < readyTime;
     if (skipped) { titleTime_ = readyTime; holdAction_ = true; }
     // 決めた後：押したボタンを一瞬見せ、ちらついて、ブラウン管を切るように横の線から点へ縮んで消える。
@@ -309,7 +327,7 @@ MenuDirector::Choice MenuDirector::UpdateTitle(HIKARI::WorldView& world, HIKARI:
         if (!leavingQuit_) { leaving_ = -1; return Choice::None; }
         // いいえ：画面が消えた後、画全体を暗くしてから終える。
         Ui::Painter fade(world, kFadeOrder);
-        fade.Fill({0, 0, fade.Width(), fade.Height()}, {0, 0, 0, static_cast<float>(Smooth((leaving_ - .5) / .35))});
+        fade.Fill({0, 0, fade.Width(), fade.Height()}, {0, 0, 0, static_cast<float>(Math::SmoothStep((leaving_ - .5) / .35))});
         if (leaving_ < .9 || quitReported_) return Choice::None;
         quitReported_ = true;
         return Choice::No;
@@ -329,10 +347,10 @@ MenuDirector::Choice MenuDirector::UpdateTitle(HIKARI::WorldView& world, HIKARI:
             const double k = (t - .22) / .28;
             const float line = (std::max)(2.f, glass.h * .006f);
             if (k < .55) {
-                const float h = static_cast<float>(line + (glass.h - line) * (1 - Smooth(k / .55)));
+                const float h = static_cast<float>(line + (glass.h - line) * (1 - Math::SmoothStep(k / .55)));
                 paint.Fill({glass.x, glass.y + (glass.h - h) * .5f, glass.w, h}, {.85f, .92f, .9f, 1});
             } else {
-                const float w = static_cast<float>(line + (glass.w - line) * (1 - Smooth((k - .55) / .45)));
+                const float w = static_cast<float>(line + (glass.w - line) * (1 - Math::SmoothStep((k - .55) / .45)));
                 paint.Fill({glass.x + (glass.w - w) * .5f, glass.y + (glass.h - line) * .5f, w, line}, {1, 1, 1, 1});
             }
             return Choice::None;
@@ -350,7 +368,7 @@ MenuDirector::Choice MenuDirector::UpdateTitle(HIKARI::WorldView& world, HIKARI:
     // （通関の目覚めの後のタイトル待ちでは、もう開いたまま）。画布の地は黒なので、alpha は黒からの出方になる。
     paint.Fill(s, kDesktop);
     Shade(paint, s);
-    const float open = leaving ? 1.f : static_cast<float>(Smooth((titleTime_ - kMailOpen) / .22));
+    const float open = leaving ? 1.f : static_cast<float>(Math::SmoothStep((titleTime_ - kMailOpen) / .22));
     if (open <= 0) return Choice::None;
     paint.SetAlpha(alpha * open);
     const float w = s.w * .9f, h = s.h * .86f * (.9f + .1f * open);
@@ -363,8 +381,8 @@ MenuDirector::Choice MenuDirector::UpdateTitle(HIKARI::WorldView& world, HIKARI:
     const Rect fields{inner.x + pad, inner.y + pad, fw, fh};
     paint.Image(kMailFields, fields);
     const float textX = fields.x + fields.w * .23f, textW = fields.w * .74f, size = fields.h * .185f;
-    paint.Text("件名：いっしょにあそぼ", {textX, fields.y + fields.h * .1f, textW, fields.h * .38f}, size, Ui::kInk);
-    paint.Text("差出人：？？？", {textX, fields.y + fields.h * .52f, textW, fields.h * .38f}, size, Ui::kInk);
+    paint.Text(developer ? kDevSubject : "件名：いっしょにあそぼ", {textX, fields.y + fields.h * .1f, textW, fields.h * .38f}, size, Ui::kInk);
+    paint.Text(developer ? kDevSender : "差出人：？？？", {textX, fields.y + fields.h * .52f, textW, fields.h * .38f}, size, Ui::kInk);
     // 届いたばかりの印（右上に赤い点の封筒）。はい を押した後は、開いた封筒（読んだ印）に替わる（いいえ はそのまま）。
     const float mail = fields.h * .62f;
     if (leaving && !leavingQuit_) {
@@ -376,20 +394,60 @@ MenuDirector::Choice MenuDirector::UpdateTitle(HIKARI::WorldView& world, HIKARI:
         const float hop = beat < .36 ? static_cast<float>(std::abs(std::sin(beat / .36 * 6.2832))) * mail * .14f : 0.f;
         paint.Image(kIconMail, {inner.Right() - pad - mail * 231.f / 194.f, fields.y + (fields.h - mail) * .5f - hop, mail * 231.f / 194.f, mail});
     }
-    // 本文：窓が開いてから一字ずつ打ち出す。
-    constexpr std::string_view body = kMailBody;
+    // 本文：窓が開いてから一字ずつ打ち出す（開発者のメールは二行で、少し小さな字）。
+    const std::string_view body = mailBody;
     const double typed = leaving ? 1e9 : (titleTime_ - kMailType) * kMailCharsPerSecond;
     const float bodyY = fields.Bottom() + pad * .9f;
     if (typed > 0) {
         // 打っている間と打ち終えて少しの間は、末尾に点滅する「_」を付ける。
-        std::string line(Head(body, static_cast<size_t>(typed)));
-        const double after = typed - static_cast<double>(Length(body));
-        if (after < 12 && std::fmod(titleTime_, .5) < .3) line += "_";
-        paint.Text(line, {inner.x + pad * 1.3f, bodyY, inner.w - pad * 2.6f, inner.h * .15f}, inner.h * .105f, Ui::kInk);
+        std::string text(Ui::CharHead(body, static_cast<size_t>(typed)));
+        const double after = typed - static_cast<double>(Ui::CharCount(body));
+        if (after < 12 && std::fmod(titleTime_, .5) < .3) text += "_";
+        const float lineH = developer ? inner.h * .12f : inner.h * .15f, textSize = developer ? inner.h * .088f : inner.h * .105f;
+        float y = bodyY;
+        for (size_t start = 0; start <= text.size();) {
+            const size_t cut = text.find('\n', start);
+            paint.Text(std::string_view(text).substr(start, cut == std::string::npos ? std::string::npos : cut - start),
+                       {inner.x + pad * 1.3f, y, inner.w - pad * 2.6f, lineH}, textSize, Ui::kInk);
+            if (cut == std::string::npos) break;
+            start = cut + 1; y += lineH;
+        }
     }
     // はい・いいえ：打ち終えてから出す。
-    const float ready = leaving ? 1.f : static_cast<float>(Smooth((typed - static_cast<double>(Length(body)) - 4) / 3));
+    const float ready = leaving ? 1.f : static_cast<float>(Math::SmoothStep((typed - static_cast<double>(Ui::CharCount(body)) - 4) / 3));
     if (ready <= 0) return Choice::None;
+    if (developer) {
+        // 開発者のメール：「最初から」だけ。選ぶと窓の真ん中に保存を消す確かめを出し、はい で最初から。
+        paint.SetAlpha(alpha * open * ready);
+        const float bh = inner.h * .2f;
+        const std::array<std::string_view, 1> restart{kDevRestart};
+        std::array<Rect, 1> rects{};
+        Popups::Buttons(paint, {inner.x, inner.Bottom() - pad - bh, inner.w - pad, bh}, restart, devConfirm_ ? -1 : 0, leaving, -1, rects);
+        if (!devConfirm_) { paint.Cursor(rects[0].x + rects[0].w * .64f, rects[0].y + bh * .58f, bh * .78f); cursorDrawn_ = true; }
+        if (devConfirm_ || leaving) {
+            paint.SetAlpha(alpha);
+            const float cw = inner.w * .86f;
+            const Rect buttons = Popups::Draw(paint, window.x + window.w * .5f, window.y + window.h * .52f, cw,
+                                              {"メッセージ", kDevConfirm, Popups::kIconWarning, 1, 1}, true);
+            const std::array<std::string_view, 2> labels{"はい", "いいえ"};
+            std::array<Rect, 2> answer{};
+            Popups::Buttons(paint, buttons, labels, devChoice_, leaving, -1, answer);
+            devCursor_ = Follow(devCursor_, static_cast<float>(devChoice_), seconds);
+            const float cx = answer[0].x + (answer[1].x - answer[0].x) * devCursor_ + answer[0].w * .64f;
+            paint.Cursor(cx, answer[0].y + answer[0].h * .58f, answer[0].h * .78f);
+            cursorDrawn_ = true;
+        }
+        if (!interactive || leaving || ready < 1 || skipped || !keys_.confirm) {
+            if (interactive && devConfirm_ && !leaving) { if (keys_.left) devChoice_ = 0; if (keys_.right) devChoice_ = 1; }
+            return Choice::None;
+        }
+        holdAction_ = true;
+        if (!devConfirm_) { devConfirm_ = true; devChoice_ = 1; devCursor_ = 1; return Choice::None; }
+        if (devChoice_ != 0) { devConfirm_ = false; return Choice::None; }
+        std::fprintf(stderr, "[TD2 menu] developer mail restart\n");
+        leaving_ = 0; leavingQuit_ = false;
+        return Choice::Yes;
+    }
     if (interactive && !leaving && ready >= 1) {
         if (keys_.left) titleChoice_ = 0;
         if (keys_.right) titleChoice_ = 1;
@@ -412,7 +470,7 @@ MenuDirector::PauseResult MenuDirector::UpdatePause(HIKARI::WorldView& world, HI
         quitting_ += seconds;
         DrawPause(world, world.FindObject(pauseScreen_), 1, quitAsked_, seconds, true);
         Ui::Painter fade(world, kFadeOrder);
-        fade.Fill({0, 0, fade.Width(), fade.Height()}, {0, 0, 0, static_cast<float>(Smooth(quitting_ / .35))});
+        fade.Fill({0, 0, fade.Width(), fade.Height()}, {0, 0, 0, static_cast<float>(Math::SmoothStep(quitting_ / .35))});
         if (quitting_ < .4 || quitReported_) return PauseResult::None;
         quitReported_ = true;
         return PauseResult::Quit;
@@ -450,7 +508,7 @@ MenuDirector::PauseResult MenuDirector::UpdatePause(HIKARI::WorldView& world, HI
     if (displayPending_ > 0 && (displayPending_ -= seconds) <= 0) { displayPending_ = 0; Apply(world, true); }
     const auto flushDisplay = [&] { if (displayPending_ > 0) { displayPending_ = 0; Apply(world, true); } };
     pauseScreen_ = screen.GetHandle();
-    DrawPause(world, screen, static_cast<float>(Smooth(opened_ / .18)), confirming, seconds);
+    DrawPause(world, screen, static_cast<float>(Math::SmoothStep(opened_ / .18)), confirming, seconds);
 
     // 決める・閉じる。
     if (confirming) {

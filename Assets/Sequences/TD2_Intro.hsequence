@@ -13,7 +13,7 @@
         "targetKind": "slot"
       }
     ],
-    "durationSeconds": 34.81999969482422,
+    "durationSeconds": 19.75,
     "id": 1,
     "name": "开场演出",
     "screenEffects": [
@@ -280,7 +280,7 @@
           0.0,
           0.0
         ],
-        "duration": 5.855000019073486,
+        "duration": 0.13500022888183594,
         "enabled": true,
         "fadeIn": 0.014999999664723873,
         "fadeOut": 0.44999998807907104,
@@ -1861,134 +1861,6 @@
                     0.020989997312426567
                   ],
                   "time": 19.6200008392334
-                },
-                {
-                  "customTangents": 0,
-                  "far": 500.0,
-                  "fov": 52.0,
-                  "inFovTangent": 0.0,
-                  "inTangent": [
-                    0.0,
-                    0.0,
-                    0.0
-                  ],
-                  "interpolation": "spline",
-                  "near": 0.009999999776482582,
-                  "outFovTangent": 0.0,
-                  "outTangent": [
-                    0.0,
-                    0.0,
-                    0.0
-                  ],
-                  "position": [
-                    4.599999904632568,
-                    1.9500000476837158,
-                    5.849999904632568
-                  ],
-                  "reference": 0,
-                  "rotation": [
-                    0.05431398004293442,
-                    -0.9456626176834106,
-                    0.23007792234420776,
-                    0.223240926861763
-                  ],
-                  "time": 25.0
-                },
-                {
-                  "customTangents": 0,
-                  "far": 500.0,
-                  "fov": 49.0,
-                  "inFovTangent": 0.0,
-                  "inTangent": [
-                    0.0,
-                    0.0,
-                    0.0
-                  ],
-                  "interpolation": "spline",
-                  "near": 0.009999999776482582,
-                  "outFovTangent": 0.0,
-                  "outTangent": [
-                    0.0,
-                    0.0,
-                    0.0
-                  ],
-                  "position": [
-                    4.449999809265137,
-                    1.8600000143051147,
-                    5.659999847412109
-                  ],
-                  "reference": 0,
-                  "rotation": [
-                    0.05133800953626633,
-                    -0.9486512541770935,
-                    0.21835504472255707,
-                    0.22303906083106995
-                  ],
-                  "time": 30.520000457763672
-                },
-                {
-                  "customTangents": 0,
-                  "far": 500.0,
-                  "fov": 28.0,
-                  "inFovTangent": 0.0,
-                  "inTangent": [
-                    0.0,
-                    0.0,
-                    0.0
-                  ],
-                  "interpolation": "spline",
-                  "near": 0.009999999776482582,
-                  "outFovTangent": 0.0,
-                  "outTangent": [
-                    0.0,
-                    0.0,
-                    0.0
-                  ],
-                  "position": [
-                    3.2200000286102295,
-                    1.2300000190734863,
-                    5.079999923706055
-                  ],
-                  "reference": 0,
-                  "rotation": [
-                    0.0035860021598637104,
-                    -0.9963685870170593,
-                    0.0647430345416069,
-                    0.05518403276801109
-                  ],
-                  "time": 33.619998931884766
-                },
-                {
-                  "customTangents": 0,
-                  "far": 500.0,
-                  "fov": 26.0,
-                  "inFovTangent": 0.0,
-                  "inTangent": [
-                    0.0,
-                    0.0,
-                    0.0
-                  ],
-                  "interpolation": "spline",
-                  "near": 0.009999999776482582,
-                  "outFovTangent": 0.0,
-                  "outTangent": [
-                    0.0,
-                    0.0,
-                    0.0
-                  ],
-                  "position": [
-                    3.119999885559082,
-                    1.1890000104904175,
-                    4.920300006866455
-                  ],
-                  "reference": 0,
-                  "rotation": [
-                    0.0,
-                    0.998199462890625,
-                    -0.05998203158378601,
-                    0.0
-                  ],
-                  "time": 34.81999969482422
                 }
               ],
               "lookAt": 0,
@@ -1998,7 +1870,7 @@
                     "keys": [],
                     "value": 0.012000000104308128
                   },
-                  "duration": 34.81999969482422,
+                  "duration": 19.75,
                   "enabled": true,
                   "fadeIn": 0.0,
                   "fadeOut": 0.0,
@@ -2108,26 +1980,6 @@
                   "maximumSpeed": 8.0,
                   "seed": 61,
                   "start": 18.350000381469727,
-                  "weight": {
-                    "keys": [],
-                    "value": 1.0
-                  }
-                },
-                {
-                  "amount": {
-                    "keys": [],
-                    "value": 0.012000000104308128
-                  },
-                  "duration": 0.3499999940395355,
-                  "enabled": true,
-                  "fadeIn": 0.009999999776482582,
-                  "fadeOut": 0.3199999928474426,
-                  "frequency": 14.0,
-                  "id": 8,
-                  "kind": 7,
-                  "maximumSpeed": 8.0,
-                  "seed": 63,
-                  "start": 33.34000015258789,
                   "weight": {
                     "keys": [],
                     "value": 1.0
@@ -2412,26 +2264,6 @@
                     "keys": [],
                     "value": 1.0
                   }
-                },
-                {
-                  "amount": {
-                    "keys": [],
-                    "value": 0.014999999664723873
-                  },
-                  "duration": 0.30000001192092896,
-                  "enabled": true,
-                  "fadeIn": 0.009999999776482582,
-                  "fadeOut": 0.30000001192092896,
-                  "frequency": 14.0,
-                  "id": 9,
-                  "kind": 7,
-                  "maximumSpeed": 8.0,
-                  "seed": 64,
-                  "start": 26.520000457763672,
-                  "weight": {
-                    "keys": [],
-                    "value": 1.0
-                  }
                 }
               ],
               "name": "开场第一人称",
@@ -2456,7 +2288,7 @@
               "useScenePose": false
             },
             "cameraBindingId": 1,
-            "durationSeconds": 34.81999969482422,
+            "durationSeconds": 19.75,
             "effects": [],
             "id": 1,
             "sourceOffsetSeconds": 0.0,
@@ -2480,7 +2312,7 @@
             "startSeconds": 0.6000000238418579
           },
           {
-            "durationSeconds": 34.220001220703125,
+            "durationSeconds": 19.149999976158142,
             "id": 2,
             "name": "黒帯",
             "startSeconds": 0.6000000238418579
@@ -2562,102 +2394,6 @@
             "id": 15,
             "name": "吸い込み",
             "startSeconds": 18.350000381469727
-          },
-          {
-            "durationSeconds": 4.199999809265137,
-            "id": 16,
-            "name": "タイトルカード",
-            "startSeconds": 20.6299991607666
-          },
-          {
-            "durationSeconds": 0.10000000149011612,
-            "id": 17,
-            "name": "遠景",
-            "startSeconds": 25.020000457763672
-          },
-          {
-            "durationSeconds": 2.5,
-            "id": 18,
-            "name": "復電",
-            "startSeconds": 26.520000457763672
-          },
-          {
-            "durationSeconds": 2.0,
-            "id": 19,
-            "name": "信号合わせ",
-            "startSeconds": 30.219999313354492
-          },
-          {
-            "durationSeconds": 0.10000000149011612,
-            "id": 20,
-            "name": "登場",
-            "startSeconds": 32.619998931884766
-          },
-          {
-            "durationSeconds": 0.47999998927116394,
-            "id": 21,
-            "name": "炸裂",
-            "startSeconds": 21.049999237060547
-          },
-          {
-            "durationSeconds": 2.4000000953674316,
-            "id": 22,
-            "name": "噴出",
-            "startSeconds": 21.530000686645508
-          },
-          {
-            "durationSeconds": 0.5400000214576721,
-            "id": 23,
-            "name": "巻き戻し",
-            "startSeconds": 23.93000030517578
-          },
-          {
-            "durationSeconds": 0.10000000149011612,
-            "id": 24,
-            "name": "乱れ",
-            "startSeconds": 22.18000030517578
-          },
-          {
-            "durationSeconds": 0.10000000149011612,
-            "id": 25,
-            "name": "乱れ",
-            "startSeconds": 22.729999542236328
-          },
-          {
-            "durationSeconds": 0.10000000149011612,
-            "id": 26,
-            "name": "乱れ",
-            "startSeconds": 23.110000610351563
-          },
-          {
-            "durationSeconds": 0.10000000149011612,
-            "id": 27,
-            "name": "乱れ",
-            "startSeconds": 23.389999389648438
-          },
-          {
-            "durationSeconds": 0.10000000149011612,
-            "id": 28,
-            "name": "乱れ",
-            "startSeconds": 23.59000015258789
-          },
-          {
-            "durationSeconds": 0.10000000149011612,
-            "id": 29,
-            "name": "乱れ",
-            "startSeconds": 23.709999084472656
-          },
-          {
-            "durationSeconds": 0.10000000149011612,
-            "id": 30,
-            "name": "乱れ",
-            "startSeconds": 23.790000915527344
-          },
-          {
-            "durationSeconds": 0.10000000149011612,
-            "id": 31,
-            "name": "乱れ",
-            "startSeconds": 23.850000381469727
           }
         ],
         "type": "event"

@@ -3,7 +3,7 @@
 namespace TD2::Editor::Level {
 namespace {
 constexpr float kTileHeight = 58;
-constexpr EditorWorkspaceColor kTileBack{.06f, .09f, .11f, 1}, kTileFrame{.22f, .32f, .35f, 1}, kTileOn{.97f, .80f, .40f, 1};
+constexpr EditorWorkspaceColor kTileBack{.06f, .09f, .11f, 1}, kTileFrame{.22f, .32f, .35f, 1}, kTileOn = kAmber;
 
 // 装置の記号を棚の枠に合わせて描く（細長い装置は横長・縦長の形のまま）。
 void DeviceIcon(IEditorWorkspaceUi& ui, std::string_view kind, EditorWorkspacePoint size) {

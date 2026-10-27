@@ -46,9 +46,6 @@ public:
                 double frameSeconds, double focusSeconds);
     // 瞬間移動した時：演出を止め、その区域カメラから追従し直す（復活と同じ）。
     void Jump(HIKARI::WorldView& world, const Rules::Exploration& exploration, const RegionObjects& objects, std::string_view region);
-    // 区域カメラの姿勢から始まる演出へ渡す、今の追従の画とのずれ（目と注視点）。追従がまだ無ければ false。
-    bool StartOffset(HIKARI::WorldView& world, const Rules::Exploration& exploration, const RegionObjects& objects, std::string_view region,
-                     HIKARI::GameProjectFloat3& eye, HIKARI::GameProjectFloat3& look) const;
     // 仕掛けが操作中のテレビを動かした時、追従の基準を同じ剛体の動きで運ぶ。
     void Carry(const HIKARI::GameProjectTransform& from, const HIKARI::GameProjectTransform& to) { rig_.Carry(from, to); }
     // 画面を揺らす（強さ 1 で数センチ）。今の揺れより強い時だけ上書きし、すぐに収まっていく。

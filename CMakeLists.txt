@@ -21,6 +21,11 @@ if(TARGET HIKARI_GameProjectEditorModule)
     # 解法の再生と検査に、エンジンに依存しない規則だけを同じソースから組み込む（実行時と同じ判定にする）。
     target_sources(HIKARI_GameProjectEditorModule PRIVATE
         Source/Runtime/Rules/TD2Rules.cpp
+        Source/Runtime/Rules/TD2RulesBodies.cpp
+        Source/Runtime/Rules/TD2RulesDevices.cpp
+        Source/Runtime/Rules/TD2RulesEcho.cpp
         Source/Runtime/Rules/TD2Exploration.cpp
+        Source/Runtime/Rules/TD2ExplorationMachines.cpp
+        Source/Runtime/Rules/TD2ExplorationProgress.cpp
         Source/Runtime/TD2RegionAuthoring.cpp)
 endif()

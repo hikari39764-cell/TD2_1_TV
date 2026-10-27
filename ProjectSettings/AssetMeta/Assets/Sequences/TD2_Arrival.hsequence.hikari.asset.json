@@ -1,0 +1,13 @@
+{
+  "displayName": "TD2_Arrival",
+  "guid": "3c5cdf8160397e2c7a0ba4d68781909a",
+  "importSettings": {
+    "runtimeLoader": "SequenceAssetStore",
+    "sourceAuthoritative": true
+  },
+  "importerId": "SequenceAssetImporter",
+  "importerVersion": 3,
+  "metaVersion": 1,
+  "sourcePath": "Assets/Sequences/TD2_Arrival.hsequence",
+  "type": "Sequence"
+}

@@ -3,11 +3,22 @@
 #include <algorithm>
 #include <array>
 #include <cmath>
+#include <cstdint>
 
 namespace TD2::Math {
 inline constexpr double kPi = 3.14159265358979323846;
 // 0〜1 へ丸めた三次のなめらかな立ち上がり（始めと終わりの傾きが 0）。
-inline double Smoothstep(double x) { x = std::clamp(x, 0.0, 1.0); return x * x * (3 - 2 * x); }
+template <class T>
+T SmoothStep(T t) {
+    t = std::clamp(t, T(0), T(1));
+    return t * t * (T(3) - T(2) * t);
+}
+// 0〜1 の決まった乱数（同じ組の数には同じ値。灯の明滅や弾窓の位置など、見た目のばらつきに使う）。
+inline double Hash01(uint32_t a, uint32_t b) {
+    uint32_t h = a * 0x9E3779B1u ^ (b + 0x7F4A7C15u) * 0x85EBCA77u;
+    h ^= h >> 15; h *= 0x2C1B3C6Du; h ^= h >> 12; h *= 0x297A2D39u; h ^= h >> 15;
+    return (h & 0xFFFFFFu) / double(0x1000000u);
+}
 
 using Vec3 = std::array<double, 3>;
 using Quat = std::array<double, 4>;   // x, y, z, w
@@ -45,13 +56,6 @@ inline Quat QFromEulerDeg(const Vec3& degrees) {
         return q;
     };
     return QMul(QMul(axis(degrees[2], 2), axis(degrees[1], 1)), axis(degrees[0], 0));
-}
-
-// 両端でゆっくり止まる補間の重み。
-template <class T>
-T SmoothStep(T t) {
-    t = std::clamp(t, T(0), T(1));
-    return t * t * (T(3) - T(2) * t);
 }
 
 // 臨界減衰のばね。行き過ぎず、目標が跳んでも速さが連続する。rate は変化の速さの状態。

@@ -42,14 +42,10 @@ struct ScreenStyleSettings {
     // 判定は手前の一列のまま。
     bool depthGrid = false;
     int depthRows = 4;
-    // 透視の窓（共有設定だけが効き、Play の時だけ）：操作中の部屋（主）と同じカメラの大区域の残りの部屋（副）を透視カメラで撮り、
-    // 外のカメラが画面を見る角度に合わせて目の位置を動かす。視差の強さは parallax。透視カメラは窓ごとに別の物体（画角で透視の強さが決まる）。
+    // 透視の覗き窓（共有設定だけが効き、Play の時だけ）：各テレビの画面を外のカメラが見る角度で撮る（斜めの視差は使わない）。
     bool perspective = false;
-    uint64_t perspectiveCameraObject = 0;
-    uint64_t perspectiveCamera2Object = 0;
-    // 遠くのテレビ（共有設定だけが効き、Play の時だけ）：ほかの窓に入らない写っているテレビを地図で近いものどうしの二組に分けて
-    // 撮る、画角の狭い透視カメラ（組ごとに一台）。写すテレビの範囲に合わせて近づけたり離したりする（キャプチャの大きさは変えない）。
-    uint64_t farCameraObject = 0, farCamera2Object = 0;
+    // 砂嵐の窓を撮る透視カメラ（回るテレビの雪の画。欄の名前は昔の「遠くのテレビのカメラ」のまま）。
+    uint64_t farCameraObject = 0;
     // 編集中に舞台を撮る正投影カメラ（詰めて並べた地図の二組。二つ目は未配置の地図）。主の高さが舞台の縮尺を決める。
     uint64_t captureCameraObject = 0;
     uint64_t unplacedCameraObject = 0;
@@ -84,10 +80,7 @@ public:
         fields.Bool("depthGrid", "奥行きのマス", settings_.depthGrid);
         fields.Int("depthRows", "奥行きの列数", settings_.depthRows, 1, 8);
         fields.Bool("perspective", "透視の窓", settings_.perspective);
-        fields.SceneObject("perspectiveCameraObject", "鮮明の透視カメラ", settings_.perspectiveCameraObject);
-        fields.SceneObject("perspectiveCamera2Object", "大区域の透視カメラ", settings_.perspectiveCamera2Object);
-        fields.SceneObject("farCameraObject", "遠くのテレビのカメラ 1", settings_.farCameraObject);
-        fields.SceneObject("farCamera2Object", "遠くのテレビのカメラ 2", settings_.farCamera2Object);
+        fields.SceneObject("farCameraObject", "砂嵐のカメラ", settings_.farCameraObject);
         fields.SceneObject("captureCameraObject", "編集用の正投影カメラ", settings_.captureCameraObject);
         fields.SceneObject("unplacedCameraObject", "編集用の正投影カメラ 2", settings_.unplacedCameraObject);
     }

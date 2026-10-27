@@ -12,6 +12,20 @@
 namespace TD2::Ui {
 inline constexpr std::string_view kFont = "Fonts/Makinas-4-Flat.otf";
 
+// UTF-8 の字の数（改行も一字）と、頭から count 字。打ち出しの途中の字を数えるのに使う。
+inline size_t CharCount(std::string_view text) {
+    size_t n = 0;
+    for (const char c : text) n += (static_cast<unsigned char>(c) & 0xC0) != 0x80;
+    return n;
+}
+inline std::string_view CharHead(std::string_view text, size_t count) {
+    size_t at = 0;
+    for (size_t n = 0; at < text.size(); ++at) {
+        if ((static_cast<unsigned char>(text[at]) & 0xC0) != 0x80 && n++ == count) break;
+    }
+    return text.substr(0, at);
+}
+
 struct Rect {
     float x = 0, y = 0, w = 0, h = 0;
     float Right() const noexcept { return x + w; }

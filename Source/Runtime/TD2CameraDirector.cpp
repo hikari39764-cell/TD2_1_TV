@@ -157,14 +157,6 @@ void CameraDirector::Jump(HIKARI::WorldView& world, const Rules::Exploration& ex
     StopTravel(world); Snap(world, exploration, objects, region);
 }
 
-bool CameraDirector::StartOffset(HIKARI::WorldView& world, const Rules::Exploration& exploration, const RegionObjects& objects,
-                                 std::string_view region, HIKARI::GameProjectFloat3& eye, HIKARI::GameProjectFloat3& look) const {
-    CameraRegionFrame frame;
-    if (!rig_.Ready() || !RegionFrame(world, exploration, objects, region, frame)) return false;
-    eye = Sub(rig_.Last().eye, frame.eye); look = Sub(rig_.Last().look, frame.look);
-    return true;
-}
-
 void CameraDirector::Snap(HIKARI::WorldView& world, const Rules::Exploration& exploration, const RegionObjects& objects, std::string_view region) {
     CameraRegionFrame frame;
     if (RegionFrame(world, exploration, objects, region, frame)) rig_.Snap(frame.eye, frame.look, frame.verticalFovRadians, frame.up);
@@ -435,7 +427,7 @@ void CameraDirector::FrameEventPose(CameraRigPose& pose, double dt) {
     eventWeight_ += (goal - eventWeight_) * (1 - std::exp(-dt / (goal > eventWeight_ ? kEventIn : kEventOut)));
     if (goal == 0 && eventWeight_ < 1e-3) { eventWeight_ = 0; eventValid_ = false; }
     if (!eventValid_ || eventWeight_ <= 0) return;
-    const double w = eventWeight_ * eventWeight_ * (3 - 2 * eventWeight_);
+    const double w = Math::SmoothStep(eventWeight_);
     pose.eye = to(add(eye, sub(of(eventEye_), eye), w));
     pose.look = to(add(look, sub(of(eventLook_), look), w));
     pose.verticalFovRadians = static_cast<float>(pose.verticalFovRadians + (eventFov_ - pose.verticalFovRadians) * w);

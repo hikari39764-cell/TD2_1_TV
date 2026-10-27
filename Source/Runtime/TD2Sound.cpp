@@ -34,6 +34,7 @@ void SoundDirector::Load(HIKARI::WorldView& world) {
     phone_.loop = false;
     ambient_.keep = footsteps_.keep = true;
     swap_ = load(kSwapPath); checkpoint_ = load(kCheckpointPath); blink_ = load(kBlinkPath); plate_ = load(kPlatePath); death_ = load(kDeathPath);
+    popup_ = load(kPopupPath);
     for (size_t i = 0; i < thunder_.size(); ++i) { thunder_[i] = load(kThunderPaths[i]); }
 }
 
@@ -62,10 +63,10 @@ void SoundDirector::Update(HIKARI::WorldView& world, const IntroDirector& intro,
         if (!phoneDone_ && t >= start && t < end + kPhoneCut) {
             const double u = t - start;
             // 遠くの小さな音から近づき、ゆっくり揺れて（部屋の中を動くように）、終わりは切る。
-            const double approach = .15 + .85 * Math::Smoothstep(u / kPhoneApproach);
+            const double approach = .15 + .85 * Math::SmoothStep(u / kPhoneApproach);
             const double sway = .8 + .2 * std::sin(2 * Math::kPi * .7 * u);
             const double cut = t < end ? 1.0 : 1 - (t - end) / kPhoneCut;
-            const double tail = end < s.blackoutStart ? Math::Smoothstep((end - t) / 1.0) : 1.0;   // 停電より先に 5 秒が来たら静かに消す
+            const double tail = end < s.blackoutStart ? Math::SmoothStep((end - t) / 1.0) : 1.0;   // 停電より先に 5 秒が来たら静かに消す
             phone = static_cast<float>(settings_.phone * approach * sway * std::clamp(cut, 0.0, 1.0) * (t < end ? tail : 1.0));
         } else if (t >= end + kPhoneCut) {
             phoneDone_ = true;
@@ -128,6 +129,20 @@ void SoundDirector::PlayOnce(HIKARI::WorldView& world, HIKARI::GameProjectAudioS
     if (Trace()) { std::fprintf(stderr, "[TD2 sound] se=%.*s\n", static_cast<int>(name.size()), name.data()); }
     if (!sound.IsValid() || volume <= 0) { return; }
     (void)world.GetAudio().Play(sound, Bus::Se, 0, volume);
+}
+
+void SoundDirector::PlayPopups(HIKARI::WorldView& world, int count) {
+    if (count <= 0 || !popup_.IsValid() || settings_.popup <= 0) { return; }
+    const auto audio = world.GetAudio();
+    for (int i = 0; i < (std::min)(count, 3); ++i) {
+        // 0.85〜1.35 倍の高さで、古い音から差し替えて重ねる。
+        popupSeed_ = popupSeed_ * 1664525u + 1013904223u;
+        HIKARI::GameProjectAudioPlayOptions options{};
+        options.bus = Bus::Se; options.volume = settings_.popup;
+        options.concurrency = HIKARI::GameProjectAudioConcurrency::ReplaceOldest; options.maximumInstances = 10;
+        options.playbackRate = .85f + .5f * static_cast<float>(popupSeed_ >> 8) / static_cast<float>(1u << 24);
+        (void)audio.Play(popup_, options);
+    }
 }
 
 void SoundDirector::OnEvent(HIKARI::WorldView& world, const Rules::RuleEvent& event) {

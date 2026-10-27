@@ -45,7 +45,6 @@ struct DeviceDefinition {
     double power = 22.5, delay = 0.85, cooldown = 3.0;
     // Decal：図案の種類（ad / space / spaceHold、前景の fore / foreCable）と不透明度。
     std::string variant;
-    double opacity = 0.8;
     // Decal の前景：玩法の面（人物の立つ面）より手前の距離（マス）。見た目だけで判定には使わない。
     double depth = 1.0;
     // Pusher（押し刺）：dir の向きへ travel マス、seconds 秒で伸びる刺の塊。dwell が 0 なら圧力板の通電で伸び、
@@ -136,7 +135,6 @@ struct WorldState {
 };
 struct StepOutput {
     std::vector<RuleEvent> events;
-    uint32_t simulationSteps = 0;
     uint64_t tick = 0;
     double simulationTime = 0.0, realTime = 0.0;
 };

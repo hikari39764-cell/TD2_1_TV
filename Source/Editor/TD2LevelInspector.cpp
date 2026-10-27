@@ -273,7 +273,7 @@ void LevelEditor::DrawDeviceInspector(EditorWorkspaceHostContext& ctx) {
     if (d->kind == "Spring") { DrawSpring(ui, *d); }
     if (d->kind == "Pusher") { DrawPusher(ui, *d); }
     if (d->kind == "Decal") { DrawDecal(ui, *d); }
-    if (d->kind == "Laser" || d->kind == "Door" || d->kind == "Bridge" || d->kind == "Goal" || (d->kind == "Pusher" && d->Extra("dwell").empty())) {
+    if (IsLinkableKind(d->kind) && !(d->kind == "Pusher" && !d->Extra("dwell").empty())) {
         ui.Checkbox("td2.device.invert", "通電で閉じる（逆）", &d->inverted);
         // つながる板が二枚以上ある時の動き方（全部で動けば、二か所を同時に押さえる謎になる）。
         bool all = d->Extra("all") == "1";

@@ -3,19 +3,18 @@
 // 世界のマス（左上原点、+Y 下）を舞台の座標へ写し、正投影カメラの姿勢を決める。
 // 各テレビの画面は、撮った像から自分の部屋の範囲を切り出したもの。
 #include "HIKARI/Project/ValueTypes.h"
+#include "../Common/TD2Math.h"
 #include <array>
 #include <cmath>
 
 namespace TD2 {
-inline constexpr double kPi = 3.14159265358979323846;
+using Math::kPi;
 inline constexpr float kStageCoordinate = 10000.0f;
 // 舞台カメラは注視点から 30 離れた正投影カメラ。
 inline constexpr double kStageCameraDistance = 30.0;
 
-using Vector3 = std::array<double, 3>;
-inline Vector3 Cross(const Vector3& a, const Vector3& b) {
-    return {a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]};
-}
+using Vector3 = Math::Vec3;
+using Math::Cross;
 // 正規直交の三軸（local X/Y/Z が向く世界方向）から回転の四元数を作る。
 inline HIKARI::GameProjectQuaternion QuaternionFromBasis(const Vector3& x, const Vector3& y, const Vector3& z) {
     const double trace = x[0] + y[1] + z[2];

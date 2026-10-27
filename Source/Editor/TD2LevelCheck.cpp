@@ -64,14 +64,14 @@ std::vector<LevelIssue> CheckLevel(const std::vector<CheckRoom>& rooms, const st
     const int entries = static_cast<int>(std::count_if(rooms.begin(), rooms.end(), [](const auto& r) { return r.settings.worldPlaced && r.settings.entryRegion; }));
     if (entries == 0 && !rooms.empty()) { add(IssueLevel::Error, "開始テレビがありません", {}); }
     if (entries > 1) { add(IssueLevel::Error, "開始テレビが " + std::to_string(entries) + " 台あります", {}); }
-    // ゴールは世界に一つ（通関の演出は一つの扉からしか始めない）。
+    // ゴールは本編と隠しステージに一つずつまで（本編のゴールは普通の通関、隠しステージのゴールは隠しの道の通関）。
     std::vector<std::string> goals;
     for (const auto& room : rooms) {
         if (!room.settings.worldPlaced) { continue; }
         DeviceEditor d; d.Load(room.settings.devices);
         for (const auto& item : d.Items()) { if (item.kind == "Goal") { goals.push_back(room.settings.region.regionId); } }
     }
-    if (goals.size() > 1) { add(IssueLevel::Error, "ゴールが " + std::to_string(goals.size()) + " 個あります（一つだけ）", goals.back()); }
+    if (goals.size() > 2) { add(IssueLevel::Error, "ゴールが " + std::to_string(goals.size()) + " 個あります（本編と隠しステージに一つずつ）", goals.back()); }
     for (const auto& room : rooms) {
         const auto& s = room.settings;
         if (!s.worldPlaced) { continue; }

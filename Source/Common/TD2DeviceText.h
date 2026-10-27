@@ -75,7 +75,7 @@ inline bool Parse(std::string_view text, std::vector<DeviceLine>& out, std::stri
                 if (IndexOf(kDirectionNames, value) < 0) { return fail("dir は Up/Down/Left/Right"); }
             } else if (key == "invert" || key == "latch" || key == "all") {
                 if (value != "0" && value != "1") { return fail(key + " は 0 か 1"); }
-            } else if (key == "range" || key == "power" || key == "delay" || key == "cooldown" || key == "opacity" || key == "depth" ||
+            } else if (key == "range" || key == "power" || key == "delay" || key == "cooldown" || key == "depth" ||
                        key == "travel" || key == "seconds" || key == "dwell" || key == "phase" || key == "width") {
                 if (!Number(value, number)) { return fail(key + " は有限の数にしてください"); }
             } else if (key != "variant") {

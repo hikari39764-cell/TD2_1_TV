@@ -22,6 +22,10 @@ std::string_view DevicePrefix(std::string_view kind);
 // 「plate_A」なら「A」。古い名前の装置は空。
 std::string DeviceLetter(const DeviceDraft& d);
 TargetKind ClassifyTarget(std::string_view target);
+// 圧力板からつなげる装置の種類（扉・レーザー・伸びる橋・ゴール・押し刺）。
+inline bool IsLinkableKind(std::string_view kind) {
+    return kind == "Door" || kind == "Laser" || kind == "Bridge" || kind == "Goal" || kind == "Pusher";
+}
 
 class DeviceEditor {
 public:

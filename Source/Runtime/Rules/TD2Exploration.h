@@ -108,6 +108,9 @@ struct Progress {
     std::vector<std::pair<std::string, std::vector<int>>> slides, stacks;      // 棚のメンバーごとのスロット、塔の場所
     std::vector<std::string> latched, taken;   // 入っている切り替え式の板と、拾った宝石（装置 ID）
     std::vector<std::pair<std::string, std::string>> sealed;   // 乗り物で降りて閉じた境（部屋の組）
+    // 通関の道：空は普通、"hidden" は隠しの道の途中、"end" は隠しの道を通した後（次の起動は机のパソコンのメールから）。
+    // 規則は使わない（ゲームのセッションが書き、読む）。
+    std::string finale;
 };
 struct RegionEvents { std::string regionId; StepOutput output; };
 struct RegionTransition { std::string kind, fromRegion, toRegion; Vec2 worldPosition; };

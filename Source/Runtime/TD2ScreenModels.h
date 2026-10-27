@@ -107,6 +107,12 @@ public:
     void PadSeries(const SeriesCounts& previous);
 
 private:
+    // 背景の壁はプレイ面より 0.85 マス奥（目盛りは壁のすぐ手前）。奥行きの格子がある時はその分さらに奥。
+    static constexpr double kBackdropDepth = -0.85;
+    // 地形の部品の奥行き（マス）。奥行きの格子の一列はこの厚み（斜投影を焼いた部品は奥へ伸ばせないので、立方体にはしない）。
+    static constexpr double kTerrainDepth = 0.7;
+    // 操作の札（キーの絵）の大きさ（マス）と、掛ける壁の奥行き。
+    static constexpr double kSignSize = .8, kSignWall = -.83;
     // 仕掛けの通電灯（点灯・消灯の二つを出して片方だけ見せる）。点いた直後は灯が一度膨らみ、光の粒が散る。
     void Lamp(double x, double bottomY, bool lit, double since, bool world = false);
     // 引っ込んだ仕掛けの輪郭（菫の破線）。部品の数は寸法だけで決まる。

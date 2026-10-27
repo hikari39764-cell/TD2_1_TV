@@ -2,6 +2,7 @@
 
 #include "Rules/TD2Exploration.h"
 #include "TD2CameraDirector.h"
+#include "TD2Finale.h"
 #include "TD2MachineViews.h"
 #include "TD2Intro.h"
 #include "TD2Menus.h"
@@ -48,16 +49,21 @@ private:
     void SyncRegions(HIKARI::WorldView& world);
     // ゴールの扉に入った：試遊の記録を締め、通関の演出を始める（演出が無ければすぐタイトル待ちへ戻す）。
     void StartEnding(HIKARI::WorldView& world, const std::string& region);
-    // 通関の後：世界を最初の状態へ戻し（仕掛けのテレビも最初の位置へ）、タイトル待ちから始める。
-    void RestartFromTitle(HIKARI::WorldView& world);
+    // 通関の後：世界を最初の状態へ戻し（仕掛けのテレビも最初の位置へ）、タイトル待ちから始める。wake は目覚め方。
+    void RestartFromTitle(HIKARI::WorldView& world, IntroDirector::Wake wake = IntroDirector::Wake::None);
+    // 通関の問いで本当のマウスを使った：隠しの道の入口の部屋へ移り、黒から明けて遊びに戻す。
+    void EnterHidden(HIKARI::WorldView& world);
+    // 隠しの道を通した後の机：パソコン以外のテレビを見えない所へ退ける（戻す時は元の姿勢へ）。
+    void HideOtherTelevisions(HIKARI::WorldView& world);
+    void RestoreTelevisions(HIKARI::WorldView& world);
     // 開発用（O）：ゴールの扉のある部屋の出生点へ移す。
     void TeleportToGoal(HIKARI::WorldView& world);
     // 世界を作者の最初の状態へ戻す（仕掛けのテレビも最初の位置へ。カメラも付け直す）。
     void ResetWorld(HIKARI::WorldView& world);
     // 保存した進みへ戻して遊びを始める（タイトル待ちは飛ばす）。戻せなければその保存を消し、最初の世界のタイトル待ちへ。
     bool ResumeProgress(HIKARI::WorldView& world, const Rules::Progress& progress);
-    // 今の進みを保存の枠へ書く（チェックポイントに触れた時と、やめる前に保存を選んだ時）。
-    void WriteProgress(HIKARI::WorldView& world);
+    // 今の進みを保存の枠へ書く（チェックポイントに触れた時と、やめる前に保存を選んだ時）。finale は通関の道（空なら今の道）。
+    void WriteProgress(HIKARI::WorldView& world, std::string_view finale = {});
     // 開発用の巡回（TD2_TOUR）の進み。
     uint64_t tourFrame_ = 0; size_t tourIndex_ = 0;
     void Trace(HIKARI::WorldView& world, uint64_t frame);
@@ -70,6 +76,12 @@ private:
     IntroDirector intro_;
     SoundDirector sound_;
     MenuDirector menu_;
+    FinaleDirector finale_;
+    // 隠しの道の途中か（その間のゴールは隠しの道の通関）。隠しの道へ移った後の黒から明ける経過秒（負なら明けている）。
+    bool hiddenRoute_ = false;
+    double hiddenFade_ = -1;
+    // 隠しの道を通した後の机で退けたテレビと、その元の姿勢。
+    std::vector<std::pair<HIKARI::GameProjectObjectHandle, HIKARI::GameProjectTransform>> movedTelevisions_;
     // 起動時に読んだ続き（問いに答えるまで持つ）。
     std::optional<Rules::Progress> pendingProgress_;
     // 進みを保存するか（「この画面から」や開発用の入口、巡回では遊ぶ人の保存を書き換えない）。

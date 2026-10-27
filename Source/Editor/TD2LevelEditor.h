@@ -9,6 +9,9 @@
 #include "TD2Replay.h"
 
 namespace TD2::Editor::Level {
+// 地図と棚で共通の色：琥珀＝選択・主役、品紅＝画面の外の仕掛け（薄い方は候補）、赤＝問題、枠と札の文字。
+inline constexpr EditorWorkspaceColor kAmber{.97f, .80f, .40f, 1}, kMagenta{.93f, .42f, .74f, 1}, kMagentaFaint{.93f, .42f, .74f, .35f};
+inline constexpr EditorWorkspaceColor kRed{.92f, .36f, .38f, 1}, kFrame{.32f, .49f, .53f, 1}, kLabel{.90f, .94f, .94f, 1};
 // 道具。地図の上の押し・ドラッグの意味が変わる。
 enum class Tool { Select, Terrain, Device, Link, Machine, Camera, Stage };
 // 左の欄に出すもの（最後に選んだもの）。
@@ -210,7 +213,6 @@ private:
     std::map<std::string, DeviceDraft, std::less<>> templates_;
     bool propertyPending_ = false;
     LinkSource link_;
-    std::string hoverText_;
 
     // 布景
     uint64_t stageObject_ = 0;
@@ -273,7 +275,6 @@ private:
     float checkClock_ = 10;
     std::vector<SolutionResult> solutions_;
     bool solutionsStale_ = true;
-    uint64_t solutionsRevision_ = 0;     // 再生した時の区域の読み直し回数（変わったら結果は古い）
     std::optional<PlayRecord> lastRecord_;
     std::filesystem::file_time_type recordingTime_{};
     bool recordingSeen_ = false;

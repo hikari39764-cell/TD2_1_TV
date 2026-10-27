@@ -25,6 +25,8 @@ inline constexpr std::string_view kBlinkPath = "Assets/Audio/SE/SE_Blink.mp3";
 inline constexpr std::string_view kFootstepsPath = "Assets/Audio/SE/SE_Footsteps.mp3";
 inline constexpr std::string_view kPlatePath = "Assets/Audio/SE/SE_PlateTrigger.mp3";
 inline constexpr std::string_view kDeathPath = "Assets/Audio/SE/SE_Death.mp3";
+// 弾窓が出る音（古いパソコンの「ピコン」。プログラムで作った短い音）。
+inline constexpr std::string_view kPopupPath = "Assets/Audio/SE/SE_Popup.wav";
 // 稲妻の雷（順に使う）。
 inline constexpr std::array<std::string_view, 3> kThunderPaths{"Assets/Audio/SE/SE_Thunder01.mp3", "Assets/Audio/SE/SE_LightningStrike1.mp3",
                                                               "Assets/Audio/SE/SE_LightningStrike2.mp3"};
@@ -36,6 +38,7 @@ struct SoundSettings {
     float ambientCinematic = 1;  // オープニングと通関の環境音（主役）
     float phone = .9f;           // オープニングの電話
     float swap = .9f, checkpoint = .9f, blink = .7f, footsteps = .7f, plate = .9f, death = .9f, thunder = .8f;
+    float popup = .55f;          // 弾窓が出る音
 };
 
 class SoundComponent final : public HIKARI::IGameComponent {
@@ -54,6 +57,7 @@ public:
         fields.Float("plate", "踏み板", settings_.plate, 0, 1);
         fields.Float("death", "死亡", settings_.death, 0, 1);
         fields.Float("thunder", "雷", settings_.thunder, 0, 1);
+        fields.Float("popup", "弾窓", settings_.popup, 0, 1);
     }
 private:
     SoundSettings settings_;
@@ -70,6 +74,8 @@ public:
     void Stop(HIKARI::WorldView& world);
     // 続きから始めた時：そのチェックポイントは鳴らし済みにする（立たせた瞬間に鳴らさない）。
     void NoteCheckpoint(std::string id) { lastCheckpoint_ = std::move(id); }
+    // 弾窓が count 個出た：一フレームに 3 つまで、音の高さを少しずつ変えて重ねる（嵐の間は鳴り続ける）。
+    void PlayPopups(HIKARI::WorldView& world, int count);
 
 private:
     // 鳴らし続ける音（BGM・環境音・足音）。音量は目標へ秒あたり rate で近づき、0 になれば止める（keep なら止めない）。
@@ -89,7 +95,8 @@ private:
     // 環境音は声の系統で鳴らす（設定の「環境音」の音量をこの系統に掛ける。このゲームに声は無い）。
     Loop titleBgm_{kTitleBgmPath}, stageBgm_{kStageBgmPath}, ambient_{kAmbientPath, HIKARI::GameProjectAudioBus::Voice}, phone_{kPhonePath, HIKARI::GameProjectAudioBus::Se};
     Loop footsteps_{kFootstepsPath, HIKARI::GameProjectAudioBus::Se};
-    HIKARI::GameProjectAudioSoundHandle swap_{}, checkpoint_{}, blink_{}, plate_{}, death_{};
+    HIKARI::GameProjectAudioSoundHandle swap_{}, checkpoint_{}, blink_{}, plate_{}, death_{}, popup_{};
+    uint32_t popupSeed_ = 1;      // 弾窓の音の高さの乱数
     std::array<HIKARI::GameProjectAudioSoundHandle, kThunderPaths.size()> thunder_{};
     double lastTime_ = -1;        // 前のフレームの演出の秒（稲妻を越えた瞬間を見る）
     std::string lastCheckpoint_;  // 最後に音を鳴らしたチェックポイント（同じ所に触れ直しても、戻されても鳴らさない）

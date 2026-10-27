@@ -6,6 +6,7 @@
 #include "TD2SaveData.h"
 #include "TD2Ui.h"
 #include "HIKARI/Project/WorldView.h"
+#include <functional>
 
 namespace TD2 {
 class MenuDirector {
@@ -24,6 +25,15 @@ public:
     uint64_t CanvasScreen() const noexcept { return canvas_.screen.value; }
     // UI がスペースを使った後、離すまで遊びへ渡さない（決めた瞬間にダッシュや交換にならない）。
     bool HoldsAction() const noexcept { return holdAction_; }
+    void HoldAction() noexcept { holdAction_ = true; }
+    // このフレームのキー（弾窓の演出が選ぶ・決めるのに使う。押した瞬間と長押しの繰り返し）。
+    bool LeftPressed() const noexcept { return keys_.left; }
+    bool RightPressed() const noexcept { return keys_.right; }
+    bool ConfirmPressed() const noexcept { return keys_.confirm; }
+    // このフレームは OS のマウスポインターを見せる（普段は単体のゲームでは隠し続ける）。
+    void RequestPointer() noexcept { pointerRequested_ = true; }
+    // テレビの画面の画布へ描く（弾窓の嵐など）。draw に描き手と画面の中の範囲を渡す。画布が使えない時は false。
+    bool PaintOnScreen(HIKARI::WorldView& world, HIKARI::ObjectView screen, int order, const std::function<void(Ui::Painter&, Ui::Rect)>& draw);
 
     // 起動の直後の毎フレーム：窓・メール・ESC の窓で使う素材と字を見えないほど薄く描き、初めて出す時の読み込みを済ませておく。
     void Warm(HIKARI::WorldView& world, double seconds);
@@ -34,10 +44,11 @@ public:
     // 毎フレーム：閉じていく続きの問いと ESC の窓を描く。
     void DrawClosing(HIKARI::WorldView& world, double seconds);
 
-    // タイトル待ちのパソコンのメール。screen はパソコンのテレビ（その画面に画布を貼って描く）、alpha は出方（通関の目覚め）。
+    // タイトル待ちのパソコンのメール。screen はパソコンのテレビ（その画面に画布を貼って描く）、alpha は出方（目覚め）。
     // interactive の時だけ選べる。はい は押した時に Yes（消える動きはその後も描く）、いいえ は消えて暗転し終えてから No。
-    Choice UpdateTitle(HIKARI::WorldView& world, HIKARI::ObjectView screen, float alpha, bool interactive, double seconds);
-    void ResetTitle() { titleChoice_ = 0; titleCursor_ = 0; leaving_ = -1; leavingQuit_ = false; }
+    // developer は隠しの道を通した後の開発者からのメール：「最初から」だけで、選ぶと保存を消す確かめを出し、はい で Yes。
+    Choice UpdateTitle(HIKARI::WorldView& world, HIKARI::ObjectView screen, float alpha, bool interactive, double seconds, bool developer = false);
+    void ResetTitle() { titleChoice_ = 0; titleCursor_ = 0; leaving_ = -1; leavingQuit_ = false; titleTime_ = 0; devConfirm_ = false; devChoice_ = 1; devCursor_ = 1; }
     // 選んで消えていく途中か（はい ならオープニングの最初の間も描き続ける）。
     bool TitleLeaving() const noexcept { return leaving_ >= 0; }
 
@@ -78,8 +89,8 @@ private:
     Keys keys_;
     Repeat leftRepeat_, rightRepeat_, upRepeat_, downRepeat_;
     bool holdAction_ = false;
-    // このフレームに窓のカーソルを描いたか。最後に使った入力が手柄か（案内の字を替える）。
-    bool cursorDrawn_ = false, gamepad_ = false;
+    // このフレームに窓のカーソルを描いたか・OS のポインターを見せるか。最後に使った入力が手柄か（案内の字を替える）。
+    bool cursorDrawn_ = false, pointerRequested_ = false, gamepad_ = false;
     int choice_ = 0, row_ = 0, confirmChoice_ = 1;
     float cursor_ = 0, confirmCursor_ = 1, rowCursor_ = 0;
     double opened_ = 0, closing_ = -1, pauseClosing_ = -1, quitting_ = 0;
@@ -93,6 +104,10 @@ private:
     float titleCursor_ = 0;
     double leaving_ = -1, titleTime_ = 0;
     bool leavingQuit_ = false, quitReported_ = false, quitAsked_ = false;
+    // 開発者のメールの「最初から」の確かめ（開いているか、はい 0・いいえ 1、カーソルの位置）。
+    bool devConfirm_ = false;
+    int devChoice_ = 1;
+    float devCursor_ = 1;
     // 設定
     UserSettings settings_, saved_;
     bool settingsLoaded_ = false, quitSave_ = false;

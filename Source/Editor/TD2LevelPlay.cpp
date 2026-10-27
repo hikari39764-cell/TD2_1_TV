@@ -88,7 +88,7 @@ void LevelEditor::RunSolutions(EditorWorkspaceHostContext& ctx) {
         }
         solutions_.push_back(std::move(result));
     }
-    solutionsStale_ = false; solutionsRevision_ = model_.revision;
+    solutionsStale_ = false;
     size_t passed = 0;
     for (const auto& s : solutions_) { passed += s.passed ? 1 : 0; }
     SetNote("解法の再生：" + std::to_string(passed) + " / " + std::to_string(solutions_.size()) + " 通過");

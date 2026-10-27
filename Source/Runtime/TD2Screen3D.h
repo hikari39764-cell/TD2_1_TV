@@ -10,6 +10,7 @@
 #include "TD2Intro.h"
 #include "HIKARI/Project/SceneCaptureView.h"
 #include "HIKARI/Project/WorldView.h"
+#include <algorithm>
 #include <array>
 #include <map>
 #include <set>
@@ -52,6 +53,12 @@ struct StageRoom {
     ScreenSurface surface;
     ScreenStyleSettings style;
     const RegionDefinition& Region() const { return region ? *region : ownedRegion; }
+    // 区域の画面の明るさ（既定 2.2）を基準 1 として描き方の明るさに掛けた描き方。
+    ScreenStyleSettings EffectiveStyle() const {
+        auto effective = style;
+        effective.brightness = std::clamp(effective.brightness * configuration.brightness / 2.2f, .0f, 4.0f);
+        return effective;
+    }
 };
 // 舞台を動かす世界座標の状態。装置の ID は「区域ID/装置ID」。activeRegion は操作中の部屋。
 // simulated は Play の snapshot。編集中は呼び手が作者の装置とスポーン位置から作る。

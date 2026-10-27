@@ -1,0 +1,352 @@
+{
+  "assetType": "Sequence",
+  "displayName": "登场演出",
+  "formatVersion": 5,
+  "guid": "3c5cdf8160397e2c7a0ba4d68781909a",
+  "sequence": {
+    "bindings": [
+      {
+        "id": 1,
+        "name": "游戏摄像机",
+        "required": true,
+        "slotName": "Camera",
+        "targetKind": "slot"
+      }
+    ],
+    "durationSeconds": 9.82,
+    "id": 1,
+    "name": "登场演出",
+    "screenEffects": [
+      {
+        "amount": {
+          "keys": [],
+          "value": 1.0
+        },
+        "color": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "duration": 0.47,
+        "enabled": true,
+        "fadeIn": 0.014999999664723873,
+        "fadeOut": 0.44999998807907104,
+        "id": 5,
+        "kind": 9,
+        "name": "黑场",
+        "start": 0.0,
+        "weight": {
+          "keys": [],
+          "value": 1.0
+        }
+      }
+    ],
+    "tracks": [
+      {
+        "clips": [
+          {
+            "camera": {
+              "aimWeight": {
+                "keys": [],
+                "value": 1.0
+              },
+              "anchor": 0,
+              "base": {
+                "customTangents": 0,
+                "far": 500.0,
+                "fov": 50.0,
+                "inFovTangent": 0.0,
+                "inTangent": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "interpolation": "spline",
+                "near": 0.009999999776482582,
+                "outFovTangent": 0.0,
+                "outTangent": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "position": [
+                  3.0,
+                  1.2100000381469727,
+                  3.9700000286102295
+                ],
+                "reference": 0,
+                "rotation": [
+                  0.0,
+                  0.9909572601318359,
+                  -0.134178027510643,
+                  0.0
+                ]
+              },
+              "keys": [
+                {
+                  "customTangents": 0,
+                  "far": 500.0,
+                  "fov": 52.0,
+                  "inFovTangent": 0.0,
+                  "inTangent": [
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  "interpolation": "spline",
+                  "near": 0.009999999776482582,
+                  "outFovTangent": 0.0,
+                  "outTangent": [
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  "position": [
+                    4.599999904632568,
+                    1.9500000476837158,
+                    5.849999904632568
+                  ],
+                  "reference": 0,
+                  "rotation": [
+                    0.05431398004293442,
+                    -0.9456626176834106,
+                    0.23007792234420776,
+                    0.223240926861763
+                  ],
+                  "time": 0.0
+                },
+                {
+                  "customTangents": 0,
+                  "far": 500.0,
+                  "fov": 49.0,
+                  "inFovTangent": 0.0,
+                  "inTangent": [
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  "interpolation": "spline",
+                  "near": 0.009999999776482582,
+                  "outFovTangent": 0.0,
+                  "outTangent": [
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  "position": [
+                    4.449999809265137,
+                    1.8600000143051147,
+                    5.659999847412109
+                  ],
+                  "reference": 0,
+                  "rotation": [
+                    0.05133800953626633,
+                    -0.9486512541770935,
+                    0.21835504472255707,
+                    0.22303906083106995
+                  ],
+                  "time": 5.52
+                },
+                {
+                  "customTangents": 0,
+                  "far": 500.0,
+                  "fov": 28.0,
+                  "inFovTangent": 0.0,
+                  "inTangent": [
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  "interpolation": "spline",
+                  "near": 0.009999999776482582,
+                  "outFovTangent": 0.0,
+                  "outTangent": [
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  "position": [
+                    3.2200000286102295,
+                    1.2300000190734863,
+                    5.079999923706055
+                  ],
+                  "reference": 0,
+                  "rotation": [
+                    0.0035860021598637104,
+                    -0.9963685870170593,
+                    0.0647430345416069,
+                    0.05518403276801109
+                  ],
+                  "time": 8.62
+                },
+                {
+                  "customTangents": 0,
+                  "far": 500.0,
+                  "fov": 26.0,
+                  "inFovTangent": 0.0,
+                  "inTangent": [
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  "interpolation": "spline",
+                  "near": 0.009999999776482582,
+                  "outFovTangent": 0.0,
+                  "outTangent": [
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  "position": [
+                    3.119999885559082,
+                    1.1890000104904175,
+                    4.920300006866455
+                  ],
+                  "reference": 0,
+                  "rotation": [
+                    0.0,
+                    0.998199462890625,
+                    -0.05998203158378601,
+                    0.0
+                  ],
+                  "time": 9.82
+                }
+              ],
+              "lookAt": 0,
+              "motion": [
+                {
+                  "amount": {
+                    "keys": [],
+                    "value": 0.012000000104308128
+                  },
+                  "duration": 9.82,
+                  "enabled": true,
+                  "fadeIn": 0.0,
+                  "fadeOut": 0.0,
+                  "frequency": 1.2000000476837158,
+                  "id": 1,
+                  "kind": 8,
+                  "maximumSpeed": 8.0,
+                  "seed": 3,
+                  "start": 0.0,
+                  "weight": {
+                    "keys": [],
+                    "value": 1.0
+                  }
+                },
+                {
+                  "amount": {
+                    "keys": [],
+                    "value": 0.012000000104308128
+                  },
+                  "duration": 0.35,
+                  "enabled": true,
+                  "fadeIn": 0.009999999776482582,
+                  "fadeOut": 0.3199999928474426,
+                  "frequency": 14.0,
+                  "id": 8,
+                  "kind": 7,
+                  "maximumSpeed": 8.0,
+                  "seed": 63,
+                  "start": 8.34,
+                  "weight": {
+                    "keys": [],
+                    "value": 1.0
+                  }
+                },
+                {
+                  "amount": {
+                    "keys": [],
+                    "value": 0.014999999664723873
+                  },
+                  "duration": 0.3,
+                  "enabled": true,
+                  "fadeIn": 0.009999999776482582,
+                  "fadeOut": 0.30000001192092896,
+                  "frequency": 14.0,
+                  "id": 9,
+                  "kind": 7,
+                  "maximumSpeed": 8.0,
+                  "seed": 64,
+                  "start": 1.52,
+                  "weight": {
+                    "keys": [],
+                    "value": 1.0
+                  }
+                }
+              ],
+              "name": "登场远景",
+              "pivotDistance": 2.0,
+              "rail": {
+                "loop": false,
+                "points": []
+              },
+              "railT": {
+                "keys": [],
+                "value": 0.0
+              },
+              "targetOffset": [
+                0.0,
+                0.0,
+                0.0
+              ],
+              "timing": {
+                "keys": [],
+                "value": 0.0
+              },
+              "useScenePose": false
+            },
+            "cameraBindingId": 1,
+            "durationSeconds": 9.82,
+            "effects": [],
+            "id": 1,
+            "sourceOffsetSeconds": 0.0,
+            "startTimeSeconds": 0.0,
+            "transition": {
+              "durationSeconds": 0.0,
+              "mode": "cut"
+            }
+          }
+        ],
+        "enabled": true,
+        "id": 1,
+        "type": "cameraCut"
+      },
+      {
+        "clips": [
+          {
+            "durationSeconds": 9.82,
+            "id": 2,
+            "name": "黒帯",
+            "startSeconds": 0.0
+          },
+          {
+            "durationSeconds": 0.10000000149011612,
+            "id": 17,
+            "name": "遠景",
+            "startSeconds": 0.02
+          },
+          {
+            "durationSeconds": 2.5,
+            "id": 18,
+            "name": "復電",
+            "startSeconds": 1.52
+          },
+          {
+            "durationSeconds": 2.0,
+            "id": 19,
+            "name": "信号合わせ",
+            "startSeconds": 5.22
+          },
+          {
+            "durationSeconds": 0.10000000149011612,
+            "id": 20,
+            "name": "登場",
+            "startSeconds": 7.62
+          }
+        ],
+        "type": "event"
+      }
+    ]
+  }
+}

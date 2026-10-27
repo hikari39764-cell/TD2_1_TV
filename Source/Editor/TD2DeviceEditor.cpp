@@ -179,7 +179,7 @@ std::string DeviceEditor::Validate(int cols, int rows) const {
         if (kind == TargetKind::Invalid) { return device.id + " のつなぎ先の書き方が無効です：" + target; }
         if (kind != TargetKind::Local) { continue; }
         const auto item = std::find_if(devices_.begin(), devices_.end(), [&target](const auto& value) { return value.id == target; });
-        if (item == devices_.end() || (item->kind != "Door" && item->kind != "Laser" && item->kind != "Bridge" && item->kind != "Goal" && item->kind != "Pusher")) {
+        if (item == devices_.end() || !IsLinkableKind(item->kind)) {
             return device.id + " は同じ画面の扉・レーザー・伸びる橋・ゴール・押し刺にだけつなげます";
         }
     }

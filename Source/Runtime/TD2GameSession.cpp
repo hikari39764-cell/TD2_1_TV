@@ -1,4 +1,6 @@
 #include "TD2GameSession.h"
+#include "TD2Ui.h"
+#include "../Common/TD2Math.h"
 #include "../Common/TD2PreviewEntry.h"
 #include "HIKARI/Project/ActionViews.h"
 #include "HIKARI/Project/GameFlowViews.h"
@@ -162,9 +164,11 @@ void GameSession::Update(HIKARI::WorldView& world, const HIKARI::FrameContext& f
         saving_ = tour.empty() && (!test || std::getenv("TD2_SAVE_SLOT") != nullptr);
         (void)intro_.Begin(world, test);
         // 続きがあれば、タイトル待ちの上に全画面の問いを出す（はい なら続きから、いいえ ならそのままタイトル）。
+        // 隠しの道を通した後の保存なら問わず、机のパソコンの開発者のメールから（「最初から」を選ぶまで毎回そこから）。
         std::string text; Rules::Progress saved;
         if (saving_ && !test && LoadSlot(world, ProgressSlot(), text) && ReadProgressText(text, saved)) {
-            pendingProgress_ = std::move(saved); menu_.OpenContinue();
+            if (saved.finale == "end") { RestartFromTitle(world, IntroDirector::Wake::TrueEnd); }
+            else { pendingProgress_ = std::move(saved); menu_.OpenContinue(); }
         }
     }
     if (menu_.ContinueOpen()) {
@@ -215,23 +219,46 @@ void GameSession::Update(HIKARI::WorldView& world, const HIKARI::FrameContext& f
             ++tourIndex_;
         }
     }
-    // タイトル待ちのパソコンのメール（通関の目覚めでも同じ姿を出す）。スペースはメールの決定にだけ使う。
+    // タイトル待ちのパソコンのメール。スペースはメールの決定にだけ使う。目覚めでは、まぶたが開いてからメールが黒い画面に
+    // 浮かび上がり、顔を上げ終えてから選べる。隠しの道を通した後は開発者のメール（「最初から」で保存を消して最初へ）。
     bool startIntro = false;
     {
         const auto& screens = intro_.Screens();
         const bool titleWait = intro_.TitleWait();
-        const bool wake = intro_.EndingPlaying() && screens.time >= screens.revealTime;
-        if (titleWait || wake || menu_.TitleLeaving()) {
-            // メールはパソコンの画面の絵として写る。目覚めでは見え始めの時刻から黒い画面に浮かび上がる。
-            const float alpha = wake ? static_cast<float>(std::clamp((screens.time - screens.revealTime) / .6, 0.0, 1.0)) : 1.f;
-            const auto choice = menu_.UpdateTitle(world, world.FindSceneObject(screens.computerScreen), alpha, titleWait, frameSeconds);
-            if (choice == MenuDirector::Choice::Yes) { startIntro = true; }
+        if (titleWait || menu_.TitleLeaving()) {
+            const double wake = intro_.WakeSeconds();
+            const float alpha = wake >= 0 ? static_cast<float>(std::clamp((wake - 1.8) / .6, 0.0, 1.0)) : 1.f;
+            const bool interactive = titleWait && (wake < 0 || wake >= 3.6);
+            const bool developer = intro_.TrueEnd();
+            const auto choice = menu_.UpdateTitle(world, world.FindSceneObject(screens.computerScreen), alpha, interactive, frameSeconds, developer);
+            if (choice == MenuDirector::Choice::Yes && developer) {
+                if (saving_) { DeleteSlot(world, ProgressSlot()); }
+                RestoreTelevisions(world);
+                RestartFromTitle(world);
+            } else if (choice == MenuDirector::Choice::Yes) { startIntro = true; }
             if (choice == MenuDirector::Choice::No) { (void)world.GetRuntimeSession().RequestEndSession(); }
         }
         if (titleWait || menu_.HoldsAction()) { buttons.action = {}; }
     }
     const bool cinematic = intro_.Update(world, startIntro, frameSeconds);
-    if (intro_.TakeEndingFinished()) { RestartFromTitle(world); }
+    // 通関の弾窓：暗転を始めたら灯を落とし、終わり方に合わせて目覚め・隠しの道へ移る。
+    if (finale_.Active()) {
+        bool blackOut = false;
+        const auto outcome = finale_.Update(world, menu_, intro_.Screens().time, frameSeconds, blackOut);
+        if (blackOut) { intro_.BlackOut(); }
+        if (outcome == FinaleDirector::Outcome::WakeNormal) { intro_.EndEnding(world); RestartFromTitle(world, IntroDirector::Wake::Normal); }
+        else if (outcome == FinaleDirector::Outcome::EnterHidden) { intro_.EndEnding(world); EnterHidden(world); }
+        else if (outcome == FinaleDirector::Outcome::WakeTrue) { intro_.EndEnding(world); RestartFromTitle(world, IntroDirector::Wake::TrueEnd); }
+    }
+    sound_.PlayPopups(world, finale_.TakeSounds() + intro_.TakePopupSounds());
+    // 隠しの道へ移った直後：黒から 0.9 秒で明ける。
+    if (hiddenFade_ >= 0) {
+        hiddenFade_ += (std::min)(frameSeconds, 1.0 / 30);
+        const double k = std::clamp(hiddenFade_ / .9, 0.0, 1.0);
+        Ui::Painter fade(world, 160000);
+        fade.Fill({0, 0, fade.Width(), fade.Height()}, {0, 0, 0, static_cast<float>(1 - Math::SmoothStep(k))});
+        if (k >= 1) { hiddenFade_ = -1; }
+    }
     // ESC の窓：遊んでいる間だけ開く。開いている間は世界を止める（カメラは止めたまま描き、音は続ける）。
     if (!cinematic && !ending_ && !menu_.PauseOpen() && menu_.MenuPressed()) { menu_.OpenPause(); }
     const bool paused = !cinematic && menu_.PauseOpen();
@@ -329,24 +356,69 @@ void GameSession::Update(HIKARI::WorldView& world, const HIKARI::FrameContext& f
 
 void GameSession::StartEnding(HIKARI::WorldView& world, const std::string& region) {
     FinishRecord();
-    // 通関したら続きは無い（次の起動はタイトルから）。
-    if (saving_) { DeleteSlot(world, ProgressSlot()); }
-    HIKARI::GameProjectFloat3 eye{}, look{};
-    (void)camera_.StartOffset(world, exploration_, regions_, region, eye, look);
-    const auto camera = regions_.cameras.find(region);
-    ending_ = intro_.BeginEnding(world, regions_.Television(region), camera != regions_.cameras.end() ? camera->second : 0, eye, look);
-    std::fprintf(stderr, "[TD2 ending] goal region=%s cinematic=%d\n", region.c_str(), ending_);
-    if (!ending_) { RestartFromTitle(world); }
+    // 普通の通関の後に続きは無い（次の起動はタイトルから）。隠しの道の通関の後は、次の起動も机の開発者のメールから。
+    const bool trueEnd = hiddenRoute_;
+    if (saving_) { if (trueEnd) { WriteProgress(world, "end"); } else { DeleteSlot(world, ProgressSlot()); } }
+    const auto goal = regions_.Television(region);
+    intro_.BeginEnding(world, goal);
+    finale_.Begin(trueEnd ? FinaleDirector::Kind::TrueEnding : FinaleDirector::Kind::Ending, goal);
+    ending_ = true;
+    std::fprintf(stderr, "[TD2 ending] goal region=%s true=%d\n", region.c_str(), trueEnd);
 }
 
-void GameSession::RestartFromTitle(HIKARI::WorldView& world) {
+void GameSession::RestartFromTitle(HIKARI::WorldView& world, IntroDirector::Wake wake) {
+    RestoreTelevisions(world);
     ResetWorld(world);
     // 試遊の記録は最初の一回だけ（戻った後の分は残さない）。
     recording_ = false; recordClosed_ = true;
     introChecked_ = true;
+    hiddenRoute_ = false; hiddenFade_ = -1;
     menu_.ResetTitle();
-    (void)intro_.Begin(world, false);
-    std::fprintf(stderr, "[TD2 world] restarted from title entry=%s\n", exploration_.ActiveRegion().c_str());
+    (void)intro_.Begin(world, false, wake);
+    if (wake == IntroDirector::Wake::TrueEnd) { HideOtherTelevisions(world); }
+    std::fprintf(stderr, "[TD2 world] restarted from title entry=%s wake=%d\n", exploration_.ActiveRegion().c_str(), static_cast<int>(wake));
+}
+
+void GameSession::EnterHidden(HIKARI::WorldView& world) {
+    ending_ = false;
+    // 入口は TD2.Intro の「隠しステージの入口」のテレビの部屋（その部屋の出生点に立つ）。
+    const auto entry = world.FindSceneObject(intro_.Settings().hiddenEntry);
+    std::string region;
+    for (const auto& [id, handle] : regions_.televisions) { if (entry.IsValid() && handle == entry.GetHandle()) { region = id; break; } }
+    if (region.empty() || !exploration_.Teleport(region)) {
+        std::fprintf(stderr, "[TD2 hidden] entry region missing; back to title\n");
+        RestartFromTitle(world, IntroDirector::Wake::Normal);
+        return;
+    }
+    (void)exploration_.TakeCalls();
+    hiddenRoute_ = true; hiddenFade_ = 0;
+    camera_.Jump(world, exploration_, regions_, region);
+    // 隠しの道の途中で止めても、次の起動は続きの問いからここへ戻れる。
+    if (saving_) { WriteProgress(world); }
+    std::fprintf(stderr, "[TD2 hidden] entered region=%s\n", region.c_str());
+}
+
+void GameSession::HideOtherTelevisions(HIKARI::WorldView& world) {
+    RestoreTelevisions(world);
+    const auto computer = world.FindSceneObject(intro_.Settings().computerScreen);
+    for (const auto& handle : intro_.Screens().tvScreens) {
+        const auto object = world.FindObject(handle);
+        HIKARI::GameProjectTransform pose{};
+        if (!object.IsValid() || (computer.IsValid() && handle == computer.GetHandle()) || !object.GetWorldTransform(pose)) { continue; }
+        movedTelevisions_.push_back({handle, pose});
+        // 床の下の遠くで、ほとんど大きさの無い姿にする（消すのではなく退ける。戻す時は元の姿勢）。
+        auto away = pose;
+        away.position.y -= 80; away.scale = {1e-4f, 1e-4f, 1e-4f};
+        (void)object.SetWorldTransform(away);
+    }
+    std::fprintf(stderr, "[TD2 world] televisions moved away=%zu\n", movedTelevisions_.size());
+}
+
+void GameSession::RestoreTelevisions(HIKARI::WorldView& world) {
+    for (const auto& [handle, pose] : movedTelevisions_) {
+        if (const auto object = world.FindObject(handle); object.IsValid()) { (void)object.SetWorldTransform(pose); }
+    }
+    movedTelevisions_.clear();
 }
 
 void GameSession::ResetWorld(HIKARI::WorldView& world) {
@@ -377,6 +449,7 @@ bool GameSession::ResumeProgress(HIKARI::WorldView& world, const Rules::Progress
         return false;
     }
     (void)exploration_.TakeCalls();
+    hiddenRoute_ = progress.finale == "hidden";
     // 仕掛けのテレビを戻した位置へ置いてから、カメラをその部屋へ付け直す。
     machines_.Resync();
     machines_.Update(world, exploration_, regions_, camera_, 0.0);
@@ -389,8 +462,10 @@ bool GameSession::ResumeProgress(HIKARI::WorldView& world, const Rules::Progress
     return true;
 }
 
-void GameSession::WriteProgress(HIKARI::WorldView& world) {
-    (void)StoreSlot(world, ProgressSlot(), WriteProgressText(exploration_.SaveProgress()));
+void GameSession::WriteProgress(HIKARI::WorldView& world, std::string_view finale) {
+    auto progress = exploration_.SaveProgress();
+    progress.finale = !finale.empty() ? std::string(finale) : hiddenRoute_ ? "hidden" : "";
+    (void)StoreSlot(world, ProgressSlot(), WriteProgressText(progress));
 }
 
 void GameSession::TeleportToGoal(HIKARI::WorldView& world) {
