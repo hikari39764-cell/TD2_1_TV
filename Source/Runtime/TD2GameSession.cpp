@@ -336,8 +336,13 @@ void GameSession::Update(HIKARI::WorldView& world, const HIKARI::FrameContext& f
         takeCalls();
         ++sliceIndex;
         buttons.action.pressed = buttons.action.released = false; remaining -= slice;
-        // ゴールの扉に入ったら、その刻みで世界を止めて通関の演出へ移る。
-        if (!goalRegion.empty()) { StartEnding(world, goalRegion); return; }
+        // ゴールの扉に入ったら、その刻みで世界を止めて通関の演出へ移る。カメラの姿勢はフレームごとの提出なので、このフレームも
+        // 出す（出さないとカメラの物体の置いたままの姿勢で 1 フレーム描かれ、別の場所が一瞬写る）。
+        if (!goalRegion.empty()) {
+            StartEnding(world, goalRegion);
+            camera_.Update(world, exploration_, regions_, 0.f, 0.0, std::isfinite(frame.gameDt) ? std::max(0.0, double(frame.gameDt)) : 0.0);
+            return;
+        }
     }
     // チェックポイントに触れたら、その刻みの後の進みを保存する。
     if (std::exchange(checkpointTouched_, false) && saving_) { WriteProgress(world); }

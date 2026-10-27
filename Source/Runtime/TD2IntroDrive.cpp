@@ -71,6 +71,11 @@ void DrawLids(HIKARI::WorldView& world, double open) {
 }
 }
 
+void IntroDirector::DrawBlack(HIKARI::WorldView& world) const {
+    Ui::Painter paint(world, kPopupOrder);
+    paint.Fill({0, 0, paint.Width(), paint.Height()}, {0, 0, 0, 1});
+}
+
 void IntroDirector::DrawPopups(HIKARI::WorldView& world, double u, double seconds) {
     Ui::Painter paint(world, kPopupOrder);
     const float W = paint.Width(), H = paint.Height();

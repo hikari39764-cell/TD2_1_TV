@@ -270,6 +270,9 @@ bool IntroDirector::Update(HIKARI::WorldView& world, bool start, double seconds)
         if (!world.GetSequence().GetSnapshot(playback_, snapshot)) { Finish(world); return false; }
         if (snapshot.timeSeconds < snapshot.durationSeconds - 1e-3f) {
             Apply(world, snapshot.timeSeconds);
+            // 画面へ飛び込んで切れた後は、演出の終わりまで UI の黒で覆う。暗転の間パソコンの画面は普段のゲームの絵に戻り、
+            // 読みやすさの保護で色調整も演出の黒も掛からないので、カメラが画面の中にいる間はそれが画全体に見えてしまう。
+            if (snapshot.timeSeconds >= screens_.blackTime - .015) { DrawBlack(world); }
             // 寄った画から、メールが消える間に作者のタイトルの構図へ引き戻す。
             if (zoomAtStart_ > 0) {
                 const double back = 1 - Math::SmoothStep(snapshot.timeSeconds / kTitleZoomOutSeconds);
@@ -296,6 +299,13 @@ bool IntroDirector::Update(HIKARI::WorldView& world, bool start, double seconds)
         return false;
     }
     Apply(world, arrivalOffset_ + snapshot.timeSeconds);
+    // 遠景を出すまでパソコンの画面は普段のゲームの絵のまま（読みやすさの保護で暗転の色調整も掛からない）。弾窓の黒が
+    // 消えた最初のフレームにそれが見えるので、遠景までと、画面が砂嵐の窓へ結び直されるまでの 2 フレームを黒で覆う。
+    const bool revealed = screens_.time >= screens_.revealTime;
+    if (!revealed || revealCovered_ < 2) {
+        DrawBlack(world);
+        if (revealed) { ++revealCovered_; }
+    }
     return true;
 }
 
@@ -325,7 +335,7 @@ bool IntroDirector::StartArrival(HIKARI::WorldView& world) {
     screens_.letterboxOut = b.letterboxOut;
     if (playback_.IsValid() && !(playback_ == playback)) { (void)world.GetSequence().Stop(playback_); }
     playback_ = playback;
-    phase_ = Phase::Arrival;
+    phase_ = Phase::Arrival; revealCovered_ = 0;
     std::fprintf(stderr, "[TD2 intro] arrival offset=%.2f\n", arrivalOffset_);
     return true;
 }

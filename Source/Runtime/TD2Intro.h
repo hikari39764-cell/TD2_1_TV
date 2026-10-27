@@ -212,6 +212,8 @@ private:
     void DriveLights(HIKARI::WorldView& world, double t);
     // 暗転の中の弾窓（タイトルの知らせ・楽しんでね・嵐）。u は弾窓が始まってからの秒。
     void DrawPopups(HIKARI::WorldView& world, double u, double seconds);
+    // 画の上を UI の黒で覆う（画面へ飛び込んで切れた後と、二つ目の演出が遠景を出すまでのつなぎ）。
+    void DrawBlack(HIKARI::WorldView& world) const;
     // 通関の灯：暗転で全部消える。
     double EndingLamp(const Lamp& lamp, double t) const;
     // 通関の暗転：画面全体を UI の黒で覆う。
@@ -255,6 +257,7 @@ private:
     double titleZoom_ = 0, zoomAtStart_ = 0, titleSeconds_ = 0;
     // 一つ目の演出の長さ（暗転の中の弾窓はこの後から数える）、弾窓の経過秒、二つ目の演出の始まり（一本の時刻）。
     double firstSeconds_ = 0, popupSeconds_ = 0, arrivalOffset_ = 0;
+    int revealCovered_ = 0;   // 二つ目の演出が遠景を出した後、まだ黒で覆ったフレームの数
     int popupSounds_ = 0;
     IntroScreens screens_;
 };

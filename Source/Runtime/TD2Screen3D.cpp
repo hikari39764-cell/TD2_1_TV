@@ -262,8 +262,9 @@ void Screen3DStage::Render(HIKARI::WorldView& world, const std::vector<StageRoom
     // 覗き窓は目の向きで撮るので、目の追従を求めた後に決める。
     intro_ = frame.intro;
     uiScreen_ = frame.uiScreen;
-    // 砂嵐の窓はパソコンの信号が合うまで使う。
-    introStatic_ = intro_ && (intro_->ending || intro_->time < (std::max)(intro_->restoreTime, intro_->lockStart + intro_->lockSeconds + .1f));
+    // 砂嵐の窓はオープニングでパソコンの信号が合うまで使う。通関では使わない（ゴールのテレビは消える前に弾窓の画布へ移り、
+    // その後は画全体が黒い。窓を足すと一番粗い段のキャプチャを外すことになり、多くの画面を結び直して画が止まる）。
+    introStatic_ = intro_ && !intro_->ending && intro_->time < (std::max)(intro_->restoreTime, intro_->lockStart + intro_->lockSeconds + .1f);
     // 主人公は登場の光が集まってから足元から現れる。それまでは画面のどこにも出さない。
     // 体の現れ方はエフェクトが実際に出た時刻から数える（舞台の窓に入るまで出ないことがある）。出なくても 1 秒後には現す。
     heroShown_ = true; heroGrow_ = 1;
