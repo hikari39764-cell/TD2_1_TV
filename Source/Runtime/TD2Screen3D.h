@@ -18,6 +18,7 @@
 #include <vector>
 
 namespace TD2 {
+struct TvPopupBoard;
 // テレビの画面の材質スロット名（どの型のモデルも同じ名前）。
 inline constexpr std::string_view kScreenSlot = "TD2_Screen";
 // 画面を映すテレビの物体（区域の付いた物体そのもの）と、画面の明るさ。
@@ -77,6 +78,8 @@ struct StageFrame {
     std::vector<std::string> snowRooms;
     // 見せ場の仕掛けでカメラが引いている間。新しく画に入るテレビは覗き窓を作らずに砂嵐にする（一瞬遅れて絵が出る跳びを見せない）。
     bool eventFraming = false;
+    // テレビの中の弾窓の板（Play だけ。舞台の奥へ置く）。
+    const std::vector<TvPopupBoard>* popups = nullptr;
 };
 
 // 編集中の並べ直し：全部の部屋を一枚ずつの窓に収めるため、描く位置（x, y）だけを二つの組に詰めて並べる。
@@ -221,6 +224,9 @@ private:
     void SubmitParts(HIKARI::WorldView& world, const std::vector<const StageRoom*>& rooms, const std::vector<Assigned>& shown,
                      const Rules::WorldSnapshot& snapshot, int palette, bool smear, double now, bool animate);
     void PlayEffects(HIKARI::WorldView& world, const ScreenFxSettings& fx, bool available, double now);
+    // 弾窓の板を、出ている部屋の奥（人物・装置より後ろ、後ろの壁より手前）へ置く。使わない板は舞台の外へ退ける。
+    void PlacePopups(HIKARI::WorldView& world, const std::vector<const StageRoom*>& rooms, const StageFrame& frame);
+    std::map<uint64_t, bool> popupParked_;   // 板 → 退けてあるか（退けた板は毎フレーム動かさない）
     const Window& WindowOf(ViewKind kind) const { return windows_[static_cast<size_t>(kind)]; }
 
     std::array<StageCamera, kViewKinds> cameras_{};

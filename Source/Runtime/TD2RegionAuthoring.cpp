@@ -34,7 +34,7 @@ bool ParseDevices(std::string_view text, std::vector<Rules::DeviceDefinition>& d
             else if (key == "variant") { device.variant = value; }
             // 押し刺：伸びるマス数・秒数、往復の止まる秒数と始まりのずれ。
             else if (key == "travel") { device.travel = std::clamp(number, .25, 30.0); }
-            else if (key == "seconds") { device.seconds = std::clamp(number, .05, 10.0); }
+            else if (key == "seconds") { device.seconds = std::clamp(number, .05, 30.0); }
             else if (key == "dwell") { device.dwell = std::clamp(number, 0.0, 30.0); }
             else if (key == "phase") { device.phase = std::clamp(number, 0.0, 1.0); }
             else if (key == "width") { device.width = std::clamp(number, 1.0 / 32, .9); }

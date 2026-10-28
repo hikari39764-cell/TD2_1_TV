@@ -111,6 +111,8 @@ struct Progress {
     // 通関の道：空は普通、"hidden" は隠しの道の途中、"end" は隠しの道を通した後（次の起動は机のパソコンのメールから）。
     // 規則は使わない（ゲームのセッションが書き、読む）。
     std::string finale;
+    // 一度だけのテレビの弾窓のうち出したもの（規則は使わない。ゲームのセッションが書き、読む）。
+    std::vector<std::string> said;
 };
 struct RegionEvents { std::string regionId; StepOutput output; };
 struct RegionTransition { std::string kind, fromRegion, toRegion; Vec2 worldPosition; };

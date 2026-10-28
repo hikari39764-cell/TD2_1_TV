@@ -1,0 +1,21 @@
+{
+  "displayName": "T_SM_TD2_Handheld_Classic_Normal",
+  "guid": "568a82b8fb73417b826bd2736692e33b",
+  "importSettings": {
+    "allowResize": false,
+    "colorSpace": "Linear",
+    "compression": "BC7",
+    "debugOutputFormat": "DDS",
+    "dimension": "Texture2D",
+    "forcePowerOfTwo": false,
+    "maxSize": 4096,
+    "mipPolicy": "Generate",
+    "outputFormat": "HTEX",
+    "usage": "Normal"
+  },
+  "importerId": "TextureImporter",
+  "importerVersion": 8,
+  "metaVersion": 1,
+  "sourcePath": "Assets/Models/TVLookDev02/Textures/SM_TD2_Handheld_Classic/T_SM_TD2_Handheld_Classic_Normal.png",
+  "type": "Texture"
+}

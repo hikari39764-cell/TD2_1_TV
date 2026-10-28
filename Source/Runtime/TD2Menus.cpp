@@ -1,12 +1,13 @@
 #include "TD2Menus.h"
-#include "TD2Popups.h"
 #include "../Common/TD2Math.h"
-#include "TD2RegionComponent.h"
 #include "HIKARI/Project/ActionViews.h"
-#include "HIKARI/Project/GameFlowViews.h"
 #include "HIKARI/Project/AudioView.h"
+#include "HIKARI/Project/CameraViewSnapshot.h"
 #include "HIKARI/Project/DisplaySettingsView.h"
+#include "HIKARI/Project/GameFlowViews.h"
 #include "HIKARI/Project/SceneCaptureView.h"
+#include "TD2Popups.h"
+#include "TD2RegionComponent.h"
 #include <algorithm>
 #include <array>
 #include <cmath>
@@ -48,15 +49,11 @@ constexpr float kCanvasSize = 1024;
 constexpr float kCanvasGain = .6f;
 // 画布の字の描き縁（字の高さに対する割合）。
 constexpr float kCanvasOutline = .09f;
-// 起動の直後は素材・字・描き方の初めての読み込みでフレームが大きく揺れる。続きの問いはその間を黒のまま待ち（最短 0.45 秒、
-// 短いフレームが 6 つ続くまで。揺れが止まらなくても 2.5 秒で開く）、見えない薄さで描いて読み込みを先に済ませる。
-constexpr double kContinueWarm = .45, kContinueWarmLimit = 2.5, kStableFrame = 1.0 / 20;
-constexpr int kStableFrames = 6;
 // 窓の動きを一フレームで進める上限（長いフレームで窓やカーソルが飛ばない）。
 constexpr double kUiStep = 1.0 / 30;
-// 見えない薄さ（読み込ませるために描くが、画には出ない。線形の色で足されるので 1/255 よりずっと薄くする）。起動の後に素材を描き続ける秒。
+// 見えない薄さ。二回だけ提出し、その描画が提示された後に本来の画へ渡す。
 constexpr float kWarmAlpha = .0002f;
-constexpr double kWarmSeconds = 1.5;
+constexpr uint32_t kWarmFrames = 2;
 constexpr std::string_view kScreenSlotName = "TD2_Screen";
 // パソコンの机の上の色（落ち着いた青緑。画面の外の暗い工場の中で少し目立つ程度）。
 constexpr Ui::Color kDesktop{.17f, .29f, .29f, 1};
@@ -208,6 +205,9 @@ void MenuDirector::EndFrame(HIKARI::WorldView& world) {
     // マウスが使えると気付ける）。エディタの Play では、窓の矢印を描いた時だけ隠す（エディタの操作を邪魔しない）。
     const bool standalone = world.GetRuntimeSession().GetHostKind() == HIKARI::GameProjectRuntimeHostKind::StandaloneGame;
     const bool show = std::exchange(pointerRequested_, false), drawn = std::exchange(cursorDrawn_, false);
+    // 単体のゲームと Play の既定は相対の捕捉で、エンジンがポインターを隠して毎フレーム中央へ戻す。見せる間だけ UI の操作中に
+    // して捕捉を外し（本当のマウスで いいえ まで動かして押せる）、終わったら相対の捕捉へ戻す。
+    if (show != pointerFree_) { (void)world.GetInput().SetUiInteractionActive(show ? 1 : 0); pointerFree_ = show; }
     if (show) (void)world.GetInput().SetPointerCursorVisible(1);
     else if (standalone || drawn) (void)world.GetInput().SetPointerCursorVisible(0);
 }
@@ -251,26 +251,66 @@ void MenuDirector::DrawContinue(Ui::Painter& paint, float alpha, float windowAlp
     Buttons(paint, {inner.x, inner.Bottom() - pad - bh, inner.w - pad, bh}, choice_, cursor_, seconds, pressed);
 }
 
-void MenuDirector::Warm(HIKARI::WorldView& world, double seconds) {
-    if ((warmTime_ += seconds) > kWarmSeconds) return;
+bool MenuDirector::PrepareStartup(HIKARI::WorldView& world, uint64_t frameIndex) {
+    if (startupReady_)
+        return true;
+    Ui::Painter cover(world, kFadeOrder);
+    cover.Fill({0, 0, cover.Width(), cover.Height()}, {0, 0, 0, 1});
+    if (startupBlackFrame_ == 0) {
+        startupBlackFrame_ = frameIndex;
+        return false;
+    }
+    HIKARI::GameProjectCameraViewSnapshot presented{};
+    if (!world.GetCamera().TryGetViewSnapshot(presented) || presented.frameIndex < startupBlackFrame_ ||
+        presented.source != HIKARI::GameProjectPrimaryViewSource::Game)
+        return false;
+    // ウィンドウ設定の復元と初回描画は、既に提示した黒の裏で行う。
+    Start(world);
+    if (warmFrames_ < kWarmFrames) {
+        Warm(world);
+        startupWarmFrame_ = frameIndex;
+        return false;
+    }
+    if (presented.frameIndex < startupWarmFrame_)
+        return false;
+    startupReady_ = true;
+    return true;
+}
+
+void MenuDirector::Warm(HIKARI::WorldView& world) {
+    if (warmFrames_ >= kWarmFrames)
+        return;
+    ++warmFrames_;
     // 一番下に重ねる。メールの本文は一字ずつ増えるので、全部の字を先に一度出しておく（打っている途中で止まらない）。
     Ui::Painter paint(world, -90000);
     paint.SetAlpha(kWarmAlpha);
     const Rect r{0, 0, 64, 32};
     (void)paint.Window({0, 0, 160, 96}, .2f, "NEW MAIL");
-    paint.Row(r, false); paint.Row(r, true);
-    paint.Button(r, "はい", Ui::State::Normal, 12); paint.Button(r, "いいえ", Ui::State::Selected, 12); paint.Button(r, "はい", Ui::State::Pressed, 12);
+    paint.Row(r, false);
+    paint.Row(r, true);
+    paint.Button(r, "はい", Ui::State::Normal, 12);
+    paint.Button(r, "いいえ", Ui::State::Selected, 12);
+    paint.Button(r, "はい", Ui::State::Pressed, 12);
     paint.Cursor(8, 8, 16);
     paint.Meter(r, 1, 2);
-    for (const auto texture : {kIconQuestion, kIconWarning, kIconMail, kIconMailOpen, kMailFields}) paint.Image(texture, r);
-    std::string glyphs = "メッセージまえの つづきから はじめますか？件名：いっしょにあそぼ差出人：？？？_オートセーブしますか？メニューオンオフ＜＞";
-    glyphs += kMailBody;
-    for (const auto label : kRowLabels) glyphs += label;
-    for (const auto label : kWindowModes) glyphs += label;
-    for (const auto label : kResolutions) glyphs += label;
-    glyphs += "W・S選ぶA・D変えるスペース決定ESC閉じる十字キー選ぶ・変えるA決定START閉じる";
-    glyphs += kPopupGlyphs;
-    for (const auto text : {kDevSubject, kDevSender, kDevBody, kDevRestart, kDevConfirm}) glyphs += text;
+    for (const auto texture : {kIconQuestion, kIconWarning, kIconMail, kIconMailOpen, kMailFields})
+        paint.Image(texture, r);
+    static const std::string glyphs = [] {
+        std::string glyphs =
+            "メッセージまえの つづきから はじめますか？件名：いっしょにあそぼ差出人：？？？_オートセーブしますか？メニューオンオフ＜＞";
+        glyphs += kMailBody;
+        for (const auto label : kRowLabels)
+            glyphs += label;
+        for (const auto label : kWindowModes)
+            glyphs += label;
+        for (const auto label : kResolutions)
+            glyphs += label;
+        glyphs += "W・S選ぶA・D変えるスペース決定ESC閉じる十字キー選ぶ・変えるA決定START閉じる";
+        glyphs += kPopupGlyphs;
+        for (const auto text : {kDevSubject, kDevSender, kDevBody, kDevRestart, kDevConfirm})
+            glyphs += text;
+        return glyphs;
+    }();
     paint.Text(glyphs, {0, 0, 4096, 32}, 24, Ui::kInk);
 }
 
@@ -293,18 +333,19 @@ void MenuDirector::DrawClosing(HIKARI::WorldView& world, double seconds) {
 
 MenuDirector::Choice MenuDirector::UpdateContinue(HIKARI::WorldView& world, double seconds) {
     if (mode_ != Mode::Continue) return Choice::None;
-    // 起動の直後の揺れが収まるまでは黒のまま（窓は見えない薄さで描いて読み込ませる）。
+    // 起動の交接は PrepareStartup
+    // が完了している。窓だけを開き、黒い背景は不透明のまま保つ。
     const double step = (std::min)(seconds, kUiStep);
-    warm_ += step; warmReal_ += seconds;
-    stable_ = seconds < kStableFrame ? stable_ + 1 : 0;
-    const bool warming = (warm_ < kContinueWarm || stable_ < kStableFrames) && warmReal_ < kContinueWarmLimit;
-    if (!warming) opened_ += step;
-    if (!warming && keys_.left) choice_ = 0;
-    if (!warming && keys_.right) choice_ = 1;
+    opened_ += step;
+    if (keys_.left)
+        choice_ = 0;
+    if (keys_.right)
+        choice_ = 1;
     // 起動の最初に出るので、黒い背景は初めから覆い（下のタイトルの画を見せない）、窓だけ現れる。
     Ui::Painter paint(world, kContinueOrder);
-    DrawContinue(paint, 1, warming ? kWarmAlpha : static_cast<float>(Math::SmoothStep(opened_ / .3)), step, false);
-    if (warming || !keys_.confirm || opened_ < .2) return Choice::None;
+    DrawContinue(paint, 1, static_cast<float>(Math::SmoothStep(opened_ / .3)), step, false);
+    if (!keys_.confirm || opened_ < .2)
+        return Choice::None;
     holdAction_ = true;
     mode_ = Mode::None;
     closing_ = 0;
@@ -371,9 +412,14 @@ MenuDirector::Choice MenuDirector::UpdateTitle(HIKARI::WorldView& world, HIKARI:
     const float open = leaving ? 1.f : static_cast<float>(Math::SmoothStep((titleTime_ - kMailOpen) / .22));
     if (open <= 0) return Choice::None;
     paint.SetAlpha(alpha * open);
-    const float w = s.w * .9f, h = s.h * .86f * (.9f + .1f * open);
-    const Rect window{s.x + (s.w - w) * .5f, s.y + (s.h - h) * .48f, w, h};
-    const Rect inner = paint.Window(window, h * .11f / Ui::kWindowTop, "NEW MAIL");
+    // 枠だけが縦に伸びて開く。中身は開ききった窓の位置に置き、枠がほぼ開いてから出す（伸びる枠に合わせると字が動いて見える）。
+    const float w = s.w * .9f, full = s.h * .86f, h = full * (.9f + .1f * open), scale = full * .11f / Ui::kWindowTop;
+    const Rect window{s.x + (s.w - w) * .5f, s.y + (s.h - full) * .48f, w, full};
+    (void)paint.Window({window.x, s.y + (s.h - h) * .48f, w, h}, scale, {});
+    const float content = leaving ? 1.f : static_cast<float>(Math::SmoothStep((open - .5) / .5));
+    paint.SetAlpha(alpha * open * content);
+    paint.WindowTitle(window, scale, "NEW MAIL");
+    const Rect inner = Ui::WindowInner(window, scale);
     const float pad = inner.h * .07f;
     // 件名と差出人の欄（素材の欄の絵。字は点線の右）。右には届いた印を置くので、窓の 7 割の幅まで。
     float fw = inner.w * .7f, fh = fw / Ui::kMailFieldsAspect;
@@ -557,10 +603,14 @@ void MenuDirector::DrawPause(HIKARI::WorldView& world, HIKARI::ObjectView screen
     // 画面は横に長いので、窓は高さいっぱい・幅はそれに合わせて少し横長に。
     const float h = glass.h * .94f, w = (std::min)(glass.w * .94f, h * 1.45f);
     const float cx = glass.x + glass.w * .5f, cy = glass.y + glass.h * .5f;
-    // 出る時はブラウン管の窓のように少し縦に伸びて開く。
-    const float grow = .86f + .14f * appear;
-    const Rect window{cx - w * .5f, cy - h * grow * .5f, w, h * grow};
-    const Rect inner = paint.Window(window, h * .1f / Ui::kWindowTop, "メニュー");
+    // 出る時はブラウン管の窓のように少し縦に伸びて開く。動くのは枠だけで、行と字は開ききった窓の位置に、枠がほぼ開いてから
+    // 出す（伸びる枠に合わせると字が動いて見える）。
+    const float grow = .86f + .14f * appear, scale = h * .1f / Ui::kWindowTop;
+    const Rect window{cx - w * .5f, cy - h * .5f, w, h};
+    (void)paint.Window({cx - w * .5f, cy - h * grow * .5f, w, h * grow}, scale, {});
+    paint.SetAlpha(appear * static_cast<float>(Math::SmoothStep((appear - .5) / .5)));
+    paint.WindowTitle(window, scale, "メニュー");
+    const Rect inner = Ui::WindowInner(window, scale);
     // 小さな画面でも字が読めるよう、行を詰めて高さを稼ぐ（八行と案内の一行で窓の中いっぱい）。
     const float vpad = inner.h * .035f, pad = inner.w * .03f, rowH = inner.h * .1f, gap = rowH * .06f;
     for (int i = 0; i < kRowCount; ++i) {

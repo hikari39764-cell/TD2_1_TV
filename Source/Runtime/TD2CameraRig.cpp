@@ -47,6 +47,11 @@ void CameraRig::Snap(const F3& eye, const F3& look, float verticalFovRadians, co
     ready_ = true;
 }
 
+void CameraRig::Adopt(const F3& eye, const F3& look, float verticalFovRadians, const F3& up) {
+    Snap(eye, look, verticalFovRadians, up);
+    calm_ = 0;
+}
+
 namespace {
 // 右・上の向きと注視点までの距離から、揺れのずれと傾きを出す。
 void BreathAlong(const CameraAreaSettings& area, double time, const Vec3& right, const Vec3& up, double distance,
@@ -140,6 +145,14 @@ CameraRigPose CameraRig::Update(const CameraRegionFrame& frame, const CameraArea
     F3 breathEye, breathLook;
     double handRoll = 0;
     Breath(area, time, breathEye, breathLook, handRoll);
+    // 演出から引き継いだ直後は揺れを 1 秒かけて戻す。
+    calm_ = (std::min)(1.0, calm_ + dt / 1.0);
+    if (calm_ < 1) {
+        const double settle = Math::SmoothStep(calm_);
+        breathEye = {static_cast<float>(breathEye.x * settle), static_cast<float>(breathEye.y * settle), static_cast<float>(breathEye.z * settle)};
+        breathLook = {static_cast<float>(breathLook.x * settle), static_cast<float>(breathLook.y * settle), static_cast<float>(breathLook.z * settle)};
+        handRoll *= settle;
+    }
     Vec3 eye, look, up;
     const Vec3 be = ToVec3(breathEye), bl = ToVec3(breathLook);
     for (size_t i = 0; i < 3; ++i) {

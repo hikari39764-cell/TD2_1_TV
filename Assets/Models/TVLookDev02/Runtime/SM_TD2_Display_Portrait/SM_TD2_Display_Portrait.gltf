@@ -1,0 +1,282 @@
+{
+  "asset": {
+    "generator": "Khronos glTF Blender I/O v5.1.20",
+    "version": "2.0"
+  },
+  "extensionsUsed": [
+    "KHR_materials_clearcoat"
+  ],
+  "scene": 0,
+  "scenes": [
+    {
+      "name": "Scene",
+      "nodes": [
+        0,
+        1
+      ]
+    }
+  ],
+  "nodes": [
+    {
+      "extras": {
+        "role": "Body",
+        "source_model": "SM_TD2_Display_Portrait",
+        "normal_map": "Tangent-space OpenGL +Y; material-specific baked detail"
+      },
+      "mesh": 0,
+      "name": "SM_TD2_Display_Portrait_LookDev02__Body"
+    },
+    {
+      "extras": {
+        "role": "Screen",
+        "grid_cols": 11,
+        "grid_rows": 24,
+        "tile_pixels": 64,
+        "binding": "TD2_Screen"
+      },
+      "mesh": 1,
+      "name": "SM_TD2_Display_Portrait_LookDev02__Screen"
+    }
+  ],
+  "materials": [
+    {
+      "name": "LD2_SM_TD2_Display_Portrait_0_Plastic",
+      "normalTexture": {
+        "index": 0
+      },
+      "pbrMetallicRoughness": {
+        "baseColorTexture": {
+          "index": 1
+        },
+        "metallicRoughnessTexture": {
+          "index": 2
+        }
+      }
+    },
+    {
+      "extensions": {
+        "KHR_materials_clearcoat": {
+          "clearcoatFactor": 0.3499999940395355,
+          "clearcoatRoughnessFactor": 0.10000000149011612
+        }
+      },
+      "name": "TD2_Screen",
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          0.004000000189989805,
+          0.007000000216066837,
+          0.008999999612569809,
+          1
+        ],
+        "metallicFactor": 0,
+        "roughnessFactor": 0.10000000149011612
+      }
+    }
+  ],
+  "meshes": [
+    {
+      "name": "SM_TD2_Display_Portrait__Body.001",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 0,
+            "NORMAL": 1,
+            "TEXCOORD_0": 2,
+            "TEXCOORD_1": 3
+          },
+          "indices": 4,
+          "material": 0
+        }
+      ]
+    },
+    {
+      "name": "SM_TD2_Display_Portrait__Screen.001",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 5,
+            "NORMAL": 6,
+            "TEXCOORD_0": 7
+          },
+          "indices": 8,
+          "material": 1
+        }
+      ]
+    }
+  ],
+  "textures": [
+    {
+      "sampler": 0,
+      "source": 0
+    },
+    {
+      "sampler": 0,
+      "source": 1
+    },
+    {
+      "sampler": 0,
+      "source": 2
+    }
+  ],
+  "images": [
+    {
+      "mimeType": "image/png",
+      "name": "T_SM_TD2_Display_Portrait_Normal",
+      "uri": "../../Textures/SM_TD2_Display_Portrait/T_SM_TD2_Display_Portrait_Normal.png"
+    },
+    {
+      "mimeType": "image/png",
+      "name": "T_SM_TD2_Display_Portrait_BaseColor",
+      "uri": "../../Textures/SM_TD2_Display_Portrait/T_SM_TD2_Display_Portrait_BaseColor.png"
+    },
+    {
+      "mimeType": "image/png",
+      "name": "T_SM_TD2_Display_Portrait_MetalRough",
+      "uri": "../../Textures/SM_TD2_Display_Portrait/T_SM_TD2_Display_Portrait_MetalRough.png"
+    }
+  ],
+  "accessors": [
+    {
+      "bufferView": 0,
+      "componentType": 5126,
+      "count": 570,
+      "max": [
+        1.0021206140518188,
+        4,
+        0.17835114896297455
+      ],
+      "min": [
+        -1.0021206140518188,
+        -1.3130737608335608e-09,
+        -0.17835146188735962
+      ],
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 1,
+      "componentType": 5126,
+      "count": 570,
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 2,
+      "componentType": 5126,
+      "count": 570,
+      "type": "VEC2"
+    },
+    {
+      "bufferView": 3,
+      "componentType": 5126,
+      "count": 570,
+      "type": "VEC2"
+    },
+    {
+      "bufferView": 4,
+      "componentType": 5123,
+      "count": 918,
+      "type": "SCALAR"
+    },
+    {
+      "bufferView": 5,
+      "componentType": 5126,
+      "count": 4,
+      "max": [
+        0.8446414470672607,
+        3.8428540229797363,
+        0.17835107445716858
+      ],
+      "min": [
+        -0.8446414470672607,
+        0.15714596211910248,
+        0.1783508062362671
+      ],
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 6,
+      "componentType": 5126,
+      "count": 4,
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 7,
+      "componentType": 5126,
+      "count": 4,
+      "type": "VEC2"
+    },
+    {
+      "bufferView": 8,
+      "componentType": 5123,
+      "count": 6,
+      "type": "SCALAR"
+    }
+  ],
+  "bufferViews": [
+    {
+      "buffer": 0,
+      "byteLength": 6840,
+      "byteOffset": 0,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteLength": 6840,
+      "byteOffset": 6840,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteLength": 4560,
+      "byteOffset": 13680,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteLength": 4560,
+      "byteOffset": 18240,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteLength": 1836,
+      "byteOffset": 22800,
+      "target": 34963
+    },
+    {
+      "buffer": 0,
+      "byteLength": 48,
+      "byteOffset": 24636,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteLength": 48,
+      "byteOffset": 24684,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteLength": 32,
+      "byteOffset": 24732,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteLength": 12,
+      "byteOffset": 24764,
+      "target": 34963
+    }
+  ],
+  "samplers": [
+    {
+      "magFilter": 9729,
+      "minFilter": 9987
+    }
+  ],
+  "buffers": [
+    {
+      "byteLength": 24776,
+      "uri": "SM_TD2_Display_Portrait.bin"
+    }
+  ]
+}

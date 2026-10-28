@@ -1,0 +1,21 @@
+{
+  "displayName": "T_SM_F_TV_Broadcast_Normal",
+  "guid": "51a3d95790594e438534c0c422ca1b57",
+  "importSettings": {
+    "allowResize": false,
+    "colorSpace": "Linear",
+    "compression": "BC7",
+    "debugOutputFormat": "DDS",
+    "dimension": "Texture2D",
+    "forcePowerOfTwo": false,
+    "maxSize": 4096,
+    "mipPolicy": "Generate",
+    "outputFormat": "HTEX",
+    "usage": "Normal"
+  },
+  "importerId": "TextureImporter",
+  "importerVersion": 8,
+  "metaVersion": 1,
+  "sourcePath": "Assets/Models/TVLookDev02/Textures/SM_F_TV_Broadcast/T_SM_F_TV_Broadcast_Normal.png",
+  "type": "Texture"
+}

@@ -1,0 +1,21 @@
+{
+  "displayName": "T_SM_TD2_Display_Portrait_MetalRough",
+  "guid": "c1c15b5fac88420a9bc2812a918631bb",
+  "importSettings": {
+    "allowResize": false,
+    "colorSpace": "Linear",
+    "compression": "BC7",
+    "debugOutputFormat": "DDS",
+    "dimension": "Texture2D",
+    "forcePowerOfTwo": false,
+    "maxSize": 4096,
+    "mipPolicy": "Generate",
+    "outputFormat": "HTEX",
+    "usage": "MetallicRoughness"
+  },
+  "importerId": "TextureImporter",
+  "importerVersion": 8,
+  "metaVersion": 1,
+  "sourcePath": "Assets/Models/TVLookDev02/Textures/SM_TD2_Display_Portrait/T_SM_TD2_Display_Portrait_MetalRough.png",
+  "type": "Texture"
+}

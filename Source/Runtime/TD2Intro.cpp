@@ -1,34 +1,34 @@
 #include "TD2Intro.h"
-#include "TD2Popups.h"
-#include "TD2RegionComponent.h"
-#include "TD2StageLight.h"
-#include "TD2Transform.h"
 #include "HIKARI/Project/ActionViews.h"
+#include "HIKARI/Project/CameraViewSnapshot.h"
 #include "HIKARI/Project/ComponentViews.h"
 #include "HIKARI/Project/EnvironmentView.h"
 #include "HIKARI/Project/GameFlowViews.h"
 #include "HIKARI/Project/LightTypes.h"
 #include "HIKARI/Project/SequenceView.h"
-#include "HIKARI/Project/CameraViewSnapshot.h"
 #include "HIKARI/Project/UiTypes.h"
 #include "HIKARI/Project/UiView.h"
 #include "HIKARI/Project/WorldQuery.h"
+#include "TD2Popups.h"
+#include "TD2RegionComponent.h"
+#include "TD2StageLight.h"
+#include "TD2Transform.h"
 #include <algorithm>
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
 #include <set>
+#include <utility>
+#include <vector>
 
 namespace TD2 {
 namespace {
-// シーンの物体の ID を探す上限（灯と装飾テレビをオープニングの始めに一度だけ集める）。
-constexpr uint64_t kScanLimit = 40000;
 using Math::Hash01;
 // タイトル待ちの寄りきるまでの秒と、オープニングで作者の構図へ戻す秒。
-constexpr double kTitleZoomSeconds = 1.6, kTitleZoomOutSeconds = 1.2;
+constexpr double kTitleZoomSeconds = 2.6, kTitleZoomOutSeconds = 2.2;
 // 通関：扉が閉じるまでの秒（閉じ終えた瞬間にゴールのテレビが消え始める）。
-constexpr float kDoorClose = 1.2f;
+constexpr float kDoorClose = 3.2f;
 // 画面に飛び込んで切れてから灯とテレビを戻すまで（暗転の中で戻し、戻る瞬間を見せない）。
 constexpr float kRestoreAfterBlack = .06f;
 }
@@ -187,9 +187,20 @@ void IntroDirector::Collect(HIKARI::WorldView& world) {
             props_.push_back({object.GetHandle(), rest, static_cast<uint32_t>(settings_.props[i])});
         }
     }
-    for (uint64_t id = 1; id < kScanLimit; ++id) {
-        const auto object = world.FindSceneObject(id);
-        if (!object.IsValid()) { continue; }
+    // 穴だらけの文書 ID を総当たりせず、実在する物だけ集める。従来と同じ ID
+    // 順にして演出の並びを保つ。
+    std::vector<HIKARI::GameProjectObjectHandle> handles(static_cast<size_t>(world.GetObjectCount()));
+    handles.resize(static_cast<size_t>(world.CopyObjectHandles(handles)));
+    std::vector<std::pair<uint64_t, HIKARI::ObjectView>> objects;
+    objects.reserve(handles.size());
+    for (const auto handle : handles) {
+        const auto object = world.FindObject(handle);
+        const auto id = object.GetSceneObjectId();
+        if (id != 0)
+            objects.emplace_back(id, object);
+    }
+    std::sort(objects.begin(), objects.end(), [](const auto& a, const auto& b) { return a.first < b.first; });
+    for (const auto& [id, object] : objects) {
         if (id == settings_.lightning1 || id == settings_.lightning2) {
             lamps_.push_back({object.GetHandle(), settings_.lightningPeak, -1, static_cast<uint32_t>(id), true, false});
             continue;
@@ -197,12 +208,14 @@ void IntroDirector::Collect(HIKARI::WorldView& world) {
         HIKARI::GameProjectLightState state{};
         // 視野の外で灯の予算が切っている灯も入れる（明滅は強さだけを変え、点け消しは予算に任せる）。
         if (!stage.contains(object.GetHandle().value) && object.GetLight().TryGetState(state)) {
-            lamps_.push_back({object.GetHandle(), state.intensity, -1, static_cast<uint32_t>(id), false, true, id == settings_.screenGlow, reachOf(object)});
+            lamps_.push_back({object.GetHandle(), state.intensity, -1, static_cast<uint32_t>(id), false, true,
+                              id == settings_.screenGlow, reachOf(object)});
         }
         HIKARI::GameProjectModelAppearance appearance{};
         if (object.GetModel().TryGetAppearance(appearance)) {
             const std::string_view asset(appearance.assetId, strnlen(appearance.assetId, sizeof(appearance.assetId)));
-            if (!asset.empty() && std::find(settings_.tvModels.begin(), settings_.tvModels.end(), asset) != settings_.tvModels.end() &&
+            if (!asset.empty() &&
+                std::find(settings_.tvModels.begin(), settings_.tvModels.end(), asset) != settings_.tvModels.end() &&
                 screens.insert(object.GetHandle().value).second) {
                 screens_.tvScreens.push_back(object.GetHandle());
             }
@@ -295,6 +308,7 @@ bool IntroDirector::Update(HIKARI::WorldView& world, bool start, double seconds)
     if (phase_ != Phase::Arrival) { return false; }
     HIKARI::GameProjectSequencePlaybackSnapshot snapshot{};
     if (!world.GetSequence().GetSnapshot(playback_, snapshot) || snapshot.timeSeconds >= snapshot.durationSeconds - 1e-3f) {
+        handoff_ = true;   // 最後の画からゲームのカメラへ滑らかに移す（Session がカメラに伝える）
         Finish(world);
         return false;
     }

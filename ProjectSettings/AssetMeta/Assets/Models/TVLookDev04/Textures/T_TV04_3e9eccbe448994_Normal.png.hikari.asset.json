@@ -1,0 +1,21 @@
+{
+  "displayName": "T_TV04_3e9eccbe448994_Normal",
+  "guid": "13db81c3afaea2e1a6602f01bc298a43",
+  "importSettings": {
+    "allowResize": false,
+    "colorSpace": "Linear",
+    "compression": "BC7",
+    "debugOutputFormat": "DDS",
+    "dimension": "Texture2D",
+    "forcePowerOfTwo": false,
+    "maxSize": 4096,
+    "mipPolicy": "Generate",
+    "outputFormat": "HTEX",
+    "usage": "Normal"
+  },
+  "importerId": "TextureImporter",
+  "importerVersion": 8,
+  "metaVersion": 1,
+  "sourcePath": "Assets/Models/TVLookDev04/Textures/T_TV04_3e9eccbe448994_Normal.png",
+  "type": "Texture"
+}

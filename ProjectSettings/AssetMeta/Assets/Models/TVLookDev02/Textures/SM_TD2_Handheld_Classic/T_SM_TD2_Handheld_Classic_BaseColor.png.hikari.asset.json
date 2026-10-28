@@ -1,0 +1,21 @@
+{
+  "displayName": "T_SM_TD2_Handheld_Classic_BaseColor",
+  "guid": "7384e550ad4a4e83a6505b847e8a5935",
+  "importSettings": {
+    "allowResize": false,
+    "colorSpace": "Srgb",
+    "compression": "BC7",
+    "debugOutputFormat": "DDS",
+    "dimension": "Texture2D",
+    "forcePowerOfTwo": false,
+    "maxSize": 4096,
+    "mipPolicy": "Generate",
+    "outputFormat": "HTEX",
+    "usage": "BaseColor"
+  },
+  "importerId": "TextureImporter",
+  "importerVersion": 8,
+  "metaVersion": 1,
+  "sourcePath": "Assets/Models/TVLookDev02/Textures/SM_TD2_Handheld_Classic/T_SM_TD2_Handheld_Classic_BaseColor.png",
+  "type": "Texture"
+}

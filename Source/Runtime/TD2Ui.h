@@ -55,10 +55,12 @@ public:
     // 字に描き縁を付ける（字の高さに対する割合。0 で無し）。光る画面で細い線が飛ばないよう太らせる。
     void SetTextOutline(float ratio) noexcept { outline_ = ratio; }
 
-    void Image(std::string_view texture, Rect r, Color tint = {});
+    void Image(std::string_view texture, Rect r, Color tint = {}, uint32_t flags = 0);
     void Fill(Rect r, Color color);
     // 窓。s は素材から描く先への倍率（題の帯の高さが 86·s）。題は暗い帯の左に明るい字で。窓の中の矩形を返す。
     Rect Window(Rect r, float s, std::string_view title);
+    // 窓 r の題だけ（開く途中の窓では、枠だけを動かして題は開ききった窓の位置に描く）。
+    void WindowTitle(Rect r, float s, std::string_view title);
     // 選べる行（高さに合わせて両端を縮める）。
     void Row(Rect r, bool selected);
     // 字の入ったボタン（素材のボタンをそのまま伸ばす）。
@@ -81,5 +83,9 @@ private:
 
 // 素材の大きさ（切り出しの画素）。配置の計算に使う。
 inline constexpr float kWindowTop = 86, kWindowTopLeft = 90, kWindowTopRight = 185, kWindowSide = 22, kWindowBottom = 33, kWindowCorner = 30;
+// 窓 r（倍率 s）の中の矩形。Painter::Window が返すのと同じ（描かずに配置だけを求める）。
+inline Rect WindowInner(Rect r, float s) {
+    return {r.x + kWindowSide * s, r.y + kWindowTop * s, r.w - 2 * kWindowSide * s, r.h - kWindowTop * s - kWindowBottom * s};
+}
 inline constexpr float kButtonAspect = 276.f / 115.f, kCursorAspect = 54.f / 88.f, kMailFieldsAspect = 517.f / 173.f;
 }

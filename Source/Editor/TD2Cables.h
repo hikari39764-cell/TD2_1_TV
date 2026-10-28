@@ -9,6 +9,7 @@ namespace TD2::Editor {
 inline constexpr std::string_view kCableSegmentPath = "TD2Props/SM_TD2_CableSeg.gltf";
 inline constexpr std::string_view kCableJointPath = "TD2Props/SM_TD2_CableJoint.gltf";
 inline constexpr std::string_view kSignalCableType = "TD2.SignalCable";
+inline constexpr std::string_view kTD2CableMaterialSet = "TD2CableMaterialSet";
 
 // 線の通り道（折れ線）。from は板のテレビの後ろの足元、to は仕掛けの部品か動くテレビの後ろ。
 std::vector<Vec3> RouteCable(const Vec3& from, const Vec3& to, const LayoutSnapshot& layout);

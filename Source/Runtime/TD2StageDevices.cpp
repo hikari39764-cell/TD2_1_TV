@@ -90,24 +90,30 @@ void RolesFor(const StagePartBuilder& builder, const Rules::DeviceSnapshot& d, c
         break;
     }
     // 押し刺：刺の面に丸鋸を並べる（箱と腕は焼いた部品）。刃の中心は面から箱の中へ寄せ、縁だけを出す。
+    // 刺の塊は四方の面すべてに並べる。
     case Rules::DeviceKind::Pusher: {
         const double ox = projection.ShiftX(-.3), oy = projection.ShiftY(-.3);
-        const bool horizontal = d.direction == Rules::Direction::Left || d.direction == Rules::Direction::Right;
-        const int count = static_cast<int>(std::ceil((horizontal ? r.h : r.w) - 1e-6));
         constexpr double kInset = .38;   // TD2ScreenModels.cpp の PusherParts と同じ
-        for (int k = 0; k < count; ++k) {
-            double sx = r.x + k + .5, sy = r.y + k + .5;
-            switch (d.direction) {
-            case Rules::Direction::Up: sy = r.y + kInset; break;
-            case Rules::Direction::Down: sy = r.y + r.h - kInset; break;
-            case Rules::Direction::Left: sx = r.x + kInset; break;
-            default: sx = r.x + r.w - kInset; break;
+        static constexpr std::string_view kSpins[]{"Spin0", "Spin1", "Spin2"};
+        int n = 0;
+        const auto face = [&](Rules::Direction direction) {
+            const bool horizontal = direction == Rules::Direction::Left || direction == Rules::Direction::Right;
+            const int count = static_cast<int>(std::ceil((horizontal ? r.h : r.w) - 1e-6));
+            for (int k = 0; k < count; ++k) {
+                double sx = r.x + k + .5, sy = r.y + k + .5;
+                switch (direction) {
+                case Rules::Direction::Up: sy = r.y + kInset; break;
+                case Rules::Direction::Down: sy = r.y + r.h - kInset; break;
+                case Rules::Direction::Left: sx = r.x + kInset; break;
+                default: sx = r.x + r.w - kInset; break;
+                }
+                Role role{Model::Saw, kSpins[n++ % 3], sx + ox, sy + oy};
+                role.pivot = 0; role.loop = true; role.blend = 0;
+                out.push_back(role);
             }
-            static constexpr std::string_view kSpins[]{"Spin0", "Spin1", "Spin2"};
-            Role role{Model::Saw, kSpins[k % 3], sx + ox, sy + oy};
-            role.pivot = 0; role.loop = true; role.blend = 0;
-            out.push_back(role);
-        }
+        };
+        if (d.variant == "block") { for (const auto direction : {Rules::Direction::Up, Rules::Direction::Right, Rules::Direction::Down, Rules::Direction::Left}) { face(direction); } }
+        else { face(d.direction); }
         break;
     }
     // チェックポイント：宙に浮く青緑の小さなテレビ（消えている間もゆっくり上下する）。触れると跳ね上がって目を覚まし、

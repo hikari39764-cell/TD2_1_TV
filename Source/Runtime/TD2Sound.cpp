@@ -34,7 +34,7 @@ void SoundDirector::Load(HIKARI::WorldView& world) {
     phone_.loop = false;
     ambient_.keep = footsteps_.keep = true;
     swap_ = load(kSwapPath); checkpoint_ = load(kCheckpointPath); blink_ = load(kBlinkPath); plate_ = load(kPlatePath); death_ = load(kDeathPath);
-    popup_ = load(kPopupPath);
+    popup_ = load(kPopupPath); spring_ = load(kSpringPath);
     for (size_t i = 0; i < thunder_.size(); ++i) { thunder_[i] = load(kThunderPaths[i]); }
 }
 
@@ -79,15 +79,16 @@ void SoundDirector::Update(HIKARI::WorldView& world, const IntroDirector& intro,
         stage = settings_.stageBgm;
         steps = playing && player.grounded && !player.dead && std::abs(player.walkVx) > .01 ? settings_.footsteps : 0;
     }
-    // 稲妻：オープニングと通関の演出の秒が稲妻の時刻を越えたフレームで、三つの雷を順に一度ずつ。
-    const bool cinematic = intro.Opening() || intro.EndingPlaying();
-    if (cinematic && lastTime_ >= 0 && t >= lastTime_) {
+    // 稲妻：通関の演出の秒が稲妻の時刻を越えたフレームで、三つの雷を順に一度ずつ。オープニングの雷と風は演出アセットの
+    // 音のトラックが鳴らす（時刻は演出の編集で直す）ので、ここで鳴らすと二重になる。
+    const bool ending = intro.EndingPlaying();
+    if (ending && lastTime_ >= 0 && t >= lastTime_) {
         for (size_t i = 0; i < s.lightning.size(); ++i) {
             const double at = s.lightning[i] + kThunderDelay;
             if (lastTime_ < at && t >= at) { PlayOnce(world, thunder_[i % thunder_.size()], settings_.thunder, NameOf(kThunderPaths[i % thunder_.size()])); }
         }
     }
-    lastTime_ = cinematic ? t : -1;
+    lastTime_ = ending ? t : -1;
     const auto toward = [](Loop& loop, float target, float riseSeconds, float fallSeconds) {
         loop.rate = 1.0f / (std::max)(.01f, target > loop.volume ? riseSeconds : fallSeconds); loop.target = target;
     };
@@ -131,14 +132,14 @@ void SoundDirector::PlayOnce(HIKARI::WorldView& world, HIKARI::GameProjectAudioS
     (void)world.GetAudio().Play(sound, Bus::Se, 0, volume);
 }
 
-void SoundDirector::PlayPopups(HIKARI::WorldView& world, int count) {
+void SoundDirector::PlayPopups(HIKARI::WorldView& world, int count, float gain) {
     if (count <= 0 || !popup_.IsValid() || settings_.popup <= 0) { return; }
     const auto audio = world.GetAudio();
     for (int i = 0; i < (std::min)(count, 3); ++i) {
         // 0.85〜1.35 倍の高さで、古い音から差し替えて重ねる。
         popupSeed_ = popupSeed_ * 1664525u + 1013904223u;
         HIKARI::GameProjectAudioPlayOptions options{};
-        options.bus = Bus::Se; options.volume = settings_.popup;
+        options.bus = Bus::Se; options.volume = settings_.popup * gain;
         options.concurrency = HIKARI::GameProjectAudioConcurrency::ReplaceOldest; options.maximumInstances = 10;
         options.playbackRate = .85f + .5f * static_cast<float>(popupSeed_ >> 8) / static_cast<float>(1u << 24);
         (void)audio.Play(popup_, options);
@@ -155,6 +156,8 @@ void SoundDirector::OnEvent(HIKARI::WorldView& world, const Rules::RuleEvent& ev
         if (event.subjectId != lastCheckpoint_) { lastCheckpoint_ = event.subjectId; PlayOnce(world, checkpoint_, settings_.checkpoint, NameOf(kCheckpointPath)); }
         break;
     case Kind::PlayerDied: PlayOnce(world, death_, settings_.death, NameOf(kDeathPath)); break;
+    // バネが体（主人公か残影）を打ち上げた時。
+    case Kind::SpringLaunched: PlayOnce(world, spring_, settings_.spring, NameOf(kSpringPath)); break;
     // 踏み板は踏まれた瞬間（pressed）だけ。踏み続けても、切り替え式の入り（latched）でも重ねて鳴らさない。
     case Kind::PlateChanged: if (event.detail == "pressed") { PlayOnce(world, plate_, settings_.plate, NameOf(kPlatePath)); } break;
     default: break;

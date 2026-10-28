@@ -62,6 +62,14 @@ inline Rect PusherFace(const Rect& r, Direction direction) {
     default: return {r.x + r.w, r.y + side, thin, r.h - 2 * side};
     }
 }
+// 刺の塊（押し刺の variant=block）：腕の無い往復の刺。四方のどの面に触れても死に、本体には当たりが無い
+// （乗れず、冲刺で突き抜けられる）。残影には塊として当たり、押される。
+inline bool PusherBlock(const DeviceDefinition& d) { return d.kind == DeviceKind::Pusher && d.variant == "block"; }
+// 刺の塊の死ぬ範囲：箱の周り 2/32（刃の先）。
+inline Rect PusherHurt(const Rect& r) {
+    constexpr double tip = 2.0 / 32;
+    return {r.x - tip, r.y - tip, r.w + 2 * tip, r.h + 2 * tip};
+}
 
 inline bool OverlapX(const Rect& a, const Rect& b) {
     return a.x < b.x + b.w - kEps && a.x + a.w > b.x + kEps;

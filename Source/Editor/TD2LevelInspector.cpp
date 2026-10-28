@@ -16,14 +16,17 @@ void DrawSpring(IEditorWorkspaceUi& ui, DeviceDraft& d) {
 }
 
 // 押し刺：伸びるマス数と秒数、動き方（板で伸びる／往復）。往復は端で止まる秒数と始まりのずれ。
+// 刺の塊は腕の無い形（四方が刺で、テレビをまたいで行き来できる）。
 void DrawPusher(IEditorWorkspaceUi& ui, DeviceDraft& d) {
     const auto read = [&d](std::string_view key, double fallback) {
         const auto text = d.Extra(key);
         try { return text.empty() ? fallback : std::stod(text); } catch (...) { return fallback; }
     };
+    bool block = d.Extra("variant") == "block";
+    if (ui.Checkbox("td2.device.pusher.block", "刺の塊", &block)) { d.SetExtra("variant", block ? "block" : ""); }
     double travel = read("travel", 3), seconds = read("seconds", .5), dwell = read("dwell", 0), phase = read("phase", 0);
     if (EditFloat(ui, "td2.device.travel", "伸びるマス数", travel, .25f, 30)) { d.SetExtra("travel", std::abs(travel - 3) < 1e-6 ? "" : ShortNumber(travel)); }
-    if (EditFloat(ui, "td2.device.seconds", "伸びる秒数", seconds, .05f, 10)) { d.SetExtra("seconds", std::abs(seconds - .5) < 1e-6 ? "" : ShortNumber(seconds)); }
+    if (EditFloat(ui, "td2.device.seconds", "伸びる秒数", seconds, .05f, 30)) { d.SetExtra("seconds", std::abs(seconds - .5) < 1e-6 ? "" : ShortNumber(seconds)); }
     const bool timed = dwell > 0;
     if (ui.Selectable("td2.device.pusher.plate", "板で伸びる", !timed)) { d.SetExtra("dwell", ""); d.SetExtra("phase", ""); }
     if (ui.Selectable("td2.device.pusher.timed", "往復する", timed) && !timed) { d.SetExtra("dwell", "1"); }

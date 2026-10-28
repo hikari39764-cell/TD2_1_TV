@@ -56,6 +56,7 @@ std::string WriteProgressText(const Rules::Progress& p) {
     for (const auto& id : p.taken) { out << "gem " << id << '\n'; ++count; }
     for (const auto& [a, b] : p.sealed) { out << "seal " << a << ' ' << b << '\n'; ++count; }
     if (!p.finale.empty()) { out << "finale " << p.finale << '\n'; ++count; }
+    for (const auto& key : p.said) { out << "said " << key << '\n'; ++count; }
     out << "end " << count << '\n';
     return out.str();
 }
@@ -96,6 +97,7 @@ bool ReadProgressText(std::string_view text, Rules::Progress& out) {
         if (key == "gem") { p.taken.push_back(id); return true; }
         if (key == "seal") { std::string other; if (!(words >> other)) return false; p.sealed.push_back({id, other}); return true; }
         if (key == "finale") { p.finale = id; return true; }
+        if (key == "said") { p.said.push_back(id); return true; }
         return true;   // 新しい版の知らない行は読み飛ばす
     });
     if (!ok || !checkpoint || p.region.empty()) return false;

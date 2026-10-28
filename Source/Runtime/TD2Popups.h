@@ -20,12 +20,13 @@ struct Look {
     float alpha = 1;
     double typed = -1;
     bool dark = false;     // 地を暗くした窓（嵐の中に時々混ぜる）
+    float textScale = 1;   // 本文の字の大きさの倍率（テレビの中の小さな窓は字を大きく）
 };
 // 窓の幅 width で中心 (cx, cy) に描く。高さは行の数とボタンの段（buttons が true）から決める。
 // 窓の中の、ボタンを置く段の矩形を返す（ボタンが無い時も最下段の矩形）。
 Ui::Rect Draw(Ui::Painter& paint, float cx, float cy, float width, const Look& look, bool buttons = false);
 // 弾窓の高さ（出きった時）。配置の計算に使う。
-float Height(float width, std::string_view text, bool buttons);
+float Height(float width, std::string_view text, bool buttons, float textScale = 1);
 // 出る動き：始まってからの秒 u で 0〜1（0.09 秒で縦に伸び、少し行き過ぎて戻る）。
 float Appear(double u);
 

@@ -1,0 +1,10 @@
+{
+  "displayName": "SE_Wind",
+  "guid": "dd7d767c4d8ccc5ea8ce53744d6dceee",
+  "importSettings": {},
+  "importerId": "AudioAssetImporter",
+  "importerVersion": 1,
+  "metaVersion": 1,
+  "sourcePath": "Assets/Audio/SE/SE_Wind.mp3",
+  "type": "Audio"
+}

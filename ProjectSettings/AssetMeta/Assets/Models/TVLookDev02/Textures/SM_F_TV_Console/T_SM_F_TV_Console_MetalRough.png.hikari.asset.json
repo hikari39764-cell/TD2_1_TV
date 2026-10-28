@@ -1,0 +1,21 @@
+{
+  "displayName": "T_SM_F_TV_Console_MetalRough",
+  "guid": "e484d9cb299e4e8980614df622d775dc",
+  "importSettings": {
+    "allowResize": false,
+    "colorSpace": "Linear",
+    "compression": "BC7",
+    "debugOutputFormat": "DDS",
+    "dimension": "Texture2D",
+    "forcePowerOfTwo": false,
+    "maxSize": 4096,
+    "mipPolicy": "Generate",
+    "outputFormat": "HTEX",
+    "usage": "MetallicRoughness"
+  },
+  "importerId": "TextureImporter",
+  "importerVersion": 8,
+  "metaVersion": 1,
+  "sourcePath": "Assets/Models/TVLookDev02/Textures/SM_F_TV_Console/T_SM_F_TV_Console_MetalRough.png",
+  "type": "Texture"
+}

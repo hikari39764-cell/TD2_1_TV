@@ -33,6 +33,8 @@ std::vector<Collider> Simulation::Colliders(const Rect& area, const BodyState* b
         const bool oneWay = dev.kind == DeviceKind::OneWay && !hanging, ceiling = dev.kind == DeviceKind::OneWay && hanging;
         if (dev.id == ignore || ((oneWay || ceiling) && fullOnly)) continue;
         if (staticOnly && dev.kind != DeviceKind::Solid && dev.kind != DeviceKind::OneWay) continue;
+        // 刺の塊は残影だけに当たる（本体は触れると死ぬだけ、光線も止めない）。
+        if (PusherBlock(dev) && !echoBody) continue;
         // バネは上面の踏み板だけが当たる（光線もここで止まる）。
         const Rect rect = dev.kind == DeviceKind::Spring ? SpringCap(dev) : spike ? SpikeHitbox(dev.rect, dev.direction)
                         : dev.kind == DeviceKind::Pusher ? PusherRect(dev, s.devices[i].push) : dev.rect;

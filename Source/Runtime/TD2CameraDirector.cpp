@@ -2,6 +2,7 @@
 #include "TD2Transform.h"
 #include "TD2TravelComponents.h"
 #include "HIKARI/Project/ActionViews.h"
+#include "HIKARI/Project/CameraViewSnapshot.h"
 #include "HIKARI/Project/GameFlowViews.h"
 #include "HIKARI/Project/SequenceView.h"
 #include "HIKARI/Project/WorldQuery.h"
@@ -155,6 +156,13 @@ void CameraDirector::Initialize(HIKARI::WorldView& world, const Rules::Explorati
 
 void CameraDirector::Jump(HIKARI::WorldView& world, const Rules::Exploration& exploration, const RegionObjects& objects, std::string_view region) {
     StopTravel(world); Snap(world, exploration, objects, region);
+}
+
+void CameraDirector::AdoptView(HIKARI::WorldView& world) {
+    HIKARI::GameProjectCameraViewSnapshot view{};
+    if (!world.GetCamera().TryGetViewSnapshot(view)) return;
+    StopTravel(world);
+    rig_.Adopt(view.pose.eye, view.pose.target, view.lens.verticalFovRadians, view.pose.up);
 }
 
 void CameraDirector::Snap(HIKARI::WorldView& world, const Rules::Exploration& exploration, const RegionObjects& objects, std::string_view region) {

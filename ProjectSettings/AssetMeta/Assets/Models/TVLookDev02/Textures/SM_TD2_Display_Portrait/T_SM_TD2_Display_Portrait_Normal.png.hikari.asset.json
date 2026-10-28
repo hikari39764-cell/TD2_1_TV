@@ -1,0 +1,21 @@
+{
+  "displayName": "T_SM_TD2_Display_Portrait_Normal",
+  "guid": "1f403e18aa994258a1642361eaa24ac2",
+  "importSettings": {
+    "allowResize": false,
+    "colorSpace": "Linear",
+    "compression": "BC7",
+    "debugOutputFormat": "DDS",
+    "dimension": "Texture2D",
+    "forcePowerOfTwo": false,
+    "maxSize": 4096,
+    "mipPolicy": "Generate",
+    "outputFormat": "HTEX",
+    "usage": "Normal"
+  },
+  "importerId": "TextureImporter",
+  "importerVersion": 8,
+  "metaVersion": 1,
+  "sourcePath": "Assets/Models/TVLookDev02/Textures/SM_TD2_Display_Portrait/T_SM_TD2_Display_Portrait_Normal.png",
+  "type": "Texture"
+}

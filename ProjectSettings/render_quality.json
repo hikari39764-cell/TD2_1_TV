@@ -1,7 +1,7 @@
 {
   "renderQuality": {
     "antiAliasingMode": "DLSS",
-    "depthOfFieldQuality": "High",
+    "depthOfFieldQuality": "Medium",
     "directionalShadow": {
       "cascadeBlend": 0.10000000149011612,
       "cascadeCount": 3,
@@ -21,7 +21,7 @@
     "dlssQualityMode": "Performance",
     "dynamicGiQuality": "Off",
     "forwardCostMode": "Full",
-    "frameGenerationMode": "Off",
+    "frameGenerationMode": "DLSS",
     "frameGenerationMultiplier": 2,
     "geometryPipeline": "MeshShader",
     "lightProbeVolumeSampling": "FullTrilinear",
@@ -39,7 +39,7 @@
     "viewportScale": 1.0,
     "volumetricCloudQuality": "Low",
     "volumetricLightingQuality": "Balanced",
-    "windowMode": "Borderless",
+    "windowMode": "Windowed",
     "windowSize": "1080p"
   },
   "version": 1

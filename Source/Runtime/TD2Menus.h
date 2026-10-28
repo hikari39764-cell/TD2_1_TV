@@ -35,10 +35,19 @@ public:
     // テレビの画面の画布へ描く（弾窓の嵐など）。draw に描き手と画面の中の範囲を渡す。画布が使えない時は false。
     bool PaintOnScreen(HIKARI::WorldView& world, HIKARI::ObjectView screen, int order, const std::function<void(Ui::Painter&, Ui::Rect)>& draw);
 
-    // 起動の直後の毎フレーム：窓・メール・ESC の窓で使う素材と字を見えないほど薄く描き、初めて出す時の読み込みを済ませておく。
-    void Warm(HIKARI::WorldView& world, double seconds);
+    // 起動の直後の毎フレーム：窓・メール・ESC
+    // の窓で使う素材と字を見えないほど薄く描き、初めて出す時の読み込みを済ませておく。
+    // 黒い UI
+    // を一度提示してから、読込と予熱を行う。最新の提示が返るまでタイトルを開かない。
+    bool PrepareStartup(HIKARI::WorldView& world, uint64_t frameIndex);
+    void Warm(HIKARI::WorldView& world);
     // 起動時の続きの問い（全画面）。決めた後も 0.4 秒、閉じていく姿を描く（その下で遊びかタイトルが始まっている）。
-    void OpenContinue() { mode_ = Mode::Continue; choice_ = 0; opened_ = 0; closing_ = -1; warm_ = warmReal_ = 0; stable_ = 0; }
+    void OpenContinue() {
+        mode_ = Mode::Continue;
+        choice_ = 0;
+        opened_ = 0;
+        closing_ = -1;
+    }
     bool ContinueOpen() const noexcept { return mode_ == Mode::Continue; }
     Choice UpdateContinue(HIKARI::WorldView& world, double seconds);
     // 毎フレーム：閉じていく続きの問いと ESC の窓を描く。
@@ -90,13 +99,14 @@ private:
     Repeat leftRepeat_, rightRepeat_, upRepeat_, downRepeat_;
     bool holdAction_ = false;
     // このフレームに窓のカーソルを描いたか・OS のポインターを見せるか。最後に使った入力が手柄か（案内の字を替える）。
-    bool cursorDrawn_ = false, pointerRequested_ = false, gamepad_ = false;
+    bool cursorDrawn_ = false, pointerRequested_ = false, pointerFree_ = false, gamepad_ = false;
     int choice_ = 0, row_ = 0, confirmChoice_ = 1;
     float cursor_ = 0, confirmCursor_ = 1, rowCursor_ = 0;
     double opened_ = 0, closing_ = -1, pauseClosing_ = -1, quitting_ = 0;
-    // 続きの問いを開く前の待ち：進めた秒（1 フレーム 1/30 秒まで）・実際の秒・続けて短かったフレームの数。起動の後の経過秒。
-    double warm_ = 0, warmReal_ = 0, warmTime_ = 0;
-    int stable_ = 0;
+    // 予熱は繰り返し描かず、提示済みフレームで交接する。長い初回読込も提示済みの黒で隠す。
+    uint64_t startupBlackFrame_ = 0, startupWarmFrame_ = 0;
+    uint32_t warmFrames_ = 0;
+    bool startupReady_ = false;
     HIKARI::GameProjectObjectHandle pauseScreen_{};
     Canvas canvas_;
     // タイトル

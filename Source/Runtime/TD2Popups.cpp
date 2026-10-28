@@ -28,23 +28,30 @@ float Appear(double u) {
     return static_cast<float>(1.08 - .08 * (u - .09) / .07);
 }
 
-float Height(float width, std::string_view text, bool buttons) {
-    const float s = width * kScalePerWidth, f = width * kTextPerWidth, pad = f * .7f;
+float Height(float width, std::string_view text, bool buttons, float textScale) {
+    const float s = width * kScalePerWidth, f = width * kTextPerWidth * textScale, pad = f * .7f;
     const float body = (std::max)(f * 2.2f, Lines(text) * f * kLineGap);
     return Ui::kWindowTop * s + pad + body + pad + (buttons ? f * 2.1f + pad : 0) + Ui::kWindowBottom * s;
 }
 
 Rect Draw(Ui::Painter& paint, float cx, float cy, float width, const Look& look, bool buttons) {
-    const float s = width * kScalePerWidth, f = width * kTextPerWidth, pad = f * .7f;
-    const float full = Height(width, look.text, buttons);
-    if (look.appear <= 0 || look.alpha <= 0) return {cx, cy, 0, 0};
-    // 出る時はブラウン管の窓のように縦に伸びて開く（幅はそのまま）。
+    const float s = width * kScalePerWidth, f = width * kTextPerWidth * look.textScale, pad = f * .7f;
+    const float full = Height(width, look.text, buttons, look.textScale);
+    // 中身（題・絵・字・ボタンの段）は開ききった窓の位置に置く。開く枠に合わせて動かすと、行き過ぎて戻る間に字が上下に
+    // 跳ねて見える。
+    const Rect settled{cx - width * .5f, cy - full * .5f, width, full};
+    const Rect inner = Ui::WindowInner(settled, s);
+    const float bh = f * 2.1f;
+    const Rect buttonRow{inner.x + pad, inner.Bottom() - pad - bh, inner.w - 2 * pad, bh};
+    if (look.appear <= 0 || look.alpha <= 0) return buttonRow;
+    // 出る時はブラウン管の窓のように縦に伸びて開く（幅はそのまま）。動くのは枠だけで、中身は枠がほぼ開いてから出す。
     const float h = (std::max)(full * look.appear, Ui::kWindowTop * s + Ui::kWindowBottom * s);
     const Rect window{cx - width * .5f, cy - h * .5f, width, h};
     paint.SetAlpha(look.alpha);
-    const Rect inner = paint.Window(window, s, look.title);
-    if (look.appear < .6f) return {inner.x, inner.Bottom(), inner.w, 0};
-    if (look.dark) paint.Fill(inner, {.08f, .09f, .1f, 1});
+    const Rect frame = paint.Window(window, s, {});
+    if (look.appear < .97f) return buttonRow;
+    paint.WindowTitle(settled, s, look.title);
+    if (look.dark) paint.Fill(frame, {.08f, .09f, .1f, 1});
     const Ui::Color ink = look.dark ? Ui::Color{.92f, .93f, .9f, 1} : Ui::kInk;
     float x = inner.x + pad;
     const float iconSize = f * 2.2f;
@@ -80,8 +87,7 @@ Rect Draw(Ui::Painter& paint, float cx, float cy, float width, const Look& look,
         if (cut == std::string_view::npos) break;
         rest = rest.substr(cut + 1);
     }
-    const float bh = f * 2.1f;
-    return {inner.x + pad, inner.Bottom() - pad - bh, inner.w - 2 * pad, bh};
+    return buttonRow;
 }
 
 void Buttons(Ui::Painter& paint, Rect area, std::span<const std::string_view> labels, int choice, bool pressed, int hover,

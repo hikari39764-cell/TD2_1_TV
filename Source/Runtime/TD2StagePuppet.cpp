@@ -23,7 +23,7 @@ constexpr double kBodyHalfDepth = .21;
 constexpr float kParkDrop = 2000.0f;
 // 残影の背丈（マス）。主角の 0.84 倍で、どの動作も当たりの箱（高さ 1 マス）の中に収まる（頭上を受ける腕がちょうど上辺）。
 constexpr double kEchoSize = .99;
-// 残影はほぼカメラを向き、向いている側へ少しだけ振る（しゃがんだ横向きは頭が箱からはみ出す）。
+// 残影はほぼカメラを向き、向いている側へ少しだけ振る（横向きのしゃがみは頭が箱からはみ出す。立ち姿も正面寄りで残影と分かる）。
 constexpr double kEchoYaw = 25.0;
 // 押され始めにひるむ秒数。
 constexpr double kEchoFlinchSeconds = .5;
@@ -93,9 +93,11 @@ void StagePuppets::Echo(HIKARI::WorldView& world, const StagePartBuilder& builde
     if (!shown || body.dead) { ParkOne(world, echo_); echoPushed_ = false; echoFlinchUntil_ = -1; return; }
     if (cue.pushed && !echoPushed_) { echoFlinchUntil_ = now + kEchoFlinchSeconds; }
     echoPushed_ = cue.pushed;
-    // 動作の優先：横からの光 → 上からの光か上に立たれる → 狭い所 → 押され始め → しゃがんで待つ（頭の上・空中も同じ）。
+    // 動作の優先：横からの光 → 上からの光か上に立たれる → 狭い所 → 押され始め → 頭の上 → 空中 → 立って待つ。
     // 横からの光は光の方を向き、腕を前に構えて受ける。上からの光と、上に立つ主角は、座って両腕を頭の上で組んで受け止める
-    // （腕の先が箱の上辺で、光の止まる所・主角の足にちょうど届く）。頭のすぐ上が塞がっていれば、頭を抱えて縮こまる。
+    // （腕の先が箱の上辺で、光の止まる所・主角の足にちょうど届く）。頭のすぐ上が塞がっていれば（押し刺に 1 マスの隙間へ
+    // 押し込まれた時など）、立った姿から頭を抱えて丸く縮こまる。主角の頭の上ではしゃがみ（掲げた手の上に立たせない）、
+    // 空中では上りが跳び、下りが落ちの動作。ほかは立って待つ。
     double yaw = (body.facing < 0 ? -1.0 : 1.0) * kEchoYaw;
     if (cue.beam == EchoBeam::FromLeft || cue.beam == EchoBeam::FromRight) {
         yaw = (cue.beam == EchoBeam::FromLeft ? -1.0 : 1.0) * (90.0 - echo_.settings.turn);
@@ -104,7 +106,9 @@ void StagePuppets::Echo(HIKARI::WorldView& world, const StagePartBuilder& builde
     else if (cue.beam == EchoBeam::Above || cue.stoodOn) { PlayEcho(world, "EchoBrace", false, .1f, 1.6f); }
     else if (cue.cramped) { PlayEcho(world, "EchoDuck", false, .12f, 1.5f); }
     else if (now < echoFlinchUntil_) { PlayEcho(world, "EchoFlinch", false, .06f, 1.3f); }
-    else { PlayEcho(world, "EchoIdle", true, .2f, 1); }
+    else if (cue.carried) { PlayEcho(world, "EchoIdle", true, .15f, 1); }
+    else if (!body.grounded) { PlayEcho(world, body.vy < 0 ? "Jump" : "Fall", body.vy >= 0, body.vy < 0 ? .1f : .18f, 1); }
+    else { PlayEcho(world, "Idle", true, .25f, 1); }
     Stand(world, builder, echo_, rect, yaw, rect.h * kEchoSize, depth, grow, now, cue.lean, cue.width, cue.height);
 }
 

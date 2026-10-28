@@ -46,6 +46,9 @@ public:
                 double frameSeconds, double focusSeconds);
     // 瞬間移動した時：演出を止め、その区域カメラから追従し直す（復活と同じ）。
     void Jump(HIKARI::WorldView& world, const Rules::Exploration& exploration, const RegionObjects& objects, std::string_view region);
+    // オープニングが終わった時：最後に映した画（演出のカメラ）から追従を始め、ゲームのカメラへ滑らかに寄せる
+    // （演出の終わりの画が追従の位置と少しずれていても、引き継ぐ瞬間に跳ばない）。
+    void AdoptView(HIKARI::WorldView& world);
     // 仕掛けが操作中のテレビを動かした時、追従の基準を同じ剛体の動きで運ぶ。
     void Carry(const HIKARI::GameProjectTransform& from, const HIKARI::GameProjectTransform& to) { rig_.Carry(from, to); }
     // 画面を揺らす（強さ 1 で数センチ）。今の揺れより強い時だけ上書きし、すぐに収まっていく。
@@ -60,6 +63,11 @@ public:
     bool TravelRooms(std::string& from, std::string& to) const;
     // 同じ大区域の部屋（大区域に入っていなければその部屋だけ）。
     std::vector<std::string> AreaRooms(std::string_view region) const;
+    // 部屋の大区域の印（同じ大区域なら同じ値。大区域に入っていなければ部屋の ID）。
+    std::string AreaKey(std::string_view region) const {
+        const auto key = areaKey_.find(region);
+        return key == areaKey_.end() ? std::string(region) : key->second;
+    }
     // 記録用：切り替えの部屋（"出る>入る"、無ければ "-"）と進み。
     std::string TravelLabel() const { return travel_ ? travel_->from + ">" + travel_->to : "-"; }
     double TravelProgress() const { return travel_ ? travel_->progress : 0.0; }

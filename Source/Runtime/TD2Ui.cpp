@@ -6,7 +6,8 @@
 
 namespace TD2::Ui {
 namespace {
-constexpr std::string_view kWhite = "TD2/Intro/T_TD2_White.png";
+// 塗りつぶしは内蔵の一色貼図を使い、起動直後の PNG 読込に暗転を依存させない。
+constexpr std::string_view kWhite = "generated://solid/ffffffff";
 // 素材のパス（Assets からの相対）。
 std::string Part(std::string_view name) { return "UI/TD2/" + std::string(name) + ".png"; }
 }
@@ -22,18 +23,31 @@ Painter::Painter(HIKARI::WorldView& world, HIKARI::GameProjectUiCanvasHandle can
     : canvases_(world.GetUiCanvases()), canvas_(canvas), width_(width), height_(height), order_(order),
       next_(0x7D3E0000ull + static_cast<uint64_t>(order) * 4096) {}
 
-void Painter::Image(std::string_view texture, Rect r, Color tint) {
-    if (r.w <= 0 || r.h <= 0 || alpha_ <= 0) return;
+void Painter::Image(std::string_view texture, Rect r, Color tint, uint32_t flags) {
+    if (r.w <= 0 || r.h <= 0 || alpha_ <= 0)
+        return;
     HIKARI::GameProjectUiSpriteRequest request{};
-    request.sourceId = next_++; request.order = order_++;
-    request.referenceWidth = width_; request.referenceHeight = height_;
-    request.x = r.x; request.y = r.y; request.width = r.w; request.height = r.h;
+    request.sourceId = next_++;
+    request.order = order_++;
+    request.referenceWidth = width_;
+    request.referenceHeight = height_;
+    request.x = r.x;
+    request.y = r.y;
+    request.width = r.w;
+    request.height = r.h;
+    request.flags = flags;
     request.tint = {tint.r * gain_, tint.g * gain_, tint.b * gain_, tint.a * alpha_};
-    if (canvas_.IsValid()) (void)canvases_.SubmitSprite(canvas_, texture, request);
-    else (void)ui_.SubmitSprite(texture, request);
+    if (canvas_.IsValid())
+        (void)canvases_.SubmitSprite(canvas_, texture, request);
+    else
+        (void)ui_.SubmitSprite(texture, request);
 }
 
-void Painter::Fill(Rect r, Color color) { Image(kWhite, r, color); }
+void Painter::Fill(Rect r, Color color) {
+    // 全画面の黒は、前の視点の画布寸法でなく現在の出力の全面を覆う。画布内の背景は従来の配置を保つ。
+    const bool full = !canvas_.IsValid() && r.x == 0 && r.y == 0 && r.w == width_ && r.h == height_;
+    Image(kWhite, r, color, full ? HIKARI::kGameProjectUiFillViewport | HIKARI::kGameProjectUiSubmissionModal : 0u);
+}
 
 Rect Painter::Window(Rect r, float s, std::string_view title) {
     // 上の帯（左上・伸ばす中・右上）、中の帯（左・地・右）、下の帯（左下・伸ばす下・右下）。帯ごとに端の幅が違う。
@@ -54,9 +68,14 @@ Rect Painter::Window(Rect r, float s, std::string_view title) {
     Image(Part("UI_Window_BottomLeft"), {r.x, r.Bottom() - bottom, corner, bottom});
     Image(Part("UI_Window_Bottom"), {r.x + corner, r.Bottom() - bottom, r.w - 2 * corner, bottom});
     Image(Part("UI_Window_BottomRight"), {r.Right() - corner, r.Bottom() - bottom, corner, bottom});
-    // 題：暗い帯は素材の上から 14〜68 画素。
-    if (!title.empty()) Text(title, {r.x + left, r.y + 14 * s, r.w - left - right, 54 * s}, 38 * s, kTitleInk);
+    WindowTitle(r, s, title);
     return {r.x + side, r.y + top, r.w - 2 * side, middle};
+}
+
+void Painter::WindowTitle(Rect r, float s, std::string_view title) {
+    // 題：暗い帯は素材の上から 14〜68 画素。
+    if (title.empty()) return;
+    Text(title, {r.x + kWindowTopLeft * s, r.y + 14 * s, r.w - (kWindowTopLeft + kWindowTopRight) * s, 54 * s}, 38 * s, kTitleInk);
 }
 
 void Painter::Row(Rect r, bool selected) {

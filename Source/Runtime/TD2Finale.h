@@ -43,7 +43,8 @@ public:
 
 private:
     // 画に残っている弾窓（答えた後も山の中に残す）。line は表の項目。
-    struct Shown { const Line* line = nullptr; float cx = 0, cy = 0; double born = 0; int answered = -1; };
+    // 山の一枚。demoted は今の問いでなくなった時刻（そこから小さく薄く後ろへ退く。まだ今の問いなら負）。
+    struct Shown { const Line* line = nullptr; float cx = 0, cy = 0; double born = 0, demoted = -1; int answered = -1; };
     void StartLines(const Line* lines, size_t count, double t);
     void Draw(HIKARI::WorldView& world, MenuDirector& menu, double t, double seconds);
     void Answer(int choice, double t);

@@ -15,6 +15,7 @@
 #include "TD2StageLight.h"
 #include "TD2StageActor.h"
 #include "TD2DeviceActor.h"
+#include "TD2TvPopups.h"
 #include "TD2Intro.h"
 #include <array>
 #include <chrono>
@@ -67,6 +68,8 @@ public:
             context.RegisterComponent<TD2::StageLightComponent>({.typeName = TD2::kStageLightComponentType, .displayName = "TD2 舞台の灯", .category = "TD2"}) &&
             context.RegisterComponent<TD2::StageActorComponent>({.typeName = TD2::kStageActorComponentType, .displayName = "TD2 舞台の人形", .category = "TD2"}) &&
             context.RegisterComponent<TD2::DeviceActorComponent>({.typeName = TD2::kDeviceActorComponentType, .displayName = "TD2 舞台の装置", .category = "TD2"}) &&
+            context.RegisterComponent<TD2::PopupBoardComponent>({.typeName = TD2::kPopupBoardComponentType, .displayName = "TD2 弾窓の板", .category = "TD2"}) &&
+            context.RegisterComponent<TD2::PopupScriptComponent>({.typeName = TD2::kPopupScriptComponentType, .displayName = "TD2 弾窓の台本", .category = "TD2"}) &&
             context.RegisterComponent<TD2::IntroComponent>({.typeName = TD2::kIntroComponentType, .displayName = "TD2 オープニング", .category = "TD2"}) &&
             context.RegisterComponent<TD2::ScreenFxComponent>({.typeName = TD2::kScreenFxComponentType, .displayName = "TD2 画面のエフェクト", .category = "TD2"}) &&
             context.RegisterSystem<TD2::ScreenPresentationSystem>({.systemId = TD2::kScreenSystemId, .displayName = "TD2 画面の表示"}) &&

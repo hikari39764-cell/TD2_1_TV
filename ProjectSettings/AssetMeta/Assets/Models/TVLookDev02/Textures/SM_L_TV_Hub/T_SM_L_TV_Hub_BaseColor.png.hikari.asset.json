@@ -1,0 +1,21 @@
+{
+  "displayName": "T_SM_L_TV_Hub_BaseColor",
+  "guid": "4a5a910af64d4b3cb716316eb64a0cef",
+  "importSettings": {
+    "allowResize": false,
+    "colorSpace": "Srgb",
+    "compression": "BC7",
+    "debugOutputFormat": "DDS",
+    "dimension": "Texture2D",
+    "forcePowerOfTwo": false,
+    "maxSize": 4096,
+    "mipPolicy": "Generate",
+    "outputFormat": "HTEX",
+    "usage": "BaseColor"
+  },
+  "importerId": "TextureImporter",
+  "importerVersion": 8,
+  "metaVersion": 1,
+  "sourcePath": "Assets/Models/TVLookDev02/Textures/SM_L_TV_Hub/T_SM_L_TV_Hub_BaseColor.png",
+  "type": "Texture"
+}

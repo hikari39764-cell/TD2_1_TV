@@ -267,11 +267,13 @@ void StagePartBuilder::PusherBody(const Rules::DeviceSnapshot& pusher) {
 // 圧力板につながる物は箱の上に通電灯を載せる（往復する物は載せない）。
 void StagePartBuilder::PusherParts(const Rules::DeviceSnapshot& d, bool saws, double since) {
     const auto& r = d.rect;
+    const bool block = d.variant == "block";
     for (double cy = 0; cy < r.h - 1e-6; cy += 1) for (double cx = 0; cx < r.w - 1e-6; cx += 1) {
         Add("Bridge_Deck", r.x + cx + .5, r.y + cy + 1, 1, 1);
     }
     const double reach = d.travel * d.push, length = (std::max)(reach, .01);
-    const bool out = reach > .02;
+    // 刺の塊には腕が無い（部品の数を変えないよう、隠した腕を出しておく）。
+    const bool out = reach > .02 && !block;
     const double mx = r.x + r.w * .5, my = r.y + r.h * .5;
     // 棒の部品は原点から上へ伸びる。横の腕は 90°回す（正の角は画面の上で反時計回り＝上向きが左向きになる）。
     switch (d.direction) {
@@ -283,19 +285,24 @@ void StagePartBuilder::PusherParts(const Rules::DeviceSnapshot& d, bool saws, do
     if (!d.timed) { Lamp(mx, r.y + .3, d.powered, since); }
     if (!saws) { return; }
     const double ox = projection_.ShiftX(-.3), oy = projection_.ShiftY(-.3);
-    const bool horizontal = d.direction == Rules::Direction::Left || d.direction == Rules::Direction::Right;
-    const int count = static_cast<int>(std::ceil((horizontal ? r.h : r.w) - 1e-6));
     constexpr double kInset = .38;   // 刃の中心を面から箱の中へ寄せる量（刃の半径 .5 のうち .12 だけ出る）
-    for (int k = 0; k < count; ++k) {
-        double sx = r.x + k + .5, sy = r.y + k + .5;
-        switch (d.direction) {
-        case Rules::Direction::Up: sy = r.y + kInset; break;
-        case Rules::Direction::Down: sy = r.y + r.h - kInset; break;
-        case Rules::Direction::Left: sx = r.x + kInset; break;
-        default: sx = r.x + r.w - kInset; break;
+    int n = 0;
+    const auto face = [&](Rules::Direction direction) {
+        const bool horizontal = direction == Rules::Direction::Left || direction == Rules::Direction::Right;
+        const int count = static_cast<int>(std::ceil((horizontal ? r.h : r.w) - 1e-6));
+        for (int k = 0; k < count; ++k, ++n) {
+            double sx = r.x + k + .5, sy = r.y + k + .5;
+            switch (direction) {
+            case Rules::Direction::Up: sy = r.y + kInset; break;
+            case Rules::Direction::Down: sy = r.y + r.h - kInset; break;
+            case Rules::Direction::Left: sx = r.x + kInset; break;
+            default: sx = r.x + r.w - kInset; break;
+            }
+            Add("Spikes_Saw", sx + ox, sy + oy, 1, 1, 0, RotateZ(-time_ * 4.5 + n * .31), 0);
         }
-        Add("Spikes_Saw", sx + ox, sy + oy, 1, 1, 0, RotateZ(-time_ * 4.5 + k * .31), 0);
-    }
+    };
+    if (block) { for (const auto direction : {Rules::Direction::Up, Rules::Direction::Right, Rules::Direction::Down, Rules::Direction::Left}) { face(direction); } }
+    else { face(d.direction); }
 }
 
 void StagePartBuilder::LaserBody(const Rules::DeviceSnapshot& laser) {

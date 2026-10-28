@@ -22,6 +22,8 @@ constexpr double kBlackFade = .5, kBlackHold = 1.2;
 constexpr int kStormOrder = 141000, kLineOrder = 150000, kBlackOrder = 160000, kScreenOrder = 90000;
 // 画に残す問いかけの数（古いものから消す）。
 constexpr size_t kPileLimit = 6;
+// 今の問いでなくなった窓が後ろへ退くまでの秒。
+constexpr double kDemoteSeconds = .22;
 
 constexpr std::array<std::string_view, 5> kClearTexts{"クリア おめでとう！", "おめでとう！", "おめでとう おめでとう", "やったね！", "クリア クリア クリア"};
 constexpr std::array<std::string_view, 4> kLaughTexts{"アハハハハハハ", "アハハハ", "ハハハハハハハハハ", "アハハハハハハハハハハハ"};
@@ -97,6 +99,9 @@ FinaleDirector::Outcome FinaleDirector::Update(HIKARI::WorldView& world, MenuDir
     // 暗転：黒くし終えて少し置いたら、終わり方を返す。
     if (blackStart_ >= 0 && t - blackStart_ >= kBlackFade + kBlackHold) {
         active_ = false;
+        // 移る先（目覚め・隠しの道）が描き始めるのは次のフレームからなので、このフレームも黒で覆う。
+        Ui::Painter black(world, kBlackOrder);
+        black.Fill({0, 0, black.Width(), black.Height()}, {0, 0, 0, 1});
         std::fprintf(stderr, "[TD2 finale] outcome=%d\n", static_cast<int>(pending_));
         return pending_;
     }
@@ -128,6 +133,8 @@ FinaleDirector::Outcome FinaleDirector::Update(HIKARI::WorldView& world, MenuDir
             // 打っている途中でスペース：打ち終えた姿にする（その押下では選ばない）。
             if (menu.ConfirmPressed()) { top.born = t - 10; menu.HoldAction(); }
         } else {
+            // 本当のマウスで答えた時も、このフレームの絵は描く（描かないと弾窓が 1 フレーム消え、下の画面が見える）。
+            bool answered = false;
             if (line.locked) {
                 // 窓の矢印は はい から動かない（押すと震える）。本当のマウスはこの間だけ見える。
                 if (menu.LeftPressed() || menu.RightPressed()) lockShake_ = .35f;
@@ -135,23 +142,23 @@ FinaleDirector::Outcome FinaleDirector::Update(HIKARI::WorldView& world, MenuDir
                 menu.RequestPointer();
                 // 開発用（環境変数 TD2_FINALE_FAKE_MOUSE）：無頭の検証では本当のマウスが無いので、1 秒後に いいえ を押したことにする。
                 static const bool fakeMouse = std::getenv("TD2_FINALE_FAKE_MOUSE") != nullptr;
-                if (fakeMouse && age > 1.0) { Answer(1, t); return Outcome::None; }
+                if (fakeMouse && age > 1.0) { Answer(1, t); answered = true; }
                 HIKARI::GameProjectPointerState pointer{};
-                const bool down = world.GetInput().GetPointerState(pointer) && pointer.valid && pointer.primaryDown;
+                const bool down = !answered && world.GetInput().GetPointerState(pointer) && pointer.valid && pointer.primaryDown;
                 if (down && !pointerDown_) {
                     Ui::Painter probe(world, kLineOrder);
                     const float px = pointer.normalizedX * probe.Width(), py = pointer.normalizedY * probe.Height();
-                    for (int i = 0; i < line.buttonCount; ++i) {
+                    for (int i = 0; i < line.buttonCount && !answered; ++i) {
                         const Rect& r = buttonRects_[static_cast<size_t>(i)];
-                        if (px >= r.x && px <= r.Right() && py >= r.y && py <= r.Bottom()) { pointerDown_ = down; Answer(i, t); return Outcome::None; }
+                        if (px >= r.x && px <= r.Right() && py >= r.y && py <= r.Bottom()) { Answer(i, t); answered = true; }
                     }
                 }
-                pointerDown_ = down;
+                if (!answered || down) pointerDown_ = down;
             } else if (line.buttonCount > 1) {
                 if (menu.LeftPressed()) choice_ = 0;
                 if (menu.RightPressed()) choice_ = 1;
             }
-            if (menu.ConfirmPressed()) { menu.HoldAction(); Answer(choice_, t); }
+            if (!answered && menu.ConfirmPressed()) { menu.HoldAction(); Answer(choice_, t); }
         }
     }
     // 問いかけを全部終えた：暗転へ（普通の通関の問いかけは、答えのどれかで別の流れへ移っている）。
@@ -203,22 +210,28 @@ void FinaleDirector::Draw(HIKARI::WorldView& world, MenuDirector& menu, double t
     const bool shaking = hasLine && lines_[current_].shake;
     const float shake = shaking ? static_cast<float>((Math::Hash01(tick, 3) - .5) * W * .012) : 0.f;
     for (size_t i = 0; i < shown_.size(); ++i) {
-        const Shown& s = shown_[i];
+        Shown& s = shown_[i];
         const bool top = hasLine && i + 1 == shown_.size();
+        // 今の問いでなくなった窓は kDemoteSeconds かけて小さく薄く退く（一瞬で縮むと、答えてから次の窓が出るまでの
+        // 1 フレームや、次の問いを待つ間に窓が跳ねて見える）。
+        if (top) s.demoted = -1;
+        else if (s.demoted < 0) s.demoted = t;
+        const float back = top ? 0.f : static_cast<float>(Math::SmoothStep(std::clamp((t - s.demoted) / kDemoteSeconds, 0.0, 1.0)));
         const Line& line = *s.line;
         Popups::Look look;
         look.title = "？？？"; look.text = line.text; look.icon = line.icon;
         look.appear = Popups::Appear(t - s.born);
-        look.typed = top ? (t - s.born - .1) * kCharsPerSecond : -1;
+        // 打ち出す前（出てすぐの 0.1 秒）は 0 字（負の数は「全部」なので、出た瞬間に全文が一瞬見えてしまう）。
+        look.typed = top ? (std::max)(0.0, (t - s.born - .1) * kCharsPerSecond) : -1;
         const bool buttons = line.buttonCount > 0;
         const float cx = W * s.cx + shake, cy = H * s.cy;
-        const float w = top ? width : width * .82f;
-        if (!top) { look.alpha = .42f; look.typed = -1; }
-        else {
-            // 今の問いの下に暗い縁を敷き、周りの窓から切り離す。
+        const float w = width * (1 - .18f * back);
+        look.alpha = 1 - .58f * back;
+        if (back < 1) {
+            // 今の問い（と退き始めた窓）の下に暗い縁を敷き、周りの窓から切り離す。
             const float h = Popups::Height(w, line.text, buttons) * look.appear, pad = w * .035f;
             lines.SetAlpha(1);
-            lines.Fill({cx - w * .5f - pad, cy - h * .5f - pad, w + 2 * pad, h + 2 * pad}, {0, 0, 0, .5f});
+            lines.Fill({cx - w * .5f - pad, cy - h * .5f - pad, w + 2 * pad, h + 2 * pad}, {0, 0, 0, .5f * (1 - back)});
         }
         const Rect area = Popups::Draw(lines, cx, cy, w, look, buttons);
         if (!buttons || look.appear < .99f) continue;

@@ -1,0 +1,282 @@
+{
+  "asset": {
+    "generator": "Khronos glTF Blender I/O v5.1.20",
+    "version": "2.0"
+  },
+  "extensionsUsed": [
+    "KHR_materials_clearcoat"
+  ],
+  "scene": 0,
+  "scenes": [
+    {
+      "name": "Scene",
+      "nodes": [
+        0,
+        1
+      ]
+    }
+  ],
+  "nodes": [
+    {
+      "extras": {
+        "role": "Body",
+        "source_model": "SM_TD2_TV_FlatStand",
+        "normal_map": "Tangent-space OpenGL +Y; material-specific baked detail"
+      },
+      "mesh": 0,
+      "name": "SM_TD2_TV_FlatStand_LookDev02__Body"
+    },
+    {
+      "extras": {
+        "role": "Screen",
+        "grid_cols": 23,
+        "grid_rows": 14,
+        "tile_pixels": 64,
+        "binding": "TD2_Screen"
+      },
+      "mesh": 1,
+      "name": "SM_TD2_TV_FlatStand_LookDev02__Screen"
+    }
+  ],
+  "materials": [
+    {
+      "name": "LD2_SM_TD2_TV_FlatStand_0_Plastic",
+      "normalTexture": {
+        "index": 0
+      },
+      "pbrMetallicRoughness": {
+        "baseColorTexture": {
+          "index": 1
+        },
+        "metallicRoughnessTexture": {
+          "index": 2
+        }
+      }
+    },
+    {
+      "extensions": {
+        "KHR_materials_clearcoat": {
+          "clearcoatFactor": 0.3499999940395355,
+          "clearcoatRoughnessFactor": 0.10000000149011612
+        }
+      },
+      "name": "TD2_Screen",
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          0.004000000189989805,
+          0.007000000216066837,
+          0.008999999612569809,
+          1
+        ],
+        "metallicFactor": 0,
+        "roughnessFactor": 0.10000000149011612
+      }
+    }
+  ],
+  "meshes": [
+    {
+      "name": "SM_TD2_TV_FlatStand__Body.001",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 0,
+            "NORMAL": 1,
+            "TEXCOORD_0": 2,
+            "TEXCOORD_1": 3
+          },
+          "indices": 4,
+          "material": 0
+        }
+      ]
+    },
+    {
+      "name": "SM_TD2_TV_FlatStand__Screen.001",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 5,
+            "NORMAL": 6,
+            "TEXCOORD_0": 7
+          },
+          "indices": 8,
+          "material": 1
+        }
+      ]
+    }
+  ],
+  "textures": [
+    {
+      "sampler": 0,
+      "source": 0
+    },
+    {
+      "sampler": 0,
+      "source": 1
+    },
+    {
+      "sampler": 0,
+      "source": 2
+    }
+  ],
+  "images": [
+    {
+      "mimeType": "image/png",
+      "name": "T_SM_TD2_TV_FlatStand_Normal",
+      "uri": "../../Textures/SM_TD2_TV_FlatStand/T_SM_TD2_TV_FlatStand_Normal.png"
+    },
+    {
+      "mimeType": "image/png",
+      "name": "T_SM_TD2_TV_FlatStand_BaseColor",
+      "uri": "../../Textures/SM_TD2_TV_FlatStand/T_SM_TD2_TV_FlatStand_BaseColor.png"
+    },
+    {
+      "mimeType": "image/png",
+      "name": "T_SM_TD2_TV_FlatStand_MetalRough",
+      "uri": "../../Textures/SM_TD2_TV_FlatStand/T_SM_TD2_TV_FlatStand_MetalRough.png"
+    }
+  ],
+  "accessors": [
+    {
+      "bufferView": 0,
+      "componentType": 5126,
+      "count": 761,
+      "max": [
+        0.7001071572303772,
+        1.0084987878799438,
+        0.15092283487319946
+      ],
+      "min": [
+        -0.7001071572303772,
+        -1.1351320772234885e-08,
+        -0.15092283487319946
+      ],
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 1,
+      "componentType": 5126,
+      "count": 761,
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 2,
+      "componentType": 5126,
+      "count": 761,
+      "type": "VEC2"
+    },
+    {
+      "bufferView": 3,
+      "componentType": 5126,
+      "count": 761,
+      "type": "VEC2"
+    },
+    {
+      "bufferView": 4,
+      "componentType": 5123,
+      "count": 2034,
+      "type": "SCALAR"
+    },
+    {
+      "bufferView": 5,
+      "componentType": 5126,
+      "count": 4,
+      "max": [
+        0.638248860836029,
+        0.9455074071884155,
+        0.13687607645988464
+      ],
+      "min": [
+        -0.638248860836029,
+        0.16850881278514862,
+        0.13687601685523987
+      ],
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 6,
+      "componentType": 5126,
+      "count": 4,
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 7,
+      "componentType": 5126,
+      "count": 4,
+      "type": "VEC2"
+    },
+    {
+      "bufferView": 8,
+      "componentType": 5123,
+      "count": 6,
+      "type": "SCALAR"
+    }
+  ],
+  "bufferViews": [
+    {
+      "buffer": 0,
+      "byteLength": 9132,
+      "byteOffset": 0,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteLength": 9132,
+      "byteOffset": 9132,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteLength": 6088,
+      "byteOffset": 18264,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteLength": 6088,
+      "byteOffset": 24352,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteLength": 4068,
+      "byteOffset": 30440,
+      "target": 34963
+    },
+    {
+      "buffer": 0,
+      "byteLength": 48,
+      "byteOffset": 34508,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteLength": 48,
+      "byteOffset": 34556,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteLength": 32,
+      "byteOffset": 34604,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteLength": 12,
+      "byteOffset": 34636,
+      "target": 34963
+    }
+  ],
+  "samplers": [
+    {
+      "magFilter": 9729,
+      "minFilter": 9987
+    }
+  ],
+  "buffers": [
+    {
+      "byteLength": 34648,
+      "uri": "SM_TD2_TV_FlatStand.bin"
+    }
+  ]
+}

@@ -97,7 +97,9 @@ bool Simulation::SpikeAt(const Rect& rect) const {
 bool Simulation::PusherFaceAt(const Rect& rect) const {
     for (size_t i = 0; i < d.devices.size(); ++i) {
         const auto& dev = d.devices[i];
-        if (dev.kind == DeviceKind::Pusher && Overlap(rect, PusherFace(PusherRect(dev, s.devices[i].push), dev.direction))) return true;
+        if (dev.kind != DeviceKind::Pusher) continue;
+        const Rect r = PusherRect(dev, s.devices[i].push);
+        if (Overlap(rect, PusherBlock(dev) ? PusherHurt(r) : PusherFace(r, dev.direction))) return true;
     }
     return false;
 }
@@ -161,9 +163,10 @@ std::string Simulation::Pushers() {
                 ++s.crushes; s.crushSideways = horizontal;
             }
         }
-        // 本体：刺の面で触れれば死ぬ。戻る背中に押されて押し切れなければ挟まれて死ぬ。
-        if (!s.player.dead && death.empty() && Overlap(s.player.rect, swept)) {
-            if (forward) death = "spikes";
+        // 本体：刺の面で触れれば死ぬ。戻る背中に押されて押し切れなければ挟まれて死ぬ。刺の塊はどの面でも死ぬ。
+        const bool block = PusherBlock(dev);
+        if (!s.player.dead && death.empty() && Overlap(s.player.rect, block ? PusherHurt(swept) : swept)) {
+            if (forward || block) death = "spikes";
             else {
                 auto& p = s.player;
                 const double need = horizontal ? (dx > 0 ? after.x + after.w - p.rect.x : after.x - p.rect.x - p.rect.w)

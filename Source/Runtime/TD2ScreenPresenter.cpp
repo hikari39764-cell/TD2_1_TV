@@ -137,6 +137,7 @@ void ScreenPresentationSystem::Update(HIKARI::WorldView& world, const HIKARI::Fr
         if (session->Intro().active) { stage.intro = &session->Intro(); }
         stage.uiScreen = session->UiScreen();
         stage.snowRooms = session->SnowRooms(); stage.eventFraming = session->EventFraming();
+        stage.popups = &session->PopupBoards();
     } else {
         if (!playing) {
             intro_.Preview(world);

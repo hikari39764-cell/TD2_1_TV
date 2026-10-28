@@ -1,0 +1,21 @@
+{
+  "displayName": "T_SM_F_TV_Console_BaseColor",
+  "guid": "9dbd398ceef24442adf2fab9dd4b7d53",
+  "importSettings": {
+    "allowResize": false,
+    "colorSpace": "Srgb",
+    "compression": "BC7",
+    "debugOutputFormat": "DDS",
+    "dimension": "Texture2D",
+    "forcePowerOfTwo": false,
+    "maxSize": 4096,
+    "mipPolicy": "Generate",
+    "outputFormat": "HTEX",
+    "usage": "BaseColor"
+  },
+  "importerId": "TextureImporter",
+  "importerVersion": 8,
+  "metaVersion": 1,
+  "sourcePath": "Assets/Models/TVLookDev02/Textures/SM_F_TV_Console/T_SM_F_TV_Console_BaseColor.png",
+  "type": "Texture"
+}

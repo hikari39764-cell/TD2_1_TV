@@ -1,0 +1,21 @@
+{
+  "displayName": "T_SM_F_TV_Portable_Normal",
+  "guid": "3d8063a29d3c4d308eaa12b6b0871418",
+  "importSettings": {
+    "allowResize": false,
+    "colorSpace": "Linear",
+    "compression": "BC7",
+    "debugOutputFormat": "DDS",
+    "dimension": "Texture2D",
+    "forcePowerOfTwo": false,
+    "maxSize": 4096,
+    "mipPolicy": "Generate",
+    "outputFormat": "HTEX",
+    "usage": "Normal"
+  },
+  "importerId": "TextureImporter",
+  "importerVersion": 8,
+  "metaVersion": 1,
+  "sourcePath": "Assets/Models/TVLookDev02/Textures/SM_F_TV_Portable/T_SM_F_TV_Portable_Normal.png",
+  "type": "Texture"
+}

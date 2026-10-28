@@ -1,0 +1,21 @@
+{
+  "displayName": "T_SM_F_TV_Portable_MetalRough",
+  "guid": "4e807fb24bfd4361aff3ca48f0f7941e",
+  "importSettings": {
+    "allowResize": false,
+    "colorSpace": "Linear",
+    "compression": "BC7",
+    "debugOutputFormat": "DDS",
+    "dimension": "Texture2D",
+    "forcePowerOfTwo": false,
+    "maxSize": 4096,
+    "mipPolicy": "Generate",
+    "outputFormat": "HTEX",
+    "usage": "MetallicRoughness"
+  },
+  "importerId": "TextureImporter",
+  "importerVersion": 8,
+  "metaVersion": 1,
+  "sourcePath": "Assets/Models/TVLookDev02/Textures/SM_F_TV_Portable/T_SM_F_TV_Portable_MetalRough.png",
+  "type": "Texture"
+}

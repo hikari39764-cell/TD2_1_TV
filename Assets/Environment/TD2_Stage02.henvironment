@@ -61,7 +61,7 @@
     "coverageBias": 0.0,
     "densityScale": 1.0,
     "detailErosion": 0.11999999731779099,
-    "enabled": false,
+    "enabled": true,
     "shadowStrength": 0.6499999761581421,
     "shapeScale": 1.0,
     "silverLining": 1.0,

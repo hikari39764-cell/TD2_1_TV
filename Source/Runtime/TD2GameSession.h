@@ -7,6 +7,7 @@
 #include "TD2Intro.h"
 #include "TD2Menus.h"
 #include "TD2Sound.h"
+#include "TD2TvPopups.h"
 #include "../Common/TD2PlayRecord.h"
 #include "HIKARI/Project/GameProjectSession.h"
 #include "HIKARI/Project/FrameContext.h"
@@ -44,6 +45,8 @@ public:
     // 機構で動いている部屋（画面を砂嵐にする）と、見せ場でカメラが引いているか（新しく画に入るテレビも砂嵐にする）。
     std::vector<std::string> SnowRooms() const { return machines_.SnowRooms(); }
     bool EventFraming() const noexcept { return camera_.EventFraming(); }
+    // テレビの中の弾窓の板の置き場所（画面の舞台が板を置く）。
+    const std::vector<TvPopupBoard>& PopupBoards() const noexcept { return popups_.Boards(); }
 
 private:
     void SyncRegions(HIKARI::WorldView& world);
@@ -77,6 +80,7 @@ private:
     SoundDirector sound_;
     MenuDirector menu_;
     FinaleDirector finale_;
+    TvPopupDirector popups_;
     // 隠しの道の途中か（その間のゴールは隠しの道の通関）。隠しの道へ移った後の黒から明ける経過秒（負なら明けている）。
     bool hiddenRoute_ = false;
     double hiddenFade_ = -1;

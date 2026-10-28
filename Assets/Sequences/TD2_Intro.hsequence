@@ -13,7 +13,7 @@
         "targetKind": "slot"
       }
     ],
-    "durationSeconds": 19.75,
+    "durationSeconds": 19.899999618530273,
     "id": 1,
     "name": "开场演出",
     "screenEffects": [
@@ -280,10 +280,10 @@
           0.0,
           0.0
         ],
-        "duration": 0.13500022888183594,
+        "duration": 0.2849998474121094,
         "enabled": true,
         "fadeIn": 0.014999999664723873,
-        "fadeOut": 0.44999998807907104,
+        "fadeOut": 0.13500022888183594,
         "id": 5,
         "kind": 9,
         "name": "黑场",
@@ -296,7 +296,7 @@
       {
         "amount": {
           "keys": [],
-          "value": 0.8999999761581421
+          "value": 0.550000011920929
         },
         "color": [
           1.0,
@@ -319,7 +319,7 @@
       {
         "amount": {
           "keys": [],
-          "value": 0.8999999761581421
+          "value": 0.550000011920929
         },
         "color": [
           1.0,
@@ -342,7 +342,7 @@
       {
         "amount": {
           "keys": [],
-          "value": 0.8999999761581421
+          "value": 0.800000011920929
         },
         "color": [
           1.0,
@@ -356,7 +356,7 @@
         "id": 22,
         "kind": 2,
         "name": "闪电",
-        "start": 7.75,
+        "start": 7.199999809265137,
         "weight": {
           "keys": [],
           "value": 1.0
@@ -875,10 +875,10 @@
                   ],
                   "reference": 0,
                   "rotation": [
-                    0.024839000776410103,
-                    0.9639210104942322,
-                    0.14595699310302734,
-                    -0.22121499478816986
+                    0.024838997051119804,
+                    0.9639208912849426,
+                    0.14595697820186615,
+                    -0.22121496498584747
                   ],
                   "time": 3.450000047683716
                 },
@@ -1072,7 +1072,7 @@
                     0.08608299493789673,
                     -0.1558389812707901
                   ],
-                  "time": 6.150000095367432
+                  "time": 6.25
                 },
                 {
                   "customTangents": 0,
@@ -1104,7 +1104,7 @@
                     0.05337800085544586,
                     -0.5430439710617065
                   ],
-                  "time": 6.5
+                  "time": 6.599999904632568
                 },
                 {
                   "customTangents": 0,
@@ -1131,10 +1131,10 @@
                   ],
                   "reference": 0,
                   "rotation": [
-                    0.03395799919962883,
-                    0.8073729872703552,
-                    0.061549000442028046,
-                    -0.5858389735221863
+                    0.03395800292491913,
+                    0.8073731064796448,
+                    0.06154900789260864,
+                    -0.585839033126831
                   ],
                   "time": 7.400000095367432
                 },
@@ -1227,10 +1227,10 @@
                   ],
                   "reference": 0,
                   "rotation": [
-                    -0.04039798676967621,
-                    0.8624237179756165,
-                    0.08734496682882309,
-                    0.4969548285007477
+                    -0.04039799049496651,
+                    0.862423837184906,
+                    0.08734497427940369,
+                    0.49695488810539246
                   ],
                   "time": 9.100000381469727
                 },
@@ -1664,8 +1664,8 @@
                   "reference": 0,
                   "rotation": [
                     0.0,
-                    0.9897487759590149,
-                    -0.14281997084617615,
+                    0.9897486567497253,
+                    -0.14281995594501495,
                     0.0
                   ],
                   "time": 18.0
@@ -1991,7 +1991,7 @@
                     "value": 0.03500000014901161
                   },
                   "duration": 0.44999998807907104,
-                  "enabled": true,
+                  "enabled": false,
                   "fadeIn": 0.019999999552965164,
                   "fadeOut": 0.4000000059604645,
                   "frequency": 18.0,
@@ -2011,7 +2011,7 @@
                     "value": 0.03500000014901161
                   },
                   "duration": 0.44999998807907104,
-                  "enabled": true,
+                  "enabled": false,
                   "fadeIn": 0.019999999552965164,
                   "fadeOut": 0.4000000059604645,
                   "frequency": 18.0,
@@ -2039,7 +2039,7 @@
                   "kind": 7,
                   "maximumSpeed": 8.0,
                   "seed": 42,
-                  "start": 7.75,
+                  "start": 7.5,
                   "weight": {
                     "keys": [],
                     "value": 1.0
@@ -2288,7 +2288,7 @@
               "useScenePose": false
             },
             "cameraBindingId": 1,
-            "durationSeconds": 19.75,
+            "durationSeconds": 19.733333587646484,
             "effects": [],
             "id": 1,
             "sourceOffsetSeconds": 0.0,
@@ -2306,13 +2306,393 @@
       {
         "clips": [
           {
+            "bus": "Se",
+            "durationSeconds": 6.100000381469727,
+            "fadeOutSeconds": 1.762516975402832,
+            "id": 1,
+            "kind": "audio",
+            "maximumDistance": 30.0,
+            "maximumInstances": 8,
+            "minimumDistance": 1.0,
+            "name": "SE_LightningStrike1",
+            "priority": 0,
+            "soundPath": "Assets/Audio/SE/SE_LightningStrike1.mp3",
+            "spatial": false,
+            "startSeconds": 7.25,
+            "targetBinding": 0,
+            "vfxAsset": "",
+            "volume": 1.0,
+            "sourceOffsetSeconds": 1.899999976158142
+          },
+          {
+            "bus": "Se",
+            "durationSeconds": 10.983332633972168,
+            "fadeOutSeconds": 7.186802864074707,
+            "id": 2,
+            "kind": "audio",
+            "maximumDistance": 30.0,
+            "maximumInstances": 8,
+            "minimumDistance": 1.0,
+            "name": "SE_LightningStrike2",
+            "priority": 0,
+            "soundPath": "Assets/Audio/SE/SE_LightningStrike2.mp3",
+            "spatial": false,
+            "startSeconds": 8.800000190734863,
+            "targetBinding": 0,
+            "vfxAsset": "",
+            "volume": 1.0
+          },
+          {
+            "bus": "Se",
+            "durationSeconds": 4.5333333015441895,
+            "fadeOutSeconds": 1.2000000476837158,
+            "id": 3,
+            "kind": "audio",
+            "maximumDistance": 30.0,
+            "maximumInstances": 8,
+            "minimumDistance": 1.0,
+            "name": "SE_Thunder01",
+            "priority": 0,
+            "soundPath": "Assets/Audio/SE/SE_Thunder01.mp3",
+            "spatial": false,
+            "startSeconds": 1.5666667222976685,
+            "targetBinding": 0,
+            "vfxAsset": "",
+            "volume": 1.0
+          },
+          {
+            "bus": "Se",
+            "durationSeconds": 3.6000003814697266,
+            "fadeInSeconds": 1.840000033378601,
+            "fadeOutSeconds": 0.3499999940395355,
+            "id": 4,
+            "kind": "audio",
+            "maximumDistance": 30.0,
+            "maximumInstances": 8,
+            "minimumDistance": 1.0,
+            "name": "SE_Wind",
+            "priority": 0,
+            "soundPath": "Assets/Audio/SE/SE_Wind.mp3",
+            "spatial": false,
+            "startSeconds": 16.149999618530273,
+            "targetBinding": 0,
+            "vfxAsset": "",
+            "volume": 1.0
+          },
+          {
+            "bus": "Se",
+            "durationSeconds": 0.30000001192092896,
+            "id": 5,
+            "kind": "audio",
+            "maximumDistance": 30.0,
+            "maximumInstances": 8,
+            "minimumDistance": 1.0,
+            "name": "SE_TvSwitchOff",
+            "priority": 0,
+            "soundPath": "Assets/Audio/SE/SE_TvSwitchOff.flac",
+            "spatial": false,
+            "startSeconds": 0.6000000238418579,
+            "targetBinding": 0,
+            "vfxAsset": "",
+            "volume": 0.5
+          },
+          {
+            "bus": "Voice",
+            "durationSeconds": 9.0,
+            "fadeInSeconds": 1.5,
+            "id": 6,
+            "kind": "audio",
+            "maximumDistance": 30.0,
+            "maximumInstances": 8,
+            "minimumDistance": 1.0,
+            "name": "AMB_Drone",
+            "priority": 0,
+            "soundPath": "Assets/Audio/AMB/AMB_Drone.flac",
+            "spatial": false,
+            "startSeconds": 1.600000023841858,
+            "targetBinding": 0,
+            "vfxAsset": "",
+            "volume": 0.550000011920929
+          },
+          {
+            "bus": "Se",
+            "durationSeconds": 3.0,
+            "fadeInSeconds": 0.05000000074505806,
+            "fadeOutSeconds": 1.2000000476837158,
+            "id": 7,
+            "kind": "audio",
+            "maximumDistance": 30.0,
+            "maximumInstances": 8,
+            "minimumDistance": 1.0,
+            "name": "SE_TvGlitch",
+            "priority": 0,
+            "soundPath": "Assets/Audio/SE/SE_TvGlitch.flac",
+            "sourceOffsetSeconds": 0.5,
+            "spatial": false,
+            "startSeconds": 6.0,
+            "targetBinding": 0,
+            "vfxAsset": "",
+            "volume": 0.25
+          },
+          {
+            "bus": "Se",
+            "durationSeconds": 1.9500000476837158,
+            "id": 8,
+            "kind": "audio",
+            "maximumDistance": 30.0,
+            "maximumInstances": 8,
+            "minimumDistance": 1.0,
+            "name": "SE_PowerCut",
+            "priority": 0,
+            "soundPath": "Assets/Audio/SE/SE_PowerCut.flac",
+            "spatial": false,
+            "startSeconds": 10.434000015258789,
+            "targetBinding": 0,
+            "vfxAsset": "",
+            "volume": 0.8999999761581421
+          },
+          {
+            "bus": "Se",
+            "durationSeconds": 2.303999900817871,
+            "id": 9,
+            "kind": "audio",
+            "maximumDistance": 30.0,
+            "maximumInstances": 8,
+            "minimumDistance": 1.0,
+            "name": "SE_TvDegauss3",
+            "priority": 0,
+            "soundPath": "Assets/Audio/SE/SE_TvDegauss3.flac",
+            "spatial": false,
+            "startSeconds": 11.390000343322754,
+            "targetBinding": 0,
+            "vfxAsset": "",
+            "volume": 0.75
+          },
+          {
+            "bus": "Se",
+            "durationSeconds": 0.39899998903274536,
+            "id": 10,
+            "kind": "audio",
+            "maximumDistance": 30.0,
+            "maximumInstances": 8,
+            "minimumDistance": 1.0,
+            "name": "SE_TvTurnOff3",
+            "priority": 0,
+            "soundPath": "Assets/Audio/SE/SE_TvTurnOff3.flac",
+            "spatial": false,
+            "startSeconds": 12.59000015258789,
+            "targetBinding": 0,
+            "vfxAsset": "",
+            "volume": 0.30000001192092896
+          },
+          {
+            "bus": "Se",
+            "durationSeconds": 0.6940000057220459,
+            "id": 11,
+            "kind": "audio",
+            "maximumDistance": 30.0,
+            "maximumInstances": 8,
+            "minimumDistance": 1.0,
+            "name": "SE_TvTurnOff1",
+            "priority": 0,
+            "soundPath": "Assets/Audio/SE/SE_TvTurnOff1.flac",
+            "spatial": false,
+            "startSeconds": 13.161399841308594,
+            "targetBinding": 0,
+            "vfxAsset": "",
+            "volume": 0.36000001430511475
+          },
+          {
+            "bus": "Se",
+            "durationSeconds": 0.39899998903274536,
+            "id": 12,
+            "kind": "audio",
+            "maximumDistance": 30.0,
+            "maximumInstances": 8,
+            "minimumDistance": 1.0,
+            "name": "SE_TvTurnOff3",
+            "priority": 0,
+            "soundPath": "Assets/Audio/SE/SE_TvTurnOff3.flac",
+            "spatial": false,
+            "startSeconds": 13.675700187683105,
+            "targetBinding": 0,
+            "vfxAsset": "",
+            "volume": 0.4300000071525574
+          },
+          {
+            "bus": "Se",
+            "durationSeconds": 0.6940000057220459,
+            "id": 13,
+            "kind": "audio",
+            "maximumDistance": 30.0,
+            "maximumInstances": 8,
+            "minimumDistance": 1.0,
+            "name": "SE_TvTurnOff1",
+            "priority": 0,
+            "soundPath": "Assets/Audio/SE/SE_TvTurnOff1.flac",
+            "spatial": false,
+            "startSeconds": 14.13290023803711,
+            "targetBinding": 0,
+            "vfxAsset": "",
+            "volume": 0.5099999904632568
+          },
+          {
+            "bus": "Se",
+            "durationSeconds": 0.39899998903274536,
+            "id": 14,
+            "kind": "audio",
+            "maximumDistance": 30.0,
+            "maximumInstances": 8,
+            "minimumDistance": 1.0,
+            "name": "SE_TvTurnOff3",
+            "priority": 0,
+            "soundPath": "Assets/Audio/SE/SE_TvTurnOff3.flac",
+            "spatial": false,
+            "startSeconds": 14.532899856567383,
+            "targetBinding": 0,
+            "vfxAsset": "",
+            "volume": 0.6000000238418579
+          },
+          {
+            "bus": "Se",
+            "durationSeconds": 0.6940000057220459,
+            "id": 15,
+            "kind": "audio",
+            "maximumDistance": 30.0,
+            "maximumInstances": 8,
+            "minimumDistance": 1.0,
+            "name": "SE_TvTurnOff1",
+            "priority": 0,
+            "soundPath": "Assets/Audio/SE/SE_TvTurnOff1.flac",
+            "spatial": false,
+            "startSeconds": 14.875699996948242,
+            "targetBinding": 0,
+            "vfxAsset": "",
+            "volume": 0.699999988079071
+          },
+          {
+            "bus": "Se",
+            "durationSeconds": 0.8960000276565552,
+            "id": 16,
+            "kind": "audio",
+            "maximumDistance": 30.0,
+            "maximumInstances": 8,
+            "minimumDistance": 1.0,
+            "name": "SE_TvTurnOff2",
+            "priority": 0,
+            "soundPath": "Assets/Audio/SE/SE_TvTurnOff2.flac",
+            "spatial": false,
+            "startSeconds": 15.161399841308594,
+            "targetBinding": 0,
+            "vfxAsset": "",
+            "volume": 0.8199999928474426
+          },
+          {
+            "bus": "Se",
+            "durationSeconds": 0.8960000276565552,
+            "id": 17,
+            "kind": "audio",
+            "maximumDistance": 30.0,
+            "maximumInstances": 8,
+            "minimumDistance": 1.0,
+            "name": "SE_TvTurnOff2",
+            "priority": 0,
+            "soundPath": "Assets/Audio/SE/SE_TvTurnOff2.flac",
+            "spatial": false,
+            "startSeconds": 15.390000343322754,
+            "targetBinding": 0,
+            "vfxAsset": "",
+            "volume": 0.949999988079071
+          },
+          {
+            "bus": "Voice",
+            "durationSeconds": 7.599999904632568,
+            "fadeInSeconds": 2.0,
+            "fadeOutSeconds": 1.5,
+            "id": 18,
+            "kind": "audio",
+            "maximumDistance": 30.0,
+            "maximumInstances": 8,
+            "minimumDistance": 1.0,
+            "name": "AMB_CaveInsects",
+            "priority": 0,
+            "soundPath": "Assets/Audio/AMB/AMB_CaveInsects.flac",
+            "spatial": false,
+            "startSeconds": 11.0,
+            "targetBinding": 0,
+            "vfxAsset": "",
+            "volume": 0.5
+          },
+          {
+            "bus": "Se",
+            "durationSeconds": 1.25,
+            "fadeInSeconds": 0.4000000059604645,
+            "fadeOutSeconds": 0.5,
+            "id": 19,
+            "kind": "audio",
+            "maximumDistance": 30.0,
+            "maximumInstances": 8,
+            "minimumDistance": 1.0,
+            "name": "SE_TvGlitch",
+            "priority": 0,
+            "soundPath": "Assets/Audio/SE/SE_TvGlitch.flac",
+            "sourceOffsetSeconds": 3.0,
+            "spatial": false,
+            "startSeconds": 17.350000381469727,
+            "targetBinding": 0,
+            "vfxAsset": "",
+            "volume": 0.20000000298023224
+          },
+          {
+            "bus": "Se",
+            "durationSeconds": 2.190000057220459,
+            "id": 20,
+            "kind": "audio",
+            "maximumDistance": 30.0,
+            "maximumInstances": 8,
+            "minimumDistance": 1.0,
+            "name": "SE_ReverseWhoosh",
+            "priority": 0,
+            "soundPath": "Assets/Audio/SE/SE_ReverseWhoosh.flac",
+            "spatial": false,
+            "startSeconds": 17.44499969482422,
+            "targetBinding": 0,
+            "vfxAsset": "",
+            "volume": 0.8500000238418579
+          },
+          {
+            "bus": "Se",
+            "durationSeconds": 2.200000047683716,
+            "fadeOutSeconds": 1.600000023841858,
+            "id": 21,
+            "kind": "audio",
+            "maximumDistance": 30.0,
+            "maximumInstances": 8,
+            "minimumDistance": 1.0,
+            "name": "SE_Thunder01",
+            "priority": 0,
+            "soundPath": "Assets/Audio/SE/SE_Thunder01.mp3",
+            "sourceOffsetSeconds": 0.4000000059604645,
+            "spatial": false,
+            "startSeconds": 6.900000095367432,
+            "targetBinding": 0,
+            "vfxAsset": "",
+            "volume": 0.550000011920929
+          }
+        ],
+        "enabled": true,
+        "type": "presentationCue"
+      },
+      {
+        "clips": [
+          {
             "durationSeconds": 0.10000000149011612,
             "id": 1,
             "name": "タイトル消去",
             "startSeconds": 0.6000000238418579
           },
           {
-            "durationSeconds": 19.149999976158142,
+            "durationSeconds": 19.149999618530273,
             "id": 2,
             "name": "黒帯",
             "startSeconds": 0.6000000238418579
@@ -2330,6 +2710,12 @@
             "startSeconds": 6.0
           },
           {
+            "durationSeconds": 3.0,
+            "id": 10,
+            "name": "砂嵐拡散",
+            "startSeconds": 6.0
+          },
+          {
             "durationSeconds": 0.10000000149011612,
             "id": 5,
             "name": "稲妻",
@@ -2339,7 +2725,7 @@
             "durationSeconds": 0.10000000149011612,
             "id": 6,
             "name": "稲妻",
-            "startSeconds": 7.75
+            "startSeconds": 7.199999809265137
           },
           {
             "durationSeconds": 0.10000000149011612,
@@ -2358,12 +2744,6 @@
             "id": 9,
             "name": "稲妻",
             "startSeconds": 10.25
-          },
-          {
-            "durationSeconds": 3.0,
-            "id": 10,
-            "name": "砂嵐拡散",
-            "startSeconds": 6.0
           },
           {
             "durationSeconds": 0.10000000149011612,

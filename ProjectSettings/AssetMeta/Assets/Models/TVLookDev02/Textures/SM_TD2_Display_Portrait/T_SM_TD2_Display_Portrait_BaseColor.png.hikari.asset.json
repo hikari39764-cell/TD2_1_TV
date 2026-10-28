@@ -1,0 +1,21 @@
+{
+  "displayName": "T_SM_TD2_Display_Portrait_BaseColor",
+  "guid": "891dfcf0714243aba239db6c6f82aadb",
+  "importSettings": {
+    "allowResize": false,
+    "colorSpace": "Srgb",
+    "compression": "BC7",
+    "debugOutputFormat": "DDS",
+    "dimension": "Texture2D",
+    "forcePowerOfTwo": false,
+    "maxSize": 4096,
+    "mipPolicy": "Generate",
+    "outputFormat": "HTEX",
+    "usage": "BaseColor"
+  },
+  "importerId": "TextureImporter",
+  "importerVersion": 8,
+  "metaVersion": 1,
+  "sourcePath": "Assets/Models/TVLookDev02/Textures/SM_TD2_Display_Portrait/T_SM_TD2_Display_Portrait_BaseColor.png",
+  "type": "Texture"
+}

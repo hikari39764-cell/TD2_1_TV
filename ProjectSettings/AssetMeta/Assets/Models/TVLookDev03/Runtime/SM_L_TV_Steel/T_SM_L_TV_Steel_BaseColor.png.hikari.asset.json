@@ -1,0 +1,21 @@
+{
+  "displayName": "T_SM_L_TV_Steel_BaseColor",
+  "guid": "2777bdb3eab3e5f2d8755c3714246960",
+  "importSettings": {
+    "allowResize": false,
+    "colorSpace": "Srgb",
+    "compression": "BC7",
+    "debugOutputFormat": "DDS",
+    "dimension": "Texture2D",
+    "forcePowerOfTwo": false,
+    "maxSize": 4096,
+    "mipPolicy": "Generate",
+    "outputFormat": "HTEX",
+    "usage": "BaseColor"
+  },
+  "importerId": "TextureImporter",
+  "importerVersion": 8,
+  "metaVersion": 1,
+  "sourcePath": "Assets/Models/TVLookDev03/Runtime/SM_L_TV_Steel/T_SM_L_TV_Steel_BaseColor.png",
+  "type": "Texture"
+}

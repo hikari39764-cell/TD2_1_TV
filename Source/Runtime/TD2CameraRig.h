@@ -88,6 +88,10 @@ public:
     // 基準をこの姿勢へ置き直す（ずれは 0 から寄せ直す）。復活と演出の終わりに使う。
     void Snap(const HIKARI::GameProjectFloat3& eye, const HIKARI::GameProjectFloat3& look, float verticalFovRadians,
               const HIKARI::GameProjectFloat3& up = {0, 1, 0});
+    // 演出の最後の画から追従を始める。基準をその画に置き（区域カメラへは追従のばねで寄る）、呼吸と手持ちの揺れは
+    // 0 から少しずつ戻す（引き継いだ瞬間に画が動かない）。
+    void Adopt(const HIKARI::GameProjectFloat3& eye, const HIKARI::GameProjectFloat3& look, float verticalFovRadians,
+               const HIKARI::GameProjectFloat3& up);
     bool Ready() const noexcept { return ready_; }
     // 基準のカメラを from から to への剛体の動きで運ぶ（乗っているテレビが回る・動く間、画面との位置関係を保つ）。
     void Carry(const HIKARI::GameProjectTransform& from, const HIKARI::GameProjectTransform& to);
@@ -118,6 +122,7 @@ private:
     CameraRigPose last_{};
     // 画角（ラジアン）とその速さ。区域カメラの画角が違っても、位置と同じ速さで寄せる（乗り換えの瞬間に画がズームしない）。
     double fov_ = .4538, fovVelocity_ = 0;
+    double calm_ = 1;   // 呼吸と手持ちの揺れの掛かり具合（Adopt の後は 0 から 1 へ戻す）
     bool ready_ = false;
 };
 }

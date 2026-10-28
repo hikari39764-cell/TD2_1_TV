@@ -1,0 +1,21 @@
+{
+  "displayName": "T_TV04_44ec165c9a99bd_MetalRough",
+  "guid": "53501bb79d8940269095610f8a30227f",
+  "importSettings": {
+    "allowResize": false,
+    "colorSpace": "Linear",
+    "compression": "BC7",
+    "debugOutputFormat": "DDS",
+    "dimension": "Texture2D",
+    "forcePowerOfTwo": false,
+    "maxSize": 4096,
+    "mipPolicy": "Generate",
+    "outputFormat": "HTEX",
+    "usage": "MetallicRoughness"
+  },
+  "importerId": "TextureImporter",
+  "importerVersion": 8,
+  "metaVersion": 1,
+  "sourcePath": "Assets/Models/TVLookDev04/Textures/T_TV04_44ec165c9a99bd_MetalRough.png",
+  "type": "Texture"
+}

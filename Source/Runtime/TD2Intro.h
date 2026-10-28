@@ -33,8 +33,10 @@ inline constexpr std::string_view kLetterboxTexture = "TD2/Intro/T_TD2_Letterbox
 // 白い板（点灯・消灯の点と線）。
 inline constexpr std::string_view kWhiteTexture = "TD2/Intro/T_TD2_White.png";
 
-// 暗転の中の弾窓の段取りの長さ（秒）。この後に登場の演出が続く。
-inline constexpr double kIntroPopupsSeconds = 7.1;
+// 暗転の中の弾窓の段取り（秒）。初めの kIntroBlackHold 秒は画面へ飛び込んだ後の黒だけを見せ、弾窓が済んだ後に
+// 登場の演出が続く。
+inline constexpr double kIntroBlackHold = 1.35;
+inline constexpr double kIntroPopupsSeconds = kIntroBlackHold + 6.75;
 
 // 演出アセットのイベントトラックで使う事件の名前。始まりの時刻と長さを演出ワークスペースで動かす。
 namespace IntroEvent {
@@ -193,6 +195,8 @@ public:
     bool TrueEnd() const noexcept { return wake_ == Wake::TrueEnd; }
     // 暗転の中の弾窓が新しく出た数（このフレームまでの分。読むと 0 に戻る）。効果音に使う。
     int TakePopupSounds() { return std::exchange(popupSounds_, 0); }
+    // 登場の演出が終わりまで流れた（このフレームにゲームのカメラへ引き継ぐ）。読んだら消える。
+    bool TakeHandoff() { return std::exchange(handoff_, false); }
 
 private:
     enum class Phase { None, Title, Playing, Popups, Arrival, Ending, Preview, Done };
@@ -245,6 +249,7 @@ private:
     float blackSent_ = -1;
     bool ending_ = false;   // 流している（プレビューしている）のが通関か
     Wake wake_ = Wake::None;
+    bool handoff_ = false;   // 登場の演出が終わった（TakeHandoff で読む）
     IntroSettings settings_;
     HIKARI::GameProjectSequencePlaybackHandle playback_{};
     std::vector<Lamp> lamps_;

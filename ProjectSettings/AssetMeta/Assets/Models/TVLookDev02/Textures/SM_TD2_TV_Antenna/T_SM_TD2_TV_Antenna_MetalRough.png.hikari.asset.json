@@ -1,0 +1,21 @@
+{
+  "displayName": "T_SM_TD2_TV_Antenna_MetalRough",
+  "guid": "d5f949e3924c4c839cbbcf7630b45e39",
+  "importSettings": {
+    "allowResize": false,
+    "colorSpace": "Linear",
+    "compression": "BC7",
+    "debugOutputFormat": "DDS",
+    "dimension": "Texture2D",
+    "forcePowerOfTwo": false,
+    "maxSize": 4096,
+    "mipPolicy": "Generate",
+    "outputFormat": "HTEX",
+    "usage": "MetallicRoughness"
+  },
+  "importerId": "TextureImporter",
+  "importerVersion": 8,
+  "metaVersion": 1,
+  "sourcePath": "Assets/Models/TVLookDev02/Textures/SM_TD2_TV_Antenna/T_SM_TD2_TV_Antenna_MetalRough.png",
+  "type": "Texture"
+}

@@ -39,10 +39,11 @@ double Noise(uint32_t seed, double t, double frequency) {
     const double s = Math::SmoothStep(x - std::floor(x));
     return Hash01(seed, i) * (1 - s) + Hash01(seed, i + 1) * s;
 }
-// 暗転の中の弾窓（一つ目の演出が終わってからの秒）：少し黒を置き、タイトルの知らせ、楽しんでね、そして「ゴールで まってるね」の
-// 嵐が画を埋め、ぷつりと切れて黒を少し置いてから二つ目の演出へ。
-constexpr double kNoticeIn = .35, kNoticeOut = 2.65, kEnjoyIn = 2.85, kEnjoyOut = 4.35;
-constexpr double kStormIn = 4.45, kStormSeconds = 2.3;
+// 暗転の中の弾窓（一つ目の演出が終わってからの秒）：飛び込んだ後の黒を kIntroBlackHold 秒見せ、タイトルの知らせ、
+// 楽しんでね、そして「ゴールで まってるね」の嵐が画を埋め、ぷつりと切れて黒を少し置いてから二つ目の演出へ。
+constexpr double kNoticeIn = kIntroBlackHold, kNoticeOut = kIntroBlackHold + 2.3;
+constexpr double kEnjoyIn = kIntroBlackHold + 2.5, kEnjoyOut = kIntroBlackHold + 4.0;
+constexpr double kStormIn = kIntroBlackHold + 4.1, kStormSeconds = 2.3;
 constexpr int kStormPeak = 150;
 constexpr double kNoticeCharsPerSecond = 20, kPopupClose = .1;
 constexpr std::string_view kNoticeText = "ちなみにタイトルは：\nビジョン　です", kEnjoyText = "たのしんでね！";
@@ -90,7 +91,8 @@ void IntroDirector::DrawPopups(HIKARI::WorldView& world, double u, double second
         Popups::Look look;
         look.title = "？？？"; look.text = text; look.icon = icon;
         look.appear = u < out ? Popups::Appear(u - in) : static_cast<float>(1 - (u - out) / kPopupClose);
-        if (typed) { look.typed = (u - in - .12) * kNoticeCharsPerSecond; }
+        // 打ち出す前は 0 字（負の数は「全部」なので、出た瞬間に全文が一瞬見えてしまう）。
+        if (typed) { look.typed = (std::max)(0.0, (u - in - .12) * kNoticeCharsPerSecond); }
         (void)Popups::Draw(paint, cx, cy, width, look);
     };
     single(kNoticeText, kNoticeIn, kNoticeOut, W * .5f, H * .5f, Popups::kIconMail, true);

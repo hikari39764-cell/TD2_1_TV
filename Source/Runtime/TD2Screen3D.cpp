@@ -2,6 +2,7 @@
 #include "TD2Screen3DShared.h"
 #include "TD2StageProjection.h"
 #include "TD2ScreenKitAssets.h"
+#include "TD2TvPopups.h"
 #include "HIKARI/Project/ActionViews.h"
 #include "HIKARI/Project/PresentationViews.h"
 #include "HIKARI/Project/VfxView.h"
@@ -116,6 +117,7 @@ bool Screen3DStage::Release(HIKARI::WorldView& world) {
     RestoreCamera(world, noiseCamera_);
     ReleaseStageLights(world);
     windows_ = {};
+    popupParked_.clear();
     portals_.clear(); portalTier_.clear(); portalSeen_.clear(); portalTan_.clear(); portalDrawn_.clear(); portalPlace_.clear(); portalLimit_.clear(); follow_.clear(); introPlanes_.clear();
     return true;
 }
@@ -362,6 +364,7 @@ void Screen3DStage::Render(HIKARI::WorldView& world, const std::vector<StageRoom
     }
     { StageTimer timer("parts"); SubmitParts(world, valid, shown, *frame.snapshot, kit, fx.enabled && fx.smear, now, frame.simulated); }
     { StageTimer timer("effects"); PlayEffects(world, fx, frame.simulated || intro_ != nullptr, now); }
+    if (play_ && frame.popups) { PlacePopups(world, valid, frame); }
     StageTimer::EndFrame();
 
     size_t ready = 0, failedCaptures = 0;
@@ -455,5 +458,45 @@ void Screen3DStage::PlayEffects(HIKARI::WorldView& world, const ScreenFxSettings
         if (flash > 0 && flash >= flashAmount_ * fade(flashStart_, kFlashSeconds)) { flashAmount_ = flash; flashStart_ = now; }
     }
     activeFx_ = std::move(next);
+}
+
+void Screen3DStage::PlacePopups(HIKARI::WorldView& world, const std::vector<const StageRoom*>& rooms, const StageFrame& frame) {
+    // 奥行き（マス、手前が正）：人物（-0.15 の面に立ち、奥へ半身ほど）と装置より後ろ、後ろの壁（実体の地形で約 -3.65）より
+    // 手前。覗き窓は斜めから見るので、手前へ張り出した地形の正面（+1.5）の縁は板の上へずれる（ずれは板の奥行きよりも
+    // 地形の張り出しで決まる）。弾窓は地形から間を空けて置く（TvPopupDirector::FindSpot）。
+    constexpr double kPopupDepth = -1.4;
+    for (const auto& board : *frame.popups) {
+        const auto object = world.FindObject(board.object);
+        if (!object.IsValid()) continue;
+        const auto room = board.shown ? std::find_if(rooms.begin(), rooms.end(), [&](const StageRoom* r) { return r->regionId == board.region; })
+                                      : rooms.end();
+        auto& parked = popupParked_[board.object.value];
+        if (room == rooms.end()) {
+            // 使わない板は舞台のずっと外（どの窓・覗き窓にも写らない所）で小さくしておく。
+            if (parked) continue;
+            HIKARI::GameProjectTransform away{};
+            away.position = projection_.Point(kNoiseX - 4000, kNoiseY, 0);
+            away.scale = {1e-3f, 1e-3f, 1e-3f};
+            parked = object.SetWorldTransform(away).Accepted();
+            continue;
+        }
+        parked = false;
+        const auto& r = (*room)->Region();
+        double x = (*room)->x + board.local.x, y = (*room)->y + board.local.y;
+        const double w = board.local.w, h = board.local.h;
+        HIKARI::GameProjectTransform pose{};
+        if ((*room)->flipped) {
+            // 回された部屋：部屋の中心について点対称に置き、180° 回す（逆さに写る画面の上で正立して読める）。板の原点は下辺の
+            // 中ほどなので、回すと上辺の中ほどになる。
+            x = 2 * ((*room)->x + r.cols * .5) - (x + w);
+            y = 2 * ((*room)->y + r.rows * .5) - (y + h);
+            pose.position = projection_.Point(x + w * .5, y, kPopupDepth);
+            pose.rotation = RotateZ(kPi);
+        } else {
+            pose.position = projection_.Point(x + w * .5, y + h, kPopupDepth);
+        }
+        pose.scale = {static_cast<float>(w * projection_.scale), static_cast<float>(h * projection_.scale), 1.0f};
+        (void)object.SetWorldTransform(pose);
+    }
 }
 }
