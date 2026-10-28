@@ -48528,12 +48528,12 @@
             "regionOffsets": "td2.ut -12 0 @td2.q1",
             "regionOffsetsC": "",
             "ride": true,
+            "rideEnter": "td2.u8",
             "rideFrom": "",
             "sealExits": "td2.q1",
             "seconds": 4.8,
             "settle": 0.0,
-            "toggle": false,
-            "rideEnter": "td2.u8"
+            "toggle": false
           },
           "type": "TD2.Mechanism"
         }
