@@ -3,5 +3,12 @@
 # 小さなテスト素材を一律に LFS 化しない。
 # 大きなバイナリは容量と用途を確認し、必要なパスだけ LFS に追加する。
 
-# 道中の BGM（14 MB の flac）だけ LFS にする。
+# 道中の BGM（14 MB の flac）は LFS にする。
 Assets/Audio/BGM/BGM_Stage.flac filter=lfs diff=lfs merge=lfs -text
+
+# 採用したテレビの大きな法線画像だけ、個別のパスで LFS にする。
+Assets/Models/TVLookDev02/Textures/SM_L_TV_Hub/T_SM_L_TV_Hub_Normal.png filter=lfs diff=lfs merge=lfs -text
+Assets/Models/TVLookDev02/Textures/SM_L_TV_Wide/T_SM_L_TV_Wide_Normal.png filter=lfs diff=lfs merge=lfs -text
+Assets/Models/TVLookDev02/Textures/SM_TD2_Display_Portrait/T_SM_TD2_Display_Portrait_Normal.png filter=lfs diff=lfs merge=lfs -text
+Assets/Models/TVLookDev02/Textures/SM_TD2_Handheld_Classic/T_SM_TD2_Handheld_Classic_Normal.png filter=lfs diff=lfs merge=lfs -text
+Assets/Models/TVLookDev02/Textures/SM_TD2_TV_Antenna/T_SM_TD2_TV_Antenna_Normal.png filter=lfs diff=lfs merge=lfs -text

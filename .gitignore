@@ -75,3 +75,48 @@ __pycache__/
 # 素材を作る Python スクリプトと、その雛形は実行時に使わないのでローカルに残す。
 /ArtSource/**/*.py
 /ArtSource/ScreenStyle07/model_meta_template.json
+
+# 制作スクリプトは共有せず、必要な一回限りの処理は一時領域で行う。
+*.py
+*.ps1
+*.sh
+*.bat
+*.cmd
+
+# テレビの制作素材と重複した書き出しはローカルに残す。
+/ArtSource/TVLookDev02/
+/ArtSource/TVLookDev03/
+/ArtSource/TVLookDev04/
+/Assets/Models/TVLookDev01/
+/ProjectSettings/AssetMeta/Assets/Models/TVLookDev01/
+/Assets/Models/TVLookDev02/*.glb
+/ProjectSettings/AssetMeta/Assets/Models/TVLookDev02/*.glb.hikari.asset.json
+/Assets/Models/TVLookDev03/*.glb
+/ProjectSettings/AssetMeta/Assets/Models/TVLookDev03/*.glb.hikari.asset.json
+
+# 現行の凹凸版は Steel だけを使い、他の試作テクスチャは残して除外する。
+/Assets/Models/TVLookDev03/Runtime/*/
+!/Assets/Models/TVLookDev03/Runtime/SM_L_TV_Steel/
+/ProjectSettings/AssetMeta/Assets/Models/TVLookDev03/Runtime/*/
+!/ProjectSettings/AssetMeta/Assets/Models/TVLookDev03/Runtime/SM_L_TV_Steel/
+
+# 採用しなかった掌上機のテクスチャと、そのメタだけを除外する。
+T_TV04_410bf5a4198742_MetalRough.png*
+T_TV04_4bb5c7ce8506f5_Normal.png*
+T_TV04_6fd2cec57333d6_BaseColor.png*
+T_TV04_8cd8e574279235_Normal.png*
+T_TV04_c58c574e56b26e_MetalRough.png*
+
+# 再生成された未使用の空の材質セットと試作用の画面設定は共有しない。
+/Assets/Materials/Ramps/HIKARI_ToonHard3Step.material.json
+/ProjectSettings/AssetMeta/Assets/Materials/Ramps/HIKARI_ToonHard3Step.material.json.hikari.asset.json
+/Assets/Models/MaterialBindings/Backdrop_GridH1_celadon3d_Material_Set.hmodelmaterial
+/Assets/Models/MaterialBindings/Ninja_Idle1_L_celadon_Material_Set.hmodelmaterial
+/Assets/Models/MaterialBindings/SM_TD2_Handheld_Wide_Material_Set.hmodelmaterial
+/Assets/Models/MaterialBindings/SM_TD2_TVStand_Material_Set.hmodelmaterial
+/ProjectSettings/AssetMeta/Assets/Models/MaterialBindings/Backdrop_GridH1_celadon3d_Material_Set.hmodelmaterial.hikari.asset.json
+/ProjectSettings/AssetMeta/Assets/Models/MaterialBindings/Ninja_Idle1_L_celadon_Material_Set.hmodelmaterial.hikari.asset.json
+/ProjectSettings/AssetMeta/Assets/Models/MaterialBindings/SM_TD2_Handheld_Wide_Material_Set.hmodelmaterial.hikari.asset.json
+/ProjectSettings/AssetMeta/Assets/Models/MaterialBindings/SM_TD2_TVStand_Material_Set.hmodelmaterial.hikari.asset.json
+/Assets/PostProfiles/PostProfile_[45].hpostprofile
+/ProjectSettings/AssetMeta/Assets/PostProfiles/PostProfile_[45].hpostprofile.hikari.asset.json
